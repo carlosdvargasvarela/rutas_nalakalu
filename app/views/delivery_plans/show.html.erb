@@ -1,0 +1,49 @@
+<h1>Detalle del Plan de Ruta #<%= @delivery_plan.id %></h1>
+
+<div class="card mb-3">
+  <div class="card-header">
+    Información General
+  </div>
+  <div class="card-body">
+    <p><strong>Semana:</strong> <%= @delivery_plan.week %></p>
+    <p><strong>Año:</strong> <%= @delivery_plan.year %></p>
+    <p><strong>Estado:</strong> <span class="badge bg-<%= delivery_status_color(@delivery_plan.status) %>"><%= @delivery_plan.status.humanize %></span></p>
+    <%# Puedes agregar más campos si tu modelo los tiene, como chofer, notas, etc. %>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">
+    Entregas en este plan
+  </div>
+  <div class="card-body">
+    <% if @deliveries.any? %>
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>Pedido</th>
+            <th>Cliente</th>
+            <th>Dirección</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @deliveries.each do |delivery| %>
+            <tr>
+              <td><%= delivery.order.number %></td>
+              <td><%= delivery.order.client.name %></td>
+              <td><%= delivery.delivery_address.address %></td>
+              <td><%= l delivery.delivery_date, format: :long %></td>
+              <td><span class="badge bg-<%= delivery_status_color(delivery.status) %>"><%= delivery.status.humanize %></span></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p>No hay entregas asignadas a este plan.</p>
+    <% end %>
+  </div>
+</div>
+
+<%= link_to "Volver a Planes de Ruta", delivery_plans_path, class: "btn btn-secondary" %>

@@ -47,6 +47,7 @@ class OrderItem < ApplicationRecord
     if fully_delivered?
       update!(status: :delivered)
       order.check_and_update_status! if order.fully_delivered?
+      order.update_status_based_on_items
     end
   end
 end

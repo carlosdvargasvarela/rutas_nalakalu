@@ -50,13 +50,6 @@ class Order < ApplicationRecord
     order_items.all? { |item| item.ready? }
   end
 
-  # Marca el pedido como listo si todos los items están listos
-  def check_and_update_status!
-    if all_items_ready? && in_production?
-      update!(status: :ready_for_delivery)
-    end
-  end
-
   # Total de items en el pedido
   def total_items
     order_items.sum(:quantity)
@@ -64,10 +57,6 @@ class Order < ApplicationRecord
 
   def pending_items
     order_items.where.not(status: :delivered)
-  end
-
-  def fully_delivered?
-    order_items.all?(&:fully_delivered?)
   end
 
   def self.ransackable_attributes(auth_object = nil)

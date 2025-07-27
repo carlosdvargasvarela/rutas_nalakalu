@@ -92,10 +92,9 @@ class Delivery < ApplicationRecord
       "order_id",
       "status",
       "updated_at"
-    ]
+    ] + _ransackers.keys
   end
 
-  # Si quieres permitir búsquedas por asociaciones (por ejemplo, cliente del pedido):
   def self.ransackable_associations(auth_object = nil)
     ["order", "delivery_address", "delivery_items"]
   end
