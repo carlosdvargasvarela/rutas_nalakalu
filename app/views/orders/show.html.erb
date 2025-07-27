@@ -1,0 +1,43 @@
+<h1>Pedido <%= @order.number %></h1>
+
+<p><strong>Cliente:</strong> <%= @order.client.name %></p>
+<p><strong>Vendedor:</strong> <%= @order.seller.name %> (<%= @order.seller.seller_code %>)</p>
+<p><strong>Estado:</strong> <%= @order.status.humanize %></p>
+
+<h2>Productos</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Producto</th>
+      <th>Cantidad</th>
+      <th>Notas</th>
+      <th>Confirmación</th>
+      <th>Acción</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @order.order_items.each do |item| %>
+      <tr>
+        <td><%= item.product %></td>
+        <td><%= item.quantity %></td>
+        <td><%= item.notes.presence || "N/A" %></td>
+        <td>
+          <% if item.confirmed? %>
+            <span class="badge bg-success">Confirmado</span>
+          <% else %>
+            <span class="badge bg-secondary">Pendiente</span>
+          <% end %>
+        </td>
+        <td>
+          <% if item.confirmed? %>
+            <%= button_to "Retirar confirmación", unconfirm_order_item_path(item), method: :patch, class: "btn btn-warning btn-sm" %>
+          <% else %>
+            <%= button_to "Confirmar", confirm_order_item_path(item), method: :patch, class: "btn btn-primary btn-sm" %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<%= link_to "Volver a Pedidos", orders_path, class: "btn btn-secondary" %>

@@ -26,6 +26,12 @@ Rails.application.routes.draw do
   end
 
   # Puedes agregar rutas para otros modelos si quieres verlos
+  resources :order_items, only: [] do
+    member do
+      patch :confirm
+      patch :unconfirm
+    end
+  end
   resources :orders, only: [:index, :show]
   resources :clients, only: [:index, :show]
   resources :sellers, only: [:index, :show]
