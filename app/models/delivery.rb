@@ -5,7 +5,7 @@ class Delivery < ApplicationRecord
   has_many :delivery_items, dependent: :destroy
   has_many :order_items, through: :delivery_items
 
-  enum status: { scheduled: 0, in_route: 1, delivered: 2, rescheduled: 3, cancelled: 4 }
+  enum status: { scheduled: 0, in_route: 1, delivered: 2, rescheduled: 3, cancelled: 4, ready_to_deliver: 5 }
 
   validates :delivery_date, presence: true
   validates :contact_name, presence: true
@@ -15,15 +15,18 @@ class Delivery < ApplicationRecord
   def update_status_based_on_items
     statuses = delivery_items.pluck(:status)
 
-    if statuses.all? { |s| s == "delivered" }
+    # Todos entregados o reagendados
+    if statuses.all? { |s| ["delivered", "rescheduled"].include?(s) }
       update_column(:status, Delivery.statuses[:delivered])
+    elsif statuses.all? { |s| ["confirmed", "rescheduled"].include?(s) }
+      update_column(:status, Delivery.statuses[:ready_to_deliver])
     elsif statuses.all? { |s| s == "cancelled" }
       update_column(:status, Delivery.statuses[:cancelled])
-    elsif statuses.any? { |s| s == "rescheduled" } && statuses.none? { |s| ["pending", "ready"].include?(s) }
+    elsif statuses.any? { |s| s == "rescheduled" } && statuses.none? { |s| ["pending", "ready", "confirmed", "in_route"].include?(s) }
       update_column(:status, Delivery.statuses[:rescheduled])
     elsif statuses.any? { |s| s == "in_route" }
       update_column(:status, Delivery.statuses[:in_route])
-    elsif statuses.all? { |s| ["pending", "ready"].include?(s) }
+    elsif statuses.all? { |s| ["pending", "ready", "confirmed"].include?(s) }
       update_column(:status, Delivery.statuses[:scheduled])
     else
       update_column(:status, Delivery.statuses[:scheduled])

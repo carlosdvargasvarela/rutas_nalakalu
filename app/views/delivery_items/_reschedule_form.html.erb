@@ -1,0 +1,13 @@
+<%= form_with url: reschedule_delivery_item_path(item), method: :patch, local: true do |f| %>
+  <div class="form-check">
+    <%= radio_button_tag "new_delivery", "true", true, id: "new_delivery_#{item.id}_true", class: "form-check-input" %>
+    <%= label_tag "new_delivery_#{item.id}_true", "Crear nueva entrega", class: "form-check-label" %>
+    <%= date_field_tag "new_date", Date.today + 7.days, class: "form-control mt-1" %>
+  </div>
+  <div class="form-check mt-2">
+    <%= radio_button_tag "new_delivery", "false", false, id: "new_delivery_#{item.id}_false", class: "form-check-input" %>
+    <%= label_tag "new_delivery_#{item.id}_false", "Agregar a entrega existente", class: "form-check-label" %>
+    <%= select_tag "target_delivery_id", options_from_collection_for_select(future_deliveries, :id, ->(d) { "Entrega ##{d.id} - #{l d.delivery_date, format: :long}" }), class: "form-select mt-1" %>
+  </div>
+  <%= f.submit "Reagendar", class: "btn btn-warning btn-sm mt-2" %>
+<% end %>

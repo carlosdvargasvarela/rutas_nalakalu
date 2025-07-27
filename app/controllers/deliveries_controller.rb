@@ -48,7 +48,10 @@ class DeliveriesController < ApplicationController
   # GET /deliveries/:id
   # Muestra los detalles de una entrega específica
   def show
-    # @delivery ya está seteada por before_action
+    @future_deliveries = Delivery
+      .where(order_id: @delivery.order_id, delivery_address_id: @delivery.delivery_address_id)
+      .where("delivery_date > ?", @delivery.delivery_date)
+      .where.not(id: @delivery.id)
   end
 
   private

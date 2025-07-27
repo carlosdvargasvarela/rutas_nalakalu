@@ -1,13 +1,12 @@
-module ApplicationHelper
-end
 # app/helpers/application_helper.rb
 module ApplicationHelper
   def delivery_status_color(status)
     case status
     when 'scheduled' then 'primary'
+    when 'ready_to_deliver' then 'info'
     when 'in_route' then 'warning'
     when 'delivered' then 'success'
-    when 'rescheduled' then 'info'
+    when 'rescheduled' then 'secondary'
     when 'cancelled' then 'danger'
     else 'secondary'
     end

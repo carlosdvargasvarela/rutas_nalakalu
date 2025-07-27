@@ -78,21 +78,27 @@
                 </span>
               </td>
               <td>
-                <% case item.status %>
-                <% when 'pending' %>
-                  <%= button_to "Confirmar", confirm_delivery_item_path(item), 
-                                method: :patch, class: "btn btn-primary btn-sm" %>
-                <% when 'confirmed' %>
-                  <%= button_to "Entregar", mark_delivered_delivery_item_path(item), 
-                                method: :patch, class: "btn btn-success btn-sm" %>
-                  <%= button_to "Reprogramar", reschedule_delivery_item_path(item), 
-                                method: :patch, class: "btn btn-warning btn-sm" %>
-                <% when 'delivered' %>
-                  <span class="text-success">✓ Entregado</span>
+                <% if item.rescheduled? %>
+                  <span class="text-warning">Reagendado</span>
                 <% else %>
-                  <%= button_to "Cancelar", cancel_delivery_item_path(item), 
-                                method: :patch, class: "btn btn-danger btn-sm",
-                                confirm: "¿Está seguro?" %>
+                  <% case item.status %>
+                  <% when 'pending' %>
+                    <%= button_to "Confirmar", confirm_delivery_item_path(item), 
+                                  method: :patch, class: "btn btn-primary btn-sm" %>
+                    <!-- Botón para mostrar el formulario de reagendar -->
+                    <button class="btn btn-warning btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#reschedule-form-<%= item.id %>">
+                      Reprogramar
+                    </button>
+                    <div class="collapse mt-2" id="reschedule-form-<%= item.id %>">
+                      <%= render partial: "delivery_items/reschedule_form", locals: { item: item, future_deliveries: @future_deliveries } %>
+                    </div>
+                  <% when 'delivered' %>
+                    <span class="text-success">✓ Entregado</span>
+                  <% else %>
+                    <%= button_to "Cancelar", cancel_delivery_item_path(item), 
+                                  method: :patch, class: "btn btn-danger btn-sm",
+                                  data: { turbo_confirm: "¿Está seguro?" } %>
+                  <% end %>
                 <% end %>
               </td>
             </tr>
