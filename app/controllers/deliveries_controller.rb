@@ -1,6 +1,5 @@
 # app/controllers/deliveries_controller.rb
 class DeliveriesController < ApplicationController
-  before_action :authenticate_user!
   before_action :set_delivery, only: [:show]
 
   # GET /deliveries
@@ -15,28 +14,36 @@ class DeliveriesController < ApplicationController
     end
 
     # Ordenar por fecha de entrega y luego por cliente
-    @deliveries = @deliveries.order(:delivery_date, 'clients.name').page(params[:page])
+    @deliveries = @deliveries.order(:delivery_date).page(params[:page])
   end
 
   # GET /deliveries/by_week
   # Muestra un formulario simple para seleccionar semana y año
   def by_week
-    @week = params[:week] || Date.today.cweek
-    @year = params[:year] || Date.today.cwyear
-    @deliveries = Delivery.for_week(Date.commercial(@year.to_i, @week.to_i, 1))
-                          .includes(:order, :delivery_address, :delivery_items)
-                          .order(:delivery_date, 'clients.name')
+    @week = params[:week].to_i
+    @year = params[:year].to_i
+
+    # Si la semana es inválida, usa la semana actual
+    @week = Date.today.cweek if @week < 1 || @week > 53
+    @year = Date.today.cwyear if @year < 2000 # o el rango que prefieras
+
+    start_date = Date.commercial(@year, @week, 1)
+    @deliveries = Delivery.for_week(start_date)
+                          .includes(order: :client, delivery_address: {}, delivery_items: {})
+                          .order('deliveries.delivery_date ASC')
                           .page(params[:page])
-    render :index # Reutiliza la vista index
+    render :index
   end
 
   # GET /deliveries/service_cases
   # Muestra solo las entregas que contienen casos de servicio
   def service_cases
-    @deliveries = Delivery.with_service_cases
-                          .includes(:order, :delivery_address, :delivery_items)
-                          .order(:delivery_date, 'clients.name')
-                          .page(params[:page])
+    @deliveries = Delivery
+      .joins(order: :client)
+      .merge(Delivery.with_service_cases)
+      .includes(:order, :delivery_address, :delivery_items)
+      .order('deliveries.delivery_date ASC, clients.name ASC')
+      .page(params[:page])
     render :index # Reutiliza la vista index
   end
 

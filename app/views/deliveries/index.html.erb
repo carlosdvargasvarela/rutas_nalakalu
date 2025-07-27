@@ -3,7 +3,7 @@
 <div class="mb-3">
   <%= form_tag by_week_deliveries_path, method: :get, class: "d-flex align-items-center" do %>
     <label for="week" class="me-2">Semana:</label>
-    <%= number_field_tag :week, @week, class: "form-control me-2", style: "width: 80px;" %>
+    <%= number_field_tag :week, @week, min: 1, max: 53, class: "form-control me-2", style: "width: 80px;" %>
     <label for="year" class="me-2">Año:</label>
     <%= number_field_tag :year, @year, class: "form-control me-2", style: "width: 100px;" %>
     <%= submit_tag "Filtrar", class: "btn btn-primary btn-sm" %>

@@ -10,6 +10,10 @@ Rails.application.routes.draw do
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
   # Devise routes for user authentication
+  devise_for :users
+
+  # Define the root path of the application
+  # Devise routes for user authentication
   root 'dashboard#index'
 
   resources :dashboard, only: [:index]
