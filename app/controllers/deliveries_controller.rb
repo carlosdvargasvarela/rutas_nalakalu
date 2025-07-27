@@ -5,16 +5,8 @@ class DeliveriesController < ApplicationController
   # GET /deliveries
   # Muestra todas las entregas o filtra por semana
   def index
-    @deliveries = Delivery.includes(:order, :delivery_address, :delivery_items)
-
-    if params[:week].present? && params[:year].present?
-      # Calcula la fecha de inicio de la semana
-      start_date = Date.commercial(params[:year].to_i, params[:week].to_i, 1)
-      @deliveries = @deliveries.for_week(start_date)
-    end
-
-    # Ordenar por fecha de entrega y luego por cliente
-    @deliveries = @deliveries.order(:delivery_date).page(params[:page])
+    @q = Delivery.ransack(params[:q])
+    @deliveries = @q.result.includes(:order, :delivery_address, :delivery_items).page(params[:page])
   end
 
   # GET /deliveries/by_week

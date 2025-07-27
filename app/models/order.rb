@@ -47,4 +47,12 @@ class Order < ApplicationRecord
   def fully_delivered?
     order_items.all?(&:fully_delivered?)
   end
+
+  def self.ransackable_attributes(auth_object = nil)
+    ["client_id", "number", "seller_id", "status", "created_at", "updated_at"]
+  end
+
+  def self.ransackable_associations(auth_object = nil)
+    ["client", "seller", "order_items", "deliveries"]
+  end
 end

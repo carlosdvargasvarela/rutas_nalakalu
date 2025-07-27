@@ -54,4 +54,27 @@ class Delivery < ApplicationRecord
       seller: order.seller.name
     }
   end
+
+  def self.ransackable_attributes(auth_object = nil)
+    [
+      "contact_id",
+      "contact_name",
+      "contact_phone",
+      "created_at",
+      "delivery_address_id",
+      "delivery_date",
+      "delivery_notes",
+      "delivery_time_preference",
+      "id",
+      "order_id",
+      "status",
+      "updated_at"
+    ]
+  end
+
+  # Si quieres permitir búsquedas por asociaciones (por ejemplo, cliente del pedido):
+  def self.ransackable_associations(auth_object = nil)
+    ["order", "delivery_address", "delivery_items"]
+  end
+
 end
