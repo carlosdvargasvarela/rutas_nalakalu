@@ -1,0 +1,20 @@
+<!-- app/views/dashboard/index.html.erb -->
+<div class="row">
+  <div class="col-12">
+    <h1>Panel de Control - NaLakalu</h1>
+    <p class="lead">Sistema de Gestión de Rutas de Entrega</p>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Tu Rol</h5>
+        <p class="card-text">
+          <span class="badge bg-primary fs-6"><%= current_user.display_role %></span>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

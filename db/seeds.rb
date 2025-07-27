@@ -7,3 +7,15 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
+
+# db/seeds.rb
+# Create initial admin user
+admin = User.create!(
+  email: 'admin@nalakalu.com',
+  password: 'password123',
+  password_confirmation: 'password123',
+  name: 'Administrador',
+  role: 'admin'
+)
+
+puts "Admin user created: #{admin.email}"

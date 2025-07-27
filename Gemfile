@@ -40,6 +40,7 @@ gem "bootsnap", require: false
 
 # Excel handling
 gem 'roo', '~> 2.10.1'
+gem "csv"
 # gem 'axlsx', '~> 3.0'
 gem 'caxlsx', '~> 4.2.0'
 gem 'caxlsx_rails'
