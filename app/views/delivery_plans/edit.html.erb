@@ -21,6 +21,11 @@
           <td><%= assignment.delivery.order.client.name %></td>
           <td><%= assignment.delivery.delivery_address.address %></td>
           <td><%= l assignment.delivery.delivery_date, format: :short %></td>
+          <td>
+            <%= form_with url: delivery_plan_delivery_plan_assignment_path(@delivery_plan, assignment), method: :delete, local: true do %>
+              <%= submit_tag "Remover", class: "btn btn-sm btn-danger", data: { confirm: "¿Seguro que deseas remover esta entrega del plan?" } %>
+            <% end %>
+          </td>
         </tr>
       <% end %>
     </tbody>
