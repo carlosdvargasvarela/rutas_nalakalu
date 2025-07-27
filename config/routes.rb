@@ -10,11 +10,19 @@ Rails.application.routes.draw do
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
   # Devise routes for user authentication
-  devise_for :users
-
-  # Define the root path of the application
   root 'dashboard#index'
 
-  # Resources for the dashboard controller
   resources :dashboard, only: [:index]
+
+  resources :deliveries, only: [:index, :show] do
+    collection do
+      get :by_week # Para filtrar por semana
+      get :service_cases # Para ver solo casos de servicio
+    end
+  end
+
+  # Puedes agregar rutas para otros modelos si quieres verlos
+  resources :orders, only: [:index, :show]
+  resources :clients, only: [:index, :show]
+  resources :sellers, only: [:index, :show]
 end
