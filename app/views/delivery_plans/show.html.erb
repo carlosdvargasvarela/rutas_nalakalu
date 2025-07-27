@@ -8,7 +8,7 @@
     <p><strong>Semana:</strong> <%= @delivery_plan.week %></p>
     <p><strong>Año:</strong> <%= @delivery_plan.year %></p>
     <p><strong>Estado:</strong> <span class="badge bg-<%= delivery_status_color(@delivery_plan.status) %>"><%= @delivery_plan.status.humanize %></span></p>
-    <%# Puedes agregar más campos si tu modelo los tiene, como chofer, notas, etc. %>
+    <%= link_to "Editar orden de paradas", edit_delivery_plan_path(@delivery_plan), class: "btn btn-outline-primary mb-3" %>
   </div>
 </div>
 
@@ -18,9 +18,10 @@
   </div>
   <div class="card-body">
     <% if @deliveries.any? %>
-      <table class="table table-sm">
+      <table>
         <thead>
           <tr>
+            <th># Parada</th>
             <th>Pedido</th>
             <th>Cliente</th>
             <th>Dirección</th>
@@ -29,13 +30,14 @@
           </tr>
         </thead>
         <tbody>
-          <% @deliveries.each do |delivery| %>
+          <% @delivery_plan.delivery_plan_assignments.order(:stop_order).each do |assignment| %>
             <tr>
-              <td><%= delivery.order.number %></td>
-              <td><%= delivery.order.client.name %></td>
-              <td><%= delivery.delivery_address.address %></td>
-              <td><%= l delivery.delivery_date, format: :long %></td>
-              <td><span class="badge bg-<%= delivery_status_color(delivery.status) %>"><%= delivery.status.humanize %></span></td>
+              <td><%= assignment.stop_order %></td>
+              <td><%= assignment.delivery.order.number %></td>
+              <td><%= assignment.delivery.order.client.name %></td>
+              <td><%= assignment.delivery.delivery_address.address %></td>
+              <td><%= l assignment.delivery.delivery_date, format: :long %></td>
+              <td><span class="badge bg-<%= delivery_status_color(assignment.delivery.status) %>"><%= assignment.delivery.status.humanize %></span></td>
             </tr>
           <% end %>
         </tbody>

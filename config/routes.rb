@@ -48,5 +48,5 @@ Rails.application.routes.draw do
   resources :orders, only: [:index, :show]
   resources :clients, only: [:index, :show]
   resources :sellers, only: [:index, :show]
-  resources :delivery_plans, only: [:new, :create, :show, :index]
+  resources :delivery_plans, only: [:index, :show, :new, :create, :edit, :update]
 end

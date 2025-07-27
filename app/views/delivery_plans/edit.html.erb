@@ -1,0 +1,30 @@
+<h1>Editar orden de paradas - <%= @delivery_plan.full_name %></h1>
+
+<%= form_with url: delivery_plan_path(@delivery_plan), method: :patch, local: true do %>
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th># Parada</th>
+        <th>Pedido</th>
+        <th>Cliente</th>
+        <th>Dirección</th>
+        <th>Fecha</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @assignments.each do |assignment| %>
+        <tr>
+          <td>
+            <%= number_field_tag "stop_orders[#{assignment.id}]", assignment.stop_order, min: 1, class: "form-control", style: "width: 80px;" %>
+          </td>
+          <td><%= assignment.delivery.order.number %></td>
+          <td><%= assignment.delivery.order.client.name %></td>
+          <td><%= assignment.delivery.delivery_address.address %></td>
+          <td><%= l assignment.delivery.delivery_date, format: :short %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= submit_tag "Guardar orden", class: "btn btn-primary" %>
+  <%= link_to "Cancelar", delivery_plan_path(@delivery_plan), class: "btn btn-secondary" %>
+<% end %>

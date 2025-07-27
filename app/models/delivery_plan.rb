@@ -1,6 +1,6 @@
 # app/models/delivery_plan.rb
 class DeliveryPlan < ApplicationRecord
-  has_many :delivery_plan_assignments, dependent: :destroy
+  has_many :delivery_plan_assignments, -> { order(:stop_order) }, dependent: :destroy
   has_many :deliveries, through: :delivery_plan_assignments
 
   enum status: { draft: 0, sent_to_logistics: 1, routes_created: 2 }

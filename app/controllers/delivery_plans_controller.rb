@@ -53,6 +53,25 @@ class DeliveryPlansController < ApplicationController
     @deliveries = @delivery_plan.deliveries.includes(:order, :delivery_address, order: :client)
   end
 
+  def edit
+    @delivery_plan = DeliveryPlan.find(params[:id])
+    @assignments = @delivery_plan.delivery_plan_assignments.includes(delivery: [:order, :delivery_address, order: :client]).order(:stop_order)
+  end
+
+  def update
+    @delivery_plan = DeliveryPlan.find(params[:id])
+
+    # Actualiza el orden de las paradas
+    if params[:stop_orders]
+      params[:stop_orders].each do |assignment_id, stop_order|
+        assignment = @delivery_plan.delivery_plan_assignments.find(assignment_id)
+        assignment.update(stop_order: stop_order)
+      end
+    end
+
+    redirect_to @delivery_plan, notice: "Orden de paradas actualizado correctamente."
+  end
+  
   private
 
   def delivery_plan_params
