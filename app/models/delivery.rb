@@ -10,6 +10,26 @@ class Delivery < ApplicationRecord
   validates :delivery_date, presence: true
   validates :contact_name, presence: true
 
+  after_save :update_status_based_on_items
+
+  def update_status_based_on_items
+    statuses = delivery_items.pluck(:status)
+
+    if statuses.all? { |s| s == "delivered" }
+      update_column(:status, Delivery.statuses[:delivered])
+    elsif statuses.all? { |s| s == "cancelled" }
+      update_column(:status, Delivery.statuses[:cancelled])
+    elsif statuses.any? { |s| s == "rescheduled" } && statuses.none? { |s| ["pending", "ready"].include?(s) }
+      update_column(:status, Delivery.statuses[:rescheduled])
+    elsif statuses.any? { |s| s == "in_route" }
+      update_column(:status, Delivery.statuses[:in_route])
+    elsif statuses.all? { |s| ["pending", "ready"].include?(s) }
+      update_column(:status, Delivery.statuses[:scheduled])
+    else
+      update_column(:status, Delivery.statuses[:scheduled])
+    end
+  end
+
   # Scope para entregas de una semana específica
   scope :for_week, ->(date) {
     week = date.cweek

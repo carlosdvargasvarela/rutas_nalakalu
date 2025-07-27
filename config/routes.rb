@@ -23,6 +23,9 @@ Rails.application.routes.draw do
       get :by_week # Para filtrar por semana
       get :service_cases # Para ver solo casos de servicio
     end
+    member do
+      patch :mark_as_delivered
+    end
   end
 
   # Puedes agregar rutas para otros modelos si quieres verlos
@@ -32,6 +35,16 @@ Rails.application.routes.draw do
       patch :unconfirm
     end
   end
+
+  resources :delivery_items, only: [:show] do
+    member do
+      patch :confirm
+      patch :mark_delivered
+      patch :reschedule
+      patch :cancel
+    end
+  end
+
   resources :orders, only: [:index, :show]
   resources :clients, only: [:index, :show]
   resources :sellers, only: [:index, :show]

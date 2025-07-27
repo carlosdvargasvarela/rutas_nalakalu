@@ -27,6 +27,12 @@ class DeliveriesController < ApplicationController
     render :index
   end
 
+  def mark_as_delivered
+    @delivery = Delivery.find(params[:id])
+    @delivery.mark_as_delivered!
+    redirect_to @delivery, notice: "Entrega marcada como completada."
+  end
+
   # GET /deliveries/service_cases
   # Muestra solo las entregas que contienen casos de servicio
   def service_cases

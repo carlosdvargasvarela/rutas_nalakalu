@@ -6,7 +6,11 @@
   </div>
   <div class="card-body">
     <p><strong>Fecha de Entrega:</strong> <%= l @delivery.delivery_date, format: :long %></p>
-    <p><strong>Estado:</strong> <%= @delivery.status.humanize %></p>
+    <p><strong>Estado:</strong> 
+      <span class="badge bg-<%= delivery_status_color(@delivery.status) %>">
+        <%= @delivery.status.humanize %>
+      </span>
+    </p>
     <p><strong>Preferencia de Hora:</strong> <%= @delivery.delivery_time_preference.presence || 'No especificado' %></p>
   </div>
 </div>
@@ -30,13 +34,17 @@
     <p><strong>Dirección:</strong> <%= @delivery.delivery_address.address %></p>
     <p><strong>Contacto:</strong> <%= @delivery.contact_name %></p>
     <p><strong>Teléfono Contacto:</strong> <%= @delivery.contact_phone.presence || 'No especificado' %></p>
-    <p><strong>Cédula Contacto:</strong> <%= @delivery.contact_id.presence || 'No especificado' %></p>
   </div>
 </div>
 
 <div class="card mb-3">
-  <div class="card-header">
-    Productos en esta Entrega
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Productos en esta Entrega</span>
+    <% if @delivery.scheduled? %>
+      <%= button_to "Marcar Entrega Completa", mark_as_delivered_delivery_path(@delivery), 
+              method: :patch, class: "btn btn-success btn-sm",
+              data: { turbo_confirm: "¿Está seguro de marcar toda la entrega como completada?" } %>
+    <% end %>
   </div>
   <div class="card-body">
     <% if @delivery.delivery_items.any? %>
@@ -48,6 +56,7 @@
             <th>Observaciones</th>
             <th>Caso Servicio</th>
             <th>Estado</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -56,8 +65,36 @@
               <td><%= item.order_item.product %></td>
               <td><%= item.quantity_delivered %></td>
               <td><%= item.order_item.notes.presence || 'N/A' %></td>
-              <td><%= item.service_case? ? 'Sí' : 'No' %></td>
-              <td><%= item.status.humanize %></td>
+              <td>
+                <% if item.service_case? %>
+                  <span class="badge bg-warning">Sí</span>
+                <% else %>
+                  <span class="badge bg-secondary">No</span>
+                <% end %>
+              </td>
+              <td>
+                <span class="badge bg-<%= delivery_item_status_color(item.status) %>">
+                  <%= item.status.humanize %>
+                </span>
+              </td>
+              <td>
+                <% case item.status %>
+                <% when 'pending' %>
+                  <%= button_to "Confirmar", confirm_delivery_item_path(item), 
+                                method: :patch, class: "btn btn-primary btn-sm" %>
+                <% when 'confirmed' %>
+                  <%= button_to "Entregar", mark_delivered_delivery_item_path(item), 
+                                method: :patch, class: "btn btn-success btn-sm" %>
+                  <%= button_to "Reprogramar", reschedule_delivery_item_path(item), 
+                                method: :patch, class: "btn btn-warning btn-sm" %>
+                <% when 'delivered' %>
+                  <span class="text-success">✓ Entregado</span>
+                <% else %>
+                  <%= button_to "Cancelar", cancel_delivery_item_path(item), 
+                                method: :patch, class: "btn btn-danger btn-sm",
+                                confirm: "¿Está seguro?" %>
+                <% end %>
+              </td>
             </tr>
           <% end %>
         </tbody>

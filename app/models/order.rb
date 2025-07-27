@@ -5,9 +5,31 @@ class Order < ApplicationRecord
   has_many :order_items, dependent: :destroy
   has_many :deliveries, dependent: :destroy
 
+  validates :number, presence: true, uniqueness: true
+
   enum status: { pending: 0, in_production: 1, ready_for_delivery: 2, delivered: 3, rescheduled: 4, cancelled: 5 }
 
-  validates :number, presence: true, uniqueness: true
+  # Verifica si está completamente entregado
+  def fully_delivered?
+    order_items.all?(&:fully_delivered?)
+  end
+
+  # Actualiza el estado basado en los order_items
+  def check_and_update_status!
+    if order_items.all? { |item| item.status == "delivered" }
+      update!(status: :delivered)
+    elsif order_items.all? { |item| item.status == "cancelled" }
+      update!(status: :cancelled)
+    elsif order_items.any? { |item| item.status == "rescheduled" }
+      update!(status: :rescheduled)
+    elsif order_items.all? { |item| ["ready", "delivered"].include?(item.status) }
+      update!(status: :ready_for_delivery)
+    elsif order_items.any? { |item| item.status == "ready" }
+      update!(status: :in_production)
+    else
+      update!(status: :pending)
+    end
+  end
 
   # Scope para filtrar pedidos listos para entrega en una semana específica
   scope :ready_for_week, ->(start_date, end_date) {

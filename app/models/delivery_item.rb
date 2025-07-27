@@ -3,11 +3,17 @@ class DeliveryItem < ApplicationRecord
   belongs_to :delivery
   belongs_to :order_item
 
-  enum status: { pending: 0, delivered: 1, rescheduled: 2, cancelled: 3, service_case: 4 }
-
   validates :quantity_delivered, presence: true, numericality: { greater_than: 0 }
 
   scope :service_cases, -> { where(service_case: true) }
+
+  enum status: { pending: 0, confirmed: 1, in_route: 2, delivered: 3, rescheduled: 4, cancelled: 5, service_case: 6 }
+
+  after_save :update_order_item_status
+
+  def update_order_item_status
+    order_item.update_status_based_on_deliveries if order_item.present?
+  end
 
   # Marca como entregado y actualiza el order_item
   def mark_as_delivered!
