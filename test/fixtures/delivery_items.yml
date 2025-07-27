@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  delivery: one
+  order_item: one
+  quantity_delivered: 1
+  status: 1
+
+two:
+  delivery: two
+  order_item: two
+  quantity_delivered: 1
+  status: 1

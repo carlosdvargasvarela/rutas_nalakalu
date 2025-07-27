@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  number: MyString
+  client: one
+  seller: one
+  created_at: 2025-07-26 19:06:21
+  status: 1
+
+two:
+  number: MyString
+  client: two
+  seller: two
+  created_at: 2025-07-26 19:06:21
+  status: 1

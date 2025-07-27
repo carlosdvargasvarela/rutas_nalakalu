@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  order: one
+  delivery_address: one
+  delivery_date: 2025-07-26
+  contact_name: MyString
+  contact_phone: MyString
+  contact_id: MyString
+  status: 1
+
+two:
+  order: two
+  delivery_address: two
+  delivery_date: 2025-07-26
+  contact_name: MyString
+  contact_phone: MyString
+  contact_id: MyString
+  status: 1
