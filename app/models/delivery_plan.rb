@@ -2,6 +2,7 @@
 class DeliveryPlan < ApplicationRecord
   has_many :delivery_plan_assignments, -> { order(:stop_order) }, dependent: :destroy
   has_many :deliveries, through: :delivery_plan_assignments
+  belongs_to :driver, class_name: "User", optional: true
 
   enum status: { draft: 0, sent_to_logistics: 1, routes_created: 2 }
 

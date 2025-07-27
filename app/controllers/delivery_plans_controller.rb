@@ -61,6 +61,9 @@ class DeliveryPlansController < ApplicationController
   def update
     @delivery_plan = DeliveryPlan.find(params[:id])
 
+    # Actualiza los datos del plan (incluyendo driver_id)
+    @delivery_plan.update(delivery_plan_params)
+
     # Actualiza el orden de las paradas
     if params[:stop_orders]
       params[:stop_orders].each do |assignment_id, stop_order|
@@ -69,12 +72,22 @@ class DeliveryPlansController < ApplicationController
       end
     end
 
-    redirect_to @delivery_plan, notice: "Orden de paradas actualizado correctamente."
+    redirect_to @delivery_plan, notice: "Plan de ruta actualizado correctamente."
   end
-  
+
+  def send_to_logistics
+    @delivery_plan = DeliveryPlan.find(params[:id])
+    if @delivery_plan.driver.present?
+      @delivery_plan.update!(status: :sent_to_logistics)
+      redirect_to @delivery_plan, notice: "Plan enviado a logística."
+    else
+      redirect_to edit_delivery_plan_path(@delivery_plan), alert: "Debes asignar un conductor antes de enviar a logística."
+    end
+  end
+
   private
 
   def delivery_plan_params
-    params.require(:delivery_plan).permit(:week, :year, :status)
+    params.require(:delivery_plan).permit(:week, :year, :status, :driver_id)
   end
 end

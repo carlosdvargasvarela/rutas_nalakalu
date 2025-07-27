@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_07_27_084902) do
+ActiveRecord::Schema[7.2].define(version: 2025_07_27_162159) do
   create_table "clients", force: :cascade do |t|
     t.string "name"
     t.string "phone"
@@ -72,6 +72,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_07_27_084902) do
     t.integer "status"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "driver_id"
+    t.index ["driver_id"], name: "index_delivery_plans_on_driver_id"
   end
 
   create_table "order_items", force: :cascade do |t|
@@ -128,6 +130,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_07_27_084902) do
   add_foreign_key "delivery_items", "order_items"
   add_foreign_key "delivery_plan_assignments", "deliveries"
   add_foreign_key "delivery_plan_assignments", "delivery_plans"
+  add_foreign_key "delivery_plans", "users", column: "driver_id"
   add_foreign_key "order_items", "orders"
   add_foreign_key "orders", "clients"
   add_foreign_key "orders", "sellers"

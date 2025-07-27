@@ -6,10 +6,11 @@ class User < ApplicationRecord
   has_one :seller, dependent: :destroy
 
   enum role: {
-    production_manager: 0,
+    admin: 0,
+    production_manager: 1,
     seller: 1,
     logistics: 2,
-    admin: 3
+    driver: 3
   }
 
   validates :name, presence: true
@@ -19,3 +20,4 @@ class User < ApplicationRecord
     role.humanize
   end
 end
+

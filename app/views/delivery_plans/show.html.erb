@@ -7,6 +7,7 @@
   <div class="card-body">
     <p><strong>Semana:</strong> <%= @delivery_plan.week %></p>
     <p><strong>Año:</strong> <%= @delivery_plan.year %></p>
+    <p><strong>Conductor asignado:</strong><%= @delivery_plan.driver&.name || "No asignado" %></p>
     <p><strong>Estado:</strong> <span class="badge bg-<%= delivery_status_color(@delivery_plan.status) %>"><%= @delivery_plan.status.humanize %></span></p>
     <%= link_to "Editar orden de paradas", edit_delivery_plan_path(@delivery_plan), class: "btn btn-outline-primary mb-3" %>
   </div>

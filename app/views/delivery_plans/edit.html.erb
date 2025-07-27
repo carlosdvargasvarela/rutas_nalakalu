@@ -1,6 +1,11 @@
 <h1>Editar orden de paradas - <%= @delivery_plan.full_name %></h1>
 
-<%= form_with url: delivery_plan_path(@delivery_plan), method: :patch, local: true do %>
+<%= form_with model: @delivery_plan, local: true do |f| %>
+  <div class="mb-3">
+    <%= f.label :driver_id, "Conductor asignado" %>
+    <%= f.collection_select :driver_id, User.where(role: :driver), :id, :name, prompt: "Selecciona un conductor", class: "form-select" %>
+  </div>
+
   <table class="table table-sm">
     <thead>
       <tr>
@@ -9,6 +14,7 @@
         <th>Cliente</th>
         <th>Dirección</th>
         <th>Fecha</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -30,6 +36,11 @@
       <% end %>
     </tbody>
   </table>
-  <%= submit_tag "Guardar orden", class: "btn btn-primary" %>
+  <%= submit_tag "Guardar cambios", class: "btn btn-primary" %>
   <%= link_to "Cancelar", delivery_plan_path(@delivery_plan), class: "btn btn-secondary" %>
+<% end %>
+
+<%# --- Botón fuera del form principal --- %>
+<% if @delivery_plan.draft? && @delivery_plan.driver.present? %>
+  <%= button_to "Enviar a logística", send_to_logistics_delivery_plan_path(@delivery_plan), method: :patch, class: "btn btn-success mt-3" %>
 <% end %>
