@@ -1,0 +1,87 @@
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">
+      <i class="bi bi-map me-2 text-primary"></i>
+      Planes de Entrega
+    </h2>
+    <%= link_to "Nuevo plan", new_delivery_plan_path, class: "btn btn-primary" %>
+  </div>
+
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <%= search_form_for @q, url: delivery_plans_path, method: :get, html: {class: "row g-2 align-items-end"} do |f| %>
+        <div class="col-12 col-md-3">
+          <%= f.label :week_eq, "Semana", class: "form-label" %>
+          <%= f.number_field :week_eq, class: "form-control", min: 1, max: 53, placeholder: "Semana" %>
+        </div>
+        <div class="col-12 col-md-3">
+          <%= f.label :year_eq, "Año", class: "form-label" %>
+          <%= f.number_field :year_eq, class: "form-control", min: 2020, max: 2100, placeholder: "Año" %>
+        </div>
+        <div class="col-12 col-md-3">
+          <%= f.label :status_eq, "Estado", class: "form-label" %>
+          <%= f.select :status_eq, DeliveryPlan.statuses.keys.map { |s| [s.humanize, s] }, {include_blank: "Todos"}, class: "form-select" %>
+        </div>
+        <div class="col-12 col-md-3 d-flex align-items-end">
+          <%= f.submit "Buscar", class: "btn btn-outline-primary me-2" %>
+          <%= link_to "Limpiar", delivery_plans_path, class: "btn btn-outline-secondary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Semana</th>
+          <th>Año</th>
+          <th>Estado</th>
+          <th>Conductor</th>
+          <th>Entregas</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @delivery_plans.each do |plan| %>
+          <tr>
+            <td><span class="badge bg-primary"><%= plan.week %></span></td>
+            <td><%= plan.year %></td>
+            <td>
+              <span class="badge <%= plan.status == "sent_to_logistics" ? "bg-success" : "bg-secondary" %>">
+                <%= plan.status.humanize %>
+              </span>
+            </td>
+            <td>
+              <% if plan.driver %>
+                <i class="bi bi-person-badge me-1"></i>
+                <%= plan.driver.name %>
+              <% else %>
+                <span class="text-muted">Sin asignar</span>
+              <% end %>
+            </td>
+            <td>
+              <span class="badge bg-info text-dark"><%= plan.deliveries.count %></span>
+            </td>
+            <td>
+              <%= link_to delivery_plan_path(plan), class: "btn btn-outline-primary btn-sm", title: "Ver" do %>
+                <i class="bi bi-eye"></i>
+              <% end %>
+              <%= link_to edit_delivery_plan_path(plan), class: "btn btn-outline-secondary btn-sm", title: "Editar" do %>
+                <i class="bi bi-pencil"></i>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+        <% if @delivery_plans.empty? %>
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">
+              <i class="bi bi-emoji-frown fs-2"></i><br>
+              No hay planes de entrega registrados.
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

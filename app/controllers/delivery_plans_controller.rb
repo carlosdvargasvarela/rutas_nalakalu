@@ -1,5 +1,10 @@
 # app/controllers/delivery_plans_controller.rb
 class DeliveryPlansController < ApplicationController
+
+  def index
+    @q = DeliveryPlan.ransack(params[:q])
+    @delivery_plans = @q.result.includes(:driver).order(year: :desc, week: :desc)
+  end
   def new
     # Rango de fechas
     if params.dig(:q, :delivery_date_gteq).present? && params.dig(:q, :delivery_date_lteq).present?

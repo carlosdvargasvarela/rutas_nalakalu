@@ -10,6 +10,9 @@ class DeliveryPlan < ApplicationRecord
   validates :week, :year, presence: true
 
   # Scope para estadisticas rapidas para el dashboard
+  scope :upcoming, -> {
+    where("year > ? OR (year = ? AND week >= ?)", Date.current.year, Date.current.year, Date.current.cweek)
+  }
   def stats
     {
       total_deliveries: deliveries.count,
@@ -57,5 +60,13 @@ class DeliveryPlan < ApplicationRecord
       normal_deliveries: normal_deliveries.count,
       total_items: deliveries.joins(:delivery_items).sum('delivery_items.quantity_delivered')
     }
+  end
+
+  def self.ransackable_attributes(auth_object = nil)
+    %w[id week year status driver_id created_at updated_at]
+  end
+
+  def self.ransackable_associations(auth_object = nil)
+    %w[driver deliveries delivery_plan_assignments]
   end
 end

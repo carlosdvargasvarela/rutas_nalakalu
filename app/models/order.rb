@@ -46,6 +46,8 @@ class Order < ApplicationRecord
   # Scope para filtrar por codigo de vendedor
   scope :by_seller_code, ->(code) { joins(:seller).where(sellers: { seller_code: code }) }
 
+  scope :active, -> { where(status: [:pending, :in_production, :ready_for_delivery, :rescheduled]) }
+
   # Verifica si todos los items están listos
   def all_items_ready?
     order_items.all? { |item| item.ready? }
