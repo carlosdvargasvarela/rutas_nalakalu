@@ -52,7 +52,7 @@
       <%= form_with model: @delivery_plan, url: delivery_plans_path, local: true do |f| %>
         <%= f.hidden_field :week, value: @from.cweek %>
         <%= f.hidden_field :year, value: @from.year %>
-        <%= f.hidden_field :status, value: DeliveryPlan.statuses[:draft] %>
+        <%= f.hidden_field :status, value: "draft" %>
 
         <div class="table-responsive">
           <table class="table table-sm table-hover align-middle">
