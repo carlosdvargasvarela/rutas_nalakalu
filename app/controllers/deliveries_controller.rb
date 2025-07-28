@@ -69,7 +69,19 @@ class DeliveriesController < ApplicationController
 
     # Para el formulario: lista de clientes y direcciones sugeridas
     @clients = Client.all.order(:name)
-    @addresses = @client&.delivery_addresses || []
+    @addresses = (@client&.delivery_addresses || []).to_a
+  end
+
+  def addresses_for_client
+    client = Client.find(params[:client_id])
+    addresses = client.delivery_addresses.select(:id, :address)
+    render json: addresses
+  end
+
+  def orders_for_client
+    client = Client.find(params[:client_id])
+    orders = client.orders.select(:id, :number)
+    render json: orders
   end
 
   def create
@@ -79,7 +91,6 @@ class DeliveriesController < ApplicationController
         if params[:client_id].present?
           Client.find(params[:client_id])
         else
-          # Busca por email o teléfono antes de crear
           existing = Client.find_by(email: params[:client][:email]) if params[:client][:email].present?
           existing ||= Client.find_by(phone: params[:client][:phone]) if params[:client][:phone].present?
           existing || Client.create!(params.require(:client).permit(:name, :phone, :email))
@@ -87,66 +98,100 @@ class DeliveriesController < ApplicationController
 
       # 2. Dirección
       address =
-        if params[:delivery_address_id].present?
-          DeliveryAddress.find(params[:delivery_address_id])
-        else
-          # Busca dirección igual antes de crear
-          existing = client.delivery_addresses.find_by(address: params[:delivery_address][:address]) if params[:delivery_address][:address].present?
+        if params[:delivery] && params[:delivery][:delivery_address_id].present?
+          DeliveryAddress.find(params[:delivery][:delivery_address_id])
+        elsif params[:delivery_address] && params[:delivery_address][:address].present?
+          existing = client.delivery_addresses.find_by(address: params[:delivery_address][:address])
           existing || client.delivery_addresses.create!(params.require(:delivery_address).permit(:address, :description))
+        else
+          raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debes seleccionar o ingresar una dirección."
         end
 
       # 3. Pedido
       order =
-        if params[:order_id].present?
-          Order.find(params[:order_id])
+        if params[:delivery] && params[:delivery][:order_id].present?
+          Order.find(params[:delivery][:order_id])
         else
           order = client.orders.create!(
-            number: Order.generate_number,
+            number: params[:order][:number],
             seller_id: params[:seller_id] || current_user.seller&.id,
             status: :pending
           )
-          # Crear productos asociados
-          if params[:order_items].blank?
-            raise ActiveRecord::RecordInvalid.new(order), "Debes agregar al menos un producto al pedido."
-          end
-          params[:order_items].each do |item_params|
-            order.order_items.create!(item_params.permit(:product, :quantity, :notes))
-          end
           order
         end
 
-      # 4. Entrega
-      existing_delivery = order.deliveries.find_by(
+      # 4. Productos nuevos (OrderItems)
+      nuevos_items = []
+      if params[:order_items].present?
+        params[:order_items].each do |item_params|
+          next if item_params[:product].blank? || item_params[:quantity].blank?
+          nuevos_items << order.order_items.create!(item_params.permit(:product, :quantity, :notes))
+        end
+      end
+
+      # Validar que haya al menos un producto nuevo
+      if nuevos_items.empty?
+        raise ActiveRecord::RecordInvalid.new(order), "Debes agregar al menos un producto nuevo al pedido."
+      end
+
+      # 5. Crear la entrega
+      delivery = order.deliveries.create!(
         delivery_address: address,
-        delivery_date: params[:delivery_date],
-        delivery_type: params[:delivery_type]
-      )
-      delivery = existing_delivery || order.deliveries.create!(
-        delivery_address: address,
-        delivery_date: params[:delivery_date],
-        contact_name: params[:contact_name],
-        contact_phone: params[:contact_phone],
-        delivery_type: params[:delivery_type],
+        delivery_date: params[:delivery][:delivery_date],
+        contact_name: params[:delivery][:contact_name],
+        contact_phone: params[:delivery][:contact_phone],
+        delivery_type: params[:delivery][:delivery_type],
         status: :ready_to_deliver
       )
 
-      # 5. DeliveryItems (si es necesario)
-      if params[:delivery_items]
-        params[:delivery_items].each do |item_params|
-          order_item = order.order_items.find(item_params[:order_item_id])
-          delivery.delivery_items.create!(
-            order_item: order_item,
-            quantity_delivered: item_params[:quantity_delivered],
-            status: item_params[:status]
-          )
-        end
+      # 6. Solo agregar DeliveryItems para los nuevos productos
+      nuevos_items.each do |order_item|
+        delivery.delivery_items.create!(
+          order_item: order_item,
+          quantity_delivered: order_item.quantity,
+          status: :pending
+        )
       end
 
       redirect_to delivery, notice: "Entrega creada correctamente."
     end
   rescue ActiveRecord::RecordInvalid => e
+    puts "=" * 50
+    puts "ERROR CAPTURADO:"
+    puts "Clase del modelo que falló: #{e.record.class.name}"
+    puts "ID del modelo (si existe): #{e.record.id}"
+    puts "Errores del modelo: #{e.record.errors.full_messages.inspect}"
+    puts "Mensaje de la excepción: #{e.message}"
+    puts "=" * 50
+
+    # Asignar variables según el tipo de modelo que falló
+    @order = e.record if e.record.is_a?(Order)
+    @delivery = e.record if e.record.is_a?(Delivery)
+    @client = e.record if e.record.is_a?(Client)
+    @address = e.record if e.record.is_a?(DeliveryAddress)
+    
+    # Si el error es en un OrderItem, buscar el pedido padre
+    if e.record.is_a?(OrderItem)
+      @order = e.record.order
+      @order_item_error = e.record
+      puts "Error en OrderItem, asignando @order: #{@order.id}"
+    end
+
+    # Recargar datos para el formulario
+    @clients = Client.all.order(:name)
+    @addresses = (@client&.delivery_addresses || []).to_a
+    
     flash.now[:alert] = "Error al crear la entrega: #{e.message}"
+    puts "Renderizando vista :new"
     render :new
+  rescue => e
+    puts "=" * 50
+    puts "ERROR NO ESPERADO:"
+    puts "Clase: #{e.class.name}"
+    puts "Mensaje: #{e.message}"
+    puts "Backtrace: #{e.backtrace.first(5).join("\n")}"
+    puts "=" * 50
+    raise e
   end
 
   private

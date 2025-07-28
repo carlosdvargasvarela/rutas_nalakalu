@@ -22,6 +22,8 @@ Rails.application.routes.draw do
     collection do
       get :by_week # Para filtrar por semana
       get :service_cases # Para ver solo casos de servicio
+      get :addresses_for_client
+      get :orders_for_client
     end
     member do
       patch :mark_as_delivered

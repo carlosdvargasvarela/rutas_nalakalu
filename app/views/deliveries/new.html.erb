@@ -1,109 +1,308 @@
-<h1>Registrar nueva entrega</h1>
+<!-- app/views/deliveries/new.html.erb -->
 
-<%= form_with url: deliveries_path, method: :post, local: true do |f| %>
-  <!-- Selección o creación de cliente -->
-  <div class="mb-3">
-    <%= label_tag :client_id, "Cliente" %>
-    <%= select_tag :client_id, options_from_collection_for_select(@clients, :id, :name, params[:client_id]), prompt: "Selecciona un cliente", class: "form-select" %>
-    <span>o</span>
-    <%= link_to "Agregar nuevo cliente", "#", id: "show-new-client-form" %>
+<!-- Mostrar flash alert -->
+<% if flash[:alert] %>
+  <div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    <%= flash[:alert] %>
   </div>
-  <div id="new-client-fields" style="display:none;">
-    <fieldset>
-      <legend>Nuevo cliente</legend>
-      <%= fields_for :client do |c| %>
-        <%= c.label :name, "Nombre" %>
-        <%= c.text_field :name, class: "form-control" %>
-        <%= c.label :phone, "Teléfono" %>
-        <%= c.text_field :phone, class: "form-control" %>
-        <%= c.label :email, "Correo" %>
-        <%= c.email_field :email, class: "form-control" %>
-      <% end %>
-    </fieldset>
-  </div>
-
-  <!-- Selección o creación de dirección -->
-  <div class="mb-3">
-    <%= label_tag :delivery_address_id, "Dirección de entrega" %>
-    <%= select_tag :delivery_address_id, options_for_select([]), prompt: "Selecciona una dirección", class: "form-select" %>
-    <span>o</span>
-    <%= link_to "Agregar nueva dirección", "#", id: "show-new-address-form" %>
-  </div>
-  <div id="new-address-fields" style="display:none;">
-    <fieldset>
-      <legend>Nueva dirección</legend>
-      <%= fields_for :delivery_address do |a| %>
-        <%= a.label :address, "Dirección" %>
-        <%= a.text_area :address, class: "form-control" %>
-        <%= a.label :description, "Descripción" %>
-        <%= a.text_field :description, class: "form-control" %>
-      <% end %>
-    </fieldset>
-  </div>
-
-  <!-- Selección o creación de pedido -->
-  <div class="mb-3">
-    <%= label_tag :order_id, "Pedido" %>
-    <%= select_tag :order_id, options_for_select([]), prompt: "Selecciona un pedido", class: "form-select" %>
-    <span>o</span>
-    <%= link_to "Agregar nuevo pedido", "#", id: "show-new-order-form" %>
-  </div>
-  <div id="new-order-fields" style="display:none;">
-    <fieldset>
-      <legend>Nuevo pedido</legend>
-      <%= fields_for :order do |o| %>
-        <%= o.label :number, "Número de pedido" %>
-        <%= o.text_field :number, class: "form-control" %>
-        <!-- Puedes agregar más campos si lo deseas -->
-      <% end %>
-      <div id="order-items-fields">
-        <%= fields_for :order_items do |oi| %>
-          <%= oi.label :product, "Producto" %>
-          <%= oi.text_field :product, class: "form-control" %>
-          <%= oi.label :quantity, "Cantidad" %>
-          <%= oi.number_field :quantity, class: "form-control" %>
-          <%= oi.label :notes, "Notas" %>
-          <%= oi.text_area :notes, class: "form-control" %>
-        <% end %>
-        <%= link_to "Agregar producto", "#", id: "add-order-item" %>
-      </div>
-    </fieldset>
-  </div>
-
-  <!-- Datos de la entrega -->
-  <div class="mb-3">
-    <%= label_tag :delivery_date, "Fecha de entrega" %>
-    <%= date_field_tag :delivery_date, nil, class: "form-control" %>
-    <%= label_tag :contact_name, "Nombre de contacto" %>
-    <%= text_field_tag :contact_name, nil, class: "form-control" %>
-    <%= label_tag :contact_phone, "Teléfono de contacto" %>
-    <%= text_field_tag :contact_phone, nil, class: "form-control" %>
-    <%= label_tag :delivery_type, "Tipo de entrega" %>
-    <%= select_tag :delivery_type, options_for_select(Delivery.delivery_types.map { |k, v| [Delivery.human_attribute_name("delivery_type.#{k}"), k] }), prompt: "Selecciona el tipo", class: "form-select" %>
-  </div>
-
-  <!-- Productos a entregar (si el pedido ya existe) -->
-  <div id="delivery-items-fields">
-    <!-- Aquí puedes cargar dinámicamente los productos del pedido seleccionado -->
-  </div>
-
-  <%= submit_tag "Guardar entrega", class: "btn btn-primary" %>
 <% end %>
 
-<!-- Sugerencia: agrega un poco de JS para mostrar/ocultar los campos de nuevo cliente, dirección y pedido -->
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    document.getElementById("show-new-client-form")?.addEventListener("click", function(e) {
-      e.preventDefault();
-      document.getElementById("new-client-fields").style.display = "block";
-    });
-    document.getElementById("show-new-address-form")?.addEventListener("click", function(e) {
-      e.preventDefault();
-      document.getElementById("new-address-fields").style.display = "block";
-    });
-    document.getElementById("show-new-order-form")?.addEventListener("click", function(e) {
-      e.preventDefault();
-      document.getElementById("new-order-fields").style.display = "block";
-    });
-  });
-</script>
+<!-- Mostrar errores de cualquier modelo -->
+<% [@client, @order, @delivery, @address].compact.each do |obj| %>
+  <% if obj&.errors&.any? %>
+    <div class="alert alert-danger">
+      <strong>Errores en <%= obj.class.name %>:</strong>
+      <ul class="mb-0">
+        <% obj.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+<% end %>
+
+<!-- Errores de order_items si existen -->
+<% if @order&.order_items&.any? %>
+  <% @order.order_items.each_with_index do |item, index| %>
+    <% if item&.errors&.any? %>
+      <div class="alert alert-danger">
+        <strong>Errores en Producto <%= index + 1 %>:</strong>
+        <ul class="mb-0">
+          <% item.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>
+
+<div class="d-flex align-items-center mb-4">
+  <i class="bi bi-truck me-2 fs-3 text-primary"></i>
+  <h1 class="mb-0">Registrar nueva entrega</h1>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <%= form_with model: @delivery, url: deliveries_path, local: true, 
+          html: { 
+            multipart: true, 
+            class: "needs-validation", 
+            novalidate: true,
+            data: { 
+              controller: "delivery-form",
+              "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
+              "delivery-form-orders-url-value": orders_for_client_deliveries_path
+            }
+          } do |f| %>
+      
+      <!-- Sección: Cliente -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <h5 class="text-secondary mb-3">
+            <i class="bi bi-person me-2"></i>Cliente
+          </h5>
+        </div>
+        <div class="col-md-8">
+          <div class="mb-3">
+            <%= label_tag :client_id, "Cliente", class: "form-label" %>
+            <%= select_tag :client_id, 
+                  options_from_collection_for_select(@clients, :id, :name, params[:client_id]), 
+                  prompt: "Selecciona un cliente", 
+                  class: "form-select",
+                  data: { 
+                    "delivery-form-target": "clientSelect",
+                    action: "change->delivery-form#clientChanged"
+                  } %>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <%= link_to "Agregar nuevo cliente", "#", 
+                class: "btn btn-outline-primary btn-sm mt-4",
+                data: { action: "click->delivery-form#toggleNewClientFields" } %>
+        </div>
+      </div>
+
+      <!-- Campos para nuevo cliente (ocultos inicialmente) -->
+      <div data-delivery-form-target="newClientFields" class="row mb-4" style="display:none;">
+        <div class="col-12">
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            Completa los datos del nuevo cliente
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mb-3">
+            <%= label_tag "client[name]", "Nombre", class: "form-label" %>
+            <%= text_field_tag "client[name]", "", placeholder: "Nombre del cliente", class: "form-control" %>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mb-3">
+            <%= label_tag "client[phone]", "Teléfono", class: "form-label" %>
+            <%= text_field_tag "client[phone]", "", placeholder: "Teléfono", class: "form-control" %>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mb-3">
+            <%= label_tag "client[email]", "Correo", class: "form-label" %>
+            <%= email_field_tag "client[email]", "", placeholder: "Correo electrónico", class: "form-control" %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Dirección -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <h5 class="text-secondary mb-3">
+            <i class="bi bi-geo-alt me-2"></i>Dirección de entrega
+          </h5>
+        </div>
+        <div class="col-md-8">
+          <div class="mb-3">
+            <%= f.label :delivery_address_id, "Dirección", class: "form-label" %>
+            <%= f.select :delivery_address_id, 
+                  options_from_collection_for_select(@addresses, :id, :address, params[:delivery_address_id] || @delivery&.delivery_address_id), 
+                  { prompt: "Selecciona una dirección" }, 
+                  { class: "form-select", required: true, data: { "delivery-form-target": "addressSelect" } } %>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <%= link_to "Agregar nueva dirección", "#", 
+                class: "btn btn-outline-primary btn-sm mt-4",
+                data: { action: "click->delivery-form#toggleNewAddressFields" } %>
+        </div>
+      </div>
+
+      <!-- Campos para nueva dirección (ocultos inicialmente) -->
+      <div data-delivery-form-target="newAddressFields" class="row mb-4" style="display:none;">
+        <div class="col-12">
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            Completa los datos de la nueva dirección
+          </div>
+        </div>
+        <div class="col-md-8">
+          <div class="mb-3">
+            <%= label_tag "delivery_address[address]", "Dirección", class: "form-label" %>
+            <%= text_area_tag "delivery_address[address]", "", 
+                  placeholder: "Dirección completa", 
+                  class: "form-control", rows: 2 %>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mb-3">
+            <%= label_tag "delivery_address[description]", "Descripción", class: "form-label" %>
+            <%= text_field_tag "delivery_address[description]", "", 
+                  placeholder: "Descripción (opcional)", 
+                  class: "form-control" %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Pedido -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <h5 class="text-secondary mb-3">
+            <i class="bi bi-box me-2"></i>Pedido
+          </h5>
+        </div>
+        <div class="col-md-8">
+          <div class="mb-3">
+            <%= f.label :order_id, "Pedido", class: "form-label" %>
+            <%= f.select :order_id, 
+                  [], 
+                  { prompt: "Selecciona un pedido" }, 
+                  { 
+                    class: "form-select",
+                    data: { "delivery-form-target": "orderSelect" }
+                  } %>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <%= link_to "Agregar nuevo pedido", "#", 
+                class: "btn btn-outline-primary btn-sm mt-4",
+                data: { action: "click->delivery-form#toggleNewOrderFields" } %>
+        </div>
+      </div>
+
+      <!-- Mostrar productos actuales si el pedido ya existe -->
+      <% if @order && @order.persisted? && @order.order_items.any? %>
+        <div class="mb-3">
+          <h6>Productos actuales del pedido:</h6>
+          <ul>
+            <% @order.order_items.each do |item| %>
+              <li>
+                <strong><%= item.product %></strong> - <%= item.quantity %>
+                <% if item.notes.present? %>
+                  <span class="text-muted">(<%= item.notes %>)</span>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <!-- Campos para nuevo pedido (ocultos inicialmente) -->
+      <div data-delivery-form-target="newOrderFields" class="mb-4" style="display:none;">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i>
+          Completa los datos del nuevo pedido
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <%= label_tag "order[number]", "Número de pedido", class: "form-label" %>
+              <%= text_field_tag "order[number]", "", 
+                    placeholder: "Número de pedido", 
+                    class: "form-control" %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Productos a agregar (siempre visibles) -->
+      <div id="order-items-fields" class="mb-4">
+        <h6>Agregar nuevos productos</h6>
+        <div class="order-item-template">
+          <div class="row mb-2">
+            <div class="col-md-4">
+              <%= text_field_tag "order_items[][product]", "", 
+                    placeholder: "Nombre del producto", 
+                    class: "form-control" %>
+            </div>
+            <div class="col-md-2">
+              <%= number_field_tag "order_items[][quantity]", "", 
+                    placeholder: "Cantidad", 
+                    class: "form-control", min: 1 %>
+            </div>
+            <div class="col-md-4">
+              <%= text_area_tag "order_items[][notes]", "", 
+                    placeholder: "Notas (opcional)", 
+                    class: "form-control", rows: 1 %>
+            </div>
+            <div class="col-md-2">
+              <%= link_to "Eliminar", "#", 
+                    class: "btn btn-outline-danger btn-sm",
+                    data: { action: "click->delivery-form#removeOrderItem" } %>
+            </div>
+          </div>
+        </div>
+        <%= link_to "Agregar producto", "#", 
+              class: "btn btn-outline-secondary btn-sm",
+              data: { action: "click->delivery-form#addOrderItem" } %>
+      </div>
+
+      <!-- Sección: Datos de la entrega -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <h5 class="text-secondary mb-3">
+            <i class="bi bi-calendar-event me-2"></i>Datos de la entrega
+          </h5>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <%= f.label :delivery_date, "Fecha de entrega", class: "form-label" %>
+            <%= f.date_field :delivery_date, class: "form-control" %>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <%= f.label :delivery_type, "Tipo de entrega", class: "form-label" %>
+            <%= f.select :delivery_type, 
+                  [
+                    ["Entrega normal", "normal"],
+                    ["Recogida de producto", "pickup"],
+                    ["Devolución de producto", "return_delivery"],
+                    ["Reparación en sitio", "onsite_repair"]
+                  ],
+                  { prompt: "Selecciona el tipo" }, 
+                  { class: "form-select" } %>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <%= f.label :contact_name, "Nombre de contacto", class: "form-label" %>
+            <%= f.text_field :contact_name, class: "form-control" %>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <%= f.label :contact_phone, "Teléfono de contacto", class: "form-label" %>
+            <%= f.text_field :contact_phone, class: "form-control" %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones de acción -->
+      <div class="d-flex justify-content-end gap-2">
+        <%= link_to "Cancelar", deliveries_path, class: "btn btn-secondary" %>
+        <%= f.submit "Guardar entrega", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+</div>

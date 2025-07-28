@@ -7,6 +7,7 @@ class Delivery < ApplicationRecord
   has_many :order_items, through: :delivery_items
 
   enum status: { scheduled: 0, in_route: 1, delivered: 2, rescheduled: 3, cancelled: 4, ready_to_deliver: 5 }
+  enum delivery_type: { normal_delivery: 0, service_case: 1 }
 
   validates :delivery_date, presence: true
   validates :contact_name, presence: true
