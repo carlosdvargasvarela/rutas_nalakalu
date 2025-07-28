@@ -218,6 +218,11 @@ GEM
     parser (3.3.9.0)
       ast (~> 2.4.1)
       racc
+    pg (1.6.0)
+    pg (1.6.0-aarch64-linux)
+    pg (1.6.0-arm64-darwin)
+    pg (1.6.0-x86_64-darwin)
+    pg (1.6.0-x86_64-linux)
     popper_js (2.11.8)
     pp (0.6.2)
       prettyprint
@@ -413,6 +418,7 @@ DEPENDENCIES
   jquery-rails
   kaminari
   paper_trail (~> 16.0)
+  pg
   puma (>= 5.0)
   rails (~> 7.2.2, >= 7.2.2.1)
   ransack
