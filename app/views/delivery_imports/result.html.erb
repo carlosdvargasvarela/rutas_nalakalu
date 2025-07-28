@@ -1,0 +1,19 @@
+<div class="container py-4">
+  <h2 class="mb-4">Resultado de la importación</h2>
+  <div class="mb-3">
+    <span class="fw-bold">Entregas importadas:</span> <span class="badge bg-success fs-6"><%= @success %></span>
+  </div>
+  <% if @errors.any? %>
+    <div class="alert alert-danger">
+      <h5 class="alert-heading">Errores encontrados</h5>
+      <ul class="mb-0">
+        <% @errors.each do |err| %>
+          <li><%= err %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% else %>
+    <div class="alert alert-success">¡Importación exitosa!</div>
+  <% end %>
+  <%= link_to "Volver a importar", new_delivery_import_path, class: "btn btn-secondary mt-3" %>
+</div>

@@ -54,6 +54,13 @@ Rails.application.routes.draw do
     resources :delivery_plan_assignments, only: [:destroy]
   end
 
+  resources :delivery_imports, only: [:new, :create] do
+    collection do
+      post :preview
+      post :process_import
+    end
+  end
+
   resources :orders, only: [:index, :show]
   resources :clients, only: [:index, :show]
   resources :sellers, only: [:index, :show]

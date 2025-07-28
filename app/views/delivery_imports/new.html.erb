@@ -1,0 +1,14 @@
+<div class="container py-4">
+  <h1 class="mb-4">Importar entregas desde Excel</h1>
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <%= form_with url: preview_delivery_imports_path, local: true, multipart: true do |f| %>
+        <div class="mb-3">
+          <label for="file" class="form-label">Selecciona archivo Excel</label>
+          <%= f.file_field :file, required: true, class: "form-control" %>
+        </div>
+        <%= f.submit "Previsualizar", class: "btn btn-primary" %>
+      <% end %>
+    </div>
+  </div>
+</div>

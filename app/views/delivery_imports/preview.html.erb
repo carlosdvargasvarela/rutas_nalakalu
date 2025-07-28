@@ -1,0 +1,102 @@
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Previsualización y edición de entregas</h2>
+    <div>
+      <span class="badge bg-info fs-6"><%= @rows.count %> filas</span>
+      <% if @validation_errors.any? %>
+        <span class="badge bg-warning fs-6"><%= @validation_errors.count %> con errores</span>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @validation_errors.any? %>
+    <div class="alert alert-warning">
+      <h5 class="alert-heading">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        Se encontraron errores de validación
+      </h5>
+      <p class="mb-0">
+        Corrige los errores marcados en rojo antes de importar. 
+        Los campos obligatorios están marcados con <span class="text-danger">*</span>.
+      </p>
+    </div>
+  <% end %>
+
+  <% if @rows.present? && @rows.any? %>
+    <%= form_with url: process_import_delivery_imports_path, method: :post, local: true do |f| %>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Fila</th>
+              <% @rows.first.keys.each do |col| %>
+                <th>
+                  <%= humanize_column_name(col) %>
+                  <% if required_field?(col) %>
+                    <span class="text-danger">*</span>
+                  <% end %>
+                </th>
+              <% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% @rows.each_with_index do |row, idx| %>
+              <tr class="<%= 'table-warning' if @validation_errors[idx] %>">
+                <td class="text-center">
+                  <strong><%= idx + 2 %></strong>
+                  <% if @validation_errors[idx] %>
+                    <i class="bi bi-exclamation-triangle-fill text-warning ms-1" 
+                       data-bs-toggle="tooltip" 
+                       title="<%= @validation_errors[idx].join(', ') %>"></i>
+                  <% end %>
+                </td>
+                <% row.each do |key, value| %>
+                  <td>
+                    <% field_errors = field_has_errors?(key, @validation_errors[idx]) %>
+                    <%= text_field_tag "rows[#{idx}][#{key}]", 
+                                       value, 
+                                       class: "form-control form-control-sm #{'is-invalid' if field_errors}", 
+                                       required: required_field?(key) %>
+                    <% if field_errors %>
+                      <div class="invalid-feedback">
+                        <%= get_field_error_message(key, @validation_errors[idx]) %>
+                      </div>
+                    <% end %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="d-flex justify-content-between align-items-center mt-4">
+        <div>
+          <% if @validation_errors.any? %>
+            <small class="text-muted">
+              <i class="bi bi-info-circle me-1"></i>
+              Corrige los errores antes de importar
+            </small>
+          <% end %>
+        </div>
+        <div>
+          <%= link_to "Cancelar", new_delivery_import_path, class: "btn btn-outline-secondary me-2" %>
+          <%= f.submit "Importar entregas", 
+                       class: "btn btn-success", 
+                       disabled: @validation_errors.any? %>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="alert alert-warning mt-4">No se encontraron datos en el archivo.</div>
+    <%= link_to "Volver", new_delivery_import_path, class: "btn btn-secondary mt-2" %>
+  <% end %>
+</div>
+
+<script>
+  // Inicializar tooltips de Bootstrap
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+  })
+</script>
