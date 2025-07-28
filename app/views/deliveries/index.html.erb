@@ -1,56 +1,106 @@
-<h1>Listado de Entregas</h1>
+<h1 class="mb-4">
+  <i class="bi bi-truck me-2"></i>
+  Listado de Entregas
+</h1>
 
-<%= search_form_for @q, url: deliveries_path, method: :get do |f| %>
-  <%= f.label :order_client_name_cont, "Cliente" %>
-  <%= f.search_field :order_client_name_cont %>
-  <%= f.label :delivery_date_gteq, "Desde" %>
-  <%= f.date_field :delivery_date_gteq %>
-  <%= f.label :delivery_date_lteq, "Hasta" %>
-  <%= f.date_field :delivery_date_lteq %>
-  <%= f.submit "Buscar" %>
-<% end %>
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <%= search_form_for @q, url: deliveries_path, method: :get, html: { class: "row g-2 align-items-end" } do |f| %>
+      <div class="col-md-3">
+        <%= f.label :order_client_name_cont, "Cliente", class: "form-label" %>
+        <%= f.search_field :order_client_name_cont, class: "form-control" %>
+      </div>
+      <div class="col-md-2">
+        <%= f.label :delivery_date_gteq, "Desde", class: "form-label" %>
+        <%= f.date_field :delivery_date_gteq, class: "form-control" %>
+      </div>
+      <div class="col-md-2">
+        <%= f.label :delivery_date_lteq, "Hasta", class: "form-label" %>
+        <%= f.date_field :delivery_date_lteq, class: "form-control" %>
+      </div>
+      <div class="col-md-2 d-grid">
+        <%= f.submit "Buscar", class: "btn btn-outline-primary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
 
-<div class="mb-3">
+<div class="mb-3 d-flex gap-2">
   <%= link_to "Ver solo Casos de Servicio", service_cases_deliveries_path, class: "btn btn-info btn-sm" %>
   <%= link_to "Ver todas las Entregas", deliveries_path, class: "btn btn-secondary btn-sm" %>
+  <%= link_to "Nueva Entrega", new_delivery_path, class: "btn btn-primary btn-sm ms-auto" %>
 </div>
 
 <% if @deliveries.any? %>
-  <table class="table table-striped table-hover">
-    <thead>
-      <tr>
-        <th>Fecha Entrega</th>
-        <th>Pedido</th>
-        <th>Cliente</th>
-        <th>Dirección</th>
-        <th>Contacto</th>
-        <th>Items</th>
-        <th>Caso Servicio</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @deliveries.each do |delivery| %>
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+      <thead class="table-light">
         <tr>
-          <td><%= l delivery.delivery_date, format: :short %></td>
-          <td><%= delivery.order.number %></td>
-          <td><%= delivery.order.client.name %></td>
-          <td><%= delivery.delivery_address.address %></td>
-          <td><%= delivery.contact_name %></td>
-          <td>
-            <ul>
-              <% delivery.delivery_items.each do |item| %>
-                <li><%= item.quantity_delivered %> x <%= item.order_item.product %></li>
-              <% end %>
-            </ul>
-          </td>
-          <td><%= delivery.has_service_cases? ? 'Sí' : 'No' %></td>
-          <td><%= link_to "Ver", delivery_path(delivery), class: "btn btn-sm btn-outline-primary" %></td>
+          <th>Fecha Entrega</th>
+          <th>Pedido</th>
+          <th>Cliente</th>
+          <th>Dirección</th>
+          <th>Contacto</th>
+          <th>Items</th>
+          <th>Caso Servicio</th>
+          <th>Acciones</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <%= paginate @deliveries %>
+      </thead>
+      <tbody>
+        <% @deliveries.each do |delivery| %>
+          <tr>
+            <td>
+              <i class="bi bi-calendar-event me-1"></i>
+              <%= l delivery.delivery_date, format: :short %>
+            </td>
+            <td>
+              <%= link_to delivery.order.number, order_path(delivery.order), class: "text-decoration-none" %>
+            </td>
+            <td>
+              <i class="bi bi-person me-1"></i>
+              <%= delivery.order.client.name %>
+            </td>
+            <td>
+              <i class="bi bi-geo-alt me-1"></i>
+              <%= delivery.delivery_address.address %>
+            </td>
+            <td>
+              <i class="bi bi-person-lines-fill me-1"></i>
+              <%= delivery.contact_name %>
+            </td>
+            <td>
+              <ul class="mb-0 ps-3 small">
+                <% delivery.delivery_items.each do |item| %>
+                  <li>
+                    <span class="badge bg-secondary"><%= item.quantity_delivered %></span>
+                    <%= item.order_item.product %>
+                  </li>
+                <% end %>
+              </ul>
+            </td>
+            <td>
+              <% if delivery.has_service_cases? %>
+                <span class="badge bg-warning text-dark">Sí</span>
+              <% else %>
+                <span class="badge bg-secondary">No</span>
+              <% end %>
+            </td>
+            <td>
+              <%= link_to delivery_path(delivery), class: "btn btn-sm btn-outline-primary", title: "Ver detalles" do %>
+                <i class="bi bi-eye"></i>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <div class="d-flex justify-content-center">
+    <%= paginate @deliveries %>
+  </div>
 <% else %>
-  <p>No hay entregas para mostrar.</p>
+  <div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    No hay entregas para mostrar.
+  </div>
 <% end %>

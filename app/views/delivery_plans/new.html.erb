@@ -1,74 +1,123 @@
-<h1>Crear Plan de Ruta</h1>
+<h1 class="mb-4">
+  <i class="bi bi-map me-2"></i>
+  Crear Plan de Ruta
+</h1>
 
-<!-- Formulario de búsqueda (separado) -->
-<%= search_form_for @q, url: new_delivery_plan_path, method: :get, html: { class: "mb-3" } do |f| %>
-    <div class="row g-2">
-        <div class="col">
-        <%= f.label :delivery_date_gteq, "Desde" %>
-        <%= f.date_field :delivery_date_gteq, value: @from, class: "form-control" %>
+<!-- Formulario de búsqueda -->
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <%= search_form_for @q, url: new_delivery_plan_path, method: :get, html: { class: "mb-0" } do |f| %>
+      <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+          <%= f.label :delivery_date_gteq, "Desde", class: "form-label" %>
+          <%= f.date_field :delivery_date_gteq, value: @from, class: "form-control" %>
         </div>
-        <div class="col">
-        <%= f.label :delivery_date_lteq, "Hasta" %>
-        <%= f.date_field :delivery_date_lteq, value: @to, class: "form-control" %>
+        <div class="col-md-2">
+          <%= f.label :delivery_date_lteq, "Hasta", class: "form-label" %>
+          <%= f.date_field :delivery_date_lteq, value: @to, class: "form-control" %>
         </div>
-        <div class="col">
-        <%= f.label :order_number_cont, "Pedido" %>
-        <%= f.search_field :order_number_cont, class: "form-control" %>
+        <div class="col-md-2">
+          <%= f.label :order_number_cont, "Pedido", class: "form-label" %>
+          <%= f.search_field :order_number_cont, class: "form-control" %>
         </div>
-        <div class="col">
-        <%= f.label :order_client_name_cont, "Cliente" %>
-        <%= f.search_field :order_client_name_cont, class: "form-control" %>
+        <div class="col-md-2">
+          <%= f.label :order_client_name_cont, "Cliente", class: "form-label" %>
+          <%= f.search_field :order_client_name_cont, class: "form-control" %>
         </div>
-        <div class="col">
-        <%= f.label :delivery_address_address_cont, "Dirección" %>
-        <%= f.search_field :delivery_address_address_cont, class: "form-control" %>
+        <div class="col-md-2">
+          <%= f.label :delivery_address_address_cont, "Dirección", class: "form-label" %>
+          <%= f.search_field :delivery_address_address_cont, class: "form-control" %>
         </div>
-        <div class="col-auto align-self-end">
-        <%= f.submit "Buscar", class: "btn btn-outline-primary" %>
+        <div class="col-md-2 d-grid">
+          <%= f.submit "Buscar", class: "btn btn-outline-primary" %>
         </div>
-    </div>
-<% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
 
-<h5>
-    Entregas disponibles
-    <% if @from == @to %>
-        para <%= l @from, format: :long %>
-    <% else %>
-        del <%= l @from, format: :long %> al <%= l @to, format: :long %>
-    <% end %>:
+<h5 class="mb-3">
+  <i class="bi bi-truck-flatbed me-1"></i>
+  Entregas disponibles
+  <% if @from == @to %>
+    para <%= l @from, format: :long %>
+  <% else %>
+    del <%= l @from, format: :long %> al <%= l @to, format: :long %>
+  <% end %>:
 </h5>
 
-<!-- Formulario de creación del plan (separado) -->
 <% if @deliveries.any? %>
-    <%= form_with model: @delivery_plan, url: delivery_plans_path, local: true do |f| %>
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <%= form_with model: @delivery_plan, url: delivery_plans_path, local: true do |f| %>
         <%= f.hidden_field :week, value: @from.cweek %>
         <%= f.hidden_field :year, value: @from.year %>
         <%= f.hidden_field :status, value: DeliveryPlan.statuses[:draft] %>
 
-        <table class="table table-sm">
-        <thead>
-            <tr>
-            <th></th>
-            <th>Pedido</th>
-            <th>Cliente</th>
-            <th>Dirección</th>
-            <th>Fecha</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% @deliveries.each do |delivery| %>
-            <tr>
-                <td><%= check_box_tag "delivery_ids[]", delivery.id %></td>
-                <td><%= delivery.order.number %></td>
-                <td><%= delivery.order.client.name %></td>
-                <td><%= delivery.delivery_address.address %></td>
-                <td><%= l delivery.delivery_date, format: :short %></td>
-            </tr>
-            <% end %>
-        </tbody>
-        </table>
-        <%= f.submit "Crear Plan de Ruta", class: "btn btn-primary" %>
-    <% end %>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th></th>
+                <th>Pedido</th>
+                <th>Cliente</th>
+                <th>Dirección</th>
+                <th>Fecha</th>
+                <th>Productos</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @deliveries.each do |delivery| %>
+                <tr>
+                  <td>
+                    <%= check_box_tag "delivery_ids[]", delivery.id, false, class: "form-check-input" %>
+                  </td>
+                  <td>
+                    <%= link_to delivery.order.number, order_path(delivery.order), class: "text-decoration-none" %>
+                  </td>
+                  <td>
+                    <i class="bi bi-person me-1"></i>
+                    <%= delivery.order.client.name %>
+                  </td>
+                  <td>
+                    <i class="bi bi-geo-alt me-1"></i>
+                    <%= delivery.delivery_address.address %>
+                  </td>
+                  <td>
+                    <i class="bi bi-calendar-event me-1"></i>
+                    <%= l delivery.delivery_date, format: :short %>
+                  </td>
+                  <td>
+                    <% if delivery.delivery_items.any? %>
+                      <ul class="mb-0 ps-3 small">
+                        <% delivery.delivery_items.each do |item| %>
+                          <li>
+                            <strong><%= item.order_item.product %></strong>
+                            <span class="badge bg-secondary ms-1"><%= item.quantity_delivered %></span>
+                            <% if item.order_item.notes.present? %>
+                              <span class="text-muted ms-1"><i class="bi bi-info-circle"></i> <%= item.order_item.notes %></span>
+                            <% end %>
+                          </li>
+                        <% end %>
+                      </ul>
+                    <% else %>
+                      <span class="text-muted">Sin productos</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <div class="d-flex justify-content-end mt-3">
+          <%= f.submit "Crear Plan de Ruta", class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
 <% else %>
-    <p>No hay entregas disponibles para este rango de fechas.</p>
+  <div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    No hay entregas disponibles para este rango de fechas.
+  </div>
 <% end %>

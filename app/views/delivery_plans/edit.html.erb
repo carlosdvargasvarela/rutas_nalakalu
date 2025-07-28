@@ -1,46 +1,77 @@
-<h1>Editar orden de paradas - <%= @delivery_plan.full_name %></h1>
+<h1 class="mb-4">
+  <i class="bi bi-pencil-square me-2"></i>
+  Editar orden de paradas - <span class="text-primary"><%= @delivery_plan.full_name %></span>
+</h1>
 
 <%= form_with model: @delivery_plan, local: true do |f| %>
-  <div class="mb-3">
-    <%= f.label :driver_id, "Conductor asignado" %>
-    <%= f.collection_select :driver_id, User.where(role: :driver), :id, :name, prompt: "Selecciona un conductor", class: "form-select" %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="mb-3">
+        <%= f.label :driver_id, "Conductor asignado", class: "form-label" %>
+        <%= f.collection_select :driver_id, User.where(role: :driver), :id, :name, prompt: "Selecciona un conductor", class: "form-select" %>
+      </div>
+    </div>
   </div>
 
-  <table class="table table-sm">
-    <thead>
-      <tr>
-        <th># Parada</th>
-        <th>Pedido</th>
-        <th>Cliente</th>
-        <th>Dirección</th>
-        <th>Fecha</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @assignments.each do |assignment| %>
-        <tr>
-          <td>
-            <%= number_field_tag "stop_orders[#{assignment.id}]", assignment.stop_order, min: 1, class: "form-control", style: "width: 80px;" %>
-          </td>
-          <td><%= assignment.delivery.order.number %></td>
-          <td><%= assignment.delivery.order.client.name %></td>
-          <td><%= assignment.delivery.delivery_address.address %></td>
-          <td><%= l assignment.delivery.delivery_date, format: :short %></td>
-          <td>
-            <%= form_with url: delivery_plan_delivery_plan_assignment_path(@delivery_plan, assignment), method: :delete, local: true do %>
-              <%= submit_tag "Remover", class: "btn btn-sm btn-danger", data: { confirm: "¿Seguro que deseas remover esta entrega del plan?" } %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+      <i class="bi bi-list-ol me-1"></i> Orden de paradas
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th># Parada</th>
+              <th>Pedido</th>
+              <th>Cliente</th>
+              <th>Dirección</th>
+              <th>Fecha</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @assignments.each do |assignment| %>
+              <tr>
+                <td>
+                  <%= number_field_tag "stop_orders[#{assignment.id}]", assignment.stop_order, min: 1, class: "form-control text-center", style: "width: 80px;" %>
+                </td>
+                <td>
+                  <%= link_to assignment.delivery.order.number, order_path(assignment.delivery.order), class: "text-decoration-none" %>
+                </td>
+                <td>
+                  <i class="bi bi-person me-1"></i>
+                  <%= assignment.delivery.order.client.name %>
+                </td>
+                <td>
+                  <i class="bi bi-geo-alt me-1"></i>
+                  <%= assignment.delivery.delivery_address.address %>
+                </td>
+                <td>
+                  <i class="bi bi-calendar-event me-1"></i>
+                  <%= l assignment.delivery.delivery_date, format: :short %>
+                </td>
+                <td>
+                  <%= form_with url: delivery_plan_delivery_plan_assignment_path(@delivery_plan, assignment), method: :delete, local: true, class: "d-inline" do %>
+                    <%= submit_tag "Remover entrega", class: "btn btn-sm btn-danger bi bi-trash", title: "Remover entrega", data: { confirm: "¿Seguro que deseas remover esta entrega del plan?" } %>
+                  <% end %>
+                </td>
+              </tr>
             <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <%= submit_tag "Guardar cambios", class: "btn btn-primary" %>
-  <%= link_to "Cancelar", delivery_plan_path(@delivery_plan), class: "btn btn-secondary" %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2">
+    <%= submit_tag "Guardar cambios", class: "btn btn-primary" %>
+    <%= link_to "Cancelar", delivery_plan_path(@delivery_plan), class: "btn btn-secondary" %>
+  </div>
 <% end %>
 
-<%# --- Botón fuera del form principal --- %>
 <% if @delivery_plan.draft? && @delivery_plan.driver.present? %>
-  <%= button_to "Enviar a logística", send_to_logistics_delivery_plan_path(@delivery_plan), method: :patch, class: "btn btn-success mt-3" %>
+  <div class="mt-3">
+    <%= button_to "Enviar a logística", send_to_logistics_delivery_plan_path(@delivery_plan), method: :patch, class: "btn btn-success" %>
+  </div>
 <% end %>

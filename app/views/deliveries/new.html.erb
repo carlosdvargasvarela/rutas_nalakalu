@@ -1,6 +1,5 @@
 <!-- app/views/deliveries/new.html.erb -->
 
-<!-- Mostrar flash alert -->
 <% if flash[:alert] %>
   <div class="alert alert-danger">
     <i class="bi bi-exclamation-triangle me-2"></i>
@@ -8,7 +7,6 @@
   </div>
 <% end %>
 
-<!-- Mostrar errores de cualquier modelo -->
 <% [@client, @order, @delivery, @address].compact.each do |obj| %>
   <% if obj&.errors&.any? %>
     <div class="alert alert-danger">
@@ -22,7 +20,6 @@
   <% end %>
 <% end %>
 
-<!-- Errores de order_items si existen -->
 <% if @order&.order_items&.any? %>
   <% @order.order_items.each_with_index do |item, index| %>
     <% if item&.errors&.any? %>
@@ -43,7 +40,7 @@
   <h1 class="mb-0">Registrar nueva entrega</h1>
 </div>
 
-<div class="card">
+<div class="card shadow-sm">
   <div class="card-body">
     <%= form_with model: @delivery, url: deliveries_path, local: true, 
           html: { 
@@ -187,7 +184,6 @@
         </div>
       </div>
 
-      <!-- Mostrar productos actuales si el pedido ya existe -->
       <% if @order && @order.persisted? && @order.order_items.any? %>
         <div class="mb-3">
           <h6>Productos actuales del pedido:</h6>
@@ -233,7 +229,7 @@
                     class: "form-control" %>
             </div>
             <div class="col-md-2">
-              <%= number_field_tag "order_items[][quantity]", "", 
+              <%= number_field_tag "order_items[][quantity]", 1, 
                     placeholder: "Cantidad", 
                     class: "form-control", min: 1 %>
             </div>
@@ -298,7 +294,6 @@
         </div>
       </div>
 
-      <!-- Botones de acción -->
       <div class="d-flex justify-content-end gap-2">
         <%= link_to "Cancelar", deliveries_path, class: "btn btn-secondary" %>
         <%= f.submit "Guardar entrega", class: "btn btn-primary" %>

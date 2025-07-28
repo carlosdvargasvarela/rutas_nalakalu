@@ -1,114 +1,168 @@
-<h1>Detalles de Entrega #<%= @delivery.id %></h1>
+<h1 class="mb-4">
+  <i class="bi bi-truck me-2"></i>
+  Detalles de Entrega <span class="text-primary">#<%= @delivery.id %></span>
+</h1>
 
-<div class="card mb-3">
-  <div class="card-header">
-    Información General
+<div class="row mb-4">
+  <div class="col-md-4 mb-3">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-light">
+        <i class="bi bi-info-circle me-1"></i> Información General
+      </div>
+      <div class="card-body">
+        <p>
+          <strong><i class="bi bi-calendar-event me-1"></i>Fecha de Entrega:</strong>
+          <%= l @delivery.delivery_date, format: :long %>
+        </p>
+        <p>
+          <strong><i class="bi bi-flag me-1"></i>Estado:</strong>
+          <span class="badge bg-<%= delivery_status_color(@delivery.status) %>">
+            <%= @delivery.status.humanize %>
+          </span>
+        </p>
+        <p>
+          <strong><i class="bi bi-clock me-1"></i>Preferencia de Hora:</strong>
+          <%= @delivery.delivery_time_preference.presence || 'No especificado' %>
+        </p>
+      </div>
+    </div>
   </div>
-  <div class="card-body">
-    <p><strong>Fecha de Entrega:</strong> <%= l @delivery.delivery_date, format: :long %></p>
-    <p><strong>Estado:</strong> 
-      <span class="badge bg-<%= delivery_status_color(@delivery.status) %>">
-        <%= @delivery.status.humanize %>
-      </span>
-    </p>
-    <p><strong>Preferencia de Hora:</strong> <%= @delivery.delivery_time_preference.presence || 'No especificado' %></p>
+  <div class="col-md-4 mb-3">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-light">
+        <i class="bi bi-receipt me-1"></i> Información del Pedido
+      </div>
+      <div class="card-body">
+        <p>
+          <strong>Número de Pedido:</strong>
+          <%= link_to @delivery.order.number, order_path(@delivery.order), class: "text-decoration-none" %>
+        </p>
+        <p>
+          <strong><i class="bi bi-person me-1"></i>Cliente:</strong>
+          <%= @delivery.order.client.name %>
+        </p>
+        <p>
+          <strong><i class="bi bi-person-badge me-1"></i>Vendedor:</strong>
+          <%= @delivery.order.seller.name %>
+          <span class="text-muted small">(<%= @delivery.order.seller.seller_code %>)</span>
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-3">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-light">
+        <i class="bi bi-geo-alt me-1"></i> Detalles de Entrega
+      </div>
+      <div class="card-body">
+        <p>
+          <strong>Dirección:</strong>
+          <%= @delivery.delivery_address.address %>
+        </p>
+        <p>
+          <strong><i class="bi bi-person-lines-fill me-1"></i>Contacto:</strong>
+          <%= @delivery.contact_name %>
+        </p>
+        <p>
+          <strong><i class="bi bi-telephone me-1"></i>Teléfono Contacto:</strong>
+          <%= @delivery.contact_phone.presence || 'No especificado' %>
+        </p>
+      </div>
+    </div>
   </div>
 </div>
 
-<div class="card mb-3">
-  <div class="card-header">
-    Información del Pedido
-  </div>
-  <div class="card-body">
-    <p><strong>Número de Pedido:</strong> <%= @delivery.order.number %></p>
-    <p><strong>Cliente:</strong> <%= @delivery.order.client.name %></p>
-    <p><strong>Vendedor:</strong> <%= @delivery.order.seller.name %> (<%= @delivery.order.seller.seller_code %>)</p>
-  </div>
-</div>
-
-<div class="card mb-3">
-  <div class="card-header">
-    Detalles de Entrega
-  </div>
-  <div class="card-body">
-    <p><strong>Dirección:</strong> <%= @delivery.delivery_address.address %></p>
-    <p><strong>Contacto:</strong> <%= @delivery.contact_name %></p>
-    <p><strong>Teléfono Contacto:</strong> <%= @delivery.contact_phone.presence || 'No especificado' %></p>
-  </div>
-</div>
-
-<div class="card mb-3">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <span>Productos en esta Entrega</span>
+<div class="card shadow-sm mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center bg-light">
+    <span>
+      <i class="bi bi-box-seam me-1"></i> Productos en esta Entrega
+    </span>
     <% if @delivery.scheduled? %>
       <%= button_to "Marcar Entrega Completa", mark_as_delivered_delivery_path(@delivery), 
               method: :patch, class: "btn btn-success btn-sm",
-              data: { turbo_confirm: "¿Está seguro de marcar toda la entrega como completada?" } %>
+              data: { turbo_confirm: "¿Está seguro de marcar toda la entrega como completada?" } do %>
+        <i class="bi bi-check-circle"></i> Completar
+      <% end %>
     <% end %>
   </div>
   <div class="card-body">
     <% if @delivery.delivery_items.any? %>
-      <table class="table table-sm">
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Cantidad</th>
-            <th>Observaciones</th>
-            <th>Caso Servicio</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @delivery.delivery_items.each do |item| %>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+          <thead class="table-light">
             <tr>
-              <td><%= item.order_item.product %></td>
-              <td><%= item.quantity_delivered %></td>
-              <td><%= item.order_item.notes.presence || 'N/A' %></td>
-              <td>
-                <% if item.service_case? %>
-                  <span class="badge bg-warning">Sí</span>
-                <% else %>
-                  <span class="badge bg-secondary">No</span>
-                <% end %>
-              </td>
-              <td>
-                <span class="badge bg-<%= delivery_item_status_color(item.status) %>">
-                  <%= item.status.humanize %>
-                </span>
-              </td>
-              <td>
-                <% if item.rescheduled? %>
-                  <span class="text-warning">Reagendado</span>
-                <% else %>
-                  <% case item.status %>
-                  <% when 'pending' %>
-                    <%= button_to "Confirmar", confirm_delivery_item_path(item), 
-                                  method: :patch, class: "btn btn-primary btn-sm" %>
-                    <!-- Botón para mostrar el formulario de reagendar -->
-                    <button class="btn btn-warning btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#reschedule-form-<%= item.id %>">
-                      Reprogramar
-                    </button>
-                    <div class="collapse mt-2" id="reschedule-form-<%= item.id %>">
-                      <%= render partial: "delivery_items/reschedule_form", locals: { item: item, future_deliveries: @future_deliveries } %>
-                    </div>
-                  <% when 'delivered' %>
-                    <span class="text-success">✓ Entregado</span>
-                  <% else %>
-                    <%= button_to "Cancelar", cancel_delivery_item_path(item), 
-                                  method: :patch, class: "btn btn-danger btn-sm",
-                                  data: { turbo_confirm: "¿Está seguro?" } %>
-                  <% end %>
-                <% end %>
-              </td>
+              <th>Producto</th>
+              <th>Cantidad</th>
+              <th>Observaciones</th>
+              <th>Caso Servicio</th>
+              <th>Estado</th>
+              <th>Acciones</th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% @delivery.delivery_items.each do |item| %>
+              <tr>
+                <td><strong><%= item.order_item.product %></strong></td>
+                <td>
+                  <span class="badge bg-secondary"><%= item.quantity_delivered %></span>
+                </td>
+                <td>
+                  <% if item.order_item.notes.present? %>
+                    <span class="text-muted"><i class="bi bi-info-circle"></i> <%= item.order_item.notes %></span>
+                  <% else %>
+                    <span class="text-muted">N/A</span>
+                  <% end %>
+                </td>
+                <td>
+                  <% if item.service_case? %>
+                    <span class="badge bg-warning text-dark">Sí</span>
+                  <% else %>
+                    <span class="badge bg-secondary">No</span>
+                  <% end %>
+                </td>
+                <td>
+                  <span class="badge bg-<%= delivery_item_status_color(item.status) %>">
+                    <%= item.status.humanize %>
+                  </span>
+                </td>
+                <td>
+                  <% if item.rescheduled? %>
+                    <span class="text-warning">Reagendado</span>
+                  <% else %>
+                    <% case item.status %>
+                    <% when 'pending' %>
+                      <%= button_to confirm_delivery_item_path(item), method: :patch, class: "btn btn-primary btn-sm", title: "Confirmar" do %>
+                        <i class="bi bi-check-circle"></i> Confirmar
+                      <% end %>
+                      <button class="btn btn-warning btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#reschedule-form-<%= item.id %>">
+                        <i class="bi bi-calendar2-plus"></i> Reprogramar
+                      </button>
+                      <div class="collapse mt-2" id="reschedule-form-<%= item.id %>">
+                        <%= render partial: "delivery_items/reschedule_form", locals: { item: item, future_deliveries: @future_deliveries } %>
+                      </div>
+                    <% when 'delivered' %>
+                      <span class="text-success"><i class="bi bi-check2-circle"></i> Entregado</span>
+                    <% else %>
+                      <%= button_to cancel_delivery_item_path(item), method: :patch, class: "btn btn-danger btn-sm", data: { turbo_confirm: "¿Está seguro?" }, title: "Cancelar" do %>
+                        <i class="bi bi-x-circle"></i> Cancelar
+                      <% end %>
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     <% else %>
-      <p>No hay productos asociados a esta entrega.</p>
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        No hay productos asociados a esta entrega.
+      </div>
     <% end %>
   </div>
 </div>
 
-<%= link_to "Volver a Entregas", deliveries_path, class: "btn btn-secondary" %>
+<%= link_to deliveries_path, class: "btn btn-secondary" do %>
+  <i class="bi bi-arrow-left"></i> Volver a Entregas
+<% end %>
