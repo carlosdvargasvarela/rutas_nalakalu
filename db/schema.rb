@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_07_27_162159) do
+ActiveRecord::Schema[7.2].define(version: 2025_07_27_233341) do
   create_table "clients", force: :cascade do |t|
     t.string "name"
     t.string "phone"
@@ -31,7 +31,9 @@ ActiveRecord::Schema[7.2].define(version: 2025_07_27_162159) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "delivery_time_preference"
+    t.integer "delivery_type", default: 0
     t.index ["delivery_address_id"], name: "index_deliveries_on_delivery_address_id"
+    t.index ["delivery_type"], name: "index_deliveries_on_delivery_type"
     t.index ["order_id"], name: "index_deliveries_on_order_id"
   end
 

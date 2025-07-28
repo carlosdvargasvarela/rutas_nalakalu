@@ -1,0 +1,109 @@
+<h1>Registrar nueva entrega</h1>
+
+<%= form_with url: deliveries_path, method: :post, local: true do |f| %>
+  <!-- Selección o creación de cliente -->
+  <div class="mb-3">
+    <%= label_tag :client_id, "Cliente" %>
+    <%= select_tag :client_id, options_from_collection_for_select(@clients, :id, :name, params[:client_id]), prompt: "Selecciona un cliente", class: "form-select" %>
+    <span>o</span>
+    <%= link_to "Agregar nuevo cliente", "#", id: "show-new-client-form" %>
+  </div>
+  <div id="new-client-fields" style="display:none;">
+    <fieldset>
+      <legend>Nuevo cliente</legend>
+      <%= fields_for :client do |c| %>
+        <%= c.label :name, "Nombre" %>
+        <%= c.text_field :name, class: "form-control" %>
+        <%= c.label :phone, "Teléfono" %>
+        <%= c.text_field :phone, class: "form-control" %>
+        <%= c.label :email, "Correo" %>
+        <%= c.email_field :email, class: "form-control" %>
+      <% end %>
+    </fieldset>
+  </div>
+
+  <!-- Selección o creación de dirección -->
+  <div class="mb-3">
+    <%= label_tag :delivery_address_id, "Dirección de entrega" %>
+    <%= select_tag :delivery_address_id, options_for_select([]), prompt: "Selecciona una dirección", class: "form-select" %>
+    <span>o</span>
+    <%= link_to "Agregar nueva dirección", "#", id: "show-new-address-form" %>
+  </div>
+  <div id="new-address-fields" style="display:none;">
+    <fieldset>
+      <legend>Nueva dirección</legend>
+      <%= fields_for :delivery_address do |a| %>
+        <%= a.label :address, "Dirección" %>
+        <%= a.text_area :address, class: "form-control" %>
+        <%= a.label :description, "Descripción" %>
+        <%= a.text_field :description, class: "form-control" %>
+      <% end %>
+    </fieldset>
+  </div>
+
+  <!-- Selección o creación de pedido -->
+  <div class="mb-3">
+    <%= label_tag :order_id, "Pedido" %>
+    <%= select_tag :order_id, options_for_select([]), prompt: "Selecciona un pedido", class: "form-select" %>
+    <span>o</span>
+    <%= link_to "Agregar nuevo pedido", "#", id: "show-new-order-form" %>
+  </div>
+  <div id="new-order-fields" style="display:none;">
+    <fieldset>
+      <legend>Nuevo pedido</legend>
+      <%= fields_for :order do |o| %>
+        <%= o.label :number, "Número de pedido" %>
+        <%= o.text_field :number, class: "form-control" %>
+        <!-- Puedes agregar más campos si lo deseas -->
+      <% end %>
+      <div id="order-items-fields">
+        <%= fields_for :order_items do |oi| %>
+          <%= oi.label :product, "Producto" %>
+          <%= oi.text_field :product, class: "form-control" %>
+          <%= oi.label :quantity, "Cantidad" %>
+          <%= oi.number_field :quantity, class: "form-control" %>
+          <%= oi.label :notes, "Notas" %>
+          <%= oi.text_area :notes, class: "form-control" %>
+        <% end %>
+        <%= link_to "Agregar producto", "#", id: "add-order-item" %>
+      </div>
+    </fieldset>
+  </div>
+
+  <!-- Datos de la entrega -->
+  <div class="mb-3">
+    <%= label_tag :delivery_date, "Fecha de entrega" %>
+    <%= date_field_tag :delivery_date, nil, class: "form-control" %>
+    <%= label_tag :contact_name, "Nombre de contacto" %>
+    <%= text_field_tag :contact_name, nil, class: "form-control" %>
+    <%= label_tag :contact_phone, "Teléfono de contacto" %>
+    <%= text_field_tag :contact_phone, nil, class: "form-control" %>
+    <%= label_tag :delivery_type, "Tipo de entrega" %>
+    <%= select_tag :delivery_type, options_for_select(Delivery.delivery_types.map { |k, v| [Delivery.human_attribute_name("delivery_type.#{k}"), k] }), prompt: "Selecciona el tipo", class: "form-select" %>
+  </div>
+
+  <!-- Productos a entregar (si el pedido ya existe) -->
+  <div id="delivery-items-fields">
+    <!-- Aquí puedes cargar dinámicamente los productos del pedido seleccionado -->
+  </div>
+
+  <%= submit_tag "Guardar entrega", class: "btn btn-primary" %>
+<% end %>
+
+<!-- Sugerencia: agrega un poco de JS para mostrar/ocultar los campos de nuevo cliente, dirección y pedido -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById("show-new-client-form")?.addEventListener("click", function(e) {
+      e.preventDefault();
+      document.getElementById("new-client-fields").style.display = "block";
+    });
+    document.getElementById("show-new-address-form")?.addEventListener("click", function(e) {
+      e.preventDefault();
+      document.getElementById("new-address-fields").style.display = "block";
+    });
+    document.getElementById("show-new-order-form")?.addEventListener("click", function(e) {
+      e.preventDefault();
+      document.getElementById("new-order-fields").style.display = "block";
+    });
+  });
+</script>

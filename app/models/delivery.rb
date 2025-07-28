@@ -12,6 +12,41 @@ class Delivery < ApplicationRecord
 
   after_save :update_status_based_on_items
 
+  # Nuevos tipos de delivery
+  enum delivery_type: { 
+    normal: 0,           # Entrega normal de productos
+    pickup: 1,           # Recogida de producto en casa del cliente
+    return_delivery: 2,  # Devolución de producto reparado
+    onsite_repair: 3     # Reparación en sitio del cliente
+  }
+
+  # Scopes útiles
+  scope :service_cases, -> { where(delivery_type: [:pickup, :return_delivery, :onsite_repair]) }
+  scope :normal_deliveries, -> { where(delivery_type: :normal) }
+
+  # Métodos de conveniencia
+  def service_case?
+    pickup? || return_delivery? || onsite_repair?
+  end
+
+  def display_type
+    case delivery_type
+    when 'normal' then 'Entrega normal'
+    when 'pickup' then 'Recogida de producto'
+    when 'return_delivery' then 'Devolución de producto'
+    when 'onsite_repair' then 'Reparación en sitio'
+    end
+  end
+
+  # Ransack (para filtros)
+  def self.ransackable_attributes(auth_object = nil)
+    %w[delivery_date status delivery_type contact_name contact_phone delivery_notes delivery_time_preference]
+  end
+
+  def self.ransackable_associations(auth_object = nil)
+    %w[order delivery_address delivery_items]
+  end
+
   def update_status_based_on_items
     statuses = delivery_items.pluck(:status)
 

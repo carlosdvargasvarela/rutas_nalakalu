@@ -59,6 +59,42 @@ class Order < ApplicationRecord
     order_items.where.not(status: :delivered)
   end
 
+  # Métodos de conveniencia para casos de servicio
+  def has_service_deliveries?
+    deliveries.service_cases.any?
+  end
+
+  def service_delivery_types
+    deliveries.service_cases.pluck(:delivery_type).uniq
+  end
+
+  # Método para crear deliveries de servicio
+  def create_service_deliveries(pickup: false, return_delivery: false, onsite_repair: false, delivery_date: Date.current, contact_name: nil, contact_phone: nil, delivery_address_id: nil)
+    delivery_params = {
+      delivery_date: delivery_date,
+      contact_name: contact_name,
+      contact_phone: contact_phone,
+      delivery_address_id: delivery_address_id,
+      status: :ready_to_deliver
+    }
+
+    created_deliveries = []
+
+    if pickup
+      created_deliveries << deliveries.create!(delivery_params.merge(delivery_type: :pickup))
+    end
+
+    if return_delivery
+      created_deliveries << deliveries.create!(delivery_params.merge(delivery_type: :return_delivery))
+    end
+
+    if onsite_repair
+      created_deliveries << deliveries.create!(delivery_params.merge(delivery_type: :onsite_repair))
+    end
+
+    created_deliveries
+  end
+
   def self.ransackable_attributes(auth_object = nil)
     ["client_id", "number", "seller_id", "status", "created_at", "updated_at"]
   end
