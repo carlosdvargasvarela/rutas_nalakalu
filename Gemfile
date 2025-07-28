@@ -52,6 +52,20 @@ gem 'devise'
 gem 'bootstrap', '~> 5.3.5'
 gem 'jquery-rails'
 
+# Other frontemd gems
+
+# Use sassc-rails for CSS preprocessing
+gem "sassc-rails"
+
+# Use simple_form for form building
+gem "simple_form"
+
+# Use acts_as_list for list management
+gem "acts_as_list"
+
+# Use paper_trail for versioning models
+gem "paper_trail", "~> 16.0"
+
 # Kaminari for pagination
 gem 'kaminari'
 

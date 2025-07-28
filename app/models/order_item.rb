@@ -1,5 +1,6 @@
 # app/models/order_item.rb
 class OrderItem < ApplicationRecord
+  has_paper_trail
   belongs_to :order
   has_many :delivery_items, dependent: :destroy
 

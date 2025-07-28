@@ -1,5 +1,6 @@
 # app/models/order.rb
 class Order < ApplicationRecord
+  has_paper_trail
   belongs_to :client
   belongs_to :seller
   has_many :order_items, dependent: :destroy

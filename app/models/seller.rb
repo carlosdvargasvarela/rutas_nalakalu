@@ -1,5 +1,6 @@
 # app/models/seller.rb
 class Seller < ApplicationRecord
+  has_paper_trail
   belongs_to :user
   has_many :orders, dependent: :destroy
 

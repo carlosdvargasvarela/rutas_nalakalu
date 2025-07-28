@@ -1,5 +1,6 @@
 # app/models/delivery_address.rb
 class DeliveryAddress < ApplicationRecord
+  has_paper_trail
   belongs_to :client
 
   validates :address, presence: true

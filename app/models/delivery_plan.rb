@@ -1,5 +1,6 @@
 # app/models/delivery_plan.rb
 class DeliveryPlan < ApplicationRecord
+  has_paper_trail
   has_many :delivery_plan_assignments, -> { order(:stop_order) }, dependent: :destroy
   has_many :deliveries, through: :delivery_plan_assignments
   belongs_to :driver, class_name: "User", optional: true

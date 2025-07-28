@@ -1,5 +1,6 @@
 # app/models/delivery_item.rb
 class DeliveryItem < ApplicationRecord
+  has_paper_trail
   belongs_to :delivery
   belongs_to :order_item
 
