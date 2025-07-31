@@ -1,12 +1,10 @@
 <!-- app/views/deliveries/new.html.erb -->
-
 <% if flash[:alert] %>
   <div class="alert alert-danger">
     <i class="bi bi-exclamation-triangle me-2"></i>
     <%= flash[:alert] %>
   </div>
 <% end %>
-
 <% [@client, @order, @delivery, @address].compact.each do |obj| %>
   <% if obj&.errors&.any? %>
     <div class="alert alert-danger">
@@ -19,7 +17,6 @@
     </div>
   <% end %>
 <% end %>
-
 <% if @order&.order_items&.any? %>
   <% @order.order_items.each_with_index do |item, index| %>
     <% if item&.errors&.any? %>
@@ -34,12 +31,10 @@
     <% end %>
   <% end %>
 <% end %>
-
 <div class="d-flex align-items-center mb-4">
   <i class="bi bi-truck me-2 fs-3 text-primary"></i>
   <h1 class="mb-0">Registrar nueva entrega</h1>
 </div>
-
 <div class="card shadow-sm">
   <div class="card-body">
     <%= form_with model: @delivery, url: deliveries_path, local: true, 
@@ -53,7 +48,6 @@
               "delivery-form-orders-url-value": orders_for_client_deliveries_path
             }
           } do |f| %>
-      
       <!-- Sección: Cliente -->
       <div class="row mb-4">
         <div class="col-12">
@@ -80,7 +74,6 @@
                 data: { action: "click->delivery-form#toggleNewClientFields" } %>
         </div>
       </div>
-
       <!-- Campos para nuevo cliente (ocultos inicialmente) -->
       <div data-delivery-form-target="newClientFields" class="row mb-4" style="display:none;">
         <div class="col-12">
@@ -108,7 +101,6 @@
           </div>
         </div>
       </div>
-
       <!-- Sección: Dirección -->
       <div class="row mb-4">
         <div class="col-12">
@@ -131,7 +123,6 @@
                 data: { action: "click->delivery-form#toggleNewAddressFields" } %>
         </div>
       </div>
-
       <!-- Campos para nueva dirección (ocultos inicialmente) -->
       <div data-delivery-form-target="newAddressFields" class="row mb-4" style="display:none;">
         <div class="col-12">
@@ -157,7 +148,6 @@
           </div>
         </div>
       </div>
-
       <!-- Sección: Pedido -->
       <div class="row mb-4">
         <div class="col-12">
@@ -183,7 +173,6 @@
                 data: { action: "click->delivery-form#toggleNewOrderFields" } %>
         </div>
       </div>
-
       <% if @order && @order.persisted? && @order.order_items.any? %>
         <div class="mb-3">
           <h6>Productos actuales del pedido:</h6>
@@ -199,7 +188,6 @@
           </ul>
         </div>
       <% end %>
-
       <!-- Campos para nuevo pedido (ocultos inicialmente) -->
       <div data-delivery-form-target="newOrderFields" class="mb-4" style="display:none;">
         <div class="alert alert-info">
@@ -217,7 +205,6 @@
           </div>
         </div>
       </div>
-
       <!-- Productos a agregar (siempre visibles) -->
       <div id="order-items-fields" class="mb-4">
         <h6>Agregar nuevos productos</h6>
@@ -249,7 +236,6 @@
               class: "btn btn-outline-secondary btn-sm",
               data: { action: "click->delivery-form#addOrderItem" } %>
       </div>
-
       <!-- Sección: Datos de la entrega -->
       <div class="row mb-4">
         <div class="col-12">
@@ -278,7 +264,6 @@
           </div>
         </div>
       </div>
-
       <div class="row mb-4">
         <div class="col-md-6">
           <div class="mb-3">
@@ -293,7 +278,6 @@
           </div>
         </div>
       </div>
-
       <div class="d-flex justify-content-end gap-2">
         <%= link_to "Cancelar", deliveries_path, class: "btn btn-secondary" %>
         <%= f.submit "Guardar entrega", class: "btn btn-primary" %>

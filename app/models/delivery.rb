@@ -6,11 +6,11 @@ class Delivery < ApplicationRecord
   has_many :delivery_items, dependent: :destroy
   has_many :order_items, through: :delivery_items
 
-  accepts_nested_attributes_for :delivery_items, 
-                                allow_destroy: true, 
-                                reject_if: proc { |attributes| 
-                                  attributes['quantity_delivered'].blank? && 
-                                  attributes['order_item_attributes']['product'].blank? 
+  accepts_nested_attributes_for :delivery_items,
+                                allow_destroy: true,
+                                reject_if: proc { |attributes|
+                                  attributes["quantity_delivered"].blank? &&
+                                  attributes["order_item_attributes"]["product"].blank?
                                 }
 
   enum status: { scheduled: 0, in_route: 1, delivered: 2, rescheduled: 3, cancelled: 4, ready_to_deliver: 5 }
@@ -22,7 +22,7 @@ class Delivery < ApplicationRecord
   after_save :update_status_based_on_items
 
   # Nuevos tipos de delivery
-  enum delivery_type: { 
+  enum delivery_type: {
     normal: 0,           # Entrega normal de productos
     pickup: 1,           # Recogida de producto en casa del cliente
     return_delivery: 2,  # Devolución de producto reparado
@@ -30,9 +30,9 @@ class Delivery < ApplicationRecord
   }
 
   # Scopes útiles
-  scope :service_cases, -> { where(delivery_type: [:pickup, :return_delivery, :onsite_repair]) }
+  scope :service_cases, -> { where(delivery_type: [ :pickup, :return_delivery, :onsite_repair ]) }
   scope :normal_deliveries, -> { where(delivery_type: :normal) }
-  scope :pending, -> { where(status: [:scheduled, :ready_to_deliver, :in_route]) }
+  scope :pending, -> { where(status: [ :scheduled, :ready_to_deliver, :in_route ]) }
 
   # Métodos de conveniencia
   def service_case?
@@ -41,10 +41,10 @@ class Delivery < ApplicationRecord
 
   def display_type
     case delivery_type
-    when 'normal' then 'Entrega normal'
-    when 'pickup' then 'Recogida de producto'
-    when 'return_delivery' then 'Devolución de producto'
-    when 'onsite_repair' then 'Reparación en sitio'
+    when "normal" then "Entrega normal"
+    when "pickup" then "Recogida de producto"
+    when "return_delivery" then "Devolución de producto"
+    when "onsite_repair" then "Reparación en sitio"
     end
   end
 
@@ -61,17 +61,17 @@ class Delivery < ApplicationRecord
     statuses = delivery_items.pluck(:status)
 
     # Todos entregados o reagendados
-    if statuses.all? { |s| ["delivered", "rescheduled"].include?(s) }
+    if statuses.all? { |s| [ "delivered", "rescheduled" ].include?(s) }
       update_column(:status, Delivery.statuses[:delivered])
-    elsif statuses.all? { |s| ["confirmed", "rescheduled"].include?(s) }
+    elsif statuses.all? { |s| [ "confirmed", "rescheduled" ].include?(s) }
       update_column(:status, Delivery.statuses[:ready_to_deliver])
     elsif statuses.all? { |s| s == "cancelled" }
       update_column(:status, Delivery.statuses[:cancelled])
-    elsif statuses.any? { |s| s == "rescheduled" } && statuses.none? { |s| ["pending", "ready", "confirmed", "in_route"].include?(s) }
+    elsif statuses.any? { |s| s == "rescheduled" } && statuses.none? { |s| [ "pending", "ready", "confirmed", "in_route" ].include?(s) }
       update_column(:status, Delivery.statuses[:rescheduled])
     elsif statuses.any? { |s| s == "in_route" }
       update_column(:status, Delivery.statuses[:in_route])
-    elsif statuses.all? { |s| ["pending", "ready", "confirmed"].include?(s) }
+    elsif statuses.all? { |s| [ "pending", "ready", "confirmed" ].include?(s) }
       update_column(:status, Delivery.statuses[:scheduled])
     else
       update_column(:status, Delivery.statuses[:scheduled])
@@ -141,7 +141,6 @@ class Delivery < ApplicationRecord
   end
 
   def self.ransackable_associations(auth_object = nil)
-    ["order", "delivery_address", "delivery_items"]
+    [ "order", "delivery_address", "delivery_items" ]
   end
-
 end

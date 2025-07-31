@@ -1,6 +1,6 @@
 # app/controllers/deliveries_controller.rb
 class DeliveriesController < ApplicationController
-  before_action :set_delivery, only: [:show, :edit, :update]
+  before_action :set_delivery, only: [ :show, :edit, :update ]
 
   # GET /deliveries
   # Muestra todas las entregas o filtra por semana
@@ -62,7 +62,7 @@ class DeliveriesController < ApplicationController
     @client = @delivery.order.client
     @addresses = @client.delivery_addresses.order(:description)
     @order = @delivery.order
-    
+
     flash.now[:alert] = "Error al actualizar la entrega: #{e.message}"
     render :edit, status: :unprocessable_entity
   end
@@ -152,7 +152,7 @@ class DeliveriesController < ApplicationController
     @delivery = e.record if e.record.is_a?(Delivery)
     @client = e.record if e.record.is_a?(Client)
     @address = e.record if e.record.is_a?(DeliveryAddress)
-    
+
     # Si el error es en un OrderItem, buscar el pedido padre
     if e.record.is_a?(OrderItem)
       @order = e.record.order
@@ -163,7 +163,7 @@ class DeliveriesController < ApplicationController
     # Recargar datos para el formulario
     @clients = Client.all.order(:name)
     @addresses = (@client&.delivery_addresses || []).to_a
-    
+
     flash.now[:alert] = "Error al crear la entrega: #{e.message}"
     puts "Renderizando vista :new"
     render :new
@@ -190,7 +190,7 @@ class DeliveriesController < ApplicationController
     start_date = Date.commercial(@year, @week, 1)
     @deliveries = Delivery.for_week(start_date)
                           .includes(order: :client, delivery_address: {}, delivery_items: {})
-                          .order('deliveries.delivery_date ASC')
+                          .order("deliveries.delivery_date ASC")
                           .page(params[:page])
     render :index
   end
@@ -208,7 +208,7 @@ class DeliveriesController < ApplicationController
       .joins(order: :client)
       .merge(Delivery.with_service_cases)
       .includes(:order, :delivery_address, :delivery_items)
-      .order('deliveries.delivery_date ASC, clients.name ASC')
+      .order("deliveries.delivery_date ASC, clients.name ASC")
       .page(params[:page])
     render :index # Reutiliza la vista index
   end
@@ -233,11 +233,10 @@ class DeliveriesController < ApplicationController
 
   def delivery_params
     params.require(:delivery).permit(
-      :delivery_date, :delivery_address_id, :contact_name, :contact_phone, 
-      :contact_id, :delivery_notes, :delivery_time_preference, :delivery_type,
+      :delivery_date, :delivery_address_id, :contact_name, :contact_phone, :delivery_notes,
       delivery_items_attributes: [
         :id, :quantity_delivered, :service_case, :status, :_destroy,
-        order_item_attributes: [:id, :product, :quantity, :notes]
+        order_item_attributes: [ :id, :product, :quantity, :notes ]
       ]
     )
   end

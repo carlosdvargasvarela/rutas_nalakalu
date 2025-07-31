@@ -1,0 +1,47 @@
+<!-- app/views/deliveries/_new_delivery_item_template.html.erb -->
+<div class="delivery-item-template" style="display: none;">
+  <div class="delivery-item-row border rounded p-3 mb-3" style="background-color: #f8f9fa;">
+    <div class="row">
+      <div class="col-md-4">
+        <label class="form-label">Producto</label>
+        <input type="text" name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][product]" 
+               class="form-control" placeholder="Nombre del producto" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Cantidad</label>
+        <input type="number" name="delivery[delivery_items_attributes][NEW_RECORD][quantity_delivered]" 
+               class="form-control" min="0" value="1" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Estado</label>
+        <select name="delivery[delivery_items_attributes][NEW_RECORD][status]" class="form-select">
+          <option value="pending">Pendiente</option>
+          <option value="confirmed">Confirmado</option>
+          <option value="delivered">Entregado</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <div class="form-check mt-4">
+          <input type="checkbox" name="delivery[delivery_items_attributes][NEW_RECORD][service_case]" 
+                 class="form-check-input" value="1">
+          <label class="form-check-label">Caso de servicio</label>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="mt-4">
+          <button type="button" class="btn btn-sm btn-outline-danger" 
+                  data-action="click->delivery-form#removeDeliveryItem">
+            <i class="bi bi-trash"></i> Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="row mt-2">
+      <div class="col-12">
+        <label class="form-label">Notas del producto</label>
+        <textarea name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][notes]" 
+                  class="form-control" rows="2" placeholder="Notas opcionales"></textarea>
+      </div>
+    </div>
+  </div>
+</div>

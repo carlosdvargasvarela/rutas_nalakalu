@@ -8,179 +8,18 @@
           <i class="bi bi-arrow-left"></i> Volver
         <% end %>
       </div>
-
-      <%= simple_form_for @delivery, html: { class: "needs-validation", novalidate: true } do |f| %>
+      <%= simple_form_for @delivery, html: { 
+            class: "needs-validation", 
+            novalidate: true,
+            data: { controller: "delivery-form" }
+          } do |f| %>
         <%= f.error_notification %>
         <%= f.error_notification message: f.object.errors[:base].to_sentence if f.object.errors[:base].present? %>
-
         <div class="row">
-          <!-- Información del Cliente y Pedido -->
-          <div class="col-md-4">
-            <div class="card mb-4">
-              <div class="card-header">
-                <h5><i class="bi bi-person"></i> Información del Cliente</h5>
-              </div>
-              <div class="card-body">
-                <p><strong>Cliente:</strong> <%= @client.name %></p>
-                <p><strong>Teléfono:</strong> <%= @client.phone %></p>
-                <p><strong>Email:</strong> <%= @client.email %></p>
-                <p><strong>Pedido:</strong> #<%= @order.number %></p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Datos de la Entrega -->
-          <div class="col-md-8">
-            <div class="card mb-4">
-              <div class="card-header">
-                <h5><i class="bi bi-truck"></i> Datos de la Entrega</h5>
-              </div>
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-6">
-                    <%= f.date_field :delivery_date, 
-                        label: "Fecha de entrega",
-                        as: :date,
-                        required: true,
-                        input_html: { class: "form-control" } %>
-                  </div>
-                  <div class="col-md-6">
-                    <%= f.input :delivery_type,
-                        label: "Tipo de entrega",
-                        collection: [
-                          ['Entrega normal', 'delivery'], 
-                          ['Caso de servicio', 'service']
-                        ],
-                        input_html: { class: "form-select" } %>
-                  </div>
-                </div>
-
-                <div class="row">
-                  <div class="col-12">
-                    <%= f.input :delivery_address_id,
-                        label: "Dirección de entrega",
-                        collection: @addresses,
-                        value_method: :id,
-                        prompt: "Selecciona una dirección",
-                        required: true,
-                        input_html: { class: "form-select" } %>
-                  </div>
-                </div>
-
-                <button type="button" class="btn btn-link p-0 mt-2" data-bs-toggle="collapse" data-bs-target="#nueva-direccion-form">
-                    <i class="bi bi-plus-circle"></i> Agregar nueva dirección
-                </button>
-                <div class="collapse mt-2" id="nueva-direccion-form">
-                    <div class="card card-body">
-                        <%= simple_form_for DeliveryAddress.new, url: delivery_addresses_path, method: :post, html: { id: "new-address-form" } do |af| %>
-                            <%= af.input :address, label: "Dirección", required: true %>
-                            <%= af.input :description, label: "Descripción (opcional)" %>
-                            <%= af.input :client_id, as: :hidden, input_html: { value: @client.id } %>
-                           <%= af.button :submit, "Guardar dirección", class: "btn btn-primary btn-sm" %>
-                        <% end %>
-                    </div>
-                </div>
-            </div>
+          <%= render 'deliveries/partials/client_info', client: @client, order: @order %>
+          <%= render 'deliveries/partials/delivery_data', f: f, addresses: @addresses, client: @client %>
         </div>
-
-                <div class="row">
-                  <div class="col-md-6">
-                    <%= f.input :contact_name,
-                        label: "Nombre de contacto",
-                        input_html: { class: "form-control" } %>
-                  </div>
-                  <div class="col-md-6">
-                    <%= f.input :contact_phone,
-                        label: "Teléfono de contacto",
-                        input_html: { class: "form-control" } %>
-                  </div>
-                </div>
-
-                <div class="row">
-                  <div class="col-12">
-                    <%= f.input :delivery_notes,
-                        label: "Notas de entrega",
-                        as: :text,
-                        input_html: { class: "form-control", rows: 3 } %>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Productos a Entregar -->
-        <div class="card mb-4">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5><i class="bi bi-boxes"></i> Productos a Entregar</h5>
-            <button type="button" class="btn btn-sm btn-outline-primary" id="add-delivery-item">
-              <i class="bi bi-plus"></i> Agregar Producto
-            </button>
-          </div>
-          <div class="card-body">
-            <div id="delivery-items-container">
-              <%= f.simple_fields_for :delivery_items do |di| %>
-                <div class="delivery-item-row border rounded p-3 mb-3" style="background-color: #f8f9fa;">
-                  <%= di.input :id, as: :hidden %>
-                  
-                  <div class="row">
-                    <div class="col-md-4">
-                      <%= di.simple_fields_for :order_item do |oi| %>
-                        <%= oi.input :id, as: :hidden %>
-                        <%= oi.input :product,
-                            label: "Producto",
-                            required: true,
-                            input_html: { class: "form-control" } %>
-                      <% end %>
-                    </div>
-                    <div class="col-md-2">
-                      <%= di.input :quantity_delivered,
-                          label: "Cantidad",
-                          required: true,
-                          input_html: { class: "form-control", min: 0 } %>
-                    </div>
-                    <div class="col-md-2">
-                      <%= di.input :status,
-                          label: "Estado",
-                          collection: [
-                            ['Pendiente', 'pending'],
-                            ['Confirmado', 'confirmed'],
-                            ['Entregado', 'delivered']
-                          ],
-                          input_html: { class: "form-select" } %>
-                    </div>
-                    <div class="col-md-2">
-                      <%= di.input :service_case,
-                          label: "Caso de servicio",
-                          as: :boolean,
-                          wrapper_html: { class: "mt-4" } %>
-                    </div>
-                    <div class="col-md-2">
-                      <div class="mt-4">
-                        <button type="button" class="btn btn-sm btn-outline-danger remove-delivery-item">
-                          <i class="bi bi-trash"></i> Eliminar
-                        </button>
-                        <%= di.input :_destroy, as: :hidden, input_html: { class: "destroy-flag" } %>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="row mt-2">
-                    <div class="col-12">
-                      <%= di.simple_fields_for :order_item do |oi| %>
-                        <%= oi.input :notes,
-                            label: "Notas del producto",
-                            as: :text,
-                            input_html: { class: "form-control", rows: 2 } %>
-                      <% end %>
-                    </div>
-                  </div>
-                </div>
-              <% end %>
-            </div>
-          </div>
-        </div>
-
+        <%= render 'deliveries/partials/products_section', f: f %>
         <!-- Botones de Acción -->
         <div class="d-flex justify-content-between">
           <%= link_to @delivery, class: "btn btn-secondary" do %>
@@ -194,28 +33,3 @@
     </div>
   </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Funcionalidad para eliminar delivery items
-  document.addEventListener('click', function(e) {
-    if (e.target.closest('.remove-delivery-item')) {
-      const row = e.target.closest('.delivery-item-row');
-      const destroyFlag = row.querySelector('.destroy-flag');
-      
-      if (destroyFlag) {
-        destroyFlag.value = '1';
-        row.style.display = 'none';
-      } else {
-        row.remove();
-      }
-    }
-  });
-
-  // Funcionalidad para agregar nuevos delivery items (básica)
-  document.getElementById('add-delivery-item')?.addEventListener('click', function() {
-    // Esta funcionalidad se puede implementar con Stimulus para mayor robustez
-    alert('Funcionalidad de agregar productos en desarrollo. Por ahora puedes editar los existentes.');
-  });
-});
-</script>

@@ -11,7 +11,7 @@ export default class extends Controller {
     connect() {
         console.log("Delivery form controller connected")
     }
-
+    yy
     toggleNewClientFields() {
         const fields = this.newClientFieldsTarget
         fields.style.display = fields.style.display === "none" ? "block" : "none"
@@ -51,6 +51,48 @@ export default class extends Controller {
             event.target.closest(".order-item-template").remove()
         }
     }
+
+    addDeliveryItem(event) {
+        event.preventDefault()
+        const container = document.getElementById("delivery-items-container")
+        const template = document.querySelector(".delivery-item-template")
+        const newItem = template.cloneNode(true)
+
+        // Mostrar el elemento clonado
+        newItem.style.display = "block"
+        newItem.classList.remove("delivery-item-template")
+
+        // Generar un timestamp único para reemplazar NEW_RECORD
+        const timestamp = new Date().getTime()
+        newItem.innerHTML = newItem.innerHTML.replace(/NEW_RECORD/g, timestamp)
+
+        // Limpiar valores
+        newItem.querySelectorAll("input, textarea, select").forEach(input => {
+            if (input.type !== "checkbox") {
+                input.value = input.type === "number" ? "1" : ""
+            } else {
+                input.checked = false
+            }
+        })
+
+        container.appendChild(newItem)
+    }
+
+    removeDeliveryItem(event) {
+        event.preventDefault()
+        const row = event.target.closest('.delivery-item-row')
+        const destroyFlag = row.querySelector('.destroy-flag')
+
+        if (destroyFlag) {
+            // Es un item existente, marcarlo para eliminar
+            destroyFlag.value = '1'
+            row.style.display = 'none'
+        } else {
+            // Es un item nuevo, eliminarlo del DOM
+            row.remove()
+        }
+    }
+
 
     clientChanged() {
         const clientId = this.clientSelectTarget.value
