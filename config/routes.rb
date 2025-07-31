@@ -18,7 +18,7 @@ Rails.application.routes.draw do
 
   resources :dashboard, only: [:index]
 
-  resources :deliveries, only: [:index, :show, :new, :create] do
+  resources :deliveries, only: [:index, :show, :new, :create, :edit, :update] do
     collection do
       get :by_week # Para filtrar por semana
       get :service_cases # Para ver solo casos de servicio
@@ -64,4 +64,5 @@ Rails.application.routes.draw do
   resources :orders, only: [:index, :show]
   resources :clients, only: [:index, :show]
   resources :sellers, only: [:index, :show]
+  resources :delivery_addresses, only: [:create]
 end

@@ -5,6 +5,10 @@ class DeliveryAddress < ApplicationRecord
 
   validates :address, presence: true
 
+  def to_s
+    "#{address}"
+  end
+
   def self.ransackable_attributes(auth_object = nil)
     ["address", "description", "client_id", "created_at", "updated_at"]
   end

@@ -6,6 +6,13 @@ class Delivery < ApplicationRecord
   has_many :delivery_items, dependent: :destroy
   has_many :order_items, through: :delivery_items
 
+  accepts_nested_attributes_for :delivery_items, 
+                                allow_destroy: true, 
+                                reject_if: proc { |attributes| 
+                                  attributes['quantity_delivered'].blank? && 
+                                  attributes['order_item_attributes']['product'].blank? 
+                                }
+
   enum status: { scheduled: 0, in_route: 1, delivered: 2, rescheduled: 3, cancelled: 4, ready_to_deliver: 5 }
   enum delivery_type: { normal_delivery: 0, service_case: 1 }
 

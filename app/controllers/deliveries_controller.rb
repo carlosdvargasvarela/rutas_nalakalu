@@ -1,48 +1,12 @@
 # app/controllers/deliveries_controller.rb
 class DeliveriesController < ApplicationController
-  before_action :set_delivery, only: [:show]
+  before_action :set_delivery, only: [:show, :edit, :update]
 
   # GET /deliveries
   # Muestra todas las entregas o filtra por semana
   def index
     @q = Delivery.ransack(params[:q])
     @deliveries = @q.result.includes(:order, :delivery_address, :delivery_items).page(params[:page])
-  end
-
-  # GET /deliveries/by_week
-  # Muestra un formulario simple para seleccionar semana y año
-  def by_week
-    @week = params[:week].to_i
-    @year = params[:year].to_i
-
-    # Si la semana es inválida, usa la semana actual
-    @week = Date.today.cweek if @week < 1 || @week > 53
-    @year = Date.today.cwyear if @year < 2000 # o el rango que prefieras
-
-    start_date = Date.commercial(@year, @week, 1)
-    @deliveries = Delivery.for_week(start_date)
-                          .includes(order: :client, delivery_address: {}, delivery_items: {})
-                          .order('deliveries.delivery_date ASC')
-                          .page(params[:page])
-    render :index
-  end
-
-  def mark_as_delivered
-    @delivery = Delivery.find(params[:id])
-    @delivery.mark_as_delivered!
-    redirect_to @delivery, notice: "Entrega marcada como completada."
-  end
-
-  # GET /deliveries/service_cases
-  # Muestra solo las entregas que contienen casos de servicio
-  def service_cases
-    @deliveries = Delivery
-      .joins(order: :client)
-      .merge(Delivery.with_service_cases)
-      .includes(:order, :delivery_address, :delivery_items)
-      .order('deliveries.delivery_date ASC, clients.name ASC')
-      .page(params[:page])
-    render :index # Reutiliza la vista index
   end
 
   # GET /deliveries/:id
@@ -72,16 +36,35 @@ class DeliveriesController < ApplicationController
     @addresses = (@client&.delivery_addresses || []).to_a
   end
 
-  def addresses_for_client
-    client = Client.find(params[:client_id])
-    addresses = client.delivery_addresses.select(:id, :address)
-    render json: addresses
+  def edit
+    @delivery = Delivery.includes(delivery_items: :order_item).find(params[:id])
+    @client = @delivery.order.client
+    @addresses = @client.delivery_addresses.order(:description)
+    @order = @delivery.order
+
+    # Si quieres permitir agregar nuevos, puedes hacer un build vacío opcionalmente:
+    # @delivery.delivery_items.build.build_order_item
   end
 
-  def orders_for_client
-    client = Client.find(params[:client_id])
-    orders = client.orders.select(:id, :number)
-    render json: orders
+  # PATCH/PUT /deliveries/:id
+  def update
+    ActiveRecord::Base.transaction do
+      if @delivery.update(delivery_params)
+        redirect_to @delivery, notice: "Entrega actualizada correctamente."
+      else
+        @client = @delivery.order.client
+        @addresses = @client.delivery_addresses.order(:description)
+        @order = @delivery.order
+        render :edit, status: :unprocessable_entity
+      end
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    @client = @delivery.order.client
+    @addresses = @client.delivery_addresses.order(:description)
+    @order = @delivery.order
+    
+    flash.now[:alert] = "Error al actualizar la entrega: #{e.message}"
+    render :edit, status: :unprocessable_entity
   end
 
   def create
@@ -194,9 +177,68 @@ class DeliveriesController < ApplicationController
     raise e
   end
 
-  private
+  # GET /deliveries/by_week
+  # Muestra un formulario simple para seleccionar semana y año
+  def by_week
+    @week = params[:week].to_i
+    @year = params[:year].to_i
+
+    # Si la semana es inválida, usa la semana actual
+    @week = Date.today.cweek if @week < 1 || @week > 53
+    @year = Date.today.cwyear if @year < 2000 # o el rango que prefieras
+
+    start_date = Date.commercial(@year, @week, 1)
+    @deliveries = Delivery.for_week(start_date)
+                          .includes(order: :client, delivery_address: {}, delivery_items: {})
+                          .order('deliveries.delivery_date ASC')
+                          .page(params[:page])
+    render :index
+  end
+
+  def mark_as_delivered
+    @delivery = Delivery.find(params[:id])
+    @delivery.mark_as_delivered!
+    redirect_to @delivery, notice: "Entrega marcada como completada."
+  end
+
+  # GET /deliveries/service_cases
+  # Muestra solo las entregas que contienen casos de servicio
+  def service_cases
+    @deliveries = Delivery
+      .joins(order: :client)
+      .merge(Delivery.with_service_cases)
+      .includes(:order, :delivery_address, :delivery_items)
+      .order('deliveries.delivery_date ASC, clients.name ASC')
+      .page(params[:page])
+    render :index # Reutiliza la vista index
+  end
+
+  def addresses_for_client
+    client = Client.find(params[:client_id])
+    addresses = client.delivery_addresses.select(:id, :address)
+    render json: addresses
+  end
+
+  def orders_for_client
+    client = Client.find(params[:client_id])
+    orders = client.orders.select(:id, :number)
+    render json: orders
+  end
+
+ private
 
   def set_delivery
     @delivery = Delivery.find(params[:id])
+  end
+
+  def delivery_params
+    params.require(:delivery).permit(
+      :delivery_date, :delivery_address_id, :contact_name, :contact_phone, 
+      :contact_id, :delivery_notes, :delivery_time_preference, :delivery_type,
+      delivery_items_attributes: [
+        :id, :quantity_delivered, :service_case, :status, :_destroy,
+        order_item_attributes: [:id, :product, :quantity, :notes]
+      ]
+    )
   end
 end

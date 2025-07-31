@@ -4,8 +4,9 @@ class DeliveryItem < ApplicationRecord
   belongs_to :delivery
   belongs_to :order_item
 
-  before_update :prevent_edit_if_rescheduled
+  accepts_nested_attributes_for :order_item
 
+  before_update :prevent_edit_if_rescheduled
 
   validates :quantity_delivered, presence: true, numericality: { greater_than: 0 }
 
