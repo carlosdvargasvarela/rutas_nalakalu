@@ -55,7 +55,8 @@ class Delivery < ApplicationRecord
   def update_status_based_on_items
     statuses = delivery_items.pluck(:status)
 
-    # Todos entregados o reagendados
+    return if statuses.empty? # Solo ejecuta la lógica si hay al menos un item
+
     if statuses.all? { |s| [ "delivered", "rescheduled" ].include?(s) }
       update_column(:status, Delivery.statuses[:delivered])
     elsif statuses.all? { |s| [ "confirmed", "rescheduled" ].include?(s) }

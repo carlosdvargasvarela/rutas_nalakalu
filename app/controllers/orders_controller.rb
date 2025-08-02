@@ -3,7 +3,8 @@ class OrdersController < ApplicationController
   before_action :set_order, only: [:show]
 
   def index
-    @orders = Order.includes(:client, :seller, :order_items).order(created_at: :desc).page(params[:page])
+    @q = Order.ransack(params[:q])
+    @orders = @q.result.includes(:client, :seller, :order_items).order(created_at: :desc).page(params[:page])
   end
 
   def show

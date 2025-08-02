@@ -1,8 +1,33 @@
+<%# app/views/orders/index.html.erb %>
 <h1 class="mb-4">
   <i class="bi bi-list-ul me-2"></i>
   Listado de Pedidos
 </h1>
-
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <%= search_form_for @q, url: orders_path, method: :get, html: { class: "row g-2 align-items-end" } do |f| %>
+      <div class="col-md-3">
+        <%= f.label :client_name_cont, "Cliente", class: "form-label" %>
+        <%= f.search_field :client_name_cont, class: "form-control" %>
+      </div>
+      <div class="col-md-3">
+        <%= f.label :seller_name_cont, "Vendedor", class: "form-label" %>
+        <%= f.search_field :seller_name_cont, class: "form-control" %>
+      </div>
+      <div class="col-md-2">
+        <%= f.label :created_at_gteq, "Desde", class: "form-label" %>
+        <%= f.date_field :created_at_gteq, class: "form-control" %>
+      </div>
+      <div class="col-md-2">
+        <%= f.label :created_at_lteq, "Hasta", class: "form-label" %>
+        <%= f.date_field :created_at_lteq, class: "form-control" %>
+      </div>
+      <div class="col-md-2 d-grid">
+        <%= f.submit "Buscar", class: "btn btn-outline-primary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
 <% if @orders.any? %>
   <div class="table-responsive">
     <table class="table table-striped table-hover align-middle">
@@ -19,7 +44,10 @@
       <tbody>
         <% @orders.each do |order| %>
           <tr>
-            <td><strong><%= order.number %></strong></td>
+            <td>
+              <i class="bi bi-hash me-1"></i>
+              <strong><%= order.number %></strong>
+            </td>
             <td>
               <i class="bi bi-person me-1"></i>
               <%= order.client.name %>
@@ -34,10 +62,12 @@
                 <ul class="mb-0 ps-3 small">
                   <% order.order_items.each do |item| %>
                     <li>
+                      <span class="badge bg-secondary"><%= item.quantity %></span>
                       <strong><%= item.product %></strong>
-                      <span class="badge bg-secondary ms-1"><%= item.quantity %></span>
                       <% if item.notes.present? %>
-                        <span class="text-muted ms-1" title="Notas"><i class="bi bi-info-circle"></i> <%= item.notes %></span>
+                        <span class="text-muted ms-1" title="Notas">
+                          <i class="bi bi-info-circle"></i> <%= item.notes %>
+                        </span>
                       <% end %>
                     </li>
                   <% end %>
@@ -47,7 +77,6 @@
               <% end %>
             </td>
             <td>
-              <%# Badge de estado %>
               <% status_class = case order.status
                 when "pending" then "bg-warning text-dark"
                 when "in_production" then "bg-info"
@@ -64,7 +93,7 @@
               <%= link_to order_path(order), class: "btn btn-sm btn-outline-primary", title: "Ver detalles" do %>
                 <i class="bi bi-eye"></i>
               <% end %>
-              <%# link_to edit_order_path(order), class: "btn btn-sm btn-outline-secondary", title: "Editar" do %>
+              <%#= link_to edit_order_path(order), class: "btn btn-sm btn-outline-secondary", title: "Editar" do %>
                 <i class="bi bi-pencil"></i>
               <%# end %>
               <%= link_to order_path(order), method: :delete, data: { confirm: "¿Seguro que deseas eliminar este pedido?" }, class: "btn btn-sm btn-outline-danger", title: "Eliminar" do %>
