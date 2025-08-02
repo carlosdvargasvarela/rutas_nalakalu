@@ -1,4 +1,3 @@
-# app/controllers/deliveries_controller.rb
 class DeliveriesController < ApplicationController
   before_action :set_delivery, only: [ :show, :edit, :update ]
 
@@ -18,6 +17,7 @@ class DeliveriesController < ApplicationController
       .where.not(id: @delivery.id)
   end
 
+  # GET /deliveries/new
   def new
     if params[:order_id].present?
       @order = Order.find(params[:order_id])
@@ -31,18 +31,21 @@ class DeliveriesController < ApplicationController
       @delivery.build_delivery_address
     end
 
-    # Para el formulario: lista de clientes y direcciones sugeridas
+    # Construir un delivery_item vacío con order_item anidado para el formulario
+    @delivery.delivery_items.build.build_order_item
+
     @clients = Client.all.order(:name)
     @addresses = (@client&.delivery_addresses || []).to_a
   end
 
+  # GET /deliveries/:id/edit
   def edit
     @delivery = Delivery.includes(delivery_items: :order_item).find(params[:id])
     @client = @delivery.order.client
     @addresses = @client.delivery_addresses.order(:description)
     @order = @delivery.order
 
-    # Permitir agregar nuevos productos
+    # Agregar un delivery_item vacío si no hay ninguno
     @delivery.delivery_items.build.build_order_item if @delivery.delivery_items.empty?
   end
 
@@ -62,11 +65,11 @@ class DeliveriesController < ApplicationController
     @client = @delivery.order.client
     @addresses = @client.delivery_addresses.order(:description)
     @order = @delivery.order
-
     flash.now[:alert] = "Error al actualizar la entrega: #{e.message}"
     render :edit, status: :unprocessable_entity
   end
 
+  # POST /deliveries
   def create
     ActiveRecord::Base.transaction do
       # 1. Cliente
@@ -78,8 +81,11 @@ class DeliveriesController < ApplicationController
       # 3. Pedido
       order = find_or_create_order(client)
 
-      # 4. Crear la entrega con productos anidados
-      delivery_attrs = delivery_params.merge(
+      # 4. Procesar los delivery_items y crear order_items si es necesario
+      processed_delivery_items = process_delivery_items_params(order)
+
+      # 5. Crear la entrega
+      delivery_attrs = delivery_params.except(:delivery_items_attributes).merge(
         order: order,
         delivery_address: address,
         status: :ready_to_deliver
@@ -87,19 +93,21 @@ class DeliveriesController < ApplicationController
 
       @delivery = Delivery.new(delivery_attrs)
 
-      if @delivery.save
-        redirect_to @delivery, notice: "Entrega creada correctamente."
-      else
-        # Recargar datos para el formulario
-        @client = client
-        @order = order
-        @clients = Client.all.order(:name)
-        @addresses = client.delivery_addresses.to_a
-        render :new, status: :unprocessable_entity
-      end
+      # 6. Asignar los delivery_items procesados
+      @delivery.delivery_items = processed_delivery_items
+
+      @delivery.save!
+      redirect_to @delivery, notice: "Entrega creada correctamente."
     end
   rescue ActiveRecord::RecordInvalid => e
-    handle_creation_error(e)
+    @delivery = e.record if e.respond_to?(:record) && e.record.is_a?(Delivery)
+    @delivery ||= Delivery.new # Asegurar que @delivery existe
+    @client = @order&.client || Client.new
+    @order = @order || Order.new
+    @clients = Client.all.order(:name)
+    @addresses = @client.delivery_addresses.to_a
+    flash.now[:alert] = "Error al crear la entrega: #{e.message}"
+    render :new, status: :unprocessable_entity
   end
 
   # GET /deliveries/by_week
@@ -120,6 +128,7 @@ class DeliveriesController < ApplicationController
     render :index
   end
 
+  # PATCH /deliveries/:id/mark_as_delivered
   def mark_as_delivered
     @delivery = Delivery.find(params[:id])
     @delivery.mark_as_delivered!
@@ -138,21 +147,86 @@ class DeliveriesController < ApplicationController
     render :index # Reutiliza la vista index
   end
 
+  # GET /deliveries/addresses_for_client
+  # AJAX endpoint para obtener direcciones de un cliente
   def addresses_for_client
     client = Client.find(params[:client_id])
     addresses = client.delivery_addresses.select(:id, :address)
     render json: addresses
   end
 
+  # GET /deliveries/orders_for_client
+  # AJAX endpoint para obtener pedidos de un cliente
   def orders_for_client
     client = Client.find(params[:client_id])
     orders = client.orders.select(:id, :number)
     render json: orders
   end
 
- private
+  private
 
- def find_or_create_client
+  # Procesa los parámetros de delivery_items y crea/actualiza order_items
+  def process_delivery_items_params(order)
+    delivery_items = []
+
+    return delivery_items unless params[:delivery][:delivery_items_attributes]
+
+    params[:delivery][:delivery_items_attributes].each do |key, item_params|
+      next if item_params[:_destroy] == "1"
+      next if item_params[:order_item_attributes][:product].blank?
+
+      # Buscar o crear el order_item
+      order_item = find_or_create_order_item(order, item_params[:order_item_attributes])
+
+      # Crear el delivery_item
+      delivery_item = DeliveryItem.new(
+        order_item: order_item,
+        quantity_delivered: item_params[:quantity_delivered] || 1,
+        service_case: item_params[:service_case] == "1",
+        status: :pending
+      )
+
+      delivery_items << delivery_item
+    end
+
+    delivery_items
+  end
+
+  # Busca o crea un order_item para la orden
+  def find_or_create_order_item(order, order_item_params)
+    # Si tiene ID, es un order_item existente
+    if order_item_params[:id].present?
+      order_item = OrderItem.find(order_item_params[:id])
+      order_item.update!(order_item_params.except(:id))
+      return order_item
+    end
+
+    # Buscar si ya existe un order_item con el mismo producto en esta orden
+    existing_item = order.order_items.find_by(product: order_item_params[:product])
+
+    if existing_item
+      # Actualizar cantidad si es necesario
+      if order_item_params[:quantity].present? &&
+         existing_item.quantity != order_item_params[:quantity].to_i
+        existing_item.update!(
+          quantity: existing_item.quantity + order_item_params[:quantity].to_i,
+          notes: [existing_item.notes, order_item_params[:notes]].compact.join("; ")
+        )
+      end
+      return existing_item
+    end
+
+    # Crear nuevo order_item
+    order.order_items.create!(
+      product: order_item_params[:product],
+      quantity: order_item_params[:quantity] || 1,
+      notes: order_item_params[:notes],
+      status: :pending
+    )
+  end
+
+  # Busca o crea un cliente
+  def find_or_create_client
     if params[:client_id].present?
       Client.find(params[:client_id])
     else
@@ -162,6 +236,7 @@ class DeliveriesController < ApplicationController
     end
   end
 
+  # Busca o crea una dirección de entrega
   def find_or_create_address(client)
     if params[:delivery] && params[:delivery][:delivery_address_id].present?
       DeliveryAddress.find(params[:delivery][:delivery_address_id])
@@ -173,27 +248,36 @@ class DeliveriesController < ApplicationController
     end
   end
 
+  # Busca o crea un pedido
   def find_or_create_order(client)
+    byebug
     if params[:delivery] && params[:delivery][:order_id].present?
       Order.find(params[:delivery][:order_id])
-    else
+    elsif params[:order] && params[:order][:number].present?
+      existing_order = client.orders.find_by(number: params[:order][:number])
+      return existing_order if existing_order
+
       client.orders.create!(
         number: params[:order][:number],
         seller_id: params[:seller_id] || current_user.seller&.id,
         status: :pending
       )
+    elsif params[:order_id].present?
+      Order.find(params[:order_id])
+    else
+      raise ActiveRecord::RecordInvalid.new(Order.new), "Debes seleccionar o crear un pedido."
     end
   end
 
+  # Busca la entrega por ID
   def set_delivery
     @delivery = Delivery.find(params[:id])
-    puts "Delivery found: #{@delivery.id} - #{@delivery.delivery_date}"
-    puts @delivery
   end
 
+  # Parámetros permitidos para delivery
   def delivery_params
     params.require(:delivery).permit(
-      :delivery_date, :delivery_address_id, :contact_name, :contact_phone, :delivery_notes,
+      :delivery_date, :delivery_address_id, :contact_name, :contact_phone, :delivery_notes, :delivery_type,
       delivery_items_attributes: [
         :id, :quantity_delivered, :service_case, :status, :_destroy,
         order_item_attributes: [ :id, :product, :quantity, :notes ]

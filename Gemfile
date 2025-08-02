@@ -38,18 +38,18 @@ gem "bootsnap", require: false
 # Gemfile - agregar estas líneas al final
 
 # Excel handling
-gem 'roo', '~> 2.10.1'
+gem "roo", "~> 2.10.1"
 gem "csv"
 # gem 'axlsx', '~> 3.0'
-gem 'caxlsx', '~> 4.2.0'
-gem 'caxlsx_rails'
+gem "caxlsx", "~> 4.2.0"
+gem "caxlsx_rails"
 
 # Authentication
-gem 'devise'
+gem "devise"
 
 # Bootstrap for styling
-gem 'bootstrap', '~> 5.3.5'
-gem 'jquery-rails'
+gem "bootstrap", "~> 5.3.5"
+gem "jquery-rails"
 
 # Other frontemd gems
 
@@ -66,10 +66,10 @@ gem "acts_as_list"
 gem "paper_trail", "~> 16.0"
 
 # Kaminari for pagination
-gem 'kaminari'
+gem "kaminari"
 
 # Ransack for search functionality
-gem 'ransack'
+gem "ransack"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -82,7 +82,10 @@ group :development, :test do
   gem "rubocop-rails-omakase", require: false
 
   # Use sqlite3 as the database for Active Record
-gem "sqlite3", ">= 1.4"
+  gem "sqlite3", ">= 1.4"
+
+  # Use byebug for debugging
+  gem "byebug"
 end
 
 group :development do
