@@ -90,27 +90,33 @@
               </span>
             </td>
             <td>
-              <%= link_to order_path(order), class: "btn btn-sm btn-outline-primary", title: "Ver detalles" do %>
-                <i class="bi bi-eye"></i>
+              <% if policy(order).show? %>
+                <%= link_to order_path(order), class: "btn btn-sm btn-outline-primary", title: "Ver detalles" do %>
+                  <i class="bi bi-eye"></i>
+                <% end %>
               <% end %>
-              <%#= link_to edit_order_path(order), class: "btn btn-sm btn-outline-secondary", title: "Editar" do %>
-                <i class="bi bi-pencil"></i>
-              <%# end %>
-              <%= link_to order_path(order), method: :delete, data: { confirm: "¿Seguro que deseas eliminar este pedido?" }, class: "btn btn-sm btn-outline-danger", title: "Eliminar" do %>
-                <i class="bi bi-trash"></i>
-              <% end %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-  <div class="d-flex justify-content-center">
-    <%= paginate @orders %>
-  </div>
-<% else %>
-  <div class="alert alert-info">
-    <i class="bi bi-info-circle me-2"></i>
-    No hay pedidos para mostrar.
-  </div>
-<% end %>
+              <% if policy(order).edit? %>
+                <%#= link_to edit_order_path(order), class: "btn btn-sm btn-outline-secondary", title: "Editar" do %>
+                  <i class="bi bi-pencil"></i>
+                <%# end %>
+                <% end %>
+                <% if policy(order).destroy? %>
+                  <%= button_to order_path(order), method: :delete, data: { confirm: "¿Seguro que deseas eliminar este pedido?" }, class: "btn btn-sm btn-outline-danger", form: { class: "d-inline" } do %>
+                    <i class="bi bi-trash"></i>
+                  <% end %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <div class="d-flex justify-content-center">
+      <%= paginate @orders %>
+    </div>
+  <% else %>
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle me-2"></i>
+      No hay pedidos para mostrar.
+    </div>
+  <% end %>

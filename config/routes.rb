@@ -14,11 +14,11 @@ Rails.application.routes.draw do
 
   # Define the root path of the application
   # Devise routes for user authentication
-  root 'dashboard#index'
+  root "dashboard#index"
 
-  resources :dashboard, only: [:index]
+  resources :dashboard, only: [ :index ]
 
-  resources :deliveries, only: [:index, :show, :new, :create, :edit, :update] do
+  resources :deliveries, only: [ :index, :show, :new, :create, :edit, :update ] do
     collection do
       get :by_week # Para filtrar por semana
       get :service_cases # Para ver solo casos de servicio
@@ -38,7 +38,7 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :delivery_items, only: [:show] do
+  resources :delivery_items, only: [ :show ] do
     member do
       patch :confirm
       patch :mark_delivered
@@ -47,23 +47,23 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :delivery_plans, only: [:index, :show, :new, :create, :edit, :update] do
+  resources :delivery_plans, only: [ :index, :show, :new, :create, :edit, :update ] do
     member do
       patch :send_to_logistics
       patch :update_order
     end
-    resources :delivery_plan_assignments, only: [:destroy]
+    resources :delivery_plan_assignments, only: [ :destroy ]
   end
 
-  resources :delivery_imports, only: [:new, :create] do
+  resources :delivery_imports, only: [ :new, :create ] do
     collection do
       post :preview
       post :process_import
     end
   end
 
-  resources :orders, only: [:index, :show]
-  resources :clients, only: [:index, :show]
-  resources :sellers, only: [:index, :show]
-  resources :delivery_addresses, only: [:create]
+  resources :orders, only: [ :index, :show, :destroy ]
+  resources :clients, only: [ :index, :show ]
+  resources :sellers, only: [ :index, :show ]
+  resources :delivery_addresses, only: [ :create ]
 end

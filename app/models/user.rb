@@ -1,24 +1,30 @@
 # app/models/user.rb
 class User < ApplicationRecord
-  has_paper_trail
+  # Include default devise modules. Others available are:
+  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
 
-  has_one :seller, dependent: :destroy
+  # Definir los roles como un enum
+  enum role: { admin: 0, production_manager: 1, seller: 2, logistics: 3, driver: 4 }
 
-  enum role: {
-    admin: 0,
-    production_manager: 1,
-    seller: 1,
-    logistics: 2,
-    driver: 3
-  }
-
-  validates :name, presence: true
-  validates :email, presence: true, uniqueness: true
+  # Establecer un rol por defecto al crear un usuario
+  after_initialize :set_default_role, if: :new_record?
 
   def display_role
-    role.humanize
+    case role
+    when "admin" then "Administrador"
+    when "production_manager" then "Producción"
+    when "seller" then "Vendedor"
+    when "logistics" then "Logística"
+    when "driver" then "Conductor"
+    else role.to_s.humanize
+    end
+  end
+  
+  private
+
+  def set_default_role
+    self.role ||= :seller # O el rol que consideres por defecto
   end
 end
-

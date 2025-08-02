@@ -107,3 +107,5 @@ group :production do
   # Use pg for production
   gem "pg"
 end
+
+gem "pundit", "~> 2.5"
