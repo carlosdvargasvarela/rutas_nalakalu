@@ -1,0 +1,112 @@
+es:
+  activerecord:
+    models:
+      client: Cliente  #g
+      delivery: Entrega  #g
+      delivery_address: Dirección de entrega  #g
+      delivery_item: Artículo de entrega  #g
+      delivery_plan: Plan de entrega  #g
+      delivery_plan_assignment: Asignación del plan de entrega  #g
+      order: Orden  #g
+      order_item: Artículo de pedido  #g
+      paper_trail/version: Rastro de papel/versión  #g
+      seller: Vendedor  #g
+      user:
+        one: Usuario  #g
+        other: Usuarios  #g
+
+    attributes:
+      client:
+        delivery_addresses: Direcciones de entrega  #g
+        email: Correo electrónico  #g
+        name: Nombre  #g
+        orders: Órdenes  #g
+        phone: Teléfono  #g
+        versions: Versiones  #g
+
+      delivery:
+        contact_name: Nombre de contacto  #g
+        contact_phone: Teléfono de contacto  #g
+        delivery_address: :activerecord.models.delivery_address  #g
+        delivery_date: Fecha de entrega  #g
+        delivery_items: Artículos de entrega  #g
+        delivery_notes: Notas de entrega  #g
+        delivery_time_preference: Preferencia de tiempo de entrega  #g
+        delivery_type: Tipo de entrega  #g
+        order: :activerecord.models.order  #g
+        order_items: Ordenar artículos  #g
+        status: Estado  #g
+        versions: Versiones  #g
+
+      delivery_address:
+        address: DIRECCIÓN  #g
+        client: :activerecord.models.client  #g
+        description: Descripción  #g
+        versions: Versiones  #g
+
+      delivery_item:
+        delivery: :activerecord.models.delivery  #g
+        order_item: :activerecord.models.order_item  #g
+        quantity_delivered: Cantidad entregada  #g
+        service_case: Caso de servicio  #g
+        status: Estado  #g
+        versions: Versiones  #g
+
+      delivery_plan:
+        deliveries: Entregas  #g
+        delivery_plan_assignments: Asignaciones de planes de entrega  #g
+        driver: :activerecord.models.driver  #g
+        status: Estado  #g
+        versions: Versiones  #g
+        week: Semana  #g
+        year: Año  #g
+
+      delivery_plan_assignment:
+        delivery: :activerecord.models.delivery  #g
+        delivery_plan: :activerecord.models.delivery_plan  #g
+        stop_order: Orden de parada  #g
+        versions: Versiones  #g
+
+      order:
+        client: :activerecord.models.client  #g
+        deliveries: Entregas  #g
+        number: Número  #g
+        order_items: Ordenar artículos  #g
+        seller: :activerecord.models.seller  #g
+        status: Estado  #g
+        versions: Versiones  #g
+
+      order_item:
+        confirmed: Confirmado  #g
+        delivery_items: Artículos de entrega  #g
+        notes: Notas  #g
+        order: :activerecord.models.order  #g
+        product: Producto  #g
+        quantity: Cantidad  #g
+        status: Estado  #g
+        versions: Versiones  #g
+
+      paper_trail/version:
+        event: Evento  #g
+        item: :activerecord.models.item  #g
+        item_type: Tipo de artículo  #g
+        object: Objeto  #g
+        whodunnit: Whodunnit  #g
+
+      seller:
+        name: Nombre  #g
+        orders: Órdenes  #g
+        seller_code: Código de vendedor  #g
+        user: :activerecord.models.user  #g
+        versions: Versiones  #g
+
+      user:
+        email: Email  #g
+        encrypted_password: Contraseña cifrada  #g
+        name: Nombre  #g
+        remember_created_at: Fecha de 'Recordarme'  #g
+        reset_password_sent_at: Fecha de envío de código para contraseña  #g
+        reset_password_token: Código para restablecer contraseña  #g
+        role: Role  #g
+        seller: :activerecord.models.seller  #g
+        versions: Versiones  #g

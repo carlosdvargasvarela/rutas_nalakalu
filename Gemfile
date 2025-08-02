@@ -71,6 +71,7 @@ gem "kaminari"
 # Ransack for search functionality
 gem "ransack"
 
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
@@ -91,6 +92,9 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+
+  # i18n_generators for internationalization
+  gem "i18n_generators"
 end
 
 group :test do
