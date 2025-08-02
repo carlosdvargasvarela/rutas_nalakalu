@@ -42,8 +42,8 @@ class DeliveriesController < ApplicationController
     @addresses = @client.delivery_addresses.order(:description)
     @order = @delivery.order
 
-    # Si quieres permitir agregar nuevos, puedes hacer un build vacío opcionalmente:
-    # @delivery.delivery_items.build.build_order_item
+    # Permitir agregar nuevos productos
+    @delivery.delivery_items.build.build_order_item if @delivery.delivery_items.empty?
   end
 
   # PATCH/PUT /deliveries/:id
@@ -70,111 +70,36 @@ class DeliveriesController < ApplicationController
   def create
     ActiveRecord::Base.transaction do
       # 1. Cliente
-      client =
-        if params[:client_id].present?
-          Client.find(params[:client_id])
-        else
-          existing = Client.find_by(email: params[:client][:email]) if params[:client][:email].present?
-          existing ||= Client.find_by(phone: params[:client][:phone]) if params[:client][:phone].present?
-          existing || Client.create!(params.require(:client).permit(:name, :phone, :email))
-        end
+      client = find_or_create_client
 
       # 2. Dirección
-      address =
-        if params[:delivery] && params[:delivery][:delivery_address_id].present?
-          DeliveryAddress.find(params[:delivery][:delivery_address_id])
-        elsif params[:delivery_address] && params[:delivery_address][:address].present?
-          existing = client.delivery_addresses.find_by(address: params[:delivery_address][:address])
-          existing || client.delivery_addresses.create!(params.require(:delivery_address).permit(:address, :description))
-        else
-          raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debes seleccionar o ingresar una dirección."
-        end
+      address = find_or_create_address(client)
 
       # 3. Pedido
-      order =
-        if params[:delivery] && params[:delivery][:order_id].present?
-          Order.find(params[:delivery][:order_id])
-        else
-          order = client.orders.create!(
-            number: params[:order][:number],
-            seller_id: params[:seller_id] || current_user.seller&.id,
-            status: :pending
-          )
-          order
-        end
+      order = find_or_create_order(client)
 
-      # 4. Productos nuevos (OrderItems)
-      nuevos_items = []
-      if params[:order_items].present?
-        params[:order_items].each do |item_params|
-          next if item_params[:product].blank? || item_params[:quantity].blank?
-          nuevos_items << order.order_items.create!(item_params.permit(:product, :quantity, :notes))
-        end
-      end
-
-      # Validar que haya al menos un producto nuevo
-      if nuevos_items.empty?
-        raise ActiveRecord::RecordInvalid.new(order), "Debes agregar al menos un producto nuevo al pedido."
-      end
-
-      # 5. Crear la entrega
-      delivery = order.deliveries.create!(
+      # 4. Crear la entrega con productos anidados
+      delivery_attrs = delivery_params.merge(
+        order: order,
         delivery_address: address,
-        delivery_date: params[:delivery][:delivery_date],
-        contact_name: params[:delivery][:contact_name],
-        contact_phone: params[:delivery][:contact_phone],
-        delivery_type: params[:delivery][:delivery_type],
         status: :ready_to_deliver
       )
 
-      # 6. Solo agregar DeliveryItems para los nuevos productos
-      nuevos_items.each do |order_item|
-        delivery.delivery_items.create!(
-          order_item: order_item,
-          quantity_delivered: order_item.quantity,
-          status: :pending
-        )
-      end
+      @delivery = Delivery.new(delivery_attrs)
 
-      redirect_to delivery, notice: "Entrega creada correctamente."
+      if @delivery.save
+        redirect_to @delivery, notice: "Entrega creada correctamente."
+      else
+        # Recargar datos para el formulario
+        @client = client
+        @order = order
+        @clients = Client.all.order(:name)
+        @addresses = client.delivery_addresses.to_a
+        render :new, status: :unprocessable_entity
+      end
     end
   rescue ActiveRecord::RecordInvalid => e
-    puts "=" * 50
-    puts "ERROR CAPTURADO:"
-    puts "Clase del modelo que falló: #{e.record.class.name}"
-    puts "ID del modelo (si existe): #{e.record.id}"
-    puts "Errores del modelo: #{e.record.errors.full_messages.inspect}"
-    puts "Mensaje de la excepción: #{e.message}"
-    puts "=" * 50
-
-    # Asignar variables según el tipo de modelo que falló
-    @order = e.record if e.record.is_a?(Order)
-    @delivery = e.record if e.record.is_a?(Delivery)
-    @client = e.record if e.record.is_a?(Client)
-    @address = e.record if e.record.is_a?(DeliveryAddress)
-
-    # Si el error es en un OrderItem, buscar el pedido padre
-    if e.record.is_a?(OrderItem)
-      @order = e.record.order
-      @order_item_error = e.record
-      puts "Error en OrderItem, asignando @order: #{@order.id}"
-    end
-
-    # Recargar datos para el formulario
-    @clients = Client.all.order(:name)
-    @addresses = (@client&.delivery_addresses || []).to_a
-
-    flash.now[:alert] = "Error al crear la entrega: #{e.message}"
-    puts "Renderizando vista :new"
-    render :new
-  rescue => e
-    puts "=" * 50
-    puts "ERROR NO ESPERADO:"
-    puts "Clase: #{e.class.name}"
-    puts "Mensaje: #{e.message}"
-    puts "Backtrace: #{e.backtrace.first(5).join("\n")}"
-    puts "=" * 50
-    raise e
+    handle_creation_error(e)
   end
 
   # GET /deliveries/by_week
@@ -227,8 +152,43 @@ class DeliveriesController < ApplicationController
 
  private
 
+ def find_or_create_client
+    if params[:client_id].present?
+      Client.find(params[:client_id])
+    else
+      existing = Client.find_by(email: params[:client][:email]) if params[:client][:email].present?
+      existing ||= Client.find_by(phone: params[:client][:phone]) if params[:client][:phone].present?
+      existing || Client.create!(params.require(:client).permit(:name, :phone, :email))
+    end
+  end
+
+  def find_or_create_address(client)
+    if params[:delivery] && params[:delivery][:delivery_address_id].present?
+      DeliveryAddress.find(params[:delivery][:delivery_address_id])
+    elsif params[:delivery_address] && params[:delivery_address][:address].present?
+      existing = client.delivery_addresses.find_by(address: params[:delivery_address][:address])
+      existing || client.delivery_addresses.create!(params.require(:delivery_address).permit(:address, :description))
+    else
+      raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debes seleccionar o ingresar una dirección."
+    end
+  end
+
+  def find_or_create_order(client)
+    if params[:delivery] && params[:delivery][:order_id].present?
+      Order.find(params[:delivery][:order_id])
+    else
+      client.orders.create!(
+        number: params[:order][:number],
+        seller_id: params[:seller_id] || current_user.seller&.id,
+        status: :pending
+      )
+    end
+  end
+
   def set_delivery
     @delivery = Delivery.find(params[:id])
+    puts "Delivery found: #{@delivery.id} - #{@delivery.delivery_date}"
+    puts @delivery
   end
 
   def delivery_params

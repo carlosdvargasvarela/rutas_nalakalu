@@ -11,7 +11,7 @@ export default class extends Controller {
     connect() {
         console.log("Delivery form controller connected")
     }
-    yy
+
     toggleNewClientFields() {
         const fields = this.newClientFieldsTarget
         fields.style.display = fields.style.display === "none" ? "block" : "none"
@@ -75,7 +75,8 @@ export default class extends Controller {
             }
         })
 
-        container.appendChild(newItem)
+        const addButtonRow = container.querySelector(".row:last-child")
+        container.insertBefore(newItem, addButtonRow)
     }
 
     removeDeliveryItem(event) {
@@ -93,31 +94,27 @@ export default class extends Controller {
         }
     }
 
+    clientChanged(event) {
+        const clientId = event.target.value
 
-    clientChanged() {
-        const clientId = this.clientSelectTarget.value
-        if (clientId) {
-            // Cargar direcciones
-            fetch(`${this.addressesUrlValue}?client_id=${clientId}`)
-                .then(response => response.json())
-                .then(addresses => {
-                    const select = this.addressSelectTarget
-                    select.innerHTML = '<option value="">Selecciona una dirección</option>'
-                    addresses.forEach(address => {
-                        select.innerHTML += `<option value="${address.id}">${address.address}</option>`
-                    })
+        // Actualizar direcciones
+        fetch(`${this.addressesUrlValue}?client_id=${clientId}`)
+            .then(response => response.json())
+            .then(addresses => {
+                this.addressSelectTarget.innerHTML = '<option value="">Selecciona una dirección</option>'
+                addresses.forEach(address => {
+                    this.addressSelectTarget.innerHTML += `<option value="${address.id}">${address.address}</option>`
                 })
+            })
 
-            // Cargar pedidos
-            fetch(`${this.ordersUrlValue}?client_id=${clientId}`)
-                .then(response => response.json())
-                .then(orders => {
-                    const select = this.orderSelectTarget
-                    select.innerHTML = '<option value="">Selecciona un pedido</option>'
-                    orders.forEach(order => {
-                        select.innerHTML += `<option value="${order.id}">${order.number}</option>`
-                    })
+        // Actualizar pedidos
+        fetch(`${this.ordersUrlValue}?client_id=${clientId}`)
+            .then(response => response.json())
+            .then(orders => {
+                this.orderSelectTarget.innerHTML = '<option value="">Selecciona un pedido</option>'
+                orders.forEach(order => {
+                    this.orderSelectTarget.innerHTML += `<option value="${order.id}">${order.number}</option>`
                 })
-        }
+            })
     }
 }

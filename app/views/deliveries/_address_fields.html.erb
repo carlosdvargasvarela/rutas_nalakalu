@@ -1,0 +1,56 @@
+<%# app/views/deliveries/_address_fields.html.erb %>
+<% delivery = f.object %>
+<div class="row mb-4">
+  <div class="col-12">
+    <h5 class="text-secondary mb-3">
+      <i class="bi bi-geo-alt me-2"></i>Dirección de entrega
+    </h5>
+  </div>
+  <div class="col-md-8">
+    <div class="mb-3">
+      <%= f.input :delivery_address_id, 
+          collection: addresses,
+          value_method: :id,
+          text_method: :address,
+          selected: (params.dig(:delivery, :delivery_address_id) || delivery.delivery_address_id),
+          prompt: "Selecciona una dirección",
+          label: "Dirección",
+          input_html: { 
+            class: "form-select",
+            data: { "delivery-form-target": "addressSelect" }
+          },
+          label_html: { class: "form-label" } %>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <%= link_to "Agregar nueva dirección", "#",
+        class: "btn btn-outline-primary btn-sm mt-4",
+        data: { action: "click->delivery-form#toggleNewAddressFields" } %>
+  </div>
+</div>
+<div data-delivery-form-target="newAddressFields" class="row mb-4" style="display:none;">
+  <div class="col-12">
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle me-2"></i>
+      Completa los datos de la nueva dirección
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="mb-3">
+      <%= label_tag "delivery_address[address]", "Dirección completa", class: "form-label" %>
+      <%= text_area_tag "delivery_address[address]",
+        params.dig(:delivery_address, :address),
+        placeholder: "Dirección completa de entrega", 
+        class: "form-control", rows: 2 %>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="mb-3">
+      <%= label_tag "delivery_address[description]", "Descripción", class: "form-label" %>
+      <%= text_field_tag "delivery_address[description]",
+        params.dig(:delivery_address, :description),
+        placeholder: "Ej: Casa principal", 
+        class: "form-control" %>
+    </div>
+  </div>
+</div>

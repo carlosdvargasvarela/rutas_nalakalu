@@ -1,0 +1,63 @@
+<%# app/views/deliveries/_form.html.erb %>
+<% raise "NO LLEGA delivery" unless defined?(delivery) && delivery.present? %>
+<%= simple_form_for delivery, html: {
+      data: {
+        controller: "delivery-form",
+        "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
+        "delivery-form-orders-url-value": orders_for_client_deliveries_path
+      }
+    } do |f| %>
+  <%= render "client_fields", f: f, clients: clients %>
+  <%= render "address_fields", f: f, addresses: addresses %>
+  <%= render "order_fields", f: f %>
+  <%= render "order_items_fields", f: f %>
+  <%# Datos de la entrega %>
+  <div class="row mb-4">
+    <div class="col-12">
+      <h5 class="text-secondary mb-3">
+        <i class="bi bi-calendar-event me-2"></i>Datos de la entrega
+      </h5>
+    </div>
+    <div class="col-md-6">
+      <%= f.date_field :delivery_date, as: :date, label: "Fecha de entrega", 
+          input_html: { class: "form-control" }, 
+          label_html: { class: "form-label" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :delivery_type, 
+          collection: [
+            ["Entrega normal", "normal"],
+            ["Recogida de producto", "pickup"],
+            ["Devolución de producto", "return_delivery"],
+            ["Reparación en sitio", "onsite_repair"]
+          ],
+          prompt: "Selecciona el tipo",
+          label: "Tipo de entrega",
+          input_html: { class: "form-select" },
+          label_html: { class: "form-label" } %>
+    </div>
+  </div>
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <%= f.input :contact_name, label: "Nombre de contacto", 
+          input_html: { class: "form-control" }, 
+          label_html: { class: "form-label" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :contact_phone, label: "Teléfono de contacto", 
+          input_html: { class: "form-control" }, 
+          label_html: { class: "form-label" } %>
+    </div>
+  </div>
+  <div class="row mb-4">
+    <div class="col-12">
+      <%= f.input :delivery_notes, as: :text, label: "Notas de entrega", 
+          input_html: { class: "form-control", rows: 3 }, 
+          label_html: { class: "form-label" } %>
+    </div>
+  </div>
+  <div class="d-flex justify-content-end gap-2">
+    <%= link_to "Cancelar", deliveries_path, class: "btn btn-secondary" %>
+    <%= f.button :submit, "Guardar entrega", class: "btn btn-primary" %>
+  </div>
+<% end %>
