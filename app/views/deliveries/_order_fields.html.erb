@@ -10,46 +10,53 @@
     <div class="mb-3">
       <%= label_tag :order_id, "Pedido existente", class: "form-label" %>
       <%= select_tag :order_id,
-        options_for_select([]),
-        prompt: "Selecciona un pedido",
-        class: "form-select",
-        data: { "delivery-form-target": "orderSelect" } %>
+          options_for_select([]),
+          prompt: "Selecciona un pedido",
+          class: "form-select",
+          data: { 
+            "delivery-form-target": "orderSelect",
+            action: "change->delivery-form#orderChanged"
+          } %>
     </div>
   </div>
   <div class="col-md-4">
-    <%= link_to "Crear nuevo pedido", "#",
-        class: "btn btn-outline-primary btn-sm mt-4",
-        data: { action: "click->delivery-form#toggleNewOrderFields" } %>
+    <button type="button"
+            class="btn btn-outline-primary btn-sm mt-4"
+            data-action="click->delivery-form#toggleNewOrderFields"
+      data-delivery-form-target="addOrderButton">
+      Crear nuevo pedido
+    </button>
   </div>
 </div>
-<div data-delivery-form-target="newOrderFields" class="row mb-4">
-  <div class="col-12">
-    <div class="alert alert-info">
-      <i class="bi bi-info-circle me-2"></i>
-      Datos del nuevo pedido
-    </div>
+<div data-delivery-form-target="newOrderFields" class="card card-body border-primary mb-3" style="display:none;">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="fw-bold text-primary">
+      <i class="bi bi-receipt-cutoff me-2"></i>Nuevo pedido
+    </span>
+    <button type="button" class="btn btn-outline-danger btn-sm"
+            data-action="click->delivery-form#cancelNewOrderFields">
+      <i class="bi bi-x-lg"></i> Cancelar
+    </button>
   </div>
-  <div class="col-md-6">
-    <div class="mb-3">
+  <div class="row mb-2">
+    <div class="col-md-6">
       <%= label_tag "order[number]", "Número de pedido", class: "form-label" %>
       <%= text_field_tag "order[number]",
-        params.dig(:order, :number),
-        placeholder: "Ej: PED-2024-001", 
-        class: "form-control" %>
+          params.dig(:order, :number),
+          placeholder: "Ej: PED-2024-001", 
+          class: "form-control" %>
     </div>
-  </div>
-  <div class="col-md-6">
-    <div class="mb-3">
+    <div class="col-md-6">
       <%= label_tag :seller_id, "Vendedor", class: "form-label" %>
       <%= select_tag :seller_id,
-        options_from_collection_for_select(
-          Seller.includes(:user).all,
-          :id,
-          ->(seller) { "#{seller.name} (#{seller.seller_code})" },
-          current_user.seller&.id
-        ),
-        prompt: "Selecciona un vendedor",
-        class: "form-select" %>
+          options_from_collection_for_select(
+            Seller.includes(:user).all,
+            :id,
+            ->(seller) { "#{seller.name} (#{seller.seller_code})" },
+            current_user.seller&.id
+          ),
+          prompt: "Selecciona un vendedor",
+          class: "form-select" %>
     </div>
   </div>
 </div>

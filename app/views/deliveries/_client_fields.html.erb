@@ -10,18 +10,48 @@
     <div class="mb-3">
       <%= label_tag :client_id, "Cliente", class: "form-label" %>
       <%= select_tag :client_id,
-      options_from_collection_for_select(
-        clients, :id, :name, delivery.order&.client_id
-        ),
-        prompt: "Selecciona un cliente",
-        class: "form-select",
-        data: { action: "change->delivery-form#clientChanged" }
-        %>
+          options_from_collection_for_select(
+            clients, :id, :name, delivery.order&.client_id
+          ),
+          prompt: "Selecciona un cliente",
+          class: "form-select",
+          data: { 
+            "delivery-form-target": "clientSelect",
+            action: "change->delivery-form#clientChanged" 
+          } %>
     </div>
   </div>
   <div class="col-md-4">
-    <%= link_to "Agregar nuevo cliente", "#",
-        class: "btn btn-outline-primary btn-sm mt-4",
-        data: { action: "click->delivery-form#toggleNewClientFields" } %>
+    <button type="button"
+            class="btn btn-outline-primary btn-sm mt-4"
+            data-action="click->delivery-form#toggleNewClientFields"
+      data-delivery-form-target="addClientButton">
+      Agregar nuevo cliente
+    </button>
+  </div>
+</div>
+<div data-delivery-form-target="newClientFields" class="card card-body border-primary mb-3" style="display:none;">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="fw-bold text-primary">
+      <i class="bi bi-person-plus me-2"></i>Nuevo cliente
+    </span>
+    <button type="button" class="btn btn-outline-danger btn-sm"
+            data-action="click->delivery-form#cancelNewClientFields">
+      <i class="bi bi-x-lg"></i> Cancelar
+    </button>
+  </div>
+  <div class="row mb-2">
+    <div class="col-md-6">
+      <%= label_tag "client[name]", "Nombre del cliente", class: "form-label" %>
+      <%= text_field_tag "client[name]", params.dig(:client, :name), class: "form-control", placeholder: "Nombre completo" %>
+    </div>
+    <div class="col-md-3">
+      <%= label_tag "client[phone]", "Teléfono", class: "form-label" %>
+      <%= text_field_tag "client[phone]", params.dig(:client, :phone), class: "form-control", placeholder: "Teléfono" %>
+    </div>
+    <div class="col-md-3">
+      <%= label_tag "client[email]", "Correo electrónico", class: "form-label" %>
+      <%= email_field_tag "client[email]", params.dig(:client, :email), class: "form-control", placeholder: "Correo" %>
+    </div>
   </div>
 </div>

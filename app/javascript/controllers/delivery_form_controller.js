@@ -2,56 +2,118 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-    static targets = ["clientSelect", "addressSelect", "orderSelect", "newClientFields", "newAddressFields", "newOrderFields"]
+    static targets = [
+        "clientSelect", "addressSelect", "orderSelect",
+        "newClientFields", "newAddressFields", "newOrderFields",
+        "addClientButton", "addAddressButton", "addOrderButton"
+    ]
     static values = {
         addressesUrl: String,
         ordersUrl: String
     }
 
-    connect() {
-        console.log("Delivery form controller connected")
-    }
-
+    // CLIENTE
     toggleNewClientFields() {
-        const fields = this.newClientFieldsTarget
-        fields.style.display = fields.style.display === "none" ? "block" : "none"
-    }
-
-    toggleNewAddressFields() {
-        const fields = this.newAddressFieldsTarget
-        fields.style.display = fields.style.display === "none" ? "block" : "none"
-    }
-
-    toggleNewOrderFields() {
-        const fields = this.newOrderFieldsTarget
-        fields.style.display = fields.style.display === "none" ? "block" : "none"
-    }
-
-    addOrderItem(event) {
-        event.preventDefault()
-        const container = document.getElementById("order-items-fields")
-        const template = container.querySelector(".order-item-template")
-        const newItem = template.cloneNode(true)
-
-        // Limpiar los valores de los inputs
-        newItem.querySelectorAll("input, textarea").forEach(input => {
-            input.value = ""
-        })
-
-        container.insertBefore(newItem, container.lastElementChild)
-    }
-
-    removeOrderItem(event) {
-        event.preventDefault()
-        const container = document.getElementById("order-items-fields")
-        const items = container.querySelectorAll(".order-item-template")
-
-        // Solo remover si hay más de uno
-        if (items.length > 1) {
-            event.target.closest(".order-item-template").remove()
+        this.newClientFieldsTarget.style.display = "block"
+        if (this.hasAddClientButtonTarget) {
+            this.addClientButtonTarget.disabled = true
         }
     }
 
+    cancelNewClientFields() {
+        this.newClientFieldsTarget.style.display = "none"
+        this.newClientFieldsTarget.querySelectorAll("input").forEach(input => input.value = "")
+        if (this.hasAddClientButtonTarget) {
+            this.addClientButtonTarget.disabled = false
+        }
+    }
+
+    clientChanged(event) {
+        const clientId = event.target.value
+
+        // Si se selecciona un cliente, ocultar y limpiar el bloque de nuevo cliente
+        if (clientId && this.hasNewClientFieldsTarget) {
+            this.cancelNewClientFields()
+        }
+
+        // Actualizar direcciones
+        if (clientId) {
+            fetch(`${this.addressesUrlValue}?client_id=${clientId}`)
+                .then(response => response.json())
+                .then(addresses => {
+                    this.addressSelectTarget.innerHTML = '<option value="">Selecciona una dirección</option>'
+                    addresses.forEach(address => {
+                        this.addressSelectTarget.innerHTML += `<option value="${address.id}">${address.address}</option>`
+                    })
+                })
+                .catch(error => console.error('Error cargando direcciones:', error))
+
+            // Actualizar pedidos
+            fetch(`${this.ordersUrlValue}?client_id=${clientId}`)
+                .then(response => response.json())
+                .then(orders => {
+                    this.orderSelectTarget.innerHTML = '<option value="">Selecciona un pedido</option>'
+                    orders.forEach(order => {
+                        this.orderSelectTarget.innerHTML += `<option value="${order.id}">${order.number}</option>`
+                    })
+                })
+                .catch(error => console.error('Error cargando pedidos:', error))
+        } else {
+            // Limpiar selects si no hay cliente seleccionado
+            this.addressSelectTarget.innerHTML = '<option value="">Selecciona una dirección</option>'
+            this.orderSelectTarget.innerHTML = '<option value="">Selecciona un pedido</option>'
+        }
+    }
+
+    // DIRECCIÓN
+    toggleNewAddressFields() {
+        this.newAddressFieldsTarget.style.display = "block"
+        if (this.hasAddAddressButtonTarget) {
+            this.addAddressButtonTarget.disabled = true
+        }
+    }
+
+    cancelNewAddressFields() {
+        this.newAddressFieldsTarget.style.display = "none"
+        this.newAddressFieldsTarget.querySelectorAll("input, textarea").forEach(input => input.value = "")
+        if (this.hasAddAddressButtonTarget) {
+            this.addAddressButtonTarget.disabled = false
+        }
+    }
+
+    addressChanged(event) {
+        const addressId = event.target.value
+        // Si se selecciona una dirección, ocultar el bloque de nueva dirección
+        if (addressId && this.hasNewAddressFieldsTarget) {
+            this.cancelNewAddressFields()
+        }
+    }
+
+    // PEDIDO
+    toggleNewOrderFields() {
+        this.newOrderFieldsTarget.style.display = "block"
+        if (this.hasAddOrderButtonTarget) {
+            this.addOrderButtonTarget.disabled = true
+        }
+    }
+
+    cancelNewOrderFields() {
+        this.newOrderFieldsTarget.style.display = "none"
+        this.newOrderFieldsTarget.querySelectorAll("input, textarea, select").forEach(input => input.value = "")
+        if (this.hasAddOrderButtonTarget) {
+            this.addOrderButtonTarget.disabled = false
+        }
+    }
+
+    orderChanged(event) {
+        const orderId = event.target.value
+        // Si se selecciona un pedido, ocultar el bloque de nuevo pedido
+        if (orderId && this.hasNewOrderFieldsTarget) {
+            this.cancelNewOrderFields()
+        }
+    }
+
+    // === DELIVERY ITEMS MANAGEMENT (opcional, si usas productos dinámicos) ===
     addDeliveryItem(event) {
         event.preventDefault()
         const container = document.getElementById("delivery-items-container")
@@ -59,7 +121,7 @@ export default class extends Controller {
         const newItem = template.cloneNode(true)
 
         // Mostrar el elemento clonado
-        newItem.style.display = "block"
+        newItem.style.display = ""
         newItem.classList.remove("delivery-item-template")
 
         // Generar un timestamp único para reemplazar NEW_RECORD
@@ -92,29 +154,5 @@ export default class extends Controller {
             // Es un item nuevo, eliminarlo del DOM
             row.remove()
         }
-    }
-
-    clientChanged(event) {
-        const clientId = event.target.value
-
-        // Actualizar direcciones
-        fetch(`${this.addressesUrlValue}?client_id=${clientId}`)
-            .then(response => response.json())
-            .then(addresses => {
-                this.addressSelectTarget.innerHTML = '<option value="">Selecciona una dirección</option>'
-                addresses.forEach(address => {
-                    this.addressSelectTarget.innerHTML += `<option value="${address.id}">${address.address}</option>`
-                })
-            })
-
-        // Actualizar pedidos
-        fetch(`${this.ordersUrlValue}?client_id=${clientId}`)
-            .then(response => response.json())
-            .then(orders => {
-                this.orderSelectTarget.innerHTML = '<option value="">Selecciona un pedido</option>'
-                orders.forEach(order => {
-                    this.orderSelectTarget.innerHTML += `<option value="${order.id}">${order.number}</option>`
-                })
-            })
     }
 }

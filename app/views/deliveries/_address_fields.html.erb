@@ -17,40 +17,47 @@
           label: "Dirección",
           input_html: { 
             class: "form-select",
-            data: { "delivery-form-target": "addressSelect" }
+            data: { 
+              "delivery-form-target": "addressSelect",
+              action: "change->delivery-form#addressChanged"
+            }
           },
           label_html: { class: "form-label" } %>
     </div>
   </div>
   <div class="col-md-4">
-    <%= link_to "Agregar nueva dirección", "#",
-        class: "btn btn-outline-primary btn-sm mt-4",
-        data: { action: "click->delivery-form#toggleNewAddressFields" } %>
+    <button type="button"
+            class="btn btn-outline-primary btn-sm mt-4"
+            data-action="click->delivery-form#toggleNewAddressFields"
+      data-delivery-form-target="addAddressButton">
+      Agregar nueva dirección
+    </button>
   </div>
 </div>
-<div data-delivery-form-target="newAddressFields" class="row mb-4" style="display:none;">
-  <div class="col-12">
-    <div class="alert alert-info">
-      <i class="bi bi-info-circle me-2"></i>
-      Completa los datos de la nueva dirección
-    </div>
+<div data-delivery-form-target="newAddressFields" class="card card-body border-primary mb-3" style="display:none;">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="fw-bold text-primary">
+      <i class="bi bi-geo-alt-plus me-2"></i>Nueva dirección
+    </span>
+    <button type="button" class="btn btn-outline-danger btn-sm"
+            data-action="click->delivery-form#cancelNewAddressFields">
+      <i class="bi bi-x-lg"></i> Cancelar
+    </button>
   </div>
-  <div class="col-md-8">
-    <div class="mb-3">
+  <div class="row mb-2">
+    <div class="col-md-8">
       <%= label_tag "delivery_address[address]", "Dirección completa", class: "form-label" %>
-      <%= text_area_tag "delivery_address[address]",
-        params.dig(:delivery_address, :address),
-        placeholder: "Dirección completa de entrega", 
-        class: "form-control", rows: 2 %>
+      <%= text_area_tag "delivery_address[address]", 
+          params.dig(:delivery_address, :address), 
+          placeholder: "Dirección completa de entrega", 
+          class: "form-control", rows: 2 %>
     </div>
-  </div>
-  <div class="col-md-4">
-    <div class="mb-3">
+    <div class="col-md-4">
       <%= label_tag "delivery_address[description]", "Descripción", class: "form-label" %>
-      <%= text_field_tag "delivery_address[description]",
-        params.dig(:delivery_address, :description),
-        placeholder: "Ej: Casa principal", 
-        class: "form-control" %>
+      <%= text_field_tag "delivery_address[description]", 
+          params.dig(:delivery_address, :description), 
+          placeholder: "Ej: Casa principal", 
+          class: "form-control" %>
     </div>
   </div>
 </div>
