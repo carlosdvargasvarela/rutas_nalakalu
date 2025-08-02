@@ -1,6 +1,5 @@
 # app/controllers/delivery_plans_controller.rb
 class DeliveryPlansController < ApplicationController
-
   def index
     @q = DeliveryPlan.ransack(params[:q])
     @delivery_plans = @q.result.includes(:driver).order(year: :desc, week: :desc)
@@ -60,7 +59,7 @@ class DeliveryPlansController < ApplicationController
 
   def edit
     @delivery_plan = DeliveryPlan.find(params[:id])
-    @assignments = @delivery_plan.delivery_plan_assignments.includes(delivery: [:order, :delivery_address, order: :client]).order(:stop_order)
+    @assignments = @delivery_plan.delivery_plan_assignments.includes(delivery: [ :order, :delivery_address, order: :client ]).order(:stop_order)
   end
 
   def update
@@ -88,6 +87,21 @@ class DeliveryPlansController < ApplicationController
     else
       redirect_to edit_delivery_plan_path(@delivery_plan), alert: "Debes asignar un conductor antes de enviar a logística."
     end
+  end
+
+  def update_order
+    @delivery_plan = DeliveryPlan.find(params[:id])
+
+    if params[:stop_orders]
+      params[:stop_orders].each do |assignment_id, stop_order|
+        assignment = @delivery_plan.delivery_plan_assignments.find(assignment_id)
+        assignment.update(stop_order: stop_order)
+      end
+    end
+
+    render json: { status: "success" }
+  rescue => e
+    render json: { status: "error", message: e.message }, status: 422
   end
 
   private
