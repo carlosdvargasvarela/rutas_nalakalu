@@ -6,6 +6,7 @@ class DeliveriesController < ApplicationController
   def index
     @q = Delivery.ransack(params[:q])
     @deliveries = @q.result.includes(:order, :delivery_address, :delivery_items).page(params[:page])
+    authorize Delivery
   end
 
   # GET /deliveries/:id

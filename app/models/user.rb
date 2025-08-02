@@ -11,6 +11,10 @@ class User < ApplicationRecord
   # Establecer un rol por defecto al crear un usuario
   after_initialize :set_default_role, if: :new_record?
 
+  # Relaciones
+  has_one :seller
+
+  # Metodos
   def display_role
     case role
     when "admin" then "Administrador"
@@ -21,7 +25,7 @@ class User < ApplicationRecord
     else role.to_s.humanize
     end
   end
-  
+
   private
 
   def set_default_role

@@ -28,6 +28,16 @@
     <% end %>
   </div>
 </div>
+
+<div class="d-flex justify-content-end mb-3">
+  <% if policy(Delivery).new? %>
+    <%= link_to new_delivery_path, class: "btn btn-primary" do %>
+      <i class="bi bi-plus-circle me-1"></i>
+      Nueva entrega
+    <% end %>
+  <% end %>
+</div>
+
 <% if @deliveries.any? %>
   <div class="table-responsive">
     <table class="table table-striped table-hover align-middle">
@@ -83,8 +93,10 @@
               <% end %>
             </td>
             <td>
-              <%= link_to delivery_path(delivery), class: "btn btn-sm btn-outline-primary", title: "Ver detalles" do %>
-                <i class="bi bi-eye"></i>
+              <% if policy(delivery).show? %>
+                <%= link_to delivery_path(delivery), class: "btn btn-sm btn-outline-primary", title: "Ver detalles" do %>
+                  <i class="bi bi-eye"></i>
+                <% end %>
               <% end %>
             </td>
           </tr>

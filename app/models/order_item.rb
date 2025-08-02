@@ -1,17 +1,23 @@
 # app/models/order_item.rb
 class OrderItem < ApplicationRecord
   has_paper_trail
+
+  # Relaciones
   belongs_to :order
   has_many :delivery_items, dependent: :destroy
 
+  # Validaciones
   validates :product, presence: true
   validates :quantity, presence: true, numericality: { greater_than: 0 }
 
-  scope :to_be_confirmed, -> { where(confirmed: [nil, false]) }
+  # Scopes
+  scope :to_be_confirmed, -> { where(confirmed: [ nil, false ]) }
   scope :confirmed, -> { where(confirmed: true) }
 
-  enum status: { pending: 0, ready: 1, delivered: 2, cancelled: 3 }
+  # Enum para el estado del order_item
+  enum status: { pending: 0, ready: 1, delivered: 2, cancelled: 3, missing_or_incomplete: 4 }
 
+  # Callback para actualizar el estado del order_item basado en las entregas
   after_save :update_status_based_on_deliveries
 
   def update_status_based_on_deliveries
@@ -22,9 +28,11 @@ class OrderItem < ApplicationRecord
     end
   end
 
+  def confirm!
+    update!(confirmed: true, status: :ready)
+  end
+
   def ready_to_deliver?
-    # Aquí puedes poner la lógica para saber si está listo para entrega
-    # Por ejemplo, si producción lo marcó como listo
     status == "ready"
   end
 
