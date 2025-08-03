@@ -58,6 +58,20 @@ class DeliveryPlansController < ApplicationController
   def show
     @delivery_plan = DeliveryPlan.find(params[:id])
     @deliveries = @delivery_plan.deliveries.includes(:order, :delivery_address, order: :client)
+    @assignments = @delivery_plan.delivery_plan_assignments.includes(
+      delivery: [
+        :delivery_items, 
+        order: [:client, :seller], 
+        delivery_address: :client
+      ]
+    ).order(:stop_order)
+
+    respond_to do |format|
+      format.html
+      format.xlsx {
+        response.headers['Content-Disposition'] = "attachment; filename=plan_ruta_semana_#{@delivery_plan.week}_#{@delivery_plan.year}.xlsx"
+      }
+    end
   end
 
   def edit

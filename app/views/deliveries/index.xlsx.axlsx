@@ -1,0 +1,20 @@
+wb = xlsx_package.workbook
+wb.add_worksheet(name: "Entregas") do |sheet|
+  sheet.add_row [
+    "Fecha de entrega","Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección",  "Estado", "Tipo"]
+  @deliveries.each do |delivery|
+    delivery.delivery_items.each do |delivery_item|
+        sheet.add_row [
+            delivery.delivery_date.strftime("%d/%m/%Y"),
+            delivery.order.number,
+            delivery_item.order_item.product,
+            delivery_item.order_item.quantity,
+            delivery.order.seller.seller_code,
+            delivery.order.client.name,
+            delivery.delivery_address.address,
+            delivery.status_humanize, # Usa tu helper si tienes
+            delivery.delivery_type_humanize # Usa tu helper si tienes
+        ]
+    end
+  end
+end

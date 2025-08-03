@@ -26,9 +26,12 @@
         <%= f.submit "Buscar", class: "btn btn-outline-primary" %>
       </div>
     <% end %>
+    <div class="mb-3">
+      <%= link_to "Exportar a Excel", deliveries_path(format: :xlsx, q: params[:q]&.to_unsafe_h), class: "btn btn-outline-success btn-sm" %>
+      <%= link_to "Exportar a CSV", deliveries_path(format: :csv, q: params[:q]&.to_unsafe_h), class: "btn btn-outline-primary btn-sm" %>
+    </div>
   </div>
 </div>
-
 <div class="d-flex justify-content-end mb-3">
   <% if policy(Delivery).new? %>
     <%= link_to new_delivery_path, class: "btn btn-primary" do %>
@@ -37,7 +40,6 @@
     <% end %>
   <% end %>
 </div>
-
 <% if @deliveries.any? %>
   <div class="table-responsive">
     <table class="table table-striped table-hover align-middle">

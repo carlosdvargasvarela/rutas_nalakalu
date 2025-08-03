@@ -1,3 +1,4 @@
+# app/services/route_excel_import_service.rb
 require 'roo'
 
 class RouteExcelImportService
@@ -35,7 +36,6 @@ class RouteExcelImportService
     errors << "La cantidad es obligatoria" if data[:quantity].blank? || data[:quantity].to_i <= 0
     errors << "El código de vendedor es obligatorio" if data[:seller_code].blank?
     errors << "El lugar de entrega es obligatorio" if data[:place].blank?
-    # Puedes agregar más validaciones según tu lógica de negocio
     errors
   end
 

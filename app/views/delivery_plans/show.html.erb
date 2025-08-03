@@ -27,6 +27,9 @@
             <%= @delivery_plan.status.humanize %>
           </span>
         </p>
+        <div class="mb-3">
+          <%= link_to "Exportar Plan a Excel", delivery_plan_path(@delivery_plan, format: :xlsx), class: "btn btn-outline-success btn-sm" %>
+        </div>
         <%= link_to edit_delivery_plan_path(@delivery_plan), class: "btn btn-outline-primary mt-3" do %>
           <i class="bi bi-pencil"></i> Editar orden de paradas
         <% end %>

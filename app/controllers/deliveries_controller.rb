@@ -5,8 +5,18 @@ class DeliveriesController < ApplicationController
   # Muestra todas las entregas o filtra por semana
   def index
     @q = Delivery.ransack(params[:q])
-    @deliveries = @q.result.includes(:order, :delivery_address, :delivery_items).page(params[:page])
+    @deliveries = @q.result.includes(order: [:client, :seller], delivery_address: :client).order(delivery_date: :desc).page(params[:page])
     authorize Delivery
+
+    respond_to do |format|
+      format.html
+      format.xlsx {
+        response.headers["Content-Disposition"] = "attachment; filename=entregas_#{Date.today.strftime('%Y%m%d')}.xlsx"
+      }
+      format.csv {
+        send_data @deliveries.to_csv, filename: "entregas_#{Date.today.strftime('%Y%m%d')}.csv"
+      }
+    end
   end
 
   # GET /deliveries/:id
@@ -229,7 +239,7 @@ class DeliveriesController < ApplicationController
         existing_item.quantity != order_item_params[:quantity].to_i
         existing_item.update!(
           quantity: existing_item.quantity + order_item_params[:quantity].to_i,
-          notes: [existing_item.notes, order_item_params[:notes]].compact.join("; ")
+          notes: [ existing_item.notes, order_item_params[:notes] ].compact.join("; ")
         )
       end
       return existing_item

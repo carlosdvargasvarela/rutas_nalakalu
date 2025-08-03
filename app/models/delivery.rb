@@ -147,4 +147,34 @@ class Delivery < ApplicationRecord
   def self.ransackable_associations(auth_object = nil)
     [ "order", "delivery_address", "delivery_items" ]
   end
+
+  def status_humanize
+    status.humanize
+  end
+
+  def delivery_type_humanize
+    delivery_type.humanize
+  end
+
+  def self.to_csv
+    attributes = %w{fecha_entrega pedido producto cantidad vendedor cliente direccion estado tipo}
+    CSV.generate(headers: true) do |csv|
+      csv << ["Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo"]
+      all.includes(order: [:client, :seller], delivery_address: :client, delivery_items: { order_item: :order }).find_each do |delivery|
+        delivery.delivery_items.each do |delivery_item|
+          csv << [
+            delivery.delivery_date.strftime("%d/%m/%Y"),
+            delivery.order.number,
+            delivery_item.order_item.product,
+            delivery_item.order_item.quantity,
+            delivery.order.seller.seller_code,
+            delivery.order.client.name,
+            delivery.delivery_address.address,
+            delivery.status_humanize,
+            delivery.delivery_type_humanize
+          ]
+        end
+      end
+    end
+end
 end
