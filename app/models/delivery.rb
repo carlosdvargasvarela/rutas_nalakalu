@@ -10,10 +10,11 @@ class Delivery < ApplicationRecord
 
   enum status: {
     scheduled: 0,
-    in_route: 1,
-    delivered: 2,
-    rescheduled: 3,
-    cancelled: 4
+    ready_to_deliver: 1,
+    in_route: 2,
+    delivered: 3,
+    rescheduled: 4,
+    cancelled: 5
   }
 
   enum delivery_type: { normal_delivery: 0, service_case: 1 }
@@ -62,8 +63,7 @@ class Delivery < ApplicationRecord
   # Actualiza el estado de la entrega basado en los items
   def update_status_based_on_items
     statuses = delivery_items.pluck(:status)
-
-    return if statuses.empty? # Solo ejecuta la lógica si hay al menos un item
+    return if statuses.empty?
 
     if statuses.all? { |s| s == "delivered" }
       update_column(:status, Delivery.statuses[:delivered])
@@ -71,12 +71,13 @@ class Delivery < ApplicationRecord
       update_column(:status, Delivery.statuses[:cancelled])
     elsif statuses.all? { |s| s == "rescheduled" }
       update_column(:status, Delivery.statuses[:rescheduled])
+    elsif statuses.all? { |s| [ "rescheduled", "confirmed" ].include?(s) }
+      update_column(:status, Delivery.statuses[:ready_to_deliver])
     elsif statuses.any? { |s| s == "in_route" }
       update_column(:status, Delivery.statuses[:in_route])
     elsif statuses.all? { |s| [ "pending", "confirmed" ].include?(s) }
       update_column(:status, Delivery.statuses[:scheduled])
     else
-      # Default fallback
       update_column(:status, Delivery.statuses[:scheduled])
     end
   end

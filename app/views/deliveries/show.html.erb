@@ -87,7 +87,7 @@
       <%= button_to mark_as_delivered_delivery_path(@delivery),
           method: :patch, class: "btn btn-success btn-sm",
           data: { turbo_confirm: "¿Está seguro de marcar toda la entrega como completada?" } do %>
-        <i class="bi bi-check-circle"></i> Completar
+        <i class="bi bi-check-circle"></i> Marcar todos los productos como entregados
       <% end %>
     <% end %>
   </div>
@@ -137,8 +137,16 @@
                   <% else %>
                     <% case item.status %>
                     <% when 'pending' %>
-                      <%= button_to confirm_delivery_item_path(item), method: :patch, class: "btn btn-primary btn-sm", title: "Confirmar" do %>
-                        <i class="bi bi-check-circle"></i> Confirmar
+                      <% if item.order_item.ready? %>
+                        <%= button_to confirm_delivery_item_path(item), method: :patch, class: "btn btn-primary btn-sm", title: "Confirmar" do %>
+                          <i class="bi bi-check-circle"></i> Confirmar
+                        <% end %>
+                      <% else %>
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" title="El producto aún no está listo para entrega (Producción no lo ha marcado como listo)">
+                          <button class="btn btn-primary btn-sm" type="button" disabled>
+                            <i class="bi bi-check-circle"></i> Confirmar
+                          </button>
+                        </span>
                       <% end %>
                       <button class="btn btn-warning btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#reschedule-form-<%= item.id %>">
                         <i class="bi bi-calendar2-plus"></i> Reprogramar

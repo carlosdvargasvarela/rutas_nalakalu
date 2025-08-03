@@ -21,6 +21,8 @@ class DeliveryItem < ApplicationRecord
 
   after_save :update_order_item_status
 
+  validate :order_item_must_be_ready_to_confirm, if: -> { status_changed?(from: "pending", to: "confirmed") }
+
   def update_order_item_status
     order_item.update_status_based_on_deliveries if order_item.present?
   end
@@ -76,6 +78,12 @@ class DeliveryItem < ApplicationRecord
         status: :pending,
         service_case: service_case
       )
+    end
+  end
+
+  def order_item_must_be_ready_to_confirm
+    unless order_item.ready?
+      errors.add(:base, "El producto aún no está listo para entrega (Producción no lo ha marcado como listo).")
     end
   end
 
