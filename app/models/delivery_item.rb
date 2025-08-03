@@ -8,11 +8,16 @@ class DeliveryItem < ApplicationRecord
 
   before_update :prevent_edit_if_rescheduled
 
-  validates :quantity_delivered, presence: true, numericality: { greater_than: 0 }
-
   scope :service_cases, -> { where(service_case: true) }
 
-  enum status: { pending: 0, confirmed: 1, in_route: 2, delivered: 3, rescheduled: 4, cancelled: 5, service_case: 6 }
+  enum status: {
+    pending: 0,      # Aún no confirmado para entrega
+    confirmed: 1,    # Confirmado para entregar
+    in_route: 2,
+    delivered: 3,
+    rescheduled: 4,
+    cancelled: 5
+  }
 
   after_save :update_order_item_status
 

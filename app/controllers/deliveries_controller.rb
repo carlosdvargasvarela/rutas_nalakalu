@@ -53,12 +53,26 @@ class DeliveriesController < ApplicationController
   # PATCH/PUT /deliveries/:id
   def update
     ActiveRecord::Base.transaction do
-      if @delivery.update(delivery_params)
+      # 1. Si el usuario cambió el pedido, busca el nuevo order
+      order = if params[:delivery][:order_id].present?
+        Order.find(params[:delivery][:order_id])
+      else
+        @delivery.order
+      end
+
+      # 2. Procesa los delivery_items nuevos (si hay)
+      if params[:delivery][:delivery_items_attributes].present?
+        processed_delivery_items = process_delivery_items_params(order)
+        @delivery.delivery_items += processed_delivery_items
+      end
+
+      # 3. Actualiza la entrega
+      if @delivery.update(delivery_params.except(:delivery_items_attributes))
         redirect_to @delivery, notice: "Entrega actualizada correctamente."
       else
-        @client = @delivery.order.client
+        @client = order.client
         @addresses = @client.delivery_addresses.order(:description)
-        @order = @delivery.order
+        @order = order
         render :edit, status: :unprocessable_entity
       end
     end
@@ -174,6 +188,10 @@ class DeliveriesController < ApplicationController
 
     params[:delivery][:delivery_items_attributes].each do |key, item_params|
       next if item_params[:_destroy] == "1"
+
+      # Si ya tiene ID, es un delivery_item existente (skip para update automático)
+      next if item_params[:id].present?
+
       next if item_params[:order_item_attributes][:product].blank?
 
       # Buscar o crear el order_item
@@ -208,7 +226,7 @@ class DeliveriesController < ApplicationController
     if existing_item
       # Actualizar cantidad si es necesario
       if order_item_params[:quantity].present? &&
-         existing_item.quantity != order_item_params[:quantity].to_i
+        existing_item.quantity != order_item_params[:quantity].to_i
         existing_item.update!(
           quantity: existing_item.quantity + order_item_params[:quantity].to_i,
           notes: [existing_item.notes, order_item_params[:notes]].compact.join("; ")
@@ -217,12 +235,12 @@ class DeliveriesController < ApplicationController
       return existing_item
     end
 
-    # Crear nuevo order_item
+    # Crear nuevo order_item, asegurando el order_id correcto
     order.order_items.create!(
       product: order_item_params[:product],
       quantity: order_item_params[:quantity] || 1,
       notes: order_item_params[:notes],
-      status: :pending
+      status: :in_production # o :pending, según tu enum final
     )
   end
 

@@ -8,7 +8,14 @@ class Delivery < ApplicationRecord
 
   accepts_nested_attributes_for :delivery_items, allow_destroy: true
 
-  enum status: { scheduled: 0, in_route: 1, delivered: 2, rescheduled: 3, cancelled: 4, ready_to_deliver: 5 }
+  enum status: {
+    scheduled: 0,
+    in_route: 1,
+    delivered: 2,
+    rescheduled: 3,
+    cancelled: 4
+  }
+
   enum delivery_type: { normal_delivery: 0, service_case: 1 }
 
   validates :delivery_date, presence: true
@@ -52,24 +59,24 @@ class Delivery < ApplicationRecord
     %w[order delivery_address delivery_items]
   end
 
+  # Actualiza el estado de la entrega basado en los items
   def update_status_based_on_items
     statuses = delivery_items.pluck(:status)
 
     return if statuses.empty? # Solo ejecuta la lógica si hay al menos un item
 
-    if statuses.all? { |s| [ "delivered", "rescheduled" ].include?(s) }
+    if statuses.all? { |s| s == "delivered" }
       update_column(:status, Delivery.statuses[:delivered])
-    elsif statuses.all? { |s| [ "confirmed", "rescheduled" ].include?(s) }
-      update_column(:status, Delivery.statuses[:ready_to_deliver])
     elsif statuses.all? { |s| s == "cancelled" }
       update_column(:status, Delivery.statuses[:cancelled])
-    elsif statuses.any? { |s| s == "rescheduled" } && statuses.none? { |s| [ "pending", "ready", "confirmed", "in_route" ].include?(s) }
+    elsif statuses.all? { |s| s == "rescheduled" }
       update_column(:status, Delivery.statuses[:rescheduled])
     elsif statuses.any? { |s| s == "in_route" }
       update_column(:status, Delivery.statuses[:in_route])
-    elsif statuses.all? { |s| [ "pending", "ready", "confirmed" ].include?(s) }
+    elsif statuses.all? { |s| [ "pending", "confirmed" ].include?(s) }
       update_column(:status, Delivery.statuses[:scheduled])
     else
+      # Default fallback
       update_column(:status, Delivery.statuses[:scheduled])
     end
   end

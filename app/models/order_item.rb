@@ -15,7 +15,13 @@ class OrderItem < ApplicationRecord
   scope :confirmed, -> { where(confirmed: true) }
 
   # Enum para el estado del order_item
-  enum status: { pending: 0, ready: 1, delivered: 2, cancelled: 3, missing_or_incomplete: 4 }
+  enum status: {
+    in_production: 0,   # Default
+    ready: 1,
+    delivered: 2,
+    cancelled: 3,
+    missing: 4
+  }
 
   # Callback para actualizar el estado del order_item basado en las entregas
   after_save :update_status_based_on_deliveries
@@ -32,31 +38,8 @@ class OrderItem < ApplicationRecord
     update!(confirmed: true, status: :ready)
   end
 
+
   def ready_to_deliver?
     status == "ready"
-  end
-
-  # Cantidad entregada hasta ahora
-  def delivered_quantity
-    delivery_items.delivered.sum(:quantity_delivered)
-  end
-
-  # Cantidad pendiente de entrega
-  def pending_quantity
-    quantity - delivered_quantity
-  end
-
-  # Verifica si está completamente entregado
-  def fully_delivered?
-    delivered_quantity >= quantity
-  end
-
-  # Marca como entregado si está completo
-  def check_delivery_status!
-    if fully_delivered?
-      update!(status: :delivered)
-      order.check_and_update_status! if order.fully_delivered?
-      order.update_status_based_on_items
-    end
   end
 end

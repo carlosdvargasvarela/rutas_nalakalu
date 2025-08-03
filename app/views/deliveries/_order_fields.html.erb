@@ -8,15 +8,24 @@
   </div>
   <div class="col-md-8">
     <div class="mb-3">
+      <%# Obtén el cliente y los pedidos asociados %>
+      <% client = delivery.order&.client || @client %>
+      <% orders = client.present? ? client.orders.order(:number) : [] %>
+      <% selected_order_id = delivery.order_id %>
       <%= label_tag :order_id, "Pedido existente", class: "form-label" %>
       <%= select_tag :order_id,
-          options_for_select([]),
-          prompt: "Selecciona un pedido",
-          class: "form-select",
-          data: { 
-            "delivery-form-target": "orderSelect",
-            action: "change->delivery-form#orderChanged"
-          } %>
+            options_from_collection_for_select(
+              orders,
+              :id,
+              :number,
+              selected_order_id
+            ),
+            prompt: "Selecciona un pedido",
+            class: "form-select",
+            data: { 
+              "delivery-form-target": "orderSelect",
+              action: "change->delivery-form#orderChanged"
+            } %>
     </div>
   </div>
   <div class="col-md-4">

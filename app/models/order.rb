@@ -8,7 +8,13 @@ class Order < ApplicationRecord
 
   validates :number, presence: true, uniqueness: true
 
-  enum status: { pending: 0, in_production: 1, ready_for_delivery: 2, delivered: 3, rescheduled: 4, cancelled: 5 }
+  enum status: {
+    in_production: 0,   # Default
+    ready_for_delivery: 1,
+    delivered: 2,
+    rescheduled: 3,
+    cancelled: 4
+  }
 
   # Verifica si está completamente entregado
   def fully_delivered?
@@ -17,18 +23,23 @@ class Order < ApplicationRecord
 
   # Actualiza el estado basado en los order_items
   def check_and_update_status!
-    if order_items.all? { |item| item.status == "delivered" }
+    return if order_items.empty?
+
+    statuses = order_items.pluck(:status)
+
+    if statuses.all? { |s| s == "delivered" }
       update!(status: :delivered)
-    elsif order_items.all? { |item| item.status == "cancelled" }
+    elsif statuses.all? { |s| s == "cancelled" }
       update!(status: :cancelled)
-    elsif order_items.any? { |item| item.status == "rescheduled" }
-      update!(status: :rescheduled)
-    elsif order_items.all? { |item| ["ready", "delivered"].include?(item.status) }
+    elsif statuses.all? { |s| [ "ready", "delivered" ].include?(s) }
       update!(status: :ready_for_delivery)
-    elsif order_items.any? { |item| item.status == "ready" }
+    elsif statuses.all? { |s| s == "rescheduled" }
+      update!(status: :rescheduled)
+    elsif statuses.any? { |s| [ "in_production", "missing" ].include?(s) }
       update!(status: :in_production)
     else
-      update!(status: :pending)
+      # Default fallback
+      update!(status: :in_production)
     end
   end
 
@@ -46,7 +57,7 @@ class Order < ApplicationRecord
   # Scope para filtrar por codigo de vendedor
   scope :by_seller_code, ->(code) { joins(:seller).where(sellers: { seller_code: code }) }
 
-  scope :active, -> { where(status: [:pending, :in_production, :ready_for_delivery, :rescheduled]) }
+  scope :active, -> { where(status: [ :pending, :in_production, :ready_for_delivery, :rescheduled ]) }
 
   # Verifica si todos los items están listos
   def all_items_ready?
@@ -99,10 +110,10 @@ class Order < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    ["client_id", "number", "seller_id", "status", "created_at", "updated_at"]
+    [ "client_id", "number", "seller_id", "status", "created_at", "updated_at" ]
   end
 
   def self.ransackable_associations(auth_object = nil)
-    ["client", "seller", "order_items", "deliveries"]
+    [ "client", "seller", "order_items", "deliveries" ]
   end
 end
