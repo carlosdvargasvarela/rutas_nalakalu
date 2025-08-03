@@ -102,6 +102,28 @@
     </div>
   </div>
 </div>
+
+<% if @available_deliveries.any? %>
+  <div class="card mb-4">
+    <div class="card-body">
+      <%= form_with url: add_delivery_to_plan_delivery_plan_path(@delivery_plan), method: :patch, local: true do |f| %>
+        <div class="row align-items-end">
+          <div class="col-md-8">
+            <%= f.label :delivery_id, "Agregar entrega al plan", class: "form-label" %>
+            <%= f.collection_select :delivery_id, @available_deliveries, :id, 
+                  ->(d) { "#{d.order.number} - #{d.order.client.name} (#{d.delivery_address.address})" }, 
+                  prompt: "Selecciona una entrega", class: "form-select" %>
+          </div>
+          <div class="col-md-4">
+            <%= f.submit "Agregar", class: "btn btn-success" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+
 <!-- Botón de enviar a logística -->
 <% if @delivery_plan.draft? %>
   <div class="mt-4 d-flex align-items-center gap-3">

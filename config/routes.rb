@@ -49,6 +49,7 @@ Rails.application.routes.draw do
 
   resources :delivery_plans, only: [ :index, :show, :new, :create, :edit, :update ] do
     member do
+      patch :add_delivery_to_plan
       patch :send_to_logistics
       patch :update_order
     end

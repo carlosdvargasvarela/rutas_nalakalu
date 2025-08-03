@@ -63,6 +63,19 @@ class DeliveryPlansController < ApplicationController
   def edit
     @delivery_plan = DeliveryPlan.find(params[:id])
     @assignments = @delivery_plan.delivery_plan_assignments.includes(delivery: [ :order, :delivery_address, order: :client ]).order(:stop_order)
+
+    # Fecha de las entregas ya asignadas (todas deben ser iguales)
+    delivery_date = @assignments.first&.delivery&.delivery_date
+
+    # Entregas disponibles para agregar (mismo día, no asignadas a ningún plan)
+    @available_deliveries = if delivery_date
+      Delivery
+        .where(delivery_date: delivery_date)
+        .where(status: :ready_to_deliver)
+        .where.not(id: DeliveryPlanAssignment.select(:delivery_id))
+    else
+      []
+    end
   end
 
   def update
@@ -107,13 +120,25 @@ class DeliveryPlansController < ApplicationController
     render json: { status: "error", message: e.message }, status: 422
   end
 
+  def add_delivery_to_plan
+    @delivery_plan = DeliveryPlan.find(params[:id])
+    delivery = Delivery.find(params[:delivery_id])
+
+    # Validación: misma fecha y no asignada
+    if delivery.delivery_date == @delivery_plan.deliveries.first.delivery_date &&
+      !DeliveryPlanAssignment.exists?(delivery_id: delivery.id)
+      DeliveryPlanAssignment.create!(delivery_plan: @delivery_plan, delivery_id: delivery.id)
+      redirect_to edit_delivery_plan_path(@delivery_plan), notice: "Entrega agregada al plan."
+    else
+      redirect_to edit_delivery_plan_path(@delivery_plan), alert: "No se pudo agregar la entrega."
+    end
+  end
+
   private
 
   def delivery_plan_params
     params.require(:delivery_plan).permit(:week, :year, :status, :driver_id)
   end
-
-  private
 
   def render_new_with_selection(selected_ids)
     # Rango de fechas
