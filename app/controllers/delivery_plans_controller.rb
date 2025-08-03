@@ -28,27 +28,30 @@ class DeliveryPlansController < ApplicationController
 
   def create
     @delivery_plan = DeliveryPlan.new(delivery_plan_params)
-    delivery_ids = params[:delivery_ids]
-
-    if delivery_ids.blank?
-      redirect_to new_delivery_plan_path, alert: "Debes seleccionar al menos una entrega." and return
-    end
+    delivery_ids = params[:delivery_ids] || []
 
     # Cargar las entregas seleccionadas
     deliveries = Delivery.where(id: delivery_ids)
     unique_dates = deliveries.pluck(:delivery_date).uniq
 
+    if delivery_ids.blank?
+      flash.now[:alert] = "Debes seleccionar al menos una entrega."
+      return render_new_with_selection(delivery_ids)
+    end
+
     if unique_dates.size > 1
-      redirect_to new_delivery_plan_path, alert: "Todas las entregas seleccionadas deben tener la misma fecha." and return
+      flash.now[:alert] = "Todas las entregas seleccionadas deben tener la misma fecha."
+      return render_new_with_selection(delivery_ids)
     end
 
     if @delivery_plan.save
       delivery_ids.each do |delivery_id|
         DeliveryPlanAssignment.create!(delivery_plan: @delivery_plan, delivery_id: delivery_id)
       end
-      redirect_to @delivery_plan, notice: "Plan de ruta creado exitosamente."
+      redirect_to edit_delivery_plan_path(@delivery_plan), notice: "Plan de ruta creado exitosamente. Ahora puedes ajustar el orden o asignar conductor."
     else
-      redirect_to new_delivery_plan_path, alert: "Error al crear el plan de ruta."
+      flash.now[:alert] = "Error al crear el plan de ruta."
+      render_new_with_selection(delivery_ids)
     end
   end
 
@@ -108,5 +111,29 @@ class DeliveryPlansController < ApplicationController
 
   def delivery_plan_params
     params.require(:delivery_plan).permit(:week, :year, :status, :driver_id)
+  end
+
+  private
+
+  def render_new_with_selection(selected_ids)
+    # Rango de fechas
+    if params.dig(:q, :delivery_date_gteq).present? && params.dig(:q, :delivery_date_lteq).present?
+      from = Date.parse(params[:q][:delivery_date_gteq])
+      to = Date.parse(params[:q][:delivery_date_lteq])
+    else
+      from = to = Date.today
+    end
+
+    base_scope = Delivery
+      .where(delivery_date: from..to)
+      .where(status: :ready_to_deliver)
+      .where.not(id: DeliveryPlanAssignment.select(:delivery_id))
+
+    @q = base_scope.ransack(params[:q])
+    @deliveries = @q.result.includes(:order, :delivery_address, order: :client).order(:delivery_date)
+    @from = from
+    @to = to
+    @selected_delivery_ids = selected_ids.map(&:to_i)
+    render :new, status: :unprocessable_entity
   end
 end

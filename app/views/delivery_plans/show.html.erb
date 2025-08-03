@@ -1,8 +1,7 @@
 <h1 class="mb-4">
   <i class="bi bi-map me-2"></i>
-  Detalle del Plan de Ruta <span class="text-primary">#<%= @delivery_plan.id %></span>
+  Plan de ruta: <%= week_range_label(@delivery_plan.year, @delivery_plan.week, show_year: true) %>
 </h1>
-
 <div class="row mb-4">
   <div class="col-md-6">
     <div class="card shadow-sm mb-3">
@@ -12,7 +11,7 @@
       <div class="card-body">
         <p>
           <strong><i class="bi bi-calendar-week me-1"></i>Semana:</strong>
-          <span class="badge bg-primary"><%= @delivery_plan.week %></span>
+          <span class="badge bg-primary"><%= week_range_label(@delivery_plan.year, @delivery_plan.week, show_year: false) %></span>
         </p>
         <p>
           <strong><i class="bi bi-calendar me-1"></i>Año:</strong>
@@ -35,7 +34,6 @@
     </div>
   </div>
 </div>
-
 <div class="card shadow-sm mb-4">
   <div class="card-header bg-light">
     <i class="bi bi-truck-flatbed me-1"></i> Entregas en este plan
@@ -121,7 +119,6 @@
     <% end %>
   </div>
 </div>
-
 <%= link_to delivery_plans_path, class: "btn btn-secondary" do %>
   <i class="bi bi-arrow-left"></i> Volver a Planes de Ruta
 <% end %>
