@@ -83,7 +83,7 @@
     <span>
       <i class="bi bi-box-seam me-1"></i> Productos en esta Entrega
     </span>
-    <% if @delivery.scheduled? %>
+    <% if @delivery.scheduled? && @delivery.confirmed? %>
       <%= button_to mark_as_delivered_delivery_path(@delivery),
           method: :patch, class: "btn btn-success btn-sm",
           data: { turbo_confirm: "¿Está seguro de marcar toda la entrega como completada?" } do %>

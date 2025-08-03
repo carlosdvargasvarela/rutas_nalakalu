@@ -58,4 +58,31 @@ module ApplicationHelper
   def format_datetime_dd_mm_yyyy_hh_mm(datetime)
     datetime.strftime("%d/%m/%Y %H:%M") if datetime.present?
   end
+
+  def status_badge(status, type = :delivery)
+    color = case type
+    when :delivery
+        {
+          "scheduled" => "secondary",
+          "ready_to_deliver" => "info",
+          "in_route" => "primary",
+          "delivered" => "success",
+          "rescheduled" => "warning",
+          "cancelled" => "danger"
+        }[status.to_s] || "secondary"
+    when :order
+        {
+          "in_production" => "info",
+          "ready_for_delivery" => "primary",
+          "delivered" => "success",
+          "rescheduled" => "warning",
+          "cancelled" => "danger"
+        }[status.to_s] || "secondary"
+      # Puedes agregar más tipos si lo necesitas
+    else
+        "secondary"
+    end
+
+    content_tag(:span, status_i18n(status, type), class: "badge bg-#{color}")
+  end
 end

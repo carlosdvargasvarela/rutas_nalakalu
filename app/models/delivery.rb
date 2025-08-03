@@ -116,6 +116,10 @@ class Delivery < ApplicationRecord
     end
   end
 
+  def confirmed?
+    order_items.all? { |oi| oi.status == "ready" }
+  end
+
   # Información del cliente para logística
   def client_info
     {
@@ -157,24 +161,35 @@ class Delivery < ApplicationRecord
   end
 
   def self.to_csv
-    attributes = %w{fecha_entrega pedido producto cantidad vendedor cliente direccion estado tipo}
-    CSV.generate(headers: true) do |csv|
-      csv << ["Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo"]
-      all.includes(order: [:client, :seller], delivery_address: :client, delivery_items: { order_item: :order }).find_each do |delivery|
-        delivery.delivery_items.each do |delivery_item|
-          csv << [
-            delivery.delivery_date.strftime("%d/%m/%Y"),
-            delivery.order.number,
-            delivery_item.order_item.product,
-            delivery_item.order_item.quantity,
-            delivery.order.seller.seller_code,
-            delivery.order.client.name,
-            delivery.delivery_address.address,
-            delivery.status_humanize,
-            delivery.delivery_type_humanize
-          ]
+      attributes = %w[fecha_entrega pedido producto cantidad vendedor cliente direccion estado tipo]
+      CSV.generate(headers: true) do |csv|
+        csv << [ "Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo" ]
+        all.includes(order: [ :client, :seller ], delivery_address: :client, delivery_items: { order_item: :order }).find_each do |delivery|
+          delivery.delivery_items.each do |delivery_item|
+            csv << [
+              delivery.delivery_date.strftime("%d/%m/%Y"),
+              delivery.order.number,
+              delivery_item.order_item.product,
+              delivery_item.order_item.quantity,
+              delivery.order.seller.seller_code,
+              delivery.order.client.name,
+              delivery.delivery_address.address,
+              delivery.status_humanize,
+              delivery.delivery_type_humanize
+            ]
+          end
         end
       end
+  end
+
+  def status_i18n(status, type)
+    case type
+    when :delivery
+      Delivery.statuses.key(status).humanize # Convierte el valor numérico a string y lo humaniza
+    when :order
+      Order.statuses.key(status).humanize
+    else
+      status.to_s.humanize
     end
-end
+  end
 end

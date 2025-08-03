@@ -51,6 +51,7 @@
           <th>Dirección</th>
           <th>Contacto</th>
           <th>Items</th>
+          <th>Estado</th>
           <th>Caso Servicio</th>
           <th>Acciones</th>
         </tr>
@@ -86,6 +87,11 @@
                   </li>
                 <% end %>
               </ul>
+            </td>
+            <td>
+              <span class="badge bg-<%= delivery_status_color(delivery.status) %>">
+                <%= delivery.status.humanize %>
+              </span>
             </td>
             <td>
               <% if delivery.has_service_cases? %>

@@ -19,7 +19,7 @@ class DeliveryItem < ApplicationRecord
     cancelled: 5
   }
 
-  after_save :update_order_item_status
+  after_update :update_order_item_status
 
   validate :order_item_must_be_ready_to_confirm, if: -> { status_changed?(from: "pending", to: "confirmed") }
 

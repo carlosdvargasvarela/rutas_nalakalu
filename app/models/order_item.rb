@@ -33,6 +33,7 @@ class OrderItem < ApplicationRecord
     elsif status != "cancelled" && ready_to_deliver?
       update_column(:status, OrderItem.statuses[:ready])
     end
+    update_order_status
   end
 
   def update_order_status
@@ -49,5 +50,9 @@ class OrderItem < ApplicationRecord
 
   def ready_to_deliver?
     status == "ready"
+  end
+
+  def item_delivery_status
+    delivery_items.last.status
   end
 end

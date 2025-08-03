@@ -16,11 +16,6 @@ class Order < ApplicationRecord
     cancelled: 4
   }
 
-  # Verifica si está completamente entregado
-  def fully_delivered?
-    order_items.all?(&:fully_delivered?)
-  end
-
   # Actualiza el estado basado en los order_items
   def check_and_update_status!
     return if order_items.empty?
