@@ -1,14 +1,24 @@
 # app/models/order.rb
 class Order < ApplicationRecord
+  # ============================================================================
+  # CONFIGURACIÓN Y RELACIONES
+  # ============================================================================
+
   has_paper_trail
   belongs_to :client
   belongs_to :seller
   has_many :order_items, dependent: :destroy
   has_many :deliveries, dependent: :destroy
 
+  # ============================================================================
+  # VALIDACIONES
+  # ============================================================================
+
   validates :number, presence: true, uniqueness: true
 
-  after_update :notify_status_change, if: :saved_change_to_status?
+  # ============================================================================
+  # ENUMS
+  # ============================================================================
 
   enum status: {
     in_production: 0,   # Default
@@ -17,6 +27,38 @@ class Order < ApplicationRecord
     rescheduled: 3,
     cancelled: 4
   }
+
+  # ============================================================================
+  # CALLBACKS
+  # ============================================================================
+
+  after_initialize :set_default_status, if: :new_record?
+  after_update :notify_status_change, if: :saved_change_to_status?
+
+  # ============================================================================
+  # SCOPES
+  # ============================================================================
+
+  # Pedidos listos para entrega en una semana específica
+  scope :ready_for_week, ->(start_date, end_date) {
+    joins(:deliveries)
+      .where(status: :ready_for_delivery)
+      .where(deliveries: { delivery_date: start_date..end_date })
+      .distinct
+  }
+
+  # Filtrar por vendedor
+  scope :by_seller, ->(seller) { where(seller: seller) }
+
+  # Filtrar por código de vendedor
+  scope :by_seller_code, ->(code) { joins(:seller).where(sellers: { seller_code: code }) }
+
+  # Pedidos activos
+  scope :active, -> { where(status: [ :pending, :in_production, :ready_for_delivery, :rescheduled ]) }
+
+  # ============================================================================
+  # MÉTODOS DE ESTADO Y UTILIDAD
+  # ============================================================================
 
   # Actualiza el estado basado en los order_items
   def check_and_update_status!
@@ -35,26 +77,9 @@ class Order < ApplicationRecord
     elsif statuses.any? { |s| [ "in_production", "missing" ].include?(s) }
       update!(status: :in_production)
     else
-      # Default fallback
       update!(status: :in_production)
     end
   end
-
-  # Scope para filtrar pedidos listos para entrega en una semana específica
-  scope :ready_for_week, ->(start_date, end_date) {
-    joins(:deliveries)
-      .where(status: :ready_for_delivery)
-      .where(deliveries: { delivery_date: start_date..end_date })
-      .distinct
-  }
-
-  # Scope para filtrar por vendedor
-  scope :by_seller, ->(seller) { where(seller: seller) }
-
-  # Scope para filtrar por codigo de vendedor
-  scope :by_seller_code, ->(code) { joins(:seller).where(sellers: { seller_code: code }) }
-
-  scope :active, -> { where(status: [ :pending, :in_production, :ready_for_delivery, :rescheduled ]) }
 
   # Verifica si todos los items están listos
   def all_items_ready?
@@ -106,6 +131,10 @@ class Order < ApplicationRecord
     created_deliveries
   end
 
+  # ============================================================================
+  # RANSACK
+  # ============================================================================
+
   def self.ransackable_attributes(auth_object = nil)
     [ "client_id", "number", "seller_id", "status", "created_at", "updated_at" ]
   end
@@ -114,12 +143,22 @@ class Order < ApplicationRecord
     [ "client", "seller", "order_items", "deliveries" ]
   end
 
+  # ============================================================================
+  # CALLBACKS PRIVADOS
+  # ============================================================================
+
   private
 
+  # Notifica cuando cambia el estado del pedido
   def notify_status_change
     case status
     when "ready_for_delivery"
       NotificationService.notify_order_ready_for_delivery(self)
     end
+  end
+
+  # Setea el estado por defecto al crear un pedido
+  def set_default_status
+    self.status ||= :in_production
   end
 end

@@ -23,7 +23,6 @@ class Delivery < ApplicationRecord
   validates :contact_name, presence: true
 
   after_save :update_status_based_on_items
-  after_update :notify_all_confirmed, if: :saved_change_to_confirmed?
   after_update :notify_all_ready_for_delivery, if: :saved_change_to_status?
 
   # Nuevos tipos de delivery

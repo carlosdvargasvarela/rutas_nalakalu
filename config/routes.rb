@@ -56,14 +56,15 @@ Rails.application.routes.draw do
     resources :delivery_plan_assignments, only: [ :destroy ]
   end
 
-  resources :delivery_imports, only: [ :new, :create ] do
+  resources :delivery_imports, only: [ :new ] do
     collection do
       post :preview
       post :process_import
+      get :template
     end
   end
 
-  resources :notifications, only: [:index] do
+  resources :notifications, only: [ :index ] do
     member do
       patch :mark_as_read
     end

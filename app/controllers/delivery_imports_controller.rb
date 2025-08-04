@@ -13,7 +13,7 @@ class DeliveryImportsController < ApplicationController
 
     begin
       spreadsheet = Roo::Spreadsheet.open(file.path)
-      
+
       if spreadsheet.last_row < 2
         redirect_to new_delivery_import_path, alert: "El archivo está vacío o no tiene datos válidos."
         return
@@ -25,17 +25,17 @@ class DeliveryImportsController < ApplicationController
 
       (2..spreadsheet.last_row).each do |row_num|
         row_data = {
-          delivery_date: spreadsheet.cell(row_num, 'A'),
-          team: spreadsheet.cell(row_num, 'B'),
-          order_number: spreadsheet.cell(row_num, 'C')&.to_s,
-          client_name: spreadsheet.cell(row_num, 'D')&.to_s,
-          product: spreadsheet.cell(row_num, 'E')&.to_s,
-          quantity: spreadsheet.cell(row_num, 'F')&.to_i,
-          seller_code: spreadsheet.cell(row_num, 'G')&.to_s,
-          place: spreadsheet.cell(row_num, 'H')&.to_s,
-          contact: spreadsheet.cell(row_num, 'I')&.to_s,
-          notes: spreadsheet.cell(row_num, 'J')&.to_s,
-          time_preference: spreadsheet.cell(row_num, 'K')&.to_s
+          delivery_date: spreadsheet.cell(row_num, "A"),
+          team: spreadsheet.cell(row_num, "B"),
+          order_number: spreadsheet.cell(row_num, "C")&.to_s,
+          client_name: spreadsheet.cell(row_num, "D")&.to_s,
+          product: spreadsheet.cell(row_num, "E")&.to_s,
+          quantity: spreadsheet.cell(row_num, "F")&.to_i,
+          seller_code: spreadsheet.cell(row_num, "G")&.to_s,
+          place: spreadsheet.cell(row_num, "H")&.to_s,
+          contact: spreadsheet.cell(row_num, "I")&.to_s,
+          notes: spreadsheet.cell(row_num, "J")&.to_s,
+          time_preference: spreadsheet.cell(row_num, "K")&.to_s
         }
 
         # Validar cada fila
@@ -62,7 +62,7 @@ class DeliveryImportsController < ApplicationController
 
     rows.each_with_index do |row, idx|
       data = row.to_unsafe_h.symbolize_keys
-      
+
       # Validar antes de procesar
       validation_errors = service.validate_row(data)
       if validation_errors.any?

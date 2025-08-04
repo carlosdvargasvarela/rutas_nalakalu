@@ -35,6 +35,6 @@ class User < ApplicationRecord
   private
 
   def set_default_role
-    self.role ||= :seller # O el rol que consideres por defecto
+    self.role ||= :seller
   end
 end

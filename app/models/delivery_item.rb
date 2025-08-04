@@ -1,16 +1,18 @@
 # app/models/delivery_item.rb
 class DeliveryItem < ApplicationRecord
+  # ============================================================================
+  # CONFIGURACIÓN Y RELACIONES
+  # ============================================================================
+
   has_paper_trail
   belongs_to :delivery
   belongs_to :order_item
 
   accepts_nested_attributes_for :order_item
 
-  before_update :prevent_edit_if_rescheduled
-  after_update :notify_confirmation, if: :saved_change_to_confirmed?
-  after_update :notify_reschedule, if: :saved_change_to_delivery_id?
-
-  scope :service_cases, -> { where(service_case: true) }
+  # ============================================================================
+  # ENUMS
+  # ============================================================================
 
   enum status: {
     pending: 0,      # Aún no confirmado para entrega
@@ -21,14 +23,38 @@ class DeliveryItem < ApplicationRecord
     cancelled: 5
   }
 
-  after_update :update_order_item_status
+  # ============================================================================
+  # SCOPES
+  # ============================================================================
+
+  scope :service_cases, -> { where(service_case: true) }
+
+  # ============================================================================
+  # VALIDACIONES
+  # ============================================================================
 
   validate :order_item_must_be_ready_to_confirm, if: -> { status_changed?(from: "pending", to: "confirmed") }
 
+  # ============================================================================
+  # CALLBACKS
+  # ============================================================================
+
+  before_update :prevent_edit_if_rescheduled
+  after_update :notify_confirmation, if: :saved_change_to_status?
+  after_update :notify_reschedule, if: :saved_change_to_delivery_id?
+  after_update :notify_all_confirmed, if: :saved_change_to_status?
+  after_update :update_order_item_status
+
+  # ============================================================================
+  # MÉTODOS PÚBLICOS
+  # ============================================================================
+
+  # Actualiza el estado del order_item basado en los delivery_items
   def update_order_item_status
     order_item.update_status_based_on_deliveries if order_item.present?
   end
 
+  # Actualiza el estado del delivery basado en los delivery_items
   def update_delivery_status
     delivery.update_status_based_on_items if delivery.present?
   end
@@ -83,14 +109,23 @@ class DeliveryItem < ApplicationRecord
     end
   end
 
+  # ============================================================================
+  # VALIDACIONES PERSONALIZADAS
+  # ============================================================================
+
   def order_item_must_be_ready_to_confirm
     unless order_item.ready?
       errors.add(:base, "El producto aún no está listo para entrega (Producción no lo ha marcado como listo).")
     end
   end
 
+  # ============================================================================
+  # MÉTODOS PRIVADOS
+  # ============================================================================
+
   private
 
+  # Previene la edición de items reagendados
   def prevent_edit_if_rescheduled
     if status_was == "rescheduled"
       errors.add(:base, "No se puede modificar un producto reagendado.")
@@ -98,17 +133,35 @@ class DeliveryItem < ApplicationRecord
     end
   end
 
+  # Notifica cuando todos los productos de una entrega están confirmados
+  def notify_all_confirmed
+    return unless status == "confirmed"
+
+    delivery = self.delivery
+    # Solo cuenta los delivery_items que siguen en este delivery
+    all_confirmed = delivery.delivery_items.all? { |di| di.status == "confirmed" }
+
+    if all_confirmed
+      users = User.where(role: [ :logistics, :admin ])
+      users << delivery.delivery_plan.driver if delivery.delivery_plan&.driver
+      message = "Todos los productos del pedido #{delivery.order.number} para la entrega del #{delivery.delivery_date.strftime('%d/%m/%Y')} fueron confirmados por el vendedor."
+      NotificationService.create_for_users(users.uniq, delivery, message)
+    end
+  end
+
+  # Notifica cuando un item individual es confirmado
   def notify_confirmation
-    if confirmed
-      users = User.where(role: [ :logistics ]) # Puedes agregar más roles si quieres
+    if status == "confirmed"
+      users = User.where(role: [ :logistics, :admin ])
       users << delivery.delivery_plan.driver if delivery.delivery_plan&.driver
       message = "El item '#{order_item.product}' del pedido #{order_item.order.number} fue confirmado por el vendedor."
       NotificationService.create_for_users(users.uniq, self, message)
     end
   end
 
+  # Notifica cuando un item es reagendado
   def notify_reschedule
-    users = User.where(role: [ :logistics ])
+    users = User.where(role: [ :logistics, :admin ])
     users << delivery.delivery_plan.driver if delivery.delivery_plan&.driver
     message = "El item '#{order_item.product}' del pedido #{order_item.order.number} fue reagendado para #{delivery.delivery_date.strftime('%d/%m/%Y')}."
     NotificationService.create_for_users(users.uniq, self, message)

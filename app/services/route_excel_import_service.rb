@@ -55,7 +55,7 @@ class RouteExcelImportService
     order = Order.find_or_create_by!(number: data[:order_number]) do |o|
       o.client = client
       o.seller = seller
-      o.status = :ready_for_delivery
+      o.status = :in_production
     end
 
     # Si el pedido existe pero el vendedor es diferente, actualizarlo
@@ -65,7 +65,7 @@ class RouteExcelImportService
     order_item = order.order_items.find_or_create_by!(product: data[:product]) do |item|
       item.quantity = data[:quantity]
       item.notes = data[:notes]
-      item.status = :ready
+      item.status = :in_production
     end
 
     # Si el item existe pero la cantidad o notas son diferentes, actualizarlas
