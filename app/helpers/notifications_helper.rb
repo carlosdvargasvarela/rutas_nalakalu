@@ -1,24 +1,38 @@
+# app/helpers/notifications_helper.rb
 module NotificationsHelper
-  def notification_link(notification)
-    url = case notification.notifiable
-    when Delivery
-        delivery_path(notification.notifiable)
-    when Order
-        order_path(notification.notifiable)
-    when DeliveryPlan
-        delivery_plan_path(notification.notifiable)
-    # Para cualquier otro modelo que no tenga ruta definida
+  def notification_type_label(type)
+    case type
+    when "production_reminder" then "Recordatorios de Producción"
+    when "urgent_alert" then "Alertas Urgentes"
+    when "weekly_reminder" then "Resumen Semanal"
+    when "daily_reminder" then "Recordatorio Diario"
+    when "next_week_pending_confirmation" then "Pendientes de Confirmar Próxima Semana"
     else
-        nil
+      type.to_s.humanize
     end
+  end
 
-    if url.present?
-      link_to "Ver", url, class: "btn btn-sm btn-outline-secondary"
+  def notification_type_icon(type)
+    case type
+    when "production_reminder" then "fas fa-industry"
+    when "urgent_alert" then "fas fa-exclamation-triangle"
+    when "weekly_reminder" then "fas fa-calendar-week"
+    when "daily_reminder" then "fas fa-clock"
+    when "next_week_pending_confirmation" then "fas fa-clipboard-check"
     else
-      content_tag(:span, "Sin vista", class: "text-muted")
+      "fas fa-bell"
     end
-  rescue StandardError
-    # Si hay cualquier error generando la URL, mostrar texto neutro
-    content_tag(:span, "Sin vista", class: "text-muted")
+  end
+
+  def notification_type_color(type)
+    case type
+    when "production_reminder" then "primary"
+    when "urgent_alert" then "danger"
+    when "weekly_reminder" then "info"
+    when "daily_reminder" then "warning"
+    when "next_week_pending_confirmation" then "success"
+    else
+      "secondary"
+    end
   end
 end

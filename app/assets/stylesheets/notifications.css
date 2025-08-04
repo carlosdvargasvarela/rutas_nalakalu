@@ -1,0 +1,63 @@
+/* app/assets/stylesheets/notifications.css */
+
+.notification-item {
+    transition: all 0.2s ease;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa !important;
+}
+
+.notification-content {
+    line-height: 1.6;
+}
+
+.notification-content p {
+    margin-bottom: 0.5rem;
+}
+
+.notification-content p:last-child {
+    margin-bottom: 0;
+}
+
+.card-header {
+    border-bottom: none;
+}
+
+.notification-meta {
+    opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+    .notification-item {
+        padding: 1rem !important;
+    }
+
+    .notification-item .row {
+        flex-direction: column;
+    }
+
+    .notification-item .col-md-4 {
+        margin-top: 1rem;
+        text-align: left !important;
+    }
+}
+
+/* Animación para notificaciones nuevas */
+.bg-light {
+    animation: pulse-light 2s ease-in-out;
+}
+
+@keyframes pulse-light {
+    0% {
+        background-color: #e3f2fd;
+    }
+
+    50% {
+        background-color: #f8f9fa;
+    }
+
+    100% {
+        background-color: #f8f9fa;
+    }
+}

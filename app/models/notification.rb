@@ -1,5 +1,7 @@
 # app/models/notification.rb
 class Notification < ApplicationRecord
+  has_paper_trail
+  
   belongs_to :user
   belongs_to :notifiable, polymorphic: true, optional: true
 

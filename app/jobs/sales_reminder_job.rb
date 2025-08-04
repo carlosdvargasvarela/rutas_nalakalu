@@ -9,6 +9,7 @@ class SalesReminderJob < ApplicationJob
       send_weekly_reminders
     when "daily"
       send_daily_reminders
+      send_next_week_pending_confirmations
     else
       Rails.logger.warn "Periodo desconocido para SalesReminderJob: #{period}"
     end
@@ -89,5 +90,47 @@ class SalesReminderJob < ApplicationJob
 
     message += "\n¡Que tengas una excelente semana!"
     message
+  end
+
+  def send_next_week_pending_confirmations
+    # Calcular el rango de la próxima semana (lunes a viernes)
+    next_monday = Date.current.next_week(:monday)
+    next_saturday = next_monday + 5.days
+
+    Seller.includes(:user, orders: :deliveries).find_each do |seller|
+      # Buscar entregas de la próxima semana asociadas al vendedor
+      deliveries_next_week = Delivery.joins(:order)
+        .where(orders: { seller_id: seller.id })
+        .where(delivery_date: next_monday..next_saturday)
+        .where(status: [ :scheduled, :ready_to_deliver ])
+        .includes(:delivery_items)
+
+      # Filtrar solo las entregas con delivery_items NO confirmados
+      pending_deliveries = deliveries_next_week.select do |delivery|
+        delivery.delivery_items.any? { |di| di.status != "confirmed" }
+      end
+
+      next if pending_deliveries.empty?
+
+      # Construir mensaje
+      message = "🔔 Entregas pendientes de confirmar para la próxima semana (#{next_monday.strftime('%d/%m')} - #{next_saturday.strftime('%d/%m')}):\n\n"
+      pending_deliveries.each do |delivery|
+        day = I18n.l(delivery.delivery_date, format: "%A %d/%m")
+        order_number = delivery.order.number
+        client_name = delivery.order.client.name
+        message += "• Pedido ##{order_number} para #{client_name} el #{day}\n"
+      end
+      message += "\nPor favor, confirma estas entregas con tus clientes lo antes posible."
+
+      # Crear notificación
+      Notification.create!(
+        user: seller.user,
+        message: message,
+        notification_type: "next_week_pending_confirmation",
+        notifiable: seller
+      )
+
+      Rails.logger.info "Notificación de entregas pendientes de confirmar para la próxima semana enviada a #{seller.user.email}"
+    end
   end
 end

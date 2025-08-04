@@ -1,30 +1,98 @@
-<h2>Notificaciones</h2>
-<div class="mb-3">
-  <%= button_to "Marcar todas como leídas", mark_all_as_read_notifications_path, method: :patch, class: "btn btn-outline-primary btn-sm" %>
+<div class="container-fluid py-4">
+  <!-- Header con estadísticas -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+          <h2 class="mb-1">
+            <i class="fas fa-bell me-2"></i>Notificaciones
+          </h2>
+          <p class="text-muted mb-0">
+            <% if @unread_count > 0 %>
+              Tienes <span class="badge bg-danger"><%= @unread_count %></span> notificaciones sin leer
+            <% else %>
+              Todas las notificaciones están al día
+            <% end %>
+          </p>
+        </div>
+        <div class="d-flex gap-2">
+          <%= button_to "Marcar todas como leídas", mark_all_as_read_notifications_path, 
+                method: :patch, 
+                class: "btn btn-outline-primary",
+                data: { confirm: "¿Marcar todas las notificaciones como leídas?" } %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Notificaciones agrupadas -->
+  <div class="row">
+    <div class="col-12">
+      <% if @grouped_notifications.any? %>
+        <% @grouped_notifications.each do |type, notifications| %>
+          <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-<%= notification_type_color(type) %> text-white">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                  <i class="<%= notification_type_icon(type) %> me-2"></i>
+                  <%= notification_type_label(type) %>
+                </h5>
+                <span class="badge bg-light text-dark">
+                  <%= notifications.count %> <%= notifications.count == 1 ? 'notificación' : 'notificaciones' %>
+                </span>
+              </div>
+            </div>
+            <div class="card-body p-0">
+              <% notifications.each_with_index do |notification, index| %>
+                <div class="notification-item p-3 <%= 'border-bottom' unless index == notifications.count - 1 %> <%= 'bg-light' unless notification.read %>">
+                  <div class="row align-items-start">
+                    <div class="col-md-8 col-lg-9">
+                      <div class="notification-content">
+                        <%= simple_format(notification.message, {}, wrapper_tag: "div", class: "mb-2") %>
+                      </div>
+                      <div class="notification-meta">
+                        <small class="text-muted">
+                          <i class="fas fa-clock me-1"></i>
+                          <%= time_ago_in_words(notification.created_at) %> atrás
+                          <span class="mx-2">•</span>
+                          <%= l(notification.created_at, format: :short) %>
+                          <% unless notification.read %>
+                            <span class="badge bg-primary ms-2">Nueva</span>
+                          <% end %>
+                        </small>
+                      </div>
+                    </div>
+                    <div class="col-md-4 col-lg-3 text-end">
+                      <% unless notification.read %>
+                        <%= button_to mark_as_read_notification_path(notification), 
+                              method: :patch, 
+                              class: "btn btn-sm btn-outline-success",
+                              title: "Marcar como leída" do %>
+                          <i class="fas fa-check me-1"></i>
+                          <span class="d-none d-md-inline">Marcar leída</span>
+                        <% end %>
+                      <% else %>
+                        <span class="text-success">
+                          <i class="fas fa-check-circle me-1"></i>
+                          <span class="d-none d-md-inline">Leída</span>
+                        </span>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      <% else %>
+        <!-- Estado vacío -->
+        <div class="text-center py-5">
+          <div class="mb-4">
+            <i class="fas fa-bell-slash fa-4x text-muted"></i>
+          </div>
+          <h4 class="text-muted">No tienes notificaciones</h4>
+          <p class="text-muted">Cuando recibas notificaciones, aparecerán aquí organizadas por tipo.</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
 </div>
-<table class="table table-hover">
-  <thead>
-    <tr>
-      <th>Mensaje</th>
-      <th>Fecha</th>
-      <th>Acciones</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @notifications.each do |notification| %>
-      <tr class="<%= 'table-light' unless notification.read %>">
-        <td>
-          <%= notification.message %>
-          <br>
-          <small class="text-muted"><%= l(notification.created_at, format: :short) %></small>
-        </td>
-        <td><%= l(notification.created_at, format: :short) %></td>
-        <td>
-          <% unless notification.read %>
-            <%= button_to "Marcar como leída", mark_as_read_notification_path(notification), method: :patch, class: "btn btn-sm btn-success" %>
-          <% end %>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>

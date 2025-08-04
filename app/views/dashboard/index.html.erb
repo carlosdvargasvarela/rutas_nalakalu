@@ -1,4 +1,6 @@
+<!-- app/views/dashboard/index.html.erb -->
 <div class="container-fluid py-4">
+  <!-- Bienvenida -->
   <div class="row mb-4">
     <div class="col-12 col-md-8">
       <h3 class="fw-bold mb-2">
@@ -8,60 +10,50 @@
       <p class="text-muted mb-0">
         Rol: <span class="badge bg-primary"><%= current_user.display_role %></span>
       </p>
+      <%# Mensaje motivacional o de la empresa %>
+      <p class="text-secondary mt-2">"Transformando espacios, entregando calidad."</p>
     </div>
     <div class="col-12 col-md-4 d-flex align-items-center justify-content-md-end mt-3 mt-md-0">
       <div class="btn-group" role="group">
-        <%= link_to "Nuevo Pedido", orders_path, class: "btn btn-outline-primary btn-sm" %>
-        <%= link_to "Nueva Entrega", new_delivery_path, class: "btn btn-outline-success btn-sm" %>
-        <%= link_to "Importar Excel", new_delivery_import_path, class: "btn btn-outline-secondary btn-sm" %>
+        <% if current_user.seller? || current_user.admin? %>
+          <%= link_to "Nuevo Pedido", orders_path, class: "btn btn-outline-primary btn-sm" %>
+        <% end %>
+        <% if current_user.logistics? || current_user.admin? %>
+          <%= link_to "Nueva Entrega", new_delivery_path, class: "btn btn-outline-success btn-sm" %>
+        <% end %>
+        <% if current_user.admin? || current_user.production_manager? %>
+          <%= link_to "Importar Excel", new_delivery_import_path, class: "btn btn-outline-secondary btn-sm" %>
+        <% end %>
+        <%= link_to "Ver Notificaciones", notifications_path, class: "btn btn-outline-info btn-sm" %>
       </div>
     </div>
   </div>
-
+  <!-- Cards resumen -->
   <div class="row g-4">
-    <div class="col-12 col-md-4">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body d-flex flex-column align-items-center">
-          <i class="bi bi-truck fs-1 text-primary mb-2"></i>
-          <h6 class="card-title text-uppercase text-secondary">Entregas pendientes</h6>
-          <p class="fw-bold fs-2 mb-1"><%= @pending_deliveries_count || 0 %></p>
-          <%= link_to "Ver entregas", deliveries_path, class: "btn btn-primary btn-sm mt-2" %>
-        </div>
-      </div>
+    <%= render "dashboard/summary_cards" %>
+  </div>
+  <!-- Panel de notificaciones recientes -->
+  <div class="row mt-4">
+    <div class="col-12 col-lg-6">
+      <%= render "dashboard/recent_notifications", notifications: @recent_notifications %>
     </div>
-    <div class="col-12 col-md-4">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body d-flex flex-column align-items-center">
-          <i class="bi bi-box-seam fs-1 text-success mb-2"></i>
-          <h6 class="card-title text-uppercase text-secondary">Pedidos activos</h6>
-          <p class="fw-bold fs-2 mb-1"><%= @active_orders_count || 0 %></p>
-          <%= link_to "Ver pedidos", orders_path, class: "btn btn-success btn-sm mt-2" %>
-        </div>
-      </div>
+    <div class="col-12 col-lg-6">
+      <%= render "dashboard/pending_tasks", tasks: @pending_tasks %>
     </div>
-    <div class="col-12 col-md-4">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-body d-flex flex-column align-items-center">
-          <i class="bi bi-calendar-check fs-1 text-info mb-2"></i>
-          <h6 class="card-title text-uppercase text-secondary">Próximos planes</h6>
-          <p class="fw-bold fs-2 mb-1"><%= @upcoming_plans_count || 0 %></p>
-          <%= link_to "Ver planes", delivery_plans_path, class: "btn btn-info btn-sm mt-2" %>
-        </div>
+  </div>
+  <!-- (Opcional) Gráfico de avance semanal -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <%= render "dashboard/progress_chart", chart_data: @chart_data if @chart_data.present? %>
+    </div>
+  </div>
+  <!-- Sección de ayuda/contacto -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="alert alert-info d-flex align-items-center" role="alert">
+        <i class="bi bi-question-circle-fill me-2"></i>
+        ¿Necesitas ayuda? <a href="mailto:cvargas@nalakalu.com" class="ms-2">Contacta al equipo de soporte</a>
       </div>
     </div>
   </div>
-
-  <%# Sección de avisos o alertas internas (opcional) %>
-  <% if @dashboard_alerts.present? %>
-    <div class="row mt-4">
-      <div class="col-12">
-        <div class="alert alert-warning d-flex align-items-center" role="alert">
-          <i class="bi bi-exclamation-triangle-fill me-2"></i>
-          <div>
-            <%= @dashboard_alerts %>
-          </div>
-        </div>
-      </div>
-    </div>
-  <% end %>
 </div>
