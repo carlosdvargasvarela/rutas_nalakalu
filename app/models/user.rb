@@ -13,8 +13,14 @@ class User < ApplicationRecord
 
   # Relaciones
   has_one :seller
+  has_many :notifications, dependent: :destroy
 
   # Metodos
+
+  def unread_notifications_count
+    notifications.unread.count
+  end
+
   def display_role
     case role
     when "admin" then "Administrador"

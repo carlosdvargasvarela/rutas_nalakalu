@@ -63,6 +63,15 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :notifications, only: [:index] do
+    member do
+      patch :mark_as_read
+    end
+    collection do
+      patch :mark_all_as_read
+    end
+  end
+
   resources :orders, only: [ :index, :show, :destroy ]
   resources :clients, only: [ :index, :show ]
   resources :sellers, only: [ :index, :show ]

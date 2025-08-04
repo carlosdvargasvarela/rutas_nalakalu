@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_07_28_005424) do
+ActiveRecord::Schema[7.2].define(version: 2025_08_03_215411) do
   create_table "clients", force: :cascade do |t|
     t.string "name"
     t.string "phone"
@@ -78,6 +78,20 @@ ActiveRecord::Schema[7.2].define(version: 2025_07_28_005424) do
     t.index ["driver_id"], name: "index_delivery_plans_on_driver_id"
   end
 
+  create_table "notifications", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "notifiable_type", null: false
+    t.integer "notifiable_id", null: false
+    t.string "message", null: false
+    t.boolean "read", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["notifiable_type", "notifiable_id"], name: "index_notifications_on_notifiable"
+    t.index ["notifiable_type", "notifiable_id"], name: "index_notifications_on_notifiable_type_and_notifiable_id"
+    t.index ["user_id", "read"], name: "index_notifications_on_user_id_and_read"
+    t.index ["user_id"], name: "index_notifications_on_user_id"
+  end
+
   create_table "order_items", force: :cascade do |t|
     t.integer "order_id", null: false
     t.string "product"
@@ -143,6 +157,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_07_28_005424) do
   add_foreign_key "delivery_plan_assignments", "deliveries"
   add_foreign_key "delivery_plan_assignments", "delivery_plans"
   add_foreign_key "delivery_plans", "users", column: "driver_id"
+  add_foreign_key "notifications", "users"
   add_foreign_key "order_items", "orders"
   add_foreign_key "orders", "clients"
   add_foreign_key "orders", "sellers"

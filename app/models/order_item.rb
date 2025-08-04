@@ -55,4 +55,14 @@ class OrderItem < ApplicationRecord
   def item_delivery_status
     delivery_items.last.status
   end
+
+  private
+
+  def notify_ready
+    if status == "ready"
+      seller_user = order.seller.user
+      message = "El producto '#{product}' del pedido #{order.number} está listo para confirmar con el cliente."
+      NotificationService.create_for_users([seller_user], self, message)
+    end
+  end
 end

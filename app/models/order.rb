@@ -8,6 +8,8 @@ class Order < ApplicationRecord
 
   validates :number, presence: true, uniqueness: true
 
+  after_update :notify_status_change, if: :saved_change_to_status?
+
   enum status: {
     in_production: 0,   # Default
     ready_for_delivery: 1,
@@ -110,5 +112,14 @@ class Order < ApplicationRecord
 
   def self.ransackable_associations(auth_object = nil)
     [ "client", "seller", "order_items", "deliveries" ]
+  end
+
+  private
+
+  def notify_status_change
+    case status
+    when "ready_for_delivery"
+      NotificationService.notify_order_ready_for_delivery(self)
+    end
   end
 end

@@ -1,3 +1,4 @@
+# app/policies/delivery_policy.rb
 class DeliveryPolicy < ApplicationPolicy
   def index?
     user.admin? || user.production_manager? || user.logistics? || user.seller? || user.driver?

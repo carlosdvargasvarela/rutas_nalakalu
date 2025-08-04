@@ -7,6 +7,8 @@ class DeliveryItem < ApplicationRecord
   accepts_nested_attributes_for :order_item
 
   before_update :prevent_edit_if_rescheduled
+  after_update :notify_confirmation, if: :saved_change_to_confirmed?
+  after_update :notify_reschedule, if: :saved_change_to_delivery_id?
 
   scope :service_cases, -> { where(service_case: true) }
 
@@ -94,5 +96,21 @@ class DeliveryItem < ApplicationRecord
       errors.add(:base, "No se puede modificar un producto reagendado.")
       throw :abort
     end
+  end
+
+  def notify_confirmation
+    if confirmed
+      users = User.where(role: [ :logistics ]) # Puedes agregar más roles si quieres
+      users << delivery.delivery_plan.driver if delivery.delivery_plan&.driver
+      message = "El item '#{order_item.product}' del pedido #{order_item.order.number} fue confirmado por el vendedor."
+      NotificationService.create_for_users(users.uniq, self, message)
+    end
+  end
+
+  def notify_reschedule
+    users = User.where(role: [ :logistics ])
+    users << delivery.delivery_plan.driver if delivery.delivery_plan&.driver
+    message = "El item '#{order_item.product}' del pedido #{order_item.order.number} fue reagendado para #{delivery.delivery_date.strftime('%d/%m/%Y')}."
+    NotificationService.create_for_users(users.uniq, self, message)
   end
 end

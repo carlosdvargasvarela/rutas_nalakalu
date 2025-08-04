@@ -1,0 +1,36 @@
+<h2>Notificaciones</h2>
+<div class="mb-3">
+  <%= button_to "Marcar todas como leídas", mark_all_as_read_notifications_path, method: :patch, class: "btn btn-outline-primary btn-sm" %>
+</div>
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th>Mensaje</th>
+      <th>Fecha</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @notifications.each do |notification| %>
+      <tr class="<%= 'table-light' unless notification.read %>">
+        <td>
+          <%= notification.message %>
+          <br>
+          <small class="text-muted"><%= l(notification.created_at, format: :short) %></small>
+        </td>
+        <td><%= l(notification.created_at, format: :short) %></td>
+        <td>
+          <% unless notification.read %>
+            <%= button_to "Marcar como leída", mark_as_read_notification_path(notification), method: :patch, class: "btn btn-sm btn-success" %>
+          <% end %>
+          <% url = begin
+                polymorphic_url(notification.notifiable)
+            rescue
+                "#"
+            end %>
+          <%= link_to "Ver", url, class: "btn btn-sm btn-outline-secondary" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
