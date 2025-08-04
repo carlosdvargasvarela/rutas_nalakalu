@@ -11,7 +11,8 @@ class TestJob < ApplicationJob
       Notification.create!(
         user: admin,
         message: "🧪 Job de prueba ejecutado exitosamente: #{message}",
-        notification_type: "system_test"
+        notification_type: "system_test",
+        notifiable: admin # Asociamos al propio admin
       )
 
       Rails.logger.info "Notificación de prueba enviada a #{admin.email}"

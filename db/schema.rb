@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_08_03_215411) do
+ActiveRecord::Schema[7.2].define(version: 2025_08_04_070919) do
   create_table "clients", force: :cascade do |t|
     t.string "name"
     t.string "phone"
@@ -86,6 +86,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_03_215411) do
     t.boolean "read", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "notification_type"
     t.index ["notifiable_type", "notifiable_id"], name: "index_notifications_on_notifiable"
     t.index ["notifiable_type", "notifiable_id"], name: "index_notifications_on_notifiable_type_and_notifiable_id"
     t.index ["user_id", "read"], name: "index_notifications_on_user_id_and_read"

@@ -14,6 +14,7 @@ class User < ApplicationRecord
   # Relaciones
   has_one :seller
   has_many :notifications, dependent: :destroy
+  has_many :orders, foreign_key: :seller_id, dependent: :nullify
 
   # Metodos
 

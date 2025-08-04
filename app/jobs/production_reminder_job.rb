@@ -17,7 +17,8 @@ class ProductionReminderJob < ApplicationJob
       Notification.create!(
         user: manager,
         message: message,
-        notification_type: "production_reminder"
+        notification_type: "production_reminder",
+        notifiable: manager # Aquí asociamos al propio usuario
       )
 
       Rails.logger.info "Recordatorio de producción enviado a #{manager.email}"
@@ -104,7 +105,8 @@ class ProductionReminderJob < ApplicationJob
         Notification.create!(
           user: user,
           message: message,
-          notification_type: "urgent_alert"
+          notification_type: "urgent_alert",
+          notifiable: order
         )
       end
 

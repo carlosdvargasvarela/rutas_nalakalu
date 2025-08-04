@@ -23,12 +23,6 @@
           <% unless notification.read %>
             <%= button_to "Marcar como leída", mark_as_read_notification_path(notification), method: :patch, class: "btn btn-sm btn-success" %>
           <% end %>
-          <% url = begin
-                polymorphic_url(notification.notifiable)
-            rescue
-                "#"
-            end %>
-          <%= link_to "Ver", url, class: "btn btn-sm btn-outline-secondary" %>
         </td>
       </tr>
     <% end %>

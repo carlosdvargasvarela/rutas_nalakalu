@@ -17,71 +17,65 @@ class SalesReminderJob < ApplicationJob
   private
 
   def send_weekly_reminders
-    # Obtener todos los vendedores activos
-    sellers = User.where(role: :seller)
-
-    sellers.each do |seller|
+    Seller.includes(:user, orders: :deliveries).find_each do |seller|
       # Contar pedidos pendientes del vendedor
-      pending_orders = Order.joins(:seller)
-                           .where(sellers: { id: seller.id })
+      pending_orders = Order.where(seller_id: seller.id)
                            .where(status: [ :pending, :in_production ])
                            .count
 
       # Contar entregas programadas para esta semana
       current_week = Date.current.beginning_of_week
-      deliveries_this_week = Delivery.joins(order: :seller)
-                                   .where(sellers: { id: seller.id })
+      deliveries_this_week = Delivery.joins(:order)
+                                   .where(orders: { seller_id: seller.id })
                                    .where(delivery_date: current_week..current_week.end_of_week)
-                                   .where(status: [ :pending, :in_transit ])
+                                   .where(status: [ :scheduled, :ready_to_deliver, :in_route ])
                                    .count
 
       # Crear notificación semanal
       message = build_weekly_message(seller, pending_orders, deliveries_this_week)
 
       Notification.create!(
-        user: seller,
+        user: seller.user,
         message: message,
-        notification_type: "weekly_reminder"
+        notification_type: "weekly_reminder",
+        notifiable: seller
       )
 
-      Rails.logger.info "Recordatorio semanal enviado a #{seller.email}"
+      Rails.logger.info "Recordatorio semanal enviado a #{seller.user.email}"
     end
   end
 
   def send_daily_reminders
-    # Obtener vendedores con entregas para hoy
     today = Date.current
 
-    sellers_with_deliveries_today = User.joins(sellers: { orders: :deliveries })
-                                       .where(role: :seller)
-                                       .where(deliveries: { delivery_date: today })
-                                       .where(deliveries: { status: [ :pending, :in_transit ] })
-                                       .distinct
+    Seller.includes(:user, orders: :deliveries).find_each do |seller|
+      # Pedidos de este seller con entregas para hoy y en estado correcto
+      deliveries_today = Delivery.joins(:order)
+        .where(orders: { seller_id: seller.id })
+        .where(delivery_date: today)
+        .where(status: [ :scheduled, :ready_to_deliver, :in_route ])
 
-    sellers_with_deliveries_today.each do |seller|
-      # Contar entregas de hoy
-      todays_deliveries = Delivery.joins(order: :seller)
-                                .where(sellers: { id: seller.id })
-                                .where(delivery_date: today)
-                                .where(status: [ :pending, :in_transit ])
-                                .count
+      next if deliveries_today.empty?
 
-      # Crear notificación diaria
-      message = "¡Buenos días! Tienes #{todays_deliveries} entrega(s) programada(s) para hoy. " \
+      message = "¡Buenos días! Tienes #{deliveries_today.count} entrega(s) programada(s) para hoy. " \
                 "Revisa el estado de tus pedidos y coordina con el equipo de logística."
 
+      # Notifica al usuario asociado al seller
       Notification.create!(
-        user: seller,
+        user: seller.user,
         message: message,
-        notification_type: "daily_reminder"
+        notification_type: "daily_reminder",
+        notifiable: seller
       )
 
-      Rails.logger.info "Recordatorio diario enviado a #{seller.email}"
+      Rails.logger.info "Recordatorio diario enviado a #{seller.user.email}"
     end
   end
 
   def build_weekly_message(seller, pending_orders, deliveries_this_week)
-    message = "¡Resumen semanal para #{seller.name}!\n\n"
+    seller_name = seller.name.presence || seller.user.name.presence || seller.user.email
+
+    message = "¡Resumen semanal para #{seller_name}!\n\n"
     message += "📋 Pedidos pendientes: #{pending_orders}\n"
     message += "🚚 Entregas esta semana: #{deliveries_this_week}\n\n"
 
