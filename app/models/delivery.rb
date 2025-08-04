@@ -23,7 +23,6 @@ class Delivery < ApplicationRecord
   validates :contact_name, presence: true
 
   after_save :update_status_based_on_items
-  after_update :notify_all_ready_for_delivery, if: :saved_change_to_status?
 
   # Nuevos tipos de delivery
   enum delivery_type: {
@@ -196,34 +195,17 @@ class Delivery < ApplicationRecord
 
   private
 
-  def notify_all_ready_for_delivery
-    return unless status == "ready"
-
-    # Busca todos los order_items de este delivery
-    delivery = DeliveryItem.find_by(order_item_id: id)&.delivery
-    return unless delivery
-
-    all_ready = delivery.delivery_items.all? { |di| di.order_item.status == "ready" }
-
-    if all_ready
-      seller_user = delivery.order.seller.user
-      message = "Todos los productos del pedido #{delivery.order.number} para la entrega del #{delivery.delivery_date.strftime('%d/%m/%Y')} están listos para entrega."
-      NotificationService.create_for_users([ seller_user ], delivery, message)
-    end
-  end
-
   def notify_all_confirmed
-    return unless confirmed
+    return unless confirmed?  # Usa el método que ya tienes
 
-    # Solo cuenta los delivery_items que NO han sido reagendados (es decir, siguen en este delivery)
-    items = delivery.delivery_items
-    all_confirmed = items.all?(&:confirmed)
+    items = delivery_items
+    all_confirmed = items.all? { |di| di.status == "confirmed" }
 
     if all_confirmed
-      users = User.where(role: [ :logistics ])
-      users << delivery.delivery_plan.driver if delivery.delivery_plan&.driver
-      message = "Todos los productos del pedido #{order_item.order.number} para la entrega del #{delivery.delivery_date.strftime('%d/%m/%Y')} fueron confirmados por el vendedor."
-      NotificationService.create_for_users(users.uniq, delivery, message)
+      users = User.where(role: [ :logistics, :admin ])
+      users << delivery_plan.driver if delivery_plan&.driver
+      message = "Todos los productos del pedido #{order.number} para la entrega del #{delivery_date.strftime('%d/%m/%Y')} fueron confirmados por el vendedor."
+      NotificationService.create_for_users(users.uniq, self, message)
     end
   end
 end

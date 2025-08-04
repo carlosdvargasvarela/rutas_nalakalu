@@ -26,6 +26,7 @@ class OrderItem < ApplicationRecord
   # Callback para actualizar el estado del order_item basado en las entregas
   after_save :update_status_based_on_deliveries
   after_update :update_order_status
+  after_update :notify_ready, if: :saved_change_to_status?
 
   def update_status_based_on_deliveries
     if delivery_items.any? && delivery_items.all? { |di| di.status == "delivered" }
