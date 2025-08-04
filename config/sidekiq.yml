@@ -1,0 +1,19 @@
+:concurrency: 5
+:queues:
+  - default
+  - mailers
+  - low
+:schedule:
+  sales_reminder_weekly:
+    cron: "0 7 * * 1"
+    class: "SalesReminderJob"
+    args:
+      - weekly
+  sales_reminder_daily:
+    cron: "0 8 * * *"
+    class: "SalesReminderJob"
+    args:
+      - daily
+  production_reminder:
+    cron: "0 7 * * 1"
+    class: "ProductionReminderJob"

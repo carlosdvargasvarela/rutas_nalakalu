@@ -71,6 +71,11 @@ gem "kaminari"
 # Ransack for search functionality
 gem "ransack"
 
+gem "pundit", "~> 2.5"
+
+gem 'sidekiq'
+gem 'sidekiq-scheduler'
+gem 'redis'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -107,5 +112,3 @@ group :production do
   # Use pg for production
   gem "pg"
 end
-
-gem "pundit", "~> 2.5"

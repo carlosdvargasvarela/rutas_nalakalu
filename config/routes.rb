@@ -1,6 +1,25 @@
-Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+require "sidekiq/web"
 
+Rails.application.routes.draw do
+  # =============================================================================
+  # SIDEKIQ WEB PANEL - Monitoreo de jobs en background
+  # =============================================================================
+  # Panel web para monitorear jobs, colas y scheduler de Sidekiq
+  # Accesible en: /sidekiq
+
+  # Panel Sidekiq solo en desarrollo (sin autenticación)
+  if Rails.env.development?
+    mount Sidekiq::Web => "/sidekiq"
+  else
+    # En producción, solo para admins autenticados
+    authenticate :user, lambda { |u| u.admin? } do
+      mount Sidekiq::Web => "/sidekiq"
+    end
+  end
+
+  # =============================================================================
+  # RUTAS DE SALUD Y PWA
+  # =============================================================================
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
@@ -9,72 +28,120 @@ Rails.application.routes.draw do
   get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
+  # =============================================================================
+  # AUTENTICACIÓN DE USUARIOS
+  # =============================================================================
   # Devise routes for user authentication
+  # Genera rutas como: /users/sign_in, /users/sign_up, /users/sign_out, etc.
   devise_for :users
 
+  # =============================================================================
+  # RUTA PRINCIPAL
+  # =============================================================================
   # Define the root path of the application
-  # Devise routes for user authentication
   root "dashboard#index"
 
+  # =============================================================================
+  # DASHBOARD
+  # =============================================================================
+  # Panel principal con métricas y resumen
   resources :dashboard, only: [ :index ]
 
+  # =============================================================================
+  # ENTREGAS (DELIVERIES)
+  # =============================================================================
+  # Gestión completa de entregas de muebles
   resources :deliveries, only: [ :index, :show, :new, :create, :edit, :update ] do
     collection do
-      get :by_week # Para filtrar por semana
-      get :service_cases # Para ver solo casos de servicio
-      get :addresses_for_client
-      get :orders_for_client
+      get :by_week              # Filtrar entregas por semana específica
+      get :service_cases        # Ver solo casos de servicio técnico
+      get :addresses_for_client # AJAX: obtener direcciones de un cliente
+      get :orders_for_client    # AJAX: obtener pedidos de un cliente
     end
     member do
-      patch :mark_as_delivered
+      patch :mark_as_delivered  # Marcar entrega como completada
     end
   end
 
-  # Puedes agregar rutas para otros modelos si quieres verlos
+  # =============================================================================
+  # ITEMS DE PEDIDOS (ORDER ITEMS)
+  # =============================================================================
+  # Confirmación individual de items en pedidos
   resources :order_items, only: [] do
     member do
-      patch :confirm
-      patch :unconfirm
+      patch :confirm    # Confirmar que el item está listo para entrega
+      patch :unconfirm  # Desconfirmar item (volver a producción)
     end
   end
 
+  # =============================================================================
+  # ITEMS DE ENTREGA (DELIVERY ITEMS)
+  # =============================================================================
+  # Gestión del estado de items individuales en entregas
   resources :delivery_items, only: [ :show ] do
     member do
-      patch :confirm
-      patch :mark_delivered
-      patch :reschedule
-      patch :cancel
+      patch :confirm     # Confirmar item para entrega
+      patch :mark_delivered # Marcar item como entregado
+      patch :reschedule  # Reprogramar entrega del item
+      patch :cancel      # Cancelar entrega del item
     end
   end
 
+  # =============================================================================
+  # PLANES DE ENTREGA (DELIVERY PLANS)
+  # =============================================================================
+  # Planificación semanal de rutas de entrega
   resources :delivery_plans, only: [ :index, :show, :new, :create, :edit, :update ] do
     member do
-      patch :add_delivery_to_plan
-      patch :send_to_logistics
-      patch :update_order
+      patch :add_delivery_to_plan # Agregar entrega al plan
+      patch :send_to_logistics    # Enviar plan a logística
+      patch :update_order         # Actualizar orden en el plan
     end
+    # Asignaciones de entregas a planes (para eliminar)
     resources :delivery_plan_assignments, only: [ :destroy ]
   end
 
+  # =============================================================================
+  # IMPORTACIÓN DE ENTREGAS
+  # =============================================================================
+  # Importar entregas desde archivos Excel
   resources :delivery_imports, only: [ :new ] do
     collection do
-      post :preview
-      post :process_import
-      get :template
+      post :preview        # Vista previa de datos a importar
+      post :process_import # Procesar y guardar importación
+      get :template        # Descargar plantilla Excel
     end
   end
 
+  # =============================================================================
+  # NOTIFICACIONES
+  # =============================================================================
+  # Sistema de notificaciones para usuarios
   resources :notifications, only: [ :index ] do
     member do
-      patch :mark_as_read
+      patch :mark_as_read # Marcar notificación individual como leída
     end
     collection do
-      patch :mark_all_as_read
+      patch :mark_all_as_read # Marcar todas las notificaciones como leídas
     end
   end
 
+  # =============================================================================
+  # PEDIDOS (ORDERS)
+  # =============================================================================
+  # Visualización y gestión de pedidos
   resources :orders, only: [ :index, :show, :destroy ]
+
+  # =============================================================================
+  # CLIENTES Y VENDEDORES
+  # =============================================================================
+  # Información de clientes y vendedores (solo lectura)
   resources :clients, only: [ :index, :show ]
   resources :sellers, only: [ :index, :show ]
+
+  # =============================================================================
+  # DIRECCIONES DE ENTREGA
+  # =============================================================================
+  # Creación de nuevas direcciones de entrega
   resources :delivery_addresses, only: [ :create ]
 end
