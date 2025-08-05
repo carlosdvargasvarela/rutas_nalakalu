@@ -21,6 +21,10 @@ class OrderPolicy < ApplicationPolicy
     user.admin?
   end
 
+  def confirm_all_items_ready?
+    user.production_manager? || user.admin?
+  end
+
   class Scope < Scope
     def resolve
       if user.admin? || user.production_manager? || user.logistics?

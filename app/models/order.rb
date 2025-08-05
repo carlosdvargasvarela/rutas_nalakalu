@@ -56,6 +56,8 @@ class Order < ApplicationRecord
   # Pedidos activos
   scope :active, -> { where(status: [ :pending, :in_production, :ready_for_delivery, :rescheduled ]) }
 
+  scope :in_production, -> { where(status: :in_production) }
+
   # ============================================================================
   # MÉTODOS DE ESTADO Y UTILIDAD
   # ============================================================================

@@ -51,6 +51,14 @@
   <i class="bi bi-box-seam me-2"></i>
   Productos del pedido
 </h2>
+<%# BOTÓN DE CONFIRMAR TODOS LOS PRODUCTOS COMO LISTOS %>
+<% if (current_user.production_manager? || current_user.admin?) && @order.order_items.any? { |item| item.in_production? } %>
+  <%= button_to "Confirmar todos los productos como listos",
+        confirm_all_items_ready_order_path(@order),
+        method: :patch,
+        data: { confirm: "¿Estás seguro que deseas marcar todos los productos de este pedido como listos para entrega?" },
+        class: "btn btn-success mb-3" %>
+<% end %>
 <div class="table-responsive">
   <table class="table table-striped table-hover align-middle">
     <thead class="table-light">

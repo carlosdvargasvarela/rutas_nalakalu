@@ -130,7 +130,11 @@ Rails.application.routes.draw do
   # PEDIDOS (ORDERS)
   # =============================================================================
   # Visualización y gestión de pedidos
-  resources :orders, only: [ :index, :show, :destroy ]
+  resources :orders, only: [ :index, :show, :destroy ] do
+    member do
+      patch :confirm_all_items_ready
+    end
+  end
 
   # =============================================================================
   # CLIENTES Y VENDEDORES
@@ -146,7 +150,7 @@ Rails.application.routes.draw do
   resources :delivery_addresses, only: [ :create ]
 
   namespace :admin do
-    resources :users, only: [:index, :new, :create, :edit, :update] do
+    resources :users, only: [ :index, :new, :create, :edit, :update ] do
       member do
         post :send_reset_password
         patch :unlock
