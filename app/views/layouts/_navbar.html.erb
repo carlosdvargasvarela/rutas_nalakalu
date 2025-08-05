@@ -1,0 +1,17 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+  <div class="container-fluid">
+    <%= link_to root_path, class: "navbar-brand d-flex align-items-center gap-2" do %>
+      <i class="bi bi-truck fs-3"></i>
+      <span>NaLakalú</span>
+    <% end %>
+    <% if user_signed_in? %>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNavbar">
+        <%= render "layouts/navbar_links" %>
+        <%= render "layouts/navbar_user" %>
+      </div>
+    <% end %>
+  </div>
+</nav>

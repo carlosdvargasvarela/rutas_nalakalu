@@ -1,0 +1,32 @@
+<!-- app/views/devise/sessions/new.html.erb -->
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card shadow-sm border-0 mt-5">
+      <div class="card-header bg-primary text-white text-center">
+        <h4 class="mb-0">
+          <i class="bi bi-box-arrow-in-right me-2"></i>
+          Iniciar sesión
+        </h4>
+      </div>
+      <div class="card-body">
+        <%= simple_form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+          <div class="mb-3">
+            <%= f.input :email, required: true, autofocus: true, input_html: { class: "form-control" }, prepend: '<i class="bi bi-envelope-fill"></i>'.html_safe, label: "Correo electrónico" %>
+          </div>
+          <div class="mb-3">
+            <%= f.input :password, required: true, input_html: { class: "form-control" }, prepend: '<i class="bi bi-lock-fill"></i>'.html_safe, label: "Contraseña" %>
+          </div>
+          <% if devise_mapping.rememberable? %>
+            <div class="mb-3 form-check">
+              <%= f.input :remember_me, as: :boolean, label: "Recordarme", input_html: { class: "form-check-input" }, wrapper_html: { class: "form-check" } %>
+            </div>
+          <% end %>
+          <div class="d-flex justify-content-between align-items-center">
+            <%= link_to "¿Olvidaste tu contraseña?", new_password_path(resource_name), class: "small" %>
+            <%= f.button :submit, "Ingresar", class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

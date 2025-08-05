@@ -1,0 +1,51 @@
+<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+  <li class="nav-item">
+    <%= link_to root_path, class: "nav-link #{'active' if current_page?(root_path)}" do %>
+      <i class="bi bi-speedometer2 me-1"></i> Dashboard
+    <% end %>
+  </li>
+  <li class="nav-item">
+    <%= link_to orders_path, class: "nav-link #{'active' if current_page?(orders_path)}" do %>
+      <i class="bi bi-box-seam me-1"></i> Pedidos
+    <% end %>
+  </li>
+  <li class="nav-item">
+    <%= link_to deliveries_path, class: "nav-link #{'active' if current_page?(deliveries_path)}" do %>
+      <i class="bi bi-truck me-1"></i> Entregas
+    <% end %>
+  </li>
+  <li class="nav-item">
+    <%= link_to delivery_plans_path, class: "nav-link #{'active' if current_page?(delivery_plans_path)}" do %>
+      <i class="bi bi-calendar-check me-1"></i> Planes de Entrega
+    <% end %>
+  </li>
+  <li class="nav-item">
+    <%= link_to new_delivery_import_path, class: "nav-link #{'active' if current_page?(new_delivery_import_path)}" do %>
+      <i class="bi bi-file-earmark-arrow-up me-1"></i> Importar Excel
+    <% end %>
+  </li>
+  <li><span class="nav-link disabled px-2">|</span></li>
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="catalogosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-collection me-1"></i> Catálogos
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="catalogosDropdown">
+      <li>
+        <%= link_to clients_path, class: "dropdown-item" do %>
+          <i class="bi bi-people me-1"></i> Clientes
+        <% end %>
+      </li>
+      <li>
+        <%= link_to sellers_path, class: "dropdown-item" do %>
+          <i class="bi bi-person-badge me-1"></i> Vendedores
+        <% end %>
+      </li>
+      <li><hr class="dropdown-divider"></li>
+      <li>
+        <%= link_to service_cases_deliveries_path, class: "dropdown-item" do %>
+          <i class="bi bi-tools me-1"></i> Casos de Servicio
+        <% end %>
+      </li>
+    </ul>
+  </li>
+</ul>

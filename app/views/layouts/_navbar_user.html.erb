@@ -1,0 +1,42 @@
+<ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+  <li class="nav-item d-flex align-items-center">
+    <span class="navbar-text me-2 d-none d-lg-inline">
+      <i class="bi bi-person-circle me-1"></i>
+      <%= current_user.name %> (<%= current_user.display_role %>)
+    </span>
+    <%= button_to "Cerrar Sesión", destroy_user_session_path, method: :delete, class: "btn btn-outline-light btn-sm ms-2" %>
+  </li>
+  <li class="nav-item dropdown">
+    <a class="nav-link position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-bell"></i>
+      <% unread_count = current_user.unread_notifications_count %>
+      <% if unread_count > 0 %>
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+          <%= unread_count %>
+        </span>
+      <% end %>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown" style="min-width: 350px;">
+      <% current_user.notifications.recent.limit(10).each do |notification| %>
+        <li class="<%= 'bg-light' unless notification.read %>">
+          <a class="dropdown-item d-flex justify-content-between align-items-center" href="<%= polymorphic_url(notification.notifiable) rescue '#' %>">
+            <span>
+              <%= notification.message %>
+              <br>
+              <small class="text-muted"><%= l(notification.created_at, format: :short) %></small>
+            </span>
+            <% unless notification.read %>
+              <span class="badge bg-primary ms-2">Nuevo</span>
+            <% end %>
+          </a>
+        </li>
+      <% end %>
+      <li>
+        <hr class="dropdown-divider">
+      </li>
+      <li>
+        <%= link_to "Ver todas las notificaciones", notifications_path, class: "dropdown-item text-center" %>
+      </li>
+    </ul>
+  </li>
+</ul>

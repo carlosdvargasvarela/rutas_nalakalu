@@ -1,0 +1,83 @@
+<!-- app/views/users/index.html.erb -->
+<h2 class="mb-4">
+  <i class="bi bi-people-fill me-2 text-primary"></i>
+  Usuarios del sistema
+</h2>
+<div class="mb-3 d-flex justify-content-between align-items-center flex-wrap">
+  <%= link_to "Nuevo usuario", new_user_path, class: "btn btn-primary" %>
+  <span class="text-muted ms-2"><%= pluralize(@users.count, "usuario") %> registrados</span>
+</div>
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Nombre</th>
+        <th>Correo</th>
+        <th>Rol</th>
+        <th>Último acceso</th>
+        <th>Estado</th>
+        <th class="text-center">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @users.each do |user| %>
+        <tr class="<%= 'table-light' unless user.access_locked? %>">
+          <td>
+            <i class="bi bi-person-circle me-1 text-secondary"></i>
+            <%= user.name %>
+          </td>
+          <td>
+            <i class="bi bi-envelope me-1 text-secondary"></i>
+            <%= user.email %>
+          </td>
+          <td>
+            <span class="badge bg-secondary">
+              <i class="bi bi-person-badge me-1"></i>
+              <%= user.display_role %>
+            </span>
+          </td>
+          <td>
+            <% if user.last_sign_in_at.present? %>
+              <span class="text-success">
+                <i class="bi bi-clock-history me-1"></i>
+                <%= l(user.last_sign_in_at, format: :short) %>
+              </span>
+            <% else %>
+              <span class="text-muted">
+                <i class="bi bi-dash-circle me-1"></i>
+                Nunca
+              </span>
+            <% end %>
+          </td>
+          <td>
+            <% if user.access_locked? %>
+              <span class="badge bg-danger">
+                <i class="bi bi-lock-fill me-1"></i>
+                Bloqueado
+              </span>
+            <% else %>
+              <span class="badge bg-success">
+                <i class="bi bi-unlock-fill me-1"></i>
+                Activo
+              </span>
+            <% end %>
+          </td>
+          <td class="text-center">
+            <div class="btn-group" role="group">
+              <%= link_to send_reset_password_user_path(user), method: :post, class: "btn btn-outline-info btn-sm", title: "Reenviar correo de acceso", data: { bs_toggle: "tooltip" } do %>
+                <i class="bi bi-envelope-arrow-up me-1"></i>
+                <span class="d-none d-md-inline">Reenviar acceso</span>
+              <% end %>
+              <% if user.access_locked? %>
+                <%= link_to unlock_user_path(user), method: :patch, class: "btn btn-outline-success btn-sm", title: "Desbloquear usuario", data: { bs_toggle: "tooltip" } do %>
+                  <i class="bi bi-unlock me-1"></i>
+                  <span class="d-none d-md-inline">Desbloquear</span>
+                <% end %>
+              <% end %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
