@@ -5,7 +5,7 @@ class DeliveriesController < ApplicationController
   # Muestra todas las entregas o filtra por semana
   def index
     @q = Delivery.ransack(params[:q])
-    @deliveries = @q.result.includes(order: [:client, :seller], delivery_address: :client).order(delivery_date: :desc).page(params[:page])
+    @deliveries = @q.result.includes(order: [ :client, :seller ], delivery_address: :client).order(delivery_date: :desc).page(params[:page])
     authorize Delivery
 
     respond_to do |format|
@@ -186,6 +186,49 @@ class DeliveriesController < ApplicationController
     client = Client.find(params[:client_id])
     orders = client.orders.select(:id, :number)
     render json: orders
+  end
+
+  def confirm_all_items
+    @delivery = Delivery.find(params[:id])
+    authorize @delivery, :edit? # O crea una policy específica si lo prefieres
+
+    updated = @delivery.delivery_items.where(status: [ :pending, :confirmed ]).update_all(status: :confirmed, updated_at: Time.current)
+    @delivery.update_status_based_on_items
+
+    redirect_to @delivery, notice: "#{updated} productos confirmados para entrega."
+  end
+
+  def reschedule_all
+    @delivery = Delivery.find(params[:id])
+    authorize @delivery, :edit?
+
+    # Nueva fecha desde el formulario
+    new_date = params[:new_date].presence && Date.parse(params[:new_date])
+    raise "Debes seleccionar una nueva fecha" unless new_date
+
+    # Crea la nueva entrega
+    new_delivery = @delivery.dup
+    new_delivery.delivery_date = new_date
+    new_delivery.status = :scheduled
+    new_delivery.save!
+
+    # Duplica los delivery_items (solo los que no están entregados/cancelados)
+    @delivery.delivery_items.where.not(status: [ :delivered, :cancelled ]).find_each do |item|
+      new_delivery.delivery_items.create!(
+        order_item: item.order_item,
+        quantity_delivered: item.quantity_delivered,
+        status: :pending,
+        service_case: item.service_case
+      )
+      # Marca el original como reagendado
+      item.update!(status: :rescheduled)
+    end
+
+    @delivery.update_status_based_on_items
+
+    redirect_to new_delivery, notice: "Entrega reagendada para el #{l new_date, format: :long}."
+  rescue => e
+    redirect_to @delivery, alert: "Error al reagendar: #{e.message}"
   end
 
   private

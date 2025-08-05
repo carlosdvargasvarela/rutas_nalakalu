@@ -32,7 +32,9 @@ class DashboardController < ApplicationController
     when "seller"
       Delivery.joins(:order).where(orders: { seller: current_user.seller })
     when "driver"
-      Delivery.joins(:delivery_plan_assignments).where(delivery_plan_assignments: { delivery_plan: { driver: current_user } })
+      Delivery
+        .joins(delivery_plan_assignments: :delivery_plan)
+        .where(delivery_plans: { driver_id: current_user.id })
     else
       Delivery.all
     end

@@ -6,7 +6,7 @@ class OrderPolicy < ApplicationPolicy
 
   def show?
     user.admin? || user.production_manager? || user.logistics? ||
-      (user.seller? && record.seller.user_id == user.id)
+      (user.seller? && record.seller.user_id == user.id) || user.driver?
   end
 
   def create?

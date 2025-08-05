@@ -60,6 +60,8 @@ Rails.application.routes.draw do
     end
     member do
       patch :mark_as_delivered  # Marcar entrega como completada
+      patch :confirm_all_items
+      patch :reschedule_all
     end
   end
 

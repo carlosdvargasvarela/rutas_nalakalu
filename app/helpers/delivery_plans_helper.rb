@@ -4,7 +4,7 @@ module DeliveryPlansHelper
     return "-" if year.blank? || week.blank? || !week.to_s.match?(/\A\d+\z/) || !year.to_s.match?(/\A\d+\z/)
 
     year = year.to_i
-    week = week.to_i + 1
+    week = week.to_i
 
     first_day = Date.commercial(year, week, 1)
     last_day  = Date.commercial(year, week, 7)
