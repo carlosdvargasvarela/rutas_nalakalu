@@ -72,6 +72,12 @@ es-MX:
         order_items: Ordenar artículos  #g
         seller: :activerecord.models.seller  #g
         status: Estado  #g
+        statuses:
+          pending: "Pendiente"
+          in_production: "En producción"
+          ready_for_delivery: "Listo para entrega"
+          delivered: "Entregado"
+          cancelled: "Cancelado"
         versions: Versiones  #g
 
       order_item:

@@ -1,34 +1,54 @@
-<!-- app/views/dashboard/_progress_chart.html.erb -->
-<div class="card shadow-sm border-0">
-  <div class="card-header bg-info text-white">
-    <h5 class="mb-0">
-      <i class="bi bi-graph-up me-2"></i>
-      Progreso semanal
-    </h5>
-  </div>
-  <div class="card-body">
-    <div class="row">
-      <div class="col-md-8">
-        <!-- Aquí puedes integrar Chart.js o Chartkick -->
-        <div class="progress-chart-placeholder bg-light rounded p-4 text-center">
-          <i class="bi bi-bar-chart fs-1 text-muted mb-2"></i>
-          <p class="text-muted">Gráfico de progreso semanal</p>
-          <small class="text-muted">Entregas completadas vs programadas</small>
-        </div>
+<!-- app/views/dashboard/_stats.html.erb -->
+<div class="row g-4">
+  <div class="col-12 col-lg-8">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-graph-up me-2"></i>
+          Progreso semanal de entregas
+        </h5>
       </div>
-      <div class="col-md-4">
-        <div class="progress-stats">
-          <div class="stat-item mb-3">
-            <h6 class="text-muted mb-1">Esta semana</h6>
-            <p class="fs-4 fw-bold text-success mb-0">85%</p>
-            <small class="text-muted">17 de 20 entregas</small>
-          </div>
-          <div class="stat-item mb-3">
-            <h6 class="text-muted mb-1">Promedio mensual</h6>
-            <p class="fs-4 fw-bold text-info mb-0">92%</p>
-            <small class="text-muted">Últimos 30 días</small>
-          </div>
-        </div>
+      <div class="card-body">
+        <%= line_chart @deliveries_per_day, height: "250px", library: {title: {display: false}} %>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-4">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-header bg-secondary text-white">
+        <h6 class="mb-0">
+          <i class="bi bi-pie-chart me-2"></i>
+          Pedidos por estado
+        </h6>
+      </div>
+      <div class="card-body">
+        <%= pie_chart @orders_per_status.transform_keys { |k| Order.human_enum_name(:status, k) }, height: "200px" %>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-person-lines-fill me-2"></i>
+          Pedidos activos por vendedor
+        </h5>
+      </div>
+      <div class="card-body">
+        <%= column_chart @orders_per_seller, height: "250px", library: {title: {display: false}} %>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">
+          <i class="bi bi-truck me-2"></i>
+          Entregas asignadas por chofer
+        </h5>
+      </div>
+      <div class="card-body">
+        <%= bar_chart @deliveries_per_driver, height: "250px", library: {title: {display: false}} %>
       </div>
     </div>
   </div>

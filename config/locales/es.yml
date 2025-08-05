@@ -1,6 +1,13 @@
----
 es:
   activerecord:
+    attributes:
+      order:
+        statuses:
+          pending: "Pendiente"
+          in_production: "En producción"
+          ready_for_delivery: "Listo para entrega"
+          delivered: "Entregado"
+          cancelled: "Cancelado"
     errors:
       messages:
         record_invalid: 'La validación falló: %{errors}'

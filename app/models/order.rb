@@ -143,6 +143,10 @@ class Order < ApplicationRecord
     [ "client", "seller", "order_items", "deliveries" ]
   end
 
+  def self.human_enum_name(enum_name, value)
+    I18n.t("activerecord.attributes.#{model_name.i18n_key}.#{enum_name.to_s.pluralize}.#{value}")
+  end
+
   # ============================================================================
   # CALLBACKS PRIVADOS
   # ============================================================================

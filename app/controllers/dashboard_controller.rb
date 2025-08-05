@@ -17,6 +17,12 @@ class DashboardController < ApplicationController
 
     # Datos para gráfico (opcional)
     @chart_data = build_chart_data if current_user.admin? || current_user.production_manager?
+
+    @deliveries_per_day = Delivery.where(status: :delivered, delivery_date: Date.current.beginning_of_week..Date.current.end_of_week).group_by_day(:delivery_date).count
+    @orders_per_status = Order.group(:status).count
+    @orders_per_seller = Seller.joins(:orders).where(orders: { status: [ :pending, :in_production ] }).group("sellers.name").count
+    @deliveries_per_driver = User.where(role: :driver).left_joins(delivery_plans: { delivery_plan_assignments: :delivery }).group("users.name").count("deliveries.id")
+    @orders_per_week = Order.group_by_week(:created_at, last: 8, format: "%d/%m").count
   end
 
   private

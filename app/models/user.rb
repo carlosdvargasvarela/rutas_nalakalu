@@ -16,6 +16,9 @@ class User < ApplicationRecord
   has_one :seller
   has_many :notifications, dependent: :destroy
   has_many :orders, foreign_key: :seller_id, dependent: :nullify
+  has_many :delivery_plans, foreign_key: "driver_id", dependent: :destroy
+  has_many :delivery_plan_assignments, through: :delivery_plans
+  has_many :deliveries, through: :delivery_plan_assignments
 
   # Metodos
 
