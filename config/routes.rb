@@ -145,10 +145,12 @@ Rails.application.routes.draw do
   # Creación de nuevas direcciones de entrega
   resources :delivery_addresses, only: [ :create ]
 
-  resources :users, only: [ :index, :new, :create ] do
-    member do
-      post :send_reset_password
-      patch :unlock
+  namespace :admin do
+    resources :users, only: [:index, :new, :create, :edit, :update] do
+      member do
+        post :send_reset_password
+        patch :unlock
+      end
     end
   end
 end

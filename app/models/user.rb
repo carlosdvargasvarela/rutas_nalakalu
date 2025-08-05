@@ -2,10 +2,14 @@
 class User < ApplicationRecord
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
-  devise :database_authenticatable, :recoverable, :rememberable, :validatable, :trackable, :lockable
+  devise :database_authenticatable, :recoverable, :rememberable, :validatable, :trackable, :lockable, :registerable
 
   # Definir los roles como un enum
   enum role: { admin: 0, production_manager: 1, seller: 2, logistics: 3, driver: 4 }
+
+  attr_accessor :seller_code
+
+  validate :seller_code_presence_if_seller
 
   # Establecer un rol por defecto al crear un usuario
   after_initialize :set_default_role, if: :new_record?
@@ -33,6 +37,12 @@ class User < ApplicationRecord
     when "logistics" then "Logística"
     when "driver" then "Conductor"
     else role.to_s.humanize
+    end
+  end
+
+  def seller_code_presence_if_seller
+    if seller? && seller_code.blank?
+      errors.add(:seller_code, "debe estar presente para vendedores")
     end
   end
 

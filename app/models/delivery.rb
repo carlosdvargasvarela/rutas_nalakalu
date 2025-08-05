@@ -5,6 +5,8 @@ class Delivery < ApplicationRecord
   belongs_to :delivery_address
   has_many :delivery_items, dependent: :destroy
   has_many :order_items, through: :delivery_items
+  has_many :delivery_plan_assignments
+  has_many :delivery_plans, through: :delivery_plan_assignments
 
   accepts_nested_attributes_for :delivery_items, allow_destroy: true
 
@@ -118,6 +120,10 @@ class Delivery < ApplicationRecord
 
   def confirmed?
     order_items.all? { |oi| oi.status == "ready" }
+  end
+
+  def delivery_plan
+    delivery_plans.first
   end
 
   # Información del cliente para logística
