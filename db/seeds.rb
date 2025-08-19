@@ -18,7 +18,7 @@ PaperTrail::Version.delete_all if defined?(PaperTrail::Version)
 
 puts "Cargando usuarios..."
 
-DEFAULT_PASSWORD = "password123"
+DEFAULT_PASSWORD = "Nalakalu.01"
 
 # =========================
 # Ventas (Users + Sellers)
@@ -123,27 +123,9 @@ logistics.each do |l|
     name: l[:name],
     email: l[:email],
     password: DEFAULT_PASSWORD,
-    role: :logistics
+    role: :driver
   )
 end
-puts "Usuarios de logística creados: #{logistics.size}"
-
-# =========================
-# Datos de ejemplo (clientes)
-# =========================
-client1 = Client.create!(
-  name: "Muebles La Casa",
-  phone: "8888-1111",
-  email: "contacto@lacasacr.com"
-)
-
-client2 = Client.create!(
-  name: "Oficinas XYZ",
-  phone: "2222-3333",
-  email: "compras@xyz.com"
-)
-
-puts "Clientes de ejemplo creados: #{Client.count}"
 
 puts "Seeds cargados correctamente."
 puts "Total usuarios: #{User.count} | Sellers: #{Seller.count}"
