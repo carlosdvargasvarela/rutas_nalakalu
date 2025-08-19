@@ -6,6 +6,7 @@ class DeliveryPlan < ApplicationRecord
   belongs_to :driver, class_name: "User", optional: true
 
   after_update :notify_driver_assignment, if: :saved_change_to_driver_id?
+  after_update :update_status_on_driver_change, if: :saved_change_to_driver_id?
 
   enum status: { draft: 0, sent_to_logistics: 1, routes_created: 2 }
 
@@ -76,5 +77,15 @@ class DeliveryPlan < ApplicationRecord
 
   def notify_driver_assignment
     NotificationService.notify_route_assigned(self) if driver_id.present?
+  end
+
+  def update_status_on_driver_change
+    if driver_id.present?
+      # Solo cambia si sigue en draft (evita pisar estados más avanzados)
+      update_column(:status, DeliveryPlan.statuses[:sent_to_logistics]) if draft?
+    else
+      # Si se desasigna conductor, regresa a draft solo si estaba en sent_to_logistics
+      update_column(:status, DeliveryPlan.statuses[:draft]) if sent_to_logistics?
+    end
   end
 end

@@ -4,7 +4,7 @@
     <i class="bi bi-truck me-2"></i>
     Detalles de Entrega <span class="text-primary">#<%= @delivery.id %></span>
   </h1>
-  <% if policy(@delivery).edit? %>
+  <% if policy(@delivery).edit? && !@delivery.status == "rescheduled"%>
     <%= link_to edit_delivery_path(@delivery), class: "btn btn-sm btn-outline-secondary", title: "Editar" do %>
       <i class="bi bi-pencil-square"></i> Editar
     <% end %>
@@ -91,7 +91,7 @@
       <% end %>
     <% end %>
     <%# Confirmar todos los productos %>
-    <% if policy(@delivery).edit? && @delivery.delivery_items.any? { |item| item.pending? || item.status == "confirmed" } %>
+    <% if policy(@delivery).edit? && @delivery.confirmed? && @delivery.delivery_items.any? { |item| item.pending? || item.status == "confirmed" } && !@delivery.delivery_items.all? { |item| item.status == "confirmed" } %>
       <%= button_to "Confirmar todos los productos para entrega",
         confirm_all_items_delivery_path(@delivery),
         method: :patch,

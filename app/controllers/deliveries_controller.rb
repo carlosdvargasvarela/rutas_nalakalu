@@ -5,7 +5,7 @@ class DeliveriesController < ApplicationController
   # Muestra todas las entregas o filtra por semana
   def index
     @q = Delivery.ransack(params[:q])
-    @deliveries = @q.result.includes(order: [ :client, :seller ], delivery_address: :client).order(delivery_date: :desc).page(params[:page])
+    @deliveries = @q.result.includes(order: [ :client, :seller ], delivery_address: :client).order(delivery_date: :asc).page(params[:page])
     authorize Delivery
 
     respond_to do |format|
@@ -192,7 +192,7 @@ class DeliveriesController < ApplicationController
     @delivery = Delivery.find(params[:id])
     authorize @delivery, :edit? # O crea una policy específica si lo prefieres
 
-    updated = @delivery.delivery_items.where(status: [ :pending, :confirmed ]).update_all(status: :confirmed, updated_at: Time.current)
+    updated = @delivery.delivery_items.where(status: [ :in_production, :confirmed ]).update_all(status: :confirmed, updated_at: Time.current)
     @delivery.update_status_based_on_items
 
     redirect_to @delivery, notice: "#{updated} productos confirmados para entrega."
@@ -322,7 +322,6 @@ class DeliveriesController < ApplicationController
 
   # Busca o crea un pedido
   def find_or_create_order(client)
-    byebug
     if params[:delivery] && params[:delivery][:order_id].present?
       Order.find(params[:delivery][:order_id])
     elsif params[:order] && params[:order][:number].present?
@@ -332,7 +331,7 @@ class DeliveriesController < ApplicationController
       client.orders.create!(
         number: params[:order][:number],
         seller_id: params[:seller_id] || current_user.seller&.id,
-        status: :pending
+        status: :in_production
       )
     elsif params[:order_id].present?
       Order.find(params[:order_id])

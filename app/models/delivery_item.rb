@@ -17,10 +17,11 @@ class DeliveryItem < ApplicationRecord
   enum status: {
     pending: 0,      # Aún no confirmado para entrega
     confirmed: 1,    # Confirmado para entregar
-    in_route: 2,
-    delivered: 3,
-    rescheduled: 4,
-    cancelled: 5
+    in_plan: 2,
+    in_route: 3,
+    delivered: 4,
+    rescheduled: 5,
+    cancelled: 6
   }
 
   # ============================================================================

@@ -68,7 +68,7 @@
         <th>Notas</th>
         <th>Estado de entrega</th>
         <th>Estado en planta</th>
-        <% if !@order.delivered? %>
+        <% if policy(@order).edit? && !@order.delivered? %>
           <th>Acción</th>
         <% end %>
       </tr>
@@ -89,7 +89,7 @@
           </td>
           <td>
             <span class="badge bg-<%= delivery_item_status_color(item.item_delivery_status) %>">
-              <%= item.item_delivery_status.humanize %>
+              <%= DeliveryItem.human_attribute_name("status.#{item.item_delivery_status}") %>
             </span>
           </td>
           <td>
@@ -99,18 +99,20 @@
               <span class="badge bg-secondary"><i class="bi bi-hourglass-split me-1"></i>Pendiente de Confirmación</span>
             <% end %>
           </td>
-          <% if !@order.delivered?%>
-            <td>
-              <% if item.confirmed?%>
-                <%= button_to unconfirm_order_item_path(item), method: :patch, class: "btn btn-warning btn-sm", title: "Retirar confirmación" do %>
-                  <i class="bi bi-x-circle"></i> Retirar
+          <% if policy(@order).edit? %>
+            <% if !@order.delivered?%>
+              <td>
+                <% if item.confirmed?%>
+                  <%= button_to unconfirm_order_item_path(item), method: :patch, class: "btn btn-warning btn-sm", title: "Retirar confirmación" do %>
+                    <i class="bi bi-x-circle"></i> Retirar
+                  <% end %>
+                <% else %>
+                  <%= button_to confirm_order_item_path(item), method: :patch, class: "btn btn-primary btn-sm", title: "Confirmar" do %>
+                    <i class="bi bi-check-circle"></i> Confirmar
+                  <% end %>
                 <% end %>
-              <% else %>
-                <%= button_to confirm_order_item_path(item), method: :patch, class: "btn btn-primary btn-sm", title: "Confirmar" do %>
-                  <i class="bi bi-check-circle"></i> Confirmar
-                <% end %>
-              <% end %>
-            </td>
+              </td>
+            <% end %>
           <% end %>
         </tr>
       <% end %>

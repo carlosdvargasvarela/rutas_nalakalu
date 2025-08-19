@@ -13,10 +13,11 @@ class Delivery < ApplicationRecord
   enum status: {
     scheduled: 0,
     ready_to_deliver: 1,
-    in_route: 2,
-    delivered: 3,
-    rescheduled: 4,
-    cancelled: 5
+    in_plan: 2,
+    in_route: 3,
+    delivered: 4,
+    rescheduled: 5,
+    cancelled: 6
   }
 
   enum delivery_type: { normal_delivery: 0, service_case: 1 }

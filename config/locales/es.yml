@@ -7,7 +7,15 @@ es:
           in_production: "En producción"
           ready_for_delivery: "Listo para entrega"
           delivered: "Entregado"
-          cancelled: "Cancelado"
+        delivery_item:
+          status:
+            pending: "Pendiente"
+            confirmed: "Confirmado"
+            in_plan: "En plan de entregas"
+            in_route: "En ruta"
+            delivered: "Entregado"
+            rescheduled: "Reprogramado"
+            cancelled: "Cancelado"
     errors:
       messages:
         record_invalid: 'La validación falló: %{errors}'

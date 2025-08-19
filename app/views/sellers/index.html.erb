@@ -5,7 +5,6 @@
     <i class="bi bi-funnel"></i> Filtros
   </button>
 </div>
-
 <div id="filters" class="collapse mb-3">
   <div class="card">
     <div class="card-body">
@@ -27,7 +26,6 @@
     </div>
   </div>
 </div>
-
 <div class="card">
   <div class="table-responsive">
     <table class="table table-hover table-sm align-middle mb-0">
@@ -36,7 +34,6 @@
           <th><%= sort_link(@q, :name, "Nombre") %></th>
           <th>Código</th>
           <th>Usuario</th>
-          <th><%= sort_link(@q, :created_at, "Creado") %></th>
           <th class="text-end">Acciones</th>
         </tr>
       </thead>
@@ -47,7 +44,6 @@
               <td class="fw-semibold"><%= link_to seller.name, seller_path(seller), class: "link-primary link-underline-opacity-0" %></td>
               <td><span class="badge text-bg-primary"><%= seller.seller_code %></span></td>
               <td><%= seller.user&.email %></td>
-              <td><%= l(seller.created_at, format: :short) %></td>
               <td class="text-end">
                 <%= link_to raw('<i class="bi bi-eye"></i> Ver'), seller_path(seller), class: "btn btn-sm btn-outline-primary" %>
               </td>

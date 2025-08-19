@@ -13,15 +13,15 @@ module ApplicationHelper
   end
 
   # Colores para estados de DeliveryItem
-  def delivery_item_status_color(status)
-    case status.to_s
-    when "pending"           then "secondary"
-    when "confirmed"         then "primary"
-    when "in_route"          then "warning"
-    when "delivered"         then "success"
-    when "rescheduled"       then "info"
-    when "cancelled"         then "danger"
-    else "secondary"
+  def delivery_item_status_color(status_key)
+    case status_key.to_s
+    when "pending"     then "warning"
+    when "confirmed"   then "primary"
+    when "in_route"    then "info"
+    when "delivered"   then "success"
+    when "rescheduled" then "warning"
+    when "cancelled"   then "secondary"
+    else "info"
     end
   end
 
