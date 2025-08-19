@@ -51,4 +51,17 @@ class User < ApplicationRecord
   def set_default_role
     self.role ||= :seller
   end
+
+  # Ransack: permitir solo atributos seguros
+  def self.ransackable_attributes(auth_object = nil)
+    %w[email name role created_at updated_at]
+  end
+
+  def self.ransackable_associations(auth_object = nil)
+    [] # no exponemos asociaciones desde User para búsqueda
+  end
+
+  def self.ransackable_associations(_ = nil)
+    ["orders", "user", "versions"]
+  end
 end

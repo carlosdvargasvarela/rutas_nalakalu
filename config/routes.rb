@@ -159,4 +159,7 @@ Rails.application.routes.draw do
       end
     end
   end
+
+  resources :clients
+  resources :sellers, only: [ :index, :show ]
 end
