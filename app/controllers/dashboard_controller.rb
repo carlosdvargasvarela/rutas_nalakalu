@@ -60,6 +60,9 @@ class DashboardController < ApplicationController
 
     case current_user.role
     when "seller"
+      week_start = Date.current.next_week
+      week_end   = week_start.end_of_week
+
       # Entregas por confirmar próxima semana
       next_week_deliveries = current_user_deliveries
         .where(delivery_date: Date.current.next_week..Date.current.next_week.end_of_week)
@@ -74,7 +77,9 @@ class DashboardController < ApplicationController
           icon: "bi bi-calendar-check",
           color: "warning",
           action_text: "Confirmar",
-          action_url: deliveries_path(q: { delivery_date_gteq: Date.current.next_week })
+          action_url: deliveries_path(q: {
+            delivery_date_gteq: week_start,
+            delivery_date_lteq: week_end })
         }
       end
 
