@@ -80,7 +80,7 @@ class DashboardController < ApplicationController
           action_url: deliveries_path(q: {
             delivery_date_gteq: week_start,
             delivery_date_lteq: week_end,
-            order_seller_seller_code_cont: current_user.seller.code
+            order_seller_seller_code_eq: current_user.seller.code
            })
         }
       end
