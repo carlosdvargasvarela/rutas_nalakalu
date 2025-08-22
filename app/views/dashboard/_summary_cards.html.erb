@@ -56,10 +56,14 @@
       <h6 class="card-title text-uppercase text-secondary mb-2">Entregas vencidas</h6>
       <p class="fw-bold fs-2 mb-3 text-danger"><%= @overdue_deliveries_count || 0 %></p>
       <%= link_to "Ver vencidas", deliveries_path(q: {
-            delivery_date_lt: Date.current,
-            status_not_in: %w[delivered rescheduled cancelled]
-          }),
-          class: "btn btn-danger btn-sm mt-auto" %>
+        delivery_date_lt: Date.current.to_s,
+        status_not_eq_all: [
+          Delivery.statuses[:delivered],
+          Delivery.statuses[:rescheduled],
+          Delivery.statuses[:cancelled]
+        ],
+        order_seller_seller_code_eq: (current_user.seller.seller_code if current_user.seller?)}.compact),
+        class: "btn btn-danger btn-sm mt-auto" %>
     </div>
   </div>
 </div>
