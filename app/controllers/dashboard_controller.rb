@@ -9,6 +9,9 @@ class DashboardController < ApplicationController
     @upcoming_plans_count = upcoming_delivery_plans.count
     @unread_notifications_count = current_user.notifications.unread.count
 
+    # NUEVO: Pedidos/Entregas vencidas (delivery_date < hoy y status no en delivered, rescheduled, cancelled)
+    @overdue_deliveries_count = current_user_deliveries.overdue.count
+
     # Notificaciones recientes
     @recent_notifications = current_user.notifications.recent.limit(5)
 

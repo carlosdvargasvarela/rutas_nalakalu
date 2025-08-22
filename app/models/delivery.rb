@@ -39,6 +39,7 @@ class Delivery < ApplicationRecord
   scope :service_cases, -> { where(delivery_type: [ :pickup, :return_delivery, :onsite_repair ]) }
   scope :normal_deliveries, -> { where(delivery_type: :normal) }
   scope :pending, -> { where(status: [ :scheduled, :ready_to_deliver, :in_route ]) }
+  scope :overdue, -> { where("delivery_date < ?", Date.current).where.not(status: [ :delivered, :rescheduled, :cancelled ]) }
 
   # Métodos de conveniencia
   def service_case?
