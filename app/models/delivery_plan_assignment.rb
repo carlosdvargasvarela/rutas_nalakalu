@@ -15,7 +15,6 @@ class DeliveryPlanAssignment < ApplicationRecord
   private
 
   def change_deliveries_statuses
-    byebug
     delivery.delivery_items.each do |item|
       item.update!(status: "in_plan")
     end
@@ -23,7 +22,6 @@ class DeliveryPlanAssignment < ApplicationRecord
   end
 
   def revert_statuses
-    byebug
     delivery.delivery_items.each do |item|
       item.update!(status: "ready_to_deliver")
     end
