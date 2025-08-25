@@ -48,6 +48,9 @@ gem "caxlsx_rails"
 # Authentication
 gem "devise"
 
+# Geocoding
+gem "geocoder"
+
 # Bootstrap for styling
 gem "bootstrap", "~> 5.3.5"
 gem "jquery-rails"
