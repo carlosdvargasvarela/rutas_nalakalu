@@ -321,13 +321,23 @@ export default class extends Controller {
         console.log("🔍 Configurando autocompletado...")
 
         try {
+            // 🎯 AQUÍ ESTÁ EL CAMBIO PRINCIPAL - Ampliar tipos de resultados
             this.autocomplete = new google.maps.places.Autocomplete(this.inputTarget, {
-                types: ["geocode"],
+                // 👇 Permitir direcciones, locales, POIs y establecimientos
+                types: ["geocode", "establishment"],
                 componentRestrictions: { country: "CR" },
-                fields: ["geometry", "formatted_address", "plus_code"]
+                // 👇 Solicitar más campos incluyendo name y plus_code
+                fields: [
+                    "geometry", 
+                    "formatted_address", 
+                    "name", 
+                    "plus_code", 
+                    "place_id",
+                    "types"
+                ]
             })
 
-            console.log("✅ Autocompletado creado")
+            console.log("✅ Autocompletado creado con tipos ampliados")
 
             this.autocomplete.addListener("place_changed", () => {
                 const place = this.autocomplete.getPlace()
@@ -341,13 +351,39 @@ export default class extends Controller {
                 const lat = place.geometry.location.lat()
                 const lng = place.geometry.location.lng()
 
+                // 🎯 Determinar qué mostrar en el input
+                let displayAddress = ""
+                
+                // Si es un establecimiento/POI, mostrar el nombre + dirección
+                if (place.name && place.types && 
+                    (place.types.includes("establishment") || 
+                     place.types.includes("point_of_interest") ||
+                     place.types.includes("store"))) {
+                    displayAddress = `${place.name} - ${place.formatted_address}`
+                } else {
+                    // Para direcciones normales, usar formatted_address
+                    displayAddress = place.formatted_address
+                }
+
+                // Actualizar el input con la dirección mejorada
+                this.inputTarget.value = displayAddress
+
                 this.updateCoordinates(lat, lng)
-                this.plusTarget.value = place.plus_code?.compound_code || ""
+                
+                // 🎯 Mejorar captura de Plus Code
+                let plusCode = ""
+                if (place.plus_code) {
+                    // Preferir global_code, si no compound_code
+                    plusCode = place.plus_code.global_code || place.plus_code.compound_code || ""
+                }
+                this.plusTarget.value = plusCode
 
                 this.map.setCenter({ lat, lng })
                 this.updateMarkerPosition(lat, lng)
 
                 console.log(`✅ Coordenadas actualizadas desde autocomplete: ${lat}, ${lng}`)
+                console.log(`📍 Plus Code: ${plusCode}`)
+                console.log(`🏪 Tipo de lugar: ${place.types?.join(", ")}`)
             })
 
         } catch (error) {
@@ -379,8 +415,17 @@ export default class extends Controller {
         const geocoder = new google.maps.Geocoder()
         geocoder.geocode({ location: { lat, lng } }, (results, status) => {
             if (status === "OK" && results[0]) {
-                this.inputTarget.value = results[0].formatted_address
-                this.plusTarget.value = results[0].plus_code?.compound_code || ""
+                // Solo actualizar si el input está vacío o no fue llenado por autocomplete
+                if (!this.inputTarget.value || this.inputTarget.value.trim() === "") {
+                    this.inputTarget.value = results[0].formatted_address
+                }
+                
+                // Actualizar plus code si no se tiene
+                if (!this.plusTarget.value && results[0].plus_code) {
+                    this.plusTarget.value = results[0].plus_code.global_code || 
+                                           results[0].plus_code.compound_code || ""
+                }
+                
                 console.log("✅ Geocodificación inversa exitosa")
             } else {
                 console.warn("⚠️ Error en geocodificación inversa:", status)

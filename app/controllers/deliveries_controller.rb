@@ -64,7 +64,6 @@ class DeliveriesController < ApplicationController
   # PATCH/PUT /deliveries/:id
   def update
     ActiveRecord::Base.transaction do
-      byebug
       # 1. Si el usuario cambió el pedido, busca el nuevo order
       order = if params[:delivery][:order_id].present?
         Order.find(params[:delivery][:order_id])
@@ -316,7 +315,6 @@ class DeliveriesController < ApplicationController
 
   # Busca o crea una dirección de entrega
   def find_or_create_address(client)
-    byebug
     if params[:delivery] && params[:delivery][:delivery_address_id].present?
       addr = DeliveryAddress.find(params[:delivery][:delivery_address_id])
 
