@@ -68,6 +68,13 @@ export default class extends Controller {
     // DIRECCIÓN
     toggleNewAddressFields() {
         this.newAddressFieldsTarget.style.display = "block"
+        const addressController = this.application.getControllerForElementAndIdentifier(
+            this.newAddressFieldsTarget,
+            "address-autocomplete"
+        )
+        if (addressController) {
+            addressController.initialize()
+        }
         if (this.hasAddAddressButtonTarget) {
             this.addAddressButtonTarget.disabled = true
         }

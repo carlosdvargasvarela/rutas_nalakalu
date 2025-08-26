@@ -1,4 +1,4 @@
-<%# app/views/deliveries/_form.html.erb %>
+<% raise "@delivery es NIL!" if @delivery.nil? %>
 <%= simple_form_for delivery, html: {
       data: {
         controller: "delivery-form",
@@ -7,7 +7,7 @@
       }
     } do |f| %>
   <%= render "client_fields", f: f, clients: clients %>
-  <%= render "address_fields", f: f, addresses: addresses %>
+  <%= render "address_fields", f: f, addresses: addresses, delivery: delivery %>
   <%= render "order_fields", f: f %>
   <%= render "order_items_fields", f: f %>
   <%# Datos de la entrega %>

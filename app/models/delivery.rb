@@ -2,7 +2,6 @@
 class Delivery < ApplicationRecord
   has_paper_trail
   belongs_to :order
-  belongs_to :delivery_address
   has_many :delivery_items, dependent: :destroy
   has_many :order_items, through: :delivery_items
   has_many :delivery_plan_assignments

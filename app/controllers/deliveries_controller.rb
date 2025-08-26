@@ -1,5 +1,7 @@
+# app/controllers/deliveries_controller.rbº
 class DeliveriesController < ApplicationController
   before_action :set_delivery, only: [ :show, :edit, :update ]
+  before_action :set_addresses, only: [:new, :edit, :create, :update]
 
   # GET /deliveries
   # Muestra todas las entregas o filtra por semana
@@ -53,7 +55,6 @@ class DeliveriesController < ApplicationController
   def edit
     @delivery = Delivery.includes(delivery_items: :order_item).find(params[:id])
     @client = @delivery.order.client
-    @addresses = @client.delivery_addresses.order(:description)
     @order = @delivery.order
 
     # Agregar un delivery_item vacío si no hay ninguno
@@ -343,6 +344,14 @@ class DeliveriesController < ApplicationController
   # Busca la entrega por ID
   def set_delivery
     @delivery = Delivery.find(params[:id])
+  end
+
+  def set_addresses
+    if @delivery&.order&.client
+      @addresses = @delivery.order.client.delivery_addresses.to_a
+    else
+      @addresses = []
+    end
   end
 
   # Parámetros permitidos para delivery

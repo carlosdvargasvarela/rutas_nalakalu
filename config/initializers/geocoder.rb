@@ -1,7 +1,7 @@
 # config/initializers/geocoder.rb
 Geocoder.configure(
   lookup: :google,
-  api_key: "AIzaSyAX1ME8q3c7LYFTdgyMYWAVclmPgRQ50Ek",
+  api_key: "AIzaSyBGqLJVEomqQc4qRA1_6Sp7clVxRZCbAno",
   use_https: true,
   units: :km,
   timeout: 5,

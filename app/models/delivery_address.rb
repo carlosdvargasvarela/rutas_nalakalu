@@ -2,7 +2,6 @@
 class DeliveryAddress < ApplicationRecord
   has_paper_trail
   belongs_to :client
-  has_many :deliveries
 
   validates :address, presence: true
 

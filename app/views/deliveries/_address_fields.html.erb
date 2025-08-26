@@ -1,4 +1,5 @@
 <%# app/views/deliveries/_address_fields.html.erb %>
+<% raise "@addresses es NIL!" if @addresses.nil? %>
 <% delivery = f.object %>
 <div class="row mb-4">
   <div class="col-12">
@@ -7,34 +8,34 @@
     </h5>
   </div>
   <div class="col-md-8">
-    <div class="mb-3">
-      <%= f.input :delivery_address_id, 
-          collection: addresses,
-          value_method: :id,
-          text_method: :address,
-          selected: (params.dig(:delivery, :delivery_address_id) || delivery.delivery_address_id),
-          prompt: "Selecciona una dirección",
-          label: "Dirección",
-          input_html: { 
-            class: "form-select",
-            data: { 
-              "delivery-form-target": "addressSelect",
-              action: "change->delivery-form#addressChanged"
-            }
-          },
-          label_html: { class: "form-label" } %>
-    </div>
+    <%= f.input :delivery_address_id,
+    collection: @addresses,
+    label_method: :address,      
+    value_method: :id,           
+    prompt: "Selecciona una dirección existente",
+    label: "Dirección",
+    input_html: {
+      class: "form-select",
+      data: {
+        "delivery-form-target": "addressSelect",
+        action: "change->delivery-form#addressChanged"
+      }
+    },
+    label_html: { class: "form-label" } %>
   </div>
   <div class="col-md-4">
     <button type="button"
             class="btn btn-outline-primary btn-sm mt-4"
-            data-action="click->delivery-form#toggleNewAddressFields"
-      data-delivery-form-target="addAddressButton">
+            data-action="click->delivery-form#toggleNewAddressFields">
       Agregar nueva dirección
     </button>
   </div>
 </div>
-<div data-delivery-form-target="newAddressFields" class="card card-body border-primary mb-3" style="display:none;">
+<div data-delivery-form-target="newAddressFields" 
+     data-controller="address-autocomplete"
+     data-address-autocomplete-api-key-value="AIzaSyBGqLJVEomqQc4qRA1_6Sp7clVxRZCbAno"
+     class="card card-body border-primary mb-3" 
+     style="display:none;">
   <div class="d-flex justify-content-between align-items-center mb-2">
     <span class="fw-bold text-primary">
       <i class="bi bi-geo-alt-plus me-2"></i>Nueva dirección
@@ -44,20 +45,24 @@
       <i class="bi bi-x-lg"></i> Cancelar
     </button>
   </div>
-  <div class="row mb-2">
-    <div class="col-md-8">
-      <%= label_tag "delivery_address[address]", "Dirección completa", class: "form-label" %>
-      <%= text_area_tag "delivery_address[address]", 
-          params.dig(:delivery_address, :address), 
-          placeholder: "Dirección completa de entrega", 
-          class: "form-control", rows: 2 %>
-    </div>
-    <div class="col-md-4">
-      <%= label_tag "delivery_address[description]", "Descripción", class: "form-label" %>
-      <%= text_field_tag "delivery_address[description]", 
-          params.dig(:delivery_address, :description), 
-          placeholder: "Ej: Casa principal", 
-          class: "form-control" %>
-    </div>
+  <div class="mb-3">
+    <%= label_tag "delivery_address[address]", "Buscar dirección", class: "form-label" %>
+    <%= text_field_tag "delivery_address[address]", nil,
+        placeholder: "Ej: Barrio Escalante, San José...",
+        id: "delivery_address_address",
+        class: "form-control",
+        data: { "address-autocomplete-target": "input" } %>
+  </div>
+  <div data-address-autocomplete-target="map" 
+       style="height: 250px;" 
+       class="mb-3 border rounded"></div>
+  <%= hidden_field_tag "delivery_address[latitude]", nil, data: { "address-autocomplete-target": "lat" } %>
+  <%= hidden_field_tag "delivery_address[longitude]", nil, data: { "address-autocomplete-target": "lng" } %>
+  <%= hidden_field_tag "delivery_address[plus_code]", nil, data: { "address-autocomplete-target": "plus" } %>
+  <div class="mb-3">
+    <%= label_tag "delivery_address[description]", "Referencia", class: "form-label" %>
+    <%= text_field_tag "delivery_address[description]", nil,
+        placeholder: "Ej: Casa blanca portón negro",
+        class: "form-control" %>
   </div>
 </div>
