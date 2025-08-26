@@ -2,11 +2,21 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-    static values = { apiKey: String }
-    static targets = ["input", "lat", "lng", "plus", "map"]
+    static values = {
+        apiKey: String,
+        addresses: Array,
+        selectedAddressId: String
+    }
+    static targets = [
+        "input", "lat", "lng", "plus", "map",
+        "selectedAddressInfo", "selectedAddressText", "useSelectedButton"
+    ]
 
     connect() {
         console.log("🚀 AddressAutocomplete conectado")
+        console.log("📍 Direcciones disponibles:", this.addressesValue)
+        console.log("🎯 Dirección seleccionada ID:", this.selectedAddressIdValue)
+
         // Solo inicializar si el contenedor ya está visible
         if (this.isContainerVisible()) {
             this.initializeWhenReady()
@@ -23,6 +33,128 @@ export default class extends Controller {
         } else if (this.map) {
             this.refreshMap()
         }
+
+        // Mostrar información de dirección seleccionada
+        this.updateSelectedAddressInfo()
+    }
+
+    // Método llamado desde delivery-form cuando cambia el select
+    updateSelectedAddress(addressId) {
+        console.log("🔄 Actualizando dirección seleccionada:", addressId)
+        this.selectedAddressIdValue = addressId
+        this.updateSelectedAddressInfo()
+
+        if (this.map) {
+            this.centerMapOnSelectedAddress()
+        }
+    }
+
+    updateSelectedAddressInfo() {
+        const selectedAddress = this.getSelectedAddress()
+
+        if (selectedAddress) {
+            this.selectedAddressTextTarget.textContent = selectedAddress.address
+            this.selectedAddressInfoTarget.style.display = "block"
+            this.useSelectedButtonTarget.style.display = "inline-block"
+            console.log("✅ Información de dirección actualizada:", selectedAddress.address)
+        } else {
+            this.selectedAddressInfoTarget.style.display = "none"
+            this.useSelectedButtonTarget.style.display = "none"
+        }
+    }
+
+    getSelectedAddress() {
+        if (!this.selectedAddressIdValue || this.selectedAddressIdValue === "") {
+            return null
+        }
+
+        return this.addressesValue.find(addr =>
+            addr.id.toString() === this.selectedAddressIdValue.toString()
+        )
+    }
+
+    centerMapOnSelectedAddress() {
+        const selectedAddress = this.getSelectedAddress()
+
+        if (selectedAddress && selectedAddress.latitude && selectedAddress.longitude) {
+            const lat = parseFloat(selectedAddress.latitude)
+            const lng = parseFloat(selectedAddress.longitude)
+
+            console.log(`🗺️ Centrando mapa en dirección seleccionada: ${lat}, ${lng}`)
+
+            this.map.setCenter({ lat, lng })
+            this.updateMarkerPosition(lat, lng)
+
+            // Actualizar campos ocultos
+            this.latTarget.value = lat
+            this.lngTarget.value = lng
+
+            // Actualizar input de dirección
+            this.inputTarget.value = selectedAddress.address
+        }
+    }
+
+    useSelectedAddress() {
+        const selectedAddress = this.getSelectedAddress()
+
+        if (selectedAddress) {
+            console.log("✅ Usando dirección seleccionada")
+
+            // Llenar todos los campos
+            this.inputTarget.value = selectedAddress.address
+
+            if (selectedAddress.latitude && selectedAddress.longitude) {
+                const lat = parseFloat(selectedAddress.latitude)
+                const lng = parseFloat(selectedAddress.longitude)
+
+                this.latTarget.value = lat
+                this.lngTarget.value = lng
+
+                if (this.map) {
+                    this.map.setCenter({ lat, lng })
+                    this.updateMarkerPosition(lat, lng)
+                }
+            }
+
+            // Mostrar mensaje de confirmación
+            this.showTemporaryMessage("✅ Dirección aplicada correctamente")
+        }
+    }
+
+    clearForm() {
+        console.log("🧹 Limpiando formulario")
+
+        this.inputTarget.value = ""
+        this.latTarget.value = ""
+        this.lngTarget.value = ""
+        this.plusTarget.value = ""
+
+        // Resetear mapa a Costa Rica
+        if (this.map) {
+            this.map.setCenter({ lat: 9.93333, lng: -84.08333 })
+            this.updateMarkerPosition(9.93333, -84.08333)
+        }
+
+        this.showTemporaryMessage("🧹 Formulario limpiado")
+    }
+
+    showTemporaryMessage(message) {
+        // Crear elemento temporal para mostrar mensaje
+        const messageDiv = document.createElement("div")
+        messageDiv.className = "alert alert-success alert-dismissible fade show mt-2"
+        messageDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `
+
+        this.element.appendChild(messageDiv)
+
+        // Auto-remover después de 3 segundos
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.remove()
+            }
+        }, 3000)
     }
 
     isContainerVisible() {
@@ -62,7 +194,7 @@ export default class extends Controller {
 
     waitForGoogleMaps() {
         let attempts = 0
-        const maxAttempts = 30 // Reducido de 50
+        const maxAttempts = 30
 
         const checkGoogle = () => {
             attempts++
@@ -73,7 +205,7 @@ export default class extends Controller {
                 console.error("❌ Timeout esperando Google Maps")
                 this.fallbackToBasicInput()
             } else {
-                setTimeout(checkGoogle, 200) // Aumentado de 100ms
+                setTimeout(checkGoogle, 200)
             }
         }
         checkGoogle()
@@ -94,16 +226,26 @@ export default class extends Controller {
         console.log("🗺️ Inicializando mapa...")
 
         try {
-            // Verificar que el contenedor del mapa sea visible
             if (!this.isContainerVisible() || this.mapTarget.offsetWidth === 0) {
                 console.warn("⚠️ Contenedor del mapa no visible")
                 return
             }
 
+            // Determinar posición inicial
+            const selectedAddress = this.getSelectedAddress()
+            let initialLat = 9.93333  // San José por defecto
+            let initialLng = -84.08333
+
+            if (selectedAddress && selectedAddress.latitude && selectedAddress.longitude) {
+                initialLat = parseFloat(selectedAddress.latitude)
+                initialLng = parseFloat(selectedAddress.longitude)
+                console.log(`🎯 Usando posición de dirección seleccionada: ${initialLat}, ${initialLng}`)
+            }
+
             // Inicializar mapa
             this.map = new google.maps.Map(this.mapTarget, {
-                center: { lat: 9.93333, lng: -84.08333 }, // San José, Costa Rica
-                zoom: 14,
+                center: { lat: initialLat, lng: initialLng },
+                zoom: selectedAddress ? 16 : 14, // Más zoom si hay dirección específica
                 mapTypeControl: false,
                 streetViewControl: false,
                 fullscreenControl: false
@@ -111,11 +253,18 @@ export default class extends Controller {
 
             console.log("✅ Mapa creado")
 
-            // Usar AdvancedMarkerElement si está disponible, sino Marker clásico
-            await this.createMarker()
+            // Crear marcador
+            await this.createMarker(initialLat, initialLng)
 
             // Configurar autocompletado
             this.setupAutocomplete()
+
+            // Actualizar campos si hay dirección seleccionada
+            if (selectedAddress) {
+                this.latTarget.value = initialLat
+                this.lngTarget.value = initialLng
+                this.inputTarget.value = selectedAddress.address
+            }
 
         } catch (error) {
             console.error("❌ Error en initMap:", error)
@@ -123,7 +272,7 @@ export default class extends Controller {
         }
     }
 
-    async createMarker() {
+    async createMarker(lat = 9.93333, lng = -84.08333) {
         try {
             // Intentar usar AdvancedMarkerElement (nuevo)
             if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
@@ -131,36 +280,33 @@ export default class extends Controller {
 
                 this.marker = new google.maps.marker.AdvancedMarkerElement({
                     map: this.map,
-                    position: { lat: 9.93333, lng: -84.08333 },
+                    position: { lat, lng },
                     gmpDraggable: true,
                     title: "Ubicación de entrega"
                 })
 
-                // Listener para drag con AdvancedMarkerElement
                 this.marker.addListener("dragend", (event) => {
-                    const lat = event.latLng.lat()
-                    const lng = event.latLng.lng()
-                    console.log(`📍 Marcador movido a: ${lat}, ${lng}`)
-                    this.updateCoordinates(lat, lng)
+                    const newLat = event.latLng.lat()
+                    const newLng = event.latLng.lng()
+                    console.log(`📍 Marcador movido a: ${newLat}, ${newLng}`)
+                    this.updateCoordinates(newLat, newLng)
                 })
 
             } else {
-                // Fallback a Marker clásico
                 console.log("⚠️ Usando Marker clásico (deprecated)")
 
                 this.marker = new google.maps.Marker({
                     map: this.map,
-                    position: { lat: 9.93333, lng: -84.08333 },
+                    position: { lat, lng },
                     draggable: true,
                     title: "Ubicación de entrega"
                 })
 
-                // Listener para drag con Marker clásico
                 this.marker.addListener("dragend", (event) => {
-                    const lat = event.latLng.lat()
-                    const lng = event.latLng.lng()
-                    console.log(`📍 Marcador movido a: ${lat}, ${lng}`)
-                    this.updateCoordinates(lat, lng)
+                    const newLat = event.latLng.lat()
+                    const newLng = event.latLng.lng()
+                    console.log(`📍 Marcador movido a: ${newLat}, ${newLng}`)
+                    this.updateCoordinates(newLat, newLng)
                 })
             }
 
@@ -175,56 +321,38 @@ export default class extends Controller {
         console.log("🔍 Configurando autocompletado...")
 
         try {
-            // Usar PlaceAutocompleteElement si está disponible
-            if (google.maps.places.PlaceAutocompleteElement) {
-                console.log("✅ Usando PlaceAutocompleteElement (nuevo)")
-                this.setupNewAutocomplete()
-            } else {
-                console.log("⚠️ Usando Autocomplete clásico (deprecated)")
-                this.setupClassicAutocomplete()
-            }
+            this.autocomplete = new google.maps.places.Autocomplete(this.inputTarget, {
+                types: ["geocode"],
+                componentRestrictions: { country: "CR" },
+                fields: ["geometry", "formatted_address", "plus_code"]
+            })
+
+            console.log("✅ Autocompletado creado")
+
+            this.autocomplete.addListener("place_changed", () => {
+                const place = this.autocomplete.getPlace()
+                console.log("📍 Lugar seleccionado desde autocomplete:", place)
+
+                if (!place.geometry) {
+                    console.warn("⚠️ Sin información geográfica")
+                    return
+                }
+
+                const lat = place.geometry.location.lat()
+                const lng = place.geometry.location.lng()
+
+                this.updateCoordinates(lat, lng)
+                this.plusTarget.value = place.plus_code?.compound_code || ""
+
+                this.map.setCenter({ lat, lng })
+                this.updateMarkerPosition(lat, lng)
+
+                console.log(`✅ Coordenadas actualizadas desde autocomplete: ${lat}, ${lng}`)
+            })
 
         } catch (error) {
             console.error("❌ Error configurando autocompletado:", error)
-            this.setupClassicAutocomplete() // Fallback
         }
-    }
-
-    setupNewAutocomplete() {
-        // Implementación con PlaceAutocompleteElement
-        // Nota: Esta API aún está en desarrollo, mantenemos el clásico por ahora
-        this.setupClassicAutocomplete()
-    }
-
-    setupClassicAutocomplete() {
-        this.autocomplete = new google.maps.places.Autocomplete(this.inputTarget, {
-            types: ["geocode"],
-            componentRestrictions: { country: "CR" },
-            fields: ["geometry", "formatted_address", "plus_code"]
-        })
-
-        console.log("✅ Autocompletado creado")
-
-        this.autocomplete.addListener("place_changed", () => {
-            const place = this.autocomplete.getPlace()
-            console.log("📍 Lugar seleccionado:", place)
-
-            if (!place.geometry) {
-                console.warn("⚠️ Sin información geográfica")
-                return
-            }
-
-            const lat = place.geometry.location.lat()
-            const lng = place.geometry.location.lng()
-
-            this.updateCoordinates(lat, lng)
-            this.plusTarget.value = place.plus_code?.compound_code || ""
-
-            this.map.setCenter({ lat, lng })
-            this.updateMarkerPosition(lat, lng)
-
-            console.log(`✅ Coordenadas actualizadas: ${lat}, ${lng}`)
-        })
     }
 
     updateCoordinates(lat, lng) {
@@ -260,13 +388,21 @@ export default class extends Controller {
         })
     }
 
-    // Método para refrescar el mapa cuando se hace visible
     refreshMap() {
         if (this.map) {
             console.log("🔄 Refrescando mapa...")
             setTimeout(() => {
                 google.maps.event.trigger(this.map, "resize")
-                this.map.setCenter({ lat: 9.93333, lng: -84.08333 })
+
+                // Si hay dirección seleccionada, centrar ahí
+                const selectedAddress = this.getSelectedAddress()
+                if (selectedAddress && selectedAddress.latitude && selectedAddress.longitude) {
+                    const lat = parseFloat(selectedAddress.latitude)
+                    const lng = parseFloat(selectedAddress.longitude)
+                    this.map.setCenter({ lat, lng })
+                } else {
+                    this.map.setCenter({ lat: 9.93333, lng: -84.08333 })
+                }
             }, 100)
         }
     }
@@ -281,23 +417,19 @@ export default class extends Controller {
     disconnect() {
         console.log("🔌 Desconectando AddressAutocomplete")
 
-        // Limpiar listeners del marcador
         if (this.marker && google?.maps?.event) {
             google.maps.event.clearInstanceListeners(this.marker)
         }
 
-        // Limpiar listeners del autocompletado
         if (this.autocomplete && google?.maps?.event) {
             google.maps.event.clearInstanceListeners(this.autocomplete)
         }
 
-        // Limpiar timers si existen
         if (this.retryTimer) {
             clearTimeout(this.retryTimer)
             this.retryTimer = null
         }
 
-        // Limpiar referencias
         this.map = null
         this.marker = null
         this.autocomplete = null

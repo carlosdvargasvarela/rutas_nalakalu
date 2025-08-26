@@ -5,7 +5,9 @@ export default class extends Controller {
     static targets = [
         "clientSelect", "addressSelect", "orderSelect",
         "newClientFields", "newAddressFields", "newOrderFields",
-        "addClientButton", "addAddressButton", "addOrderButton"
+        "addClientButton", "addAddressButton", "addOrderButton",
+        "newAddressInput", "newAddressClientId", "newAddressLat",
+        "newAddressLng", "newAddressPlusCode", "newAddressDescription"
     ]
     static values = {
         addressesUrl: String,
@@ -45,6 +47,9 @@ export default class extends Controller {
                     addresses.forEach(address => {
                         this.addressSelectTarget.innerHTML += `<option value="${address.id}">${address.address}</option>`
                     })
+
+                    // Actualizar las direcciones disponibles en el controller de address-autocomplete
+                    this.updateAddressControllerData(addresses)
                 })
                 .catch(error => console.error('Error cargando direcciones:', error))
 
@@ -68,6 +73,10 @@ export default class extends Controller {
     // DIRECCIÓN
     toggleNewAddressFields() {
         this.newAddressFieldsTarget.style.display = "block"
+
+        // 👇 Habilitar campos de nueva dirección
+        this.toggleNewAddressFieldsEnabled(true)
+
         const addressController = this.application.getControllerForElementAndIdentifier(
             this.newAddressFieldsTarget,
             "address-autocomplete"
@@ -82,7 +91,10 @@ export default class extends Controller {
 
     cancelNewAddressFields() {
         this.newAddressFieldsTarget.style.display = "none"
-        this.newAddressFieldsTarget.querySelectorAll("input, textarea").forEach(input => input.value = "")
+
+        // 👇 Deshabilitar y limpiar campos
+        this.toggleNewAddressFieldsEnabled(false)
+
         if (this.hasAddAddressButtonTarget) {
             this.addAddressButtonTarget.disabled = false
         }
@@ -90,9 +102,80 @@ export default class extends Controller {
 
     addressChanged(event) {
         const addressId = event.target.value
-        // Si se selecciona una dirección, ocultar el bloque de nueva dirección
-        if (addressId && this.hasNewAddressFieldsTarget) {
-            this.cancelNewAddressFields()
+        console.log("📦 Dirección seleccionada en combo:", addressId)
+
+        // 👇 Deshabilitar campos de nueva dirección si se selecciona una existente
+        this.toggleNewAddressFieldsEnabled(!addressId)
+
+        // Buscar el controller de address-autocomplete y actualizar la dirección seleccionada
+        const addressController = this.application.getControllerForElementAndIdentifier(
+            this.newAddressFieldsTarget,
+            "address-autocomplete"
+        )
+
+        if (addressController) {
+            // Actualizar la dirección seleccionada en el controller del mapa
+            addressController.updateSelectedAddress(addressId)
+
+            // Si hay una dirección seleccionada, mostrar temporalmente el mapa para que se actualice
+            if (addressId) {
+                const wasHidden = this.newAddressFieldsTarget.style.display === "none"
+
+                if (wasHidden) {
+                    // Mostrar temporalmente para que el mapa se actualice
+                    this.newAddressFieldsTarget.style.display = "block"
+
+                    // Inicializar el mapa si no estaba inicializado
+                    if (!addressController.map) {
+                        addressController.initialize()
+                    }
+
+                    // Esperar un momento para que se actualice y luego ocultar
+                    setTimeout(() => {
+                        this.newAddressFieldsTarget.style.display = "none"
+                    }, 100)
+                }
+            }
+        }
+    }
+
+    toggleNewAddressFieldsEnabled(enabled) {
+        // Solo proceder si tenemos todos los targets necesarios
+        if (!this.hasNewAddressInputTarget) return
+
+        const fields = [
+            this.newAddressInputTarget,
+            this.newAddressLatTarget,
+            this.newAddressLngTarget,
+            this.newAddressPlusCodeTarget,
+            this.newAddressDescriptionTarget
+        ]
+
+        fields.forEach(field => {
+            if (field) {
+                field.disabled = !enabled
+                if (!enabled) {
+                    field.value = ""
+                }
+            }
+        })
+
+        // El client_id siempre debe estar habilitado si hay cliente
+        if (this.hasNewAddressClientIdTarget) {
+            this.newAddressClientIdTarget.disabled = false
+        }
+    }
+
+    // Método auxiliar para actualizar los datos del address controller
+    updateAddressControllerData(addresses) {
+        const addressController = this.application.getControllerForElementAndIdentifier(
+            this.newAddressFieldsTarget,
+            "address-autocomplete"
+        )
+
+        if (addressController) {
+            // Actualizar el array de direcciones disponibles
+            addressController.addressesValue = addresses
         }
     }
 

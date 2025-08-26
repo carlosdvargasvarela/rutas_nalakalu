@@ -1,5 +1,4 @@
 <%# app/views/deliveries/_address_fields.html.erb %>
-<% raise "@addresses es NIL!" if @addresses.nil? %>
 <% delivery = f.object %>
 <div class="row mb-4">
   <div class="col-12">
@@ -34,6 +33,8 @@
 <div data-delivery-form-target="newAddressFields" 
      data-controller="address-autocomplete"
      data-address-autocomplete-api-key-value="AIzaSyBGqLJVEomqQc4qRA1_6Sp7clVxRZCbAno"
+     data-address-autocomplete-addresses-value="<%= @addresses.to_json(only: [:id, :address, :latitude, :longitude, :description]) %>"
+     data-address-autocomplete-selected-address-id-value="<%= delivery.delivery_address_id %>"
      class="card card-body border-primary mb-3" 
      style="display:none;">
   <div class="d-flex justify-content-between align-items-center mb-2">
@@ -45,24 +46,79 @@
       <i class="bi bi-x-lg"></i> Cancelar
     </button>
   </div>
+  <!-- Mostrar dirección seleccionada -->
+  <div data-address-autocomplete-target="selectedAddressInfo" 
+       class="alert alert-info mb-3" 
+       style="display:none;">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-info-circle me-2"></i>
+      <div>
+        <strong>Dirección seleccionada:</strong><br>
+        <span data-address-autocomplete-target="selectedAddressText"></span>
+      </div>
+    </div>
+  </div>
   <div class="mb-3">
     <%= label_tag "delivery_address[address]", "Buscar dirección", class: "form-label" %>
     <%= text_field_tag "delivery_address[address]", nil,
         placeholder: "Ej: Barrio Escalante, San José...",
         id: "delivery_address_address",
         class: "form-control",
-        data: { "address-autocomplete-target": "input" } %>
+        data: { 
+          "address-autocomplete-target": "input",
+          "delivery-form-target": "newAddressInput"
+        } %>
+    <div class="form-text">
+      💡 Puedes buscar una nueva dirección o usar la dirección seleccionada arriba
+    </div>
   </div>
   <div data-address-autocomplete-target="map" 
        style="height: 250px;" 
        class="mb-3 border rounded"></div>
-  <%= hidden_field_tag "delivery_address[latitude]", nil, data: { "address-autocomplete-target": "lat" } %>
-  <%= hidden_field_tag "delivery_address[longitude]", nil, data: { "address-autocomplete-target": "lng" } %>
-  <%= hidden_field_tag "delivery_address[plus_code]", nil, data: { "address-autocomplete-target": "plus" } %>
+  <!-- Campos ocultos que solo se habilitan cuando hay nueva dirección -->
+  <%= hidden_field_tag "delivery_address[client_id]", (@client&.id || delivery.order&.client&.id), 
+      data: { "delivery-form-target": "newAddressClientId" } %>
+  <%= hidden_field_tag "delivery_address[latitude]", nil, 
+      data: { 
+        "address-autocomplete-target": "lat",
+        "delivery-form-target": "newAddressLat"
+      }, 
+      disabled: true %>
+  <%= hidden_field_tag "delivery_address[longitude]", nil, 
+      data: { 
+        "address-autocomplete-target": "lng",
+        "delivery-form-target": "newAddressLng"
+      }, 
+      disabled: true %>
+  <%= hidden_field_tag "delivery_address[plus_code]", nil, 
+      data: { 
+        "address-autocomplete-target": "plus",
+        "delivery-form-target": "newAddressPlusCode"
+      }, 
+      disabled: true %>
   <div class="mb-3">
     <%= label_tag "delivery_address[description]", "Referencia", class: "form-label" %>
     <%= text_field_tag "delivery_address[description]", nil,
         placeholder: "Ej: Casa blanca portón negro",
-        class: "form-control" %>
+        class: "form-control",
+        data: { "delivery-form-target": "newAddressDescription" },
+        disabled: true %>
+  </div>
+  <!-- Botón para usar dirección seleccionada -->
+  <div class="d-flex gap-2">
+    <button type="button" 
+            class="btn btn-outline-success btn-sm"
+            data-address-autocomplete-target="useSelectedButton"
+            data-action="click->address-autocomplete#useSelectedAddress"
+      style="display:none;">
+      <i class="bi bi-check-circle me-1"></i>
+      Usar dirección seleccionada
+    </button>
+    <button type="button" 
+            class="btn btn-outline-secondary btn-sm"
+            data-action="click->address-autocomplete#clearForm">
+      <i class="bi bi-arrow-clockwise me-1"></i>
+      Limpiar formulario
+    </button>
   </div>
 </div>

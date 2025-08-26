@@ -1,7 +1,7 @@
 # app/controllers/deliveries_controller.rbº
 class DeliveriesController < ApplicationController
   before_action :set_delivery, only: [ :show, :edit, :update ]
-  before_action :set_addresses, only: [:new, :edit, :create, :update]
+  before_action :set_addresses, only: [ :new, :edit, :create, :update ]
 
   # GET /deliveries
   # Muestra todas las entregas o filtra por semana
@@ -64,12 +64,17 @@ class DeliveriesController < ApplicationController
   # PATCH/PUT /deliveries/:id
   def update
     ActiveRecord::Base.transaction do
+      byebug
       # 1. Si el usuario cambió el pedido, busca el nuevo order
       order = if params[:delivery][:order_id].present?
         Order.find(params[:delivery][:order_id])
       else
         @delivery.order
       end
+
+      client = order.client
+      address = find_or_create_address(client)
+      @delivery.delivery_address = address
 
       # 2. Procesa los delivery_items nuevos (si hay)
       if params[:delivery][:delivery_items_attributes].present?
@@ -78,7 +83,7 @@ class DeliveriesController < ApplicationController
       end
 
       # 3. Actualiza la entrega
-      if @delivery.update(delivery_params.except(:delivery_items_attributes))
+      if @delivery.update(delivery_params.except(:delivery_items_attributes, :delivery_address_id))
         redirect_to @delivery, notice: "Entrega actualizada correctamente."
       else
         @client = order.client
@@ -311,11 +316,26 @@ class DeliveriesController < ApplicationController
 
   # Busca o crea una dirección de entrega
   def find_or_create_address(client)
+    byebug
     if params[:delivery] && params[:delivery][:delivery_address_id].present?
-      DeliveryAddress.find(params[:delivery][:delivery_address_id])
+      addr = DeliveryAddress.find(params[:delivery][:delivery_address_id])
+
+      # 👇 Si vienen campos para actualizar la dirección existente
+      if params[:delivery_address].present?
+        addr.update(
+          params.require(:delivery_address)
+                .permit(:address, :description, :latitude, :longitude, :plus_code)
+        )
+      end
+
+      addr
     elsif params[:delivery_address] && params[:delivery_address][:address].present?
       existing = client.delivery_addresses.find_by(address: params[:delivery_address][:address])
-      existing || client.delivery_addresses.create!(params.require(:delivery_address).permit(:address, :description))
+      existing || client.delivery_addresses.create!(
+        params.require(:delivery_address)
+              .permit(:address, :description, :latitude, :longitude, :plus_code)
+              .merge(client: client)
+      )
     else
       raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debes seleccionar o ingresar una dirección."
     end
