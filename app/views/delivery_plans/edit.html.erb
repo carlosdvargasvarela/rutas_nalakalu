@@ -102,7 +102,33 @@
     </div>
   </div>
 </div>
-
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light">
+    <i class="bi bi-map me-2"></i>Mapa de Ruta
+  </div>
+  <div class="card-body p-0">
+    <div data-controller="delivery-plan-map"
+         data-delivery-plan-map-api-key-value="AIzaSyBGqLJVEomqQc4qRA1_6Sp7clVxRZCbAno"
+         data-delivery-plan-map-points-value="<%= 
+           @assignments.map do |a| 
+             {
+               id: a.id,
+               stop_order: a.stop_order || 0,
+               address: a.delivery.delivery_address.address,
+               lat: a.delivery.delivery_address.latitude,
+               lng: a.delivery.delivery_address.longitude,
+               order_number: a.delivery.order.number,
+               client: a.delivery.order.client.name,
+               date: l(a.delivery.delivery_date, format: :short)
+             }
+           end.to_json 
+         %>">
+      <div style="height: 400px; width: 100%;" 
+           data-delivery-plan-map-target="map"
+           class="border rounded"></div>
+    </div>
+  </div>
+</div>
 <% if @available_deliveries.any? %>
   <div class="card mb-4">
     <div class="card-body">
@@ -122,8 +148,6 @@
     </div>
   </div>
 <% end %>
-
-
 <!-- Botón de enviar a logística -->
 <% if @delivery_plan.draft? %>
   <div class="mt-4 d-flex align-items-center gap-3">

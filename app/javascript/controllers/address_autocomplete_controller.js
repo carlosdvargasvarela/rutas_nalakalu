@@ -289,7 +289,8 @@ export default class extends Controller {
                     const newLat = event.latLng.lat()
                     const newLng = event.latLng.lng()
                     console.log(`📍 Marcador movido a: ${newLat}, ${newLng}`)
-                    this.updateCoordinates(newLat, newLng)
+                    // 🎯 CAMBIO: Pasar true para forzar actualización del input
+                    this.updateCoordinates(newLat, newLng, true)
                 })
 
             } else {
@@ -306,7 +307,8 @@ export default class extends Controller {
                     const newLat = event.latLng.lat()
                     const newLng = event.latLng.lng()
                     console.log(`📍 Marcador movido a: ${newLat}, ${newLng}`)
-                    this.updateCoordinates(newLat, newLng)
+                    // 🎯 CAMBIO: Pasar true para forzar actualización del input
+                    this.updateCoordinates(newLat, newLng, true)
                 })
             }
 
@@ -328,10 +330,10 @@ export default class extends Controller {
                 componentRestrictions: { country: "CR" },
                 // 👇 Solicitar más campos incluyendo name y plus_code
                 fields: [
-                    "geometry", 
-                    "formatted_address", 
-                    "name", 
-                    "plus_code", 
+                    "geometry",
+                    "formatted_address",
+                    "name",
+                    "plus_code",
                     "place_id",
                     "types"
                 ]
@@ -353,12 +355,12 @@ export default class extends Controller {
 
                 // 🎯 Determinar qué mostrar en el input
                 let displayAddress = ""
-                
+
                 // Si es un establecimiento/POI, mostrar el nombre + dirección
-                if (place.name && place.types && 
-                    (place.types.includes("establishment") || 
-                     place.types.includes("point_of_interest") ||
-                     place.types.includes("store"))) {
+                if (place.name && place.types &&
+                    (place.types.includes("establishment") ||
+                        place.types.includes("point_of_interest") ||
+                        place.types.includes("store"))) {
                     displayAddress = `${place.name} - ${place.formatted_address}`
                 } else {
                     // Para direcciones normales, usar formatted_address
@@ -368,8 +370,11 @@ export default class extends Controller {
                 // Actualizar el input con la dirección mejorada
                 this.inputTarget.value = displayAddress
 
-                this.updateCoordinates(lat, lng)
-                
+                // 🎯 CAMBIO: NO llamar updateCoordinates aquí porque ya actualizamos el input
+                // Solo actualizar coordenadas y plus code
+                this.latTarget.value = lat
+                this.lngTarget.value = lng
+
                 // 🎯 Mejorar captura de Plus Code
                 let plusCode = ""
                 if (place.plus_code) {
@@ -391,10 +396,11 @@ export default class extends Controller {
         }
     }
 
-    updateCoordinates(lat, lng) {
+    // 🎯 CAMBIO: Agregar parámetro forceUpdateInput
+    updateCoordinates(lat, lng, forceUpdateInput = false) {
         this.latTarget.value = lat
         this.lngTarget.value = lng
-        this.reverseGeocode(lat, lng)
+        this.reverseGeocode(lat, lng, forceUpdateInput)
     }
 
     updateMarkerPosition(lat, lng) {
@@ -409,23 +415,25 @@ export default class extends Controller {
         }
     }
 
-    reverseGeocode(lat, lng) {
+    // 🎯 CAMBIO: Agregar parámetro forceUpdateInput
+    reverseGeocode(lat, lng, forceUpdateInput = false) {
         if (!google.maps.Geocoder) return
 
         const geocoder = new google.maps.Geocoder()
         geocoder.geocode({ location: { lat, lng } }, (results, status) => {
             if (status === "OK" && results[0]) {
-                // Solo actualizar si el input está vacío o no fue llenado por autocomplete
-                if (!this.inputTarget.value || this.inputTarget.value.trim() === "") {
+                // 🎯 LÓGICA MEJORADA: Actualizar input si se fuerza o está vacío
+                if (forceUpdateInput || !this.inputTarget.value || this.inputTarget.value.trim() === "") {
                     this.inputTarget.value = results[0].formatted_address
+                    console.log("✅ Input actualizado por geocodificación inversa")
                 }
-                
+
                 // Actualizar plus code si no se tiene
                 if (!this.plusTarget.value && results[0].plus_code) {
-                    this.plusTarget.value = results[0].plus_code.global_code || 
-                                           results[0].plus_code.compound_code || ""
+                    this.plusTarget.value = results[0].plus_code.global_code ||
+                        results[0].plus_code.compound_code || ""
                 }
-                
+
                 console.log("✅ Geocodificación inversa exitosa")
             } else {
                 console.warn("⚠️ Error en geocodificación inversa:", status)
