@@ -32,14 +32,15 @@ class SalesReminderJob < ApplicationJob
                                    .where(status: [ :scheduled, :ready_to_deliver, :in_route ])
                                    .count
 
-      # Crear notificación semanal
+      # Crear notificación semanal usando NotificationService
       message = build_weekly_message(seller, pending_orders, deliveries_this_week)
 
-      Notification.create!(
-        user: seller.user,
-        message: message,
-        notification_type: "weekly_reminder",
-        notifiable: seller
+      NotificationService.create_for_users(
+        [ seller.user ],
+        seller,
+        message,
+        type: "weekly_reminder",
+        send_email: true
       )
 
       Rails.logger.info "Recordatorio semanal enviado a #{seller.user.email}"
@@ -61,12 +62,13 @@ class SalesReminderJob < ApplicationJob
       message = "¡Buenos días! Tienes #{deliveries_today.count} entrega(s) programada(s) para hoy. " \
                 "Revisa el estado de tus pedidos y coordina con el equipo de logística."
 
-      # Notifica al usuario asociado al seller
-      Notification.create!(
-        user: seller.user,
-        message: message,
-        notification_type: "daily_reminder",
-        notifiable: seller
+      # Notifica usando NotificationService
+      NotificationService.create_for_users(
+        [ seller.user ],
+        seller,
+        message,
+        type: "daily_reminder",
+        send_email: true
       )
 
       Rails.logger.info "Recordatorio diario enviado a #{seller.user.email}"
@@ -122,12 +124,13 @@ class SalesReminderJob < ApplicationJob
       end
       message += "\nPor favor, confirma estas entregas con tus clientes lo antes posible."
 
-      # Crear notificación
-      Notification.create!(
-        user: seller.user,
-        message: message,
-        notification_type: "next_week_pending_confirmation",
-        notifiable: seller
+      # Crear notificación usando NotificationService
+      NotificationService.create_for_users(
+        [ seller.user ],
+        seller,
+        message,
+        type: "next_week_pending_confirmation",
+        send_email: true
       )
 
       Rails.logger.info "Notificación de entregas pendientes de confirmar para la próxima semana enviada a #{seller.user.email}"

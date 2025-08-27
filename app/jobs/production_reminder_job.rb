@@ -11,14 +11,15 @@ class ProductionReminderJob < ApplicationJob
       # Obtener estadísticas de producción
       stats = get_production_stats
 
-      # Crear notificación con resumen
+      # Crear notificación con resumen usando NotificationService
       message = build_production_message(stats)
 
-      Notification.create!(
-        user: manager,
-        message: message,
-        notification_type: "production_reminder",
-        notifiable: manager # Aquí asociamos al propio usuario
+      NotificationService.create_for_users(
+        [ manager ],
+        manager,
+        message,
+        type: "production_reminder",
+        send_email: true
       )
 
       Rails.logger.info "Recordatorio de producción enviado a #{manager.email}"
@@ -87,28 +88,30 @@ class ProductionReminderJob < ApplicationJob
       # Notificar a todos los gerentes de producción y admins
       urgent_users = User.where(role: [ :production_manager, :admin ])
 
-      urgent_users.each do |user|
-        message = "🚨 ALERTA URGENTE: #{urgent_orders.count} pedido(s) llevan más de 10 días en producción.\n\n"
-        message += "Pedidos afectados:\n"
+      # Usar el primer pedido urgente como notifiable (o podrías crear un objeto específico)
+      first_urgent_order = urgent_orders.first
 
-        urgent_orders.limit(5).each do |order|
-          days_in_production = (Date.current - order.updated_at.to_date).to_i
-          message += "• Pedido ##{order.order_number} - #{days_in_production} días\n"
-        end
+      message = "🚨 ALERTA URGENTE: #{urgent_orders.count} pedido(s) llevan más de 10 días en producción.\n\n"
+      message += "Pedidos afectados:\n"
 
-        if urgent_orders.count > 5
-          message += "• ... y #{urgent_orders.count - 5} más\n"
-        end
-
-        message += "\n¡Requiere atención inmediata!"
-
-        Notification.create!(
-          user: user,
-          message: message,
-          notification_type: "urgent_alert",
-          notifiable: order
-        )
+      urgent_orders.limit(5).each do |order|
+        days_in_production = (Date.current - order.updated_at.to_date).to_i
+        message += "• Pedido ##{order.number} - #{days_in_production} días\n"
       end
+
+      if urgent_orders.count > 5
+        message += "• ... y #{urgent_orders.count - 5} más\n"
+      end
+
+      message += "\n¡Requiere atención inmediata!"
+
+      NotificationService.create_for_users(
+        urgent_users,
+        first_urgent_order,
+        message,
+        type: "urgent_alert",
+        send_email: true
+      )
 
       Rails.logger.warn "Alerta urgente enviada: #{urgent_orders.count} pedidos con retraso crítico"
     end
