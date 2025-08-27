@@ -33,7 +33,7 @@
 
 <div data-delivery-form-target="newAddressFields" 
      data-controller="address-autocomplete"
-     data-address-autocomplete-api-key-value="AIzaSyBGqLJVEomqQc4qRA1_6Sp7clVxRZCbAno"
+     data-address-autocomplete-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
      data-address-autocomplete-addresses-value="<%= @addresses.to_json(only: [:id, :address, :latitude, :longitude, :description]) %>"
      data-address-autocomplete-selected-address-id-value="<%= delivery.delivery_address_id %>"
      class="card card-body border-primary mb-3" 

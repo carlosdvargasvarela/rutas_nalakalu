@@ -77,12 +77,12 @@ gem "ransack"
 
 gem "pundit", "~> 2.5"
 
-gem 'sidekiq'
-gem 'sidekiq-scheduler'
-gem 'redis'
+gem "sidekiq"
+gem "sidekiq-scheduler"
+gem "redis"
 
-gem 'chartkick'
-gem 'groupdate'
+gem "chartkick"
+gem "groupdate"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -99,6 +99,9 @@ group :development, :test do
 
   # Use byebug for debugging
   gem "byebug"
+
+  # Use Dotenv to manage environment variables
+  gem "dotenv-rails"
 end
 
 group :development do

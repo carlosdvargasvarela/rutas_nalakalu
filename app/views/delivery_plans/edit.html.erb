@@ -108,7 +108,7 @@
   </div>
   <div class="card-body p-0">
     <div data-controller="delivery-plan-map"
-         data-delivery-plan-map-api-key-value="AIzaSyBGqLJVEomqQc4qRA1_6Sp7clVxRZCbAno"
+         data-delivery-plan-map-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
          data-delivery-plan-map-points-value="<%= 
            @assignments.map do |a| 
              {
