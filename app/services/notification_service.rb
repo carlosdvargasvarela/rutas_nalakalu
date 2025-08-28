@@ -5,6 +5,7 @@ class NotificationService
     admin_users = User.where(role: :admin)
     all_users = (users + admin_users).uniq
 
+    # Inserta notificaciones en la BD
     notifications = all_users.map do |user|
       {
         user_id: user.id,
@@ -19,9 +20,16 @@ class NotificationService
     end
     Notification.insert_all(notifications) if notifications.any?
 
-    if send_email
+    # Envía correo solo si send_email = true - USANDO EL MÉTODO SEGURO
+    if send__email
       all_users.each do |user|
-        NotificationMailer.with(user:, message:, notifiable:, type:).generic_notification.deliver_later
+        NotificationMailer.safe_notify(
+          user_id: user.id,
+          message: message,
+          type: type,
+          notifiable_id: notifiable.id,
+          notifiable_type: notifiable.class.name
+        )
       end
     end
   end

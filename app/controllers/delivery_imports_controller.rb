@@ -1,89 +1,88 @@
-# app/controllers/delivery_imports_controller.rb
 class DeliveryImportsController < ApplicationController
   def new
-    # Solo renderiza la vista
+    @import = DeliveryImport.new
   end
 
-  def preview
-    file = params[:file]
-    unless file
-      redirect_to new_delivery_import_path, alert: "Selecciona un archivo"
-      return
-    end
+  def create
+    # Crear el import primero
+    import = current_user.delivery_imports.new(status: :pending)
 
-    begin
-      spreadsheet = Roo::Spreadsheet.open(file.path)
+    # Adjuntar el archivo ANTES de guardar
+    import.file.attach(params[:delivery_import][:file])
 
-      if spreadsheet.last_row < 2
-        redirect_to new_delivery_import_path, alert: "El archivo está vacío o no tiene datos válidos."
-        return
-      end
+    # Guardar con el archivo ya adjunto
+    import.save!
 
-      service = RouteExcelImportService.new(nil)
-      @rows = []
-      @validation_errors = {}
+    # Ahora sí encolar el job (el archivo ya existe)
+    DeliveryImportPrepareJob.perform_async(import.id)
 
-      (2..spreadsheet.last_row).each do |row_num|
-        row_data = {
-          delivery_date: spreadsheet.cell(row_num, "A"),
-          team: spreadsheet.cell(row_num, "B"),
-          order_number: spreadsheet.cell(row_num, "C")&.to_s,
-          client_name: spreadsheet.cell(row_num, "D")&.to_s,
-          product: spreadsheet.cell(row_num, "E")&.to_s,
-          quantity: spreadsheet.cell(row_num, "F")&.to_i,
-          seller_code: spreadsheet.cell(row_num, "G")&.to_s,
-          place: spreadsheet.cell(row_num, "H")&.to_s,
-          contact: spreadsheet.cell(row_num, "I")&.to_s,
-          notes: spreadsheet.cell(row_num, "J")&.to_s,
-          time_preference: spreadsheet.cell(row_num, "K")&.to_s
-        }
-
-        # Validar cada fila
-        validation_errors = service.validate_row(row_data)
-        if validation_errors.any?
-          @validation_errors[row_num - 2] = validation_errors # Índice basado en 0 para la vista
-        end
-
-        @rows << row_data
-      end
-
-      render :preview
-    rescue => e
-      redirect_to new_delivery_import_path, alert: "Error al procesar el archivo: #{e.message}"
-    end
+    redirect_to delivery_import_path(import), notice: "El archivo está siendo procesado."
   end
 
-  def process_import
-    rows = params[:rows].values
+  def show
+    @import = DeliveryImport.find(params[:id])
+  end
+
+  # PATCH /delivery_imports/:id/update_rows
+  def update_rows
+    import = DeliveryImport.find(params[:id])
     service = RouteExcelImportService.new(nil)
+    updated_count = 0
 
-    success = 0
-    errors = []
+    params[:rows].each do |id, row_params|
+      row = import.delivery_import_rows.find(id)
 
-    rows.each_with_index do |row, idx|
-      data = row.to_unsafe_h.symbolize_keys
+      # Normalizar parámetros nuevos
+      new_data = row_params.to_unsafe_h.transform_keys(&:to_s)
 
-      # Validar antes de procesar
-      validation_errors = service.validate_row(data)
-      if validation_errors.any?
-        errors << "Fila #{idx + 2}: #{validation_errors.join(', ')}"
-        next
-      end
+      # Mezclar con lo que ya tenía
+      merged_data = row.data.merge(new_data)
 
-      begin
-        service.process_row(data)
-        success += 1
-      rescue => e
-        errors << "Fila #{idx + 2}: #{e.message}"
-      end
+      # Guardar
+      row.update!(
+        data: merged_data,
+        row_errors: service.validate_row(merged_data.symbolize_keys)
+      )
+
+      updated_count += 1
     end
 
-    @success = success
-    @errors = errors
-    render :result
+    if import.delivery_import_rows.any? { |r| r.row_errors.present? }
+      redirect_to delivery_import_path(import), alert: "Se actualizaron #{updated_count} filas. Corrige los errores restantes antes de importar."
+    else
+      redirect_to delivery_import_path(import), notice: "Se actualizaron #{updated_count} filas correctamente. Ya puedes procesar la importación."
+    end
   end
 
+  # POST /delivery_imports/:id/process_import
+  def process_import
+    import = DeliveryImport.find(params[:id])
+
+    if import.delivery_import_rows.any? { |r| r.row_errors.present? }
+      redirect_to delivery_import_path(import), alert: "Debes corregir los errores antes de importar."
+    else
+      DeliveryImportProcessJob.perform_async(import.id)
+      redirect_to delivery_import_path(import), notice: "Importación lanzada."
+    end
+  end
+
+  # GET /delivery_imports/template
   def template
-    # Opcional: genera y envía un Excel de ejemplo
+    package = Axlsx::Package.new
+    wb = package.workbook
+    wb.add_worksheet(name: "Entregas") do |sheet|
+      sheet.add_row [ "Fecha de entrega", "Equipo", "Número de pedido", "Cliente",
+                     "Producto", "Cantidad", "Código de vendedor", "Dirección",
+                     "Contacto" ]
+    end
+    send_data package.to_stream.read,
+              filename: "plantilla_entregas.xlsx",
+              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  end
+
+  private
+
+  def delivery_import_params
+    params.require(:delivery_import).permit(:file)
   end
 end

@@ -2,19 +2,21 @@
 
 puts "Limpiando datos previos..."
 
-# Limpieza en orden para respetar FKs
-DeliveryPlanAssignment.delete_all
-DeliveryPlan.delete_all
-DeliveryItem.delete_all
-Delivery.delete_all
-OrderItem.delete_all
-Order.delete_all
-DeliveryAddress.delete_all
-Client.delete_all
-Notification.delete_all if defined?(Notification)
-Seller.delete_all
-User.delete_all
-PaperTrail::Version.delete_all if defined?(PaperTrail::Version)
+# Limpieza con destroy_all (respeta dependencias)
+DeliveryPlanAssignment.destroy_all
+DeliveryPlan.destroy_all
+DeliveryItem.destroy_all
+Delivery.destroy_all
+OrderItem.destroy_all
+Order.destroy_all
+DeliveryAddress.destroy_all
+Client.destroy_all
+Notification.destroy_all if defined?(Notification)
+DeliveryImportRow.destroy_all
+DeliveryImport.destroy_all
+Seller.destroy_all
+User.destroy_all
+PaperTrail::Version.destroy_all if defined?(PaperTrail::Version)
 
 puts "Cargando usuarios..."
 

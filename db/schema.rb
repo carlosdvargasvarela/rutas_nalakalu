@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_08_25_223615) do
+ActiveRecord::Schema[7.2].define(version: 2025_08_28_180926) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -75,6 +75,25 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_25_223615) do
     t.decimal "longitude", precision: 10, scale: 6
     t.string "plus_code"
     t.index ["client_id"], name: "index_delivery_addresses_on_client_id"
+  end
+
+  create_table "delivery_import_rows", force: :cascade do |t|
+    t.integer "delivery_import_id", null: false
+    t.text "data", default: "{}"
+    t.text "row_errors", default: "[]"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["delivery_import_id"], name: "index_delivery_import_rows_on_delivery_import_id"
+  end
+
+  create_table "delivery_imports", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "status", default: 0
+    t.text "import_errors"
+    t.integer "success_count", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_delivery_imports_on_user_id"
   end
 
   create_table "delivery_items", force: :cascade do |t|
@@ -195,6 +214,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_25_223615) do
   add_foreign_key "deliveries", "delivery_addresses"
   add_foreign_key "deliveries", "orders"
   add_foreign_key "delivery_addresses", "clients"
+  add_foreign_key "delivery_import_rows", "delivery_imports"
+  add_foreign_key "delivery_imports", "users"
   add_foreign_key "delivery_items", "deliveries"
   add_foreign_key "delivery_items", "order_items"
   add_foreign_key "delivery_plan_assignments", "deliveries"

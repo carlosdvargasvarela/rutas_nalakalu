@@ -1,0 +1,133 @@
+<div class="container py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 fw-bold mb-0">
+      <i class="bi bi-file-earmark-spreadsheet text-primary me-2"></i>
+      Importación #<%= @import.id %>
+    </h1>
+    <span class="badge rounded-pill 
+      <%= case @import.status
+          when 'pending' then 'bg-warning text-dark'
+          when 'processing' then 'bg-primary'
+          when 'ready_for_review' then 'bg-success'
+          when 'importing' then 'bg-info text-dark'
+          when 'finished' then 'bg-success'
+          when 'failed' then 'bg-danger'
+          end %>">
+      <%= @import.status.humanize %>
+    </span>
+  </div>
+  <!-- Mensajes de estado -->
+  <% if @import.pending? || @import.processing? %>
+    <div class="alert alert-info d-flex align-items-center">
+      <div class="spinner-border spinner-border-sm me-2 text-primary"></div>
+      <div>
+        <strong>Procesando archivo...</strong><br>
+        Esta página se actualizará automáticamente.
+      </div>
+    </div>
+    <script>
+      setTimeout(() => location.reload(), 3000)
+    </script>
+  <% end %>
+  <% if @import.failed? %>
+    <div class="alert alert-danger">
+      <h5><i class="bi bi-x-circle me-1"></i> Error en el procesamiento</h5>
+      <p><%= @import.import_errors %></p>
+      <%= link_to "Intentar de nuevo", new_delivery_import_path, class: "btn btn-danger" %>
+    </div>
+  <% end %>
+  <% if @import.ready_for_review? %>
+    <div class="alert alert-success">
+      <h5><i class="bi bi-check-circle me-1"></i> Archivo procesado exitosamente</h5>
+      <p>
+        Se encontraron <strong><%= @import.delivery_import_rows.count %></strong> filas. 
+        Revisa los datos, guarda cambios y luego procesa la importación.
+      </p>
+    </div>
+    <!-- Tabla de filas -->
+    <%= form_with url: update_rows_delivery_import_path(@import), method: :patch, local: true do |form| %>
+      <div class="card shadow-sm mb-4">
+        <div class="card-header">Datos a importar</div>
+        <div class="table-responsive">
+          <table class="table table-hover table-sm mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Fila</th>
+                <th>Fecha</th>
+                <th>Equipo</th>
+                <th>Pedido</th>
+                <th>Cliente</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Vendedor</th>
+                <th>Dirección</th>
+                <th>Contacto</th>
+                <th>Errores</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @import.delivery_import_rows.each_with_index do |row, index| %>
+                <tr class="<%= 'table-danger' if row.row_errors.present? %>">
+                  <td><%= index + 1 %></td>
+                  <td><%= form.text_field "rows[#{row.id}][delivery_date]", value: row.data['delivery_date'], class: "form-control form-control-sm" %></td>
+                  <td><%= form.text_field "rows[#{row.id}][team]", value: row.data['team'], class: "form-control form-control-sm" %></td>
+                  <td><%= form.text_field "rows[#{row.id}][order_number]", value: row.data['order_number'], class: "form-control form-control-sm" %></td>
+                  <td><%= form.text_field "rows[#{row.id}][client_name]", value: row.data['client_name'], class: "form-control form-control-sm" %></td>
+                  <td><%= form.text_field "rows[#{row.id}][product]", value: row.data['product'], class: "form-control form-control-sm" %></td>
+                  <td><%= form.number_field "rows[#{row.id}][quantity]", value: row.data['quantity'], class: "form-control form-control-sm" %></td>
+                  <td><%= form.text_field "rows[#{row.id}][seller_code]", value: row.data['seller_code'], class: "form-control form-control-sm" %></td>
+                  <td><%= form.text_field "rows[#{row.id}][place]", value: row.data['place'], class: "form-control form-control-sm" %></td>
+                  <td><%= form.text_field "rows[#{row.id}][contact]", value: row.data['contact'], class: "form-control form-control-sm" %></td>
+                  <td>
+                    <% if row.row_errors.present? %>
+                      <ul class="text-danger small mb-0">
+                        <% row.row_errors.each do |error| %>
+                          <li><%= error %></li>
+                        <% end %>
+                      </ul>
+                    <% else %>
+                      <span class="text-success small">
+                        <i class="bi bi-check-circle"></i> OK
+                      </span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="d-flex justify-content-end gap-2">
+        <%= link_to "Cancelar", new_delivery_import_path, class: "btn btn-outline-secondary" %>
+        <%= form.submit "Guardar cambios", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+    <!-- Procesar importación -->
+    <% if @import.delivery_import_rows.none? { |r| r.row_errors.present? } %>
+      <div class="text-end mt-3">
+        <%= button_to "Procesar importación", process_import_delivery_import_path(@import), method: :post, data: { confirm: "¿Seguro que quieres procesar la importación?" }, class: "btn btn-success" %>
+      </div>
+    <% else %>
+      <div class="alert alert-warning mt-3">
+        ⚠ Corrige todas las filas antes de procesar.
+      </div>
+    <% end %>
+  <% end %>
+  <% if @import.importing? %>
+    <div class="alert alert-info d-flex align-items-center">
+      <div class="spinner-border spinner-border-sm me-2 text-info"></div>
+      <strong>Importando datos...</strong>
+    </div>
+    <script>
+      setTimeout(() => location.reload(), 3000)
+    </script>
+  <% end %>
+  <% if @import.finished? %>
+    <div class="alert alert-success">
+      <h5><i class="bi bi-check-circle-fill me-1"></i> Importación completada</h5>
+      <p>Se importaron <strong><%= @import.success_count %></strong> registros correctamente.</p>
+      <%= link_to "Nueva importación", new_delivery_import_path, class: "btn btn-success" %>
+    </div>
+  <% end %>
+</div>

@@ -1,15 +1,41 @@
-<!-- app/views/delivery-imports/new.html.erb -->
-<div class="container py-4">
-  <h1 class="mb-4">Importar entregas desde Excel</h1>
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <%= form_with url: preview_delivery_imports_path, local: true, multipart: true, data: { turbo: false } do |f| %>
-        <div class="mb-3">
-          <label for="file" class="form-label">Selecciona archivo Excel</label>
-          <%= f.file_field :file, required: true, class: "form-control" %>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h1 class="h4 mb-4">
+            <i class="bi bi-upload text-primary me-2"></i> Importar Entregas
+          </h1>
+          <%= form_with model: @import, url: delivery_imports_path, local: true, multipart: true do |form| %>
+            <div class="mb-3">
+              <label for="file" class="form-label">
+                Seleccionar archivo Excel/ODS
+              </label>
+              <%= form.file_field :file, accept: ".xlsx,.xls,.ods", required: true, class: "form-control" %>
+              <div class="form-text text-muted">
+                Formatos soportados: XLSX, XLS, ODS
+              </div>
+            </div>
+            <div class="text-end">
+              <%= form.submit "Subir y Procesar", class: "btn btn-primary" %>
+            </div>
+          <% end %>
         </div>
-        <%= f.submit "Previsualizar", class: "btn btn-primary" %>
-      <% end %>
+      </div>
+      <div class="alert alert-secondary mt-4">
+        <h6 class="fw-bold">Formato esperado del archivo:</h6>
+        <ul class="mb-0 small">
+          <li><strong>Columna A:</strong> Fecha de entrega</li>
+          <li><strong>Columna B:</strong> Equipo</li>
+          <li><strong>Columna C:</strong> Número de pedido</li>
+          <li><strong>Columna D:</strong> Cliente</li>
+          <li><strong>Columna E:</strong> Producto</li>
+          <li><strong>Columna F:</strong> Cantidad</li>
+          <li><strong>Columna G:</strong> Vendedor</li>
+          <li><strong>Columna H:</strong> Dirección</li>
+          <li><strong>Columna I:</strong> Contacto</li>
+        </ul>
+      </div>
     </div>
   </div>
 </div>

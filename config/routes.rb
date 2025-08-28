@@ -107,11 +107,13 @@ Rails.application.routes.draw do
   # IMPORTACIÓN DE ENTREGAS
   # =============================================================================
   # Importar entregas desde archivos Excel
-  resources :delivery_imports, only: [ :new ] do
+  resources :delivery_imports, only: [ :new, :create, :show ] do
+    member do
+      patch :update_rows    # guardar ediciones en las filas
+      post :process_import  # lanzar import final
+    end
     collection do
-      post :preview        # Vista previa de datos a importar
-      post :process_import # Procesar y guardar importación
-      get :template        # Descargar plantilla Excel
+      get :template         # bajar plantilla excel
     end
   end
 
@@ -159,7 +161,4 @@ Rails.application.routes.draw do
       end
     end
   end
-
-  resources :clients
-  resources :sellers, only: [ :index, :show ]
 end
