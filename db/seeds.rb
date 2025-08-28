@@ -69,7 +69,8 @@ puts "Vendedores creados: #{Seller.count} (códigos: #{Seller.pluck(:seller_code
 production_managers = [
   { name: "Nathalia Rocha", email: "nrocha@nalakalu.com" },
   { name: "Carlos Cordoba", email: "ccordoba@nalakalu.com" },
-  { name: "Andres Moya",   email: "amoya@nalakalu.com" }
+  { name: "Andres Moya",   email: "amoya@nalakalu.com" },
+  { name: "Luis Quesada", email: "lquesada@nalakalu.com" }
 ]
 
 production_managers.each do |pm|

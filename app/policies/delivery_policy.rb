@@ -12,7 +12,7 @@ class DeliveryPolicy < ApplicationPolicy
   end
 
   def edit?
-    user.admin? || user.logistics? || (user.seller? && record.order.seller.user_id == user.id) 
+    user.admin? || user.logistics? || user.production_manager? || user.seller?
   end
 
   def update?
