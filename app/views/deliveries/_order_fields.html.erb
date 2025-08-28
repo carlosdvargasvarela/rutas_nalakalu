@@ -29,12 +29,14 @@
     </div>
   </div>
   <div class="col-md-4">
-    <button type="button"
+    <% unless delivery.persisted? %>
+      <button type="button"
             class="btn btn-outline-primary btn-sm mt-4"
             data-action="click->delivery-form#toggleNewOrderFields"
-      data-delivery-form-target="addOrderButton">
-      Crear nuevo pedido
-    </button>
+        data-delivery-form-target="addOrderButton">
+        Crear nuevo pedido
+      </button>
+    <% end %>
   </div>
 </div>
 <div data-delivery-form-target="newOrderFields" class="card card-body border-primary mb-3" style="display:none;">

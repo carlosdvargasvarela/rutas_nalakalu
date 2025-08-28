@@ -23,14 +23,15 @@
       label_html: { class: "form-label" } %>
   </div>
   <div class="col-md-4">
-    <button type="button"
-            class="btn btn-outline-primary btn-sm mt-4"
-            data-action="click->delivery-form#toggleNewAddressFields">
-      Agregar nueva dirección
-    </button>
+    <div class="col-md-4">
+      <button type="button"
+          class="btn btn-outline-primary btn-sm mt-4"
+          data-action="click->delivery-form#toggleNewAddressFields">
+        <%= delivery.persisted? ? "Editar dirección" : "Agregar nueva dirección" %>
+      </button>
+    </div>
   </div>
 </div>
-
 <div data-delivery-form-target="newAddressFields" 
      data-controller="address-autocomplete"
      data-address-autocomplete-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
@@ -38,7 +39,6 @@
      data-address-autocomplete-selected-address-id-value="<%= delivery.delivery_address_id %>"
      class="card card-body border-primary mb-3" 
      style="display:none;">
-  
   <div class="d-flex justify-content-between align-items-center mb-2">
     <span class="fw-bold text-primary">
       <i class="bi bi-geo-alt-plus me-2"></i>Nueva dirección
@@ -48,7 +48,6 @@
       <i class="bi bi-x-lg"></i> Cancelar
     </button>
   </div>
-
   <!-- Mostrar dirección seleccionada -->
   <div data-address-autocomplete-target="selectedAddressInfo" 
        class="alert alert-info mb-3" 
@@ -61,7 +60,6 @@
       </div>
     </div>
   </div>
-
   <!-- Input principal -->
   <div class="mb-3">
     <%= label_tag "delivery_address[address]", "Buscar dirección", class: "form-label" %>
@@ -76,33 +74,27 @@
       💡 Puedes buscar una nueva dirección o usar la dirección seleccionada arriba
     </div>
   </div>
-
   <div data-address-autocomplete-target="map" 
        style="height: 250px;" 
        class="mb-3 border rounded"></div>
-
   <!-- Campos ocultos -->
   <%= hidden_field_tag "delivery_address[client_id]", (@client&.id || delivery.order&.client&.id), 
       data: { "delivery-form-target": "newAddressClientId" } %>
-
   <%= hidden_field_tag "delivery_address[latitude]", nil,
       data: { 
         "address-autocomplete-target": "lat",
         "delivery-form-target": "newAddressLat"
       } %>
-
   <%= hidden_field_tag "delivery_address[longitude]", nil,
       data: { 
         "address-autocomplete-target": "lng",
         "delivery-form-target": "newAddressLng"
       } %>
-
   <%= hidden_field_tag "delivery_address[plus_code]", nil,
       data: { 
         "address-autocomplete-target": "plus",
         "delivery-form-target": "newAddressPlusCode"
       } %>
-
   <div class="mb-3">
     <%= label_tag "delivery_address[description]", "Referencia", class: "form-label" %>
     <%= text_field_tag "delivery_address[description]", nil,
@@ -110,14 +102,13 @@
         class: "form-control",
         data: { "delivery-form-target": "newAddressDescription" } %>
   </div>
-
   <!-- Botones -->
   <div class="d-flex gap-2">
     <button type="button" 
             class="btn btn-outline-success btn-sm"
             data-address-autocomplete-target="useSelectedButton"
             data-action="click->address-autocomplete#useSelectedAddress"
-            style="display:none;">
+      style="display:none;">
       <i class="bi bi-check-circle me-1"></i>
       Usar dirección seleccionada
     </button>

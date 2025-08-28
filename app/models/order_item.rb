@@ -61,6 +61,8 @@ class OrderItem < ApplicationRecord
 
   def notify_ready
     if status == "ready"
+      # Marcar el último delivery_item como confirmado si existe
+      puts "Notificando que el producto '#{product}' del pedido #{order.number} está listo para confirmar con el cliente."
       seller_user = order.seller.user
       message = "El producto '#{product}' del pedido #{order.number} está listo para confirmar con el cliente."
       NotificationService.create_for_users([seller_user], self, message)

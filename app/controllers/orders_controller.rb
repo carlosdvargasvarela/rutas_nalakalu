@@ -21,10 +21,15 @@ class OrdersController < ApplicationController
   def confirm_all_items_ready
     authorize @order, :confirm_all_items_ready?
 
-    updated = @order.order_items.where(status: :in_production).update_all(status: :ready, updated_at: Time.current, confirmed: true)
-    @order.check_and_update_status! # Para actualizar el estado del pedido si corresponde
+    order_items_to_confirm = @order.order_items.where(status: :in_production)
 
-    redirect_to order_path(@order), notice: "#{updated} productos confirmados como listos para entrega."
+    order_items_to_confirm.each do |item|
+      item.update!(status: :ready, confirmed: true) # aquí sí cambia el objeto en memoria
+      item.delivery_items.last&.update!(status: :confirmed) if item.delivery_items.any?
+    end
+
+    @order.check_and_update_status!
+    redirect_to order_path(@order), notice: "#{order_items_to_confirm.size} productos confirmados como listos para entrega."
   end
 
   private
