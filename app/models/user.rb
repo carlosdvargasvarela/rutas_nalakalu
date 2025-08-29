@@ -14,6 +14,10 @@ class User < ApplicationRecord
   # Establecer un rol por defecto al crear un usuario
   after_initialize :set_default_role, if: :new_record?
 
+  before_save :clear_force_password_change, if: :will_save_change_to_encrypted_password?
+
+  
+
   # Relaciones
   has_paper_trail
   has_one :seller
@@ -42,8 +46,16 @@ class User < ApplicationRecord
   end
 
   def seller_code_presence_if_seller
-    if seller? && seller_code.blank?
+    if seller? && seller_code.blank? && new_record?
       errors.add(:seller_code, "debe estar presente para vendedores")
+    end
+  end
+
+  def update_with_password(params, *options)
+    if force_password_change?
+      update(params, *options)
+    else
+      super
     end
   end
 
@@ -63,6 +75,6 @@ class User < ApplicationRecord
   end
 
   def self.ransackable_associations(_ = nil)
-    ["orders", "user", "versions"]
+    [ "orders", "user", "versions" ]
   end
 end

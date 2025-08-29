@@ -21,7 +21,7 @@ class NotificationService
     Notification.insert_all(notifications) if notifications.any?
 
     # Envía correo solo si send_email = true - USANDO EL MÉTODO SEGURO
-    if send__email
+    if send_email
       all_users.each do |user|
         NotificationMailer.safe_notify(
           user_id: user.id,

@@ -19,7 +19,6 @@ class Admin::UsersController < ApplicationController
     User.transaction do
       if @user.save!
         if @user.seller? && user_params[:seller_code].present?
-          byebug
           seller = Seller.new(user: @user, name: @user.name, seller_code: user_params[:seller_code])
           seller.save
         end

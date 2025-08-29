@@ -25,7 +25,6 @@ class OrdersController < ApplicationController
 
     order_items_to_confirm.each do |item|
       item.update!(status: :ready, confirmed: true) # aquí sí cambia el objeto en memoria
-      item.delivery_items.last&.update!(status: :confirmed) if item.delivery_items.any?
     end
 
     @order.check_and_update_status!

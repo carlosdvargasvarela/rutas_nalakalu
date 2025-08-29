@@ -197,7 +197,7 @@ class DeliveriesController < ApplicationController
     @delivery = Delivery.find(params[:id])
     authorize @delivery, :edit? # O crea una policy específica si lo prefieres
 
-    updated = @delivery.delivery_items.where(status: [ :in_production, :confirmed ]).update_all(status: :confirmed, updated_at: Time.current)
+    updated = @delivery.delivery_items.where(status: [ :pending, :confirmed ]).update_all(status: :confirmed, updated_at: Time.current)
     @delivery.update_status_based_on_items
 
     redirect_to @delivery, notice: "#{updated} productos confirmados para entrega."
