@@ -118,8 +118,8 @@ class Delivery < ApplicationRecord
   # Marca la entrega como completada
   def mark_as_delivered!
     transaction do
-      update!(status: :delivered)
       delivery_items.each(&:mark_as_delivered!)
+      update!(status: :delivered)
     end
   end
 
@@ -172,7 +172,6 @@ class Delivery < ApplicationRecord
   end
 
   def self.to_csv
-      attributes = %w[fecha_entrega pedido producto cantidad vendedor cliente direccion estado tipo]
       CSV.generate(headers: true) do |csv|
         csv << [ "Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo" ]
         all.includes(order: [ :client, :seller ], delivery_address: :client, delivery_items: { order_item: :order }).find_each do |delivery|

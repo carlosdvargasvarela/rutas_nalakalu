@@ -65,7 +65,6 @@ class DeliveryItem < ApplicationRecord
   def mark_as_delivered!
     transaction do
       update!(status: :delivered)
-      order_item.check_delivery_status!
     end
   end
 
