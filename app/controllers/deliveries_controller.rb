@@ -218,7 +218,7 @@ class DeliveriesController < ApplicationController
     new_delivery.save!
 
     # Duplica los delivery_items (solo los que no están entregados/cancelados)
-    @delivery.delivery_items.where.not(status: [ :delivered, :cancelled ]).find_each do |item|
+    @delivery.delivery_items.where.not(status: [ :delivered, :cancelled, :rescheduled ]).find_each do |item|
       new_delivery.delivery_items.create!(
         order_item: item.order_item,
         quantity_delivered: item.quantity_delivered,
