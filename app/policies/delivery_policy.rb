@@ -5,8 +5,7 @@ class DeliveryPolicy < ApplicationPolicy
   end
 
   def show?
-    return true if user.admin? || user.production_manager? || user.logistics?
-    return true if user.seller? && record.order.seller.user_id == user.id
+    return true if user.admin? || user.production_manager? || user.logistics? || user.seller?
     return true if user.driver? && record.delivery_plan&.driver_id == user.id
     false
   end

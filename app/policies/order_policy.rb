@@ -5,8 +5,7 @@ class OrderPolicy < ApplicationPolicy
   end
 
   def show?
-    user.admin? || user.production_manager? || user.logistics? ||
-      (user.seller? && record.seller.user_id == user.id) || user.driver?
+    user.admin? || user.production_manager? || user.logistics? || user.seller? || user.driver?
   end
 
   def edit?

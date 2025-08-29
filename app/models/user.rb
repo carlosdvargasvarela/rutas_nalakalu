@@ -16,7 +16,9 @@ class User < ApplicationRecord
 
   before_save :clear_force_password_change, if: :will_save_change_to_encrypted_password?
 
-  
+  def clear_force_password_change
+    self.force_password_change = false if force_password_change?
+  end
 
   # Relaciones
   has_paper_trail
