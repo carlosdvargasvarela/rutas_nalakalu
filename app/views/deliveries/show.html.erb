@@ -113,7 +113,7 @@
       <% end %>
     <% end %>
     <%# Confirmar todos los productos %>
-    <% if policy(@delivery).edit? && @delivery.confirmed? && @delivery.delivery_items.any? { |item| item.pending? || item.status == "confirmed" } && !@delivery.delivery_items.all? { |item| item.status == "confirmed" } %>
+    <% if policy(@delivery).edit? && @delivery.delivery_items.any? { |item| item.pending? || item.status == "confirmed" } && !@delivery.delivery_items.all? { |item| item.status == "confirmed" } %>
       <%= button_to "Confirmar todos los productos para entrega",
         confirm_all_items_delivery_path(@delivery),
         method: :patch,
@@ -174,6 +174,7 @@
                   <% else %>
                     <% case item.status %>
                     <% when 'pending' %>
+                      <!--
                       <% if item.order_item.ready? %>
                         <%= button_to confirm_delivery_item_path(item), method: :patch, class: "btn btn-primary btn-sm", title: "Confirmar" do %>
                           <i class="bi bi-check-circle"></i> Confirmar
@@ -184,6 +185,10 @@
                             <i class="bi bi-check-circle"></i> Confirmar
                           </button>
                         </span>
+                        -->
+                        <%= button_to confirm_delivery_item_path(item), method: :patch, class: "btn btn-primary btn-sm", title: "Confirmar" do %>
+                          <i class="bi bi-check-circle"></i> Confirmar
+                        <% end %>
                       <% end %>
                       <button class="btn btn-warning btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#reschedule-form-<%= item.id %>">
                         <i class="bi bi-calendar2-plus"></i> Reprogramar

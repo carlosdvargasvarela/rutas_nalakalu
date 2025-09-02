@@ -8,8 +8,8 @@ class DeliveryItemsController < ApplicationController
 
   def confirm
     if @delivery_item.rescheduled?
-      redirect_back fallback_location: delivery_path(@delivery_item.delivery), alert: "No se puede modificar un producto reagendado."
-      return
+     redirect_back fallback_location: delivery_path(@delivery_item.delivery), alert: "No se puede modificar un producto reagendado."
+     return
     end
     @delivery_item.update!(status: :confirmed)
     @delivery_item.update_delivery_status

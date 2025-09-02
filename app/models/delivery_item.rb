@@ -115,9 +115,9 @@ class DeliveryItem < ApplicationRecord
   # ============================================================================
 
   def order_item_must_be_ready_to_confirm
-    unless order_item.ready?
-      errors.add(:base, "El producto aún no está listo para entrega (Producción no lo ha marcado como listo).")
-    end
+    # unless order_item.ready?
+    #   errors.add(:base, "El producto aún no está listo para entrega (Producción no lo ha marcado como listo).")
+    # end
   end
 
   # ============================================================================
