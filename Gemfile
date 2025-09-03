@@ -42,7 +42,7 @@ gem "bootsnap", require: false
 gem 'roo', '~> 2.10.1'
 gem "csv"
 # gem 'axlsx', '~> 3.0'
-gem 'caxlsx', '~> 4.2.0'
+gem 'caxlsx', '~> 4.4.0'
 gem 'caxlsx_rails'
 
 # Authentication
