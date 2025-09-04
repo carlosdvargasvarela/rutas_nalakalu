@@ -1,4 +1,3 @@
-<%# app/views/deliveries/show.html.erb %>
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1>
     <i class="bi bi-truck me-2"></i>
@@ -105,28 +104,55 @@
     <span>
       <i class="bi bi-box-seam me-1"></i> Productos en esta Entrega
     </span>
-    <% unless @delivery.delivered? || @delivery.cancelled? %>
-      <%= button_to mark_as_delivered_delivery_path(@delivery),
-          method: :patch, class: "btn btn-primary btn-sm",
-          data: { turbo_confirm: "¿Está seguro de marcar toda la entrega como completada?" } do %>
-        <i class="bi bi-check-circle"></i> Marcar todos los productos como entregados
+    <div class="d-flex gap-2 flex-wrap">
+      <% unless @delivery.delivered? || @delivery.cancelled? %>
+        <%= button_to mark_as_delivered_delivery_path(@delivery),
+            method: :patch, class: "btn btn-primary btn-sm",
+            data: { turbo_confirm: "¿Está seguro de marcar toda la entrega como completada?" } do %>
+          <i class="bi bi-check-circle"></i> Marcar todos los productos como entregados
+        <% end %>
       <% end %>
-    <% end %>
-    <%# Confirmar todos los productos %>
-    <% if policy(@delivery).edit? && @delivery.delivery_items.any? { |item| item.pending? || item.status == "confirmed" } && !@delivery.delivery_items.all? { |item| item.status == "confirmed" } %>
-      <%= button_to "Confirmar todos los productos para entrega",
-        confirm_all_items_delivery_path(@delivery),
-        method: :patch,
-        data: { turbo_confirm: "¿Estás seguro que deseas confirmar todos los productos para entrega?" },
-        class: "btn btn-success btn-sm me-2" %>
-    <% end %>
-    <%# Reagendar toda la entrega %>
-    <% if policy(@delivery).edit? && @delivery.delivery_items.any? { |item| !["delivered", "cancelled", "rescheduled", "confirmed"].include?(item.status) } %>
-      <%= form_with url: reschedule_all_delivery_path(@delivery), method: :patch, class: "d-inline", data: { turbo_confirm: "¿Reagendar toda la entrega para otra fecha?" } do |f| %>
-        <%= f.date_field :new_date, class: "form-control d-inline w-auto me-2", required: true %>
-        <%= f.button "Reagendar toda la entrega", class: "btn btn-warning btn-sm" %>
+      <%# Confirmar todos los productos %>
+      <% if policy(@delivery).edit? && @delivery.delivery_items.any? { |item| item.pending? || item.status == "confirmed" } && !@delivery.delivery_items.all? { |item| item.status == "confirmed" } %>
+        <%= button_to "Confirmar todos los productos para entrega",
+          confirm_all_items_delivery_path(@delivery),
+          method: :patch,
+          data: { turbo_confirm: "¿Estás seguro que deseas confirmar todos los productos para entrega?" },
+          class: "btn btn-success btn-sm" %>
       <% end %>
-    <% end %>
+      <%# Reagendar toda la entrega %>
+      <% if policy(@delivery).edit? && @delivery.delivery_items.any? { |item| !["delivered", "cancelled", "rescheduled", "confirmed"].include?(item.status) } %>
+        <div class="d-flex align-items-center gap-2">
+          <%= form_with url: reschedule_all_delivery_path(@delivery), 
+                        method: :patch, 
+                        class: "d-flex align-items-center gap-2", 
+                        data: { turbo_confirm: "¿Reagendar toda la entrega para otra fecha?" } do |f| %>
+            <% if current_user.role == "seller" %>
+              <% next_same_weekday = Date.today + 7.days %>
+              <%= f.date_field :new_date, 
+                    class: "form-control", 
+                    required: true,
+                    value: next_same_weekday.strftime("%Y-%m-%d"),
+                    style: "width: 150px;",
+                    data: { 
+                      controller: "weekday-picker",
+                      weekday_picker_weekday_value: Date.today.wday,
+                      min: next_same_weekday.strftime("%Y-%m-%d")
+                    } %>
+              <small class="text-muted">
+                Solo <%= Date::DAYNAMES[Date.today.wday].downcase %>s
+              </small>
+            <% else %>
+              <%= f.date_field :new_date, 
+                    class: "form-control", 
+                    required: true,
+                    style: "width: 150px;" %>
+            <% end %>
+            <%= f.button "Reagendar toda la entrega", class: "btn btn-warning btn-sm" %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
   </div>
   <div class="card-body">
     <% if @delivery.delivery_items.any? %>
@@ -174,32 +200,30 @@
                   <% else %>
                     <% case item.status %>
                     <% when 'pending' %>
-                      <!--
-                      <% if item.order_item.ready? %>
-                        <%= button_to confirm_delivery_item_path(item), method: :patch, class: "btn btn-primary btn-sm", title: "Confirmar" do %>
-                          <i class="bi bi-check-circle"></i> Confirmar
-                        <% end %>
-                      <% else %>
-                        <span data-bs-toggle="tooltip" data-bs-placement="top" title="El producto aún no está listo para entrega (Producción no lo ha marcado como listo)">
-                          <button class="btn btn-primary btn-sm" type="button" disabled>
-                            <i class="bi bi-check-circle"></i> Confirmar
-                          </button>
-                        </span>
-                        -->
-                        <%= button_to confirm_delivery_item_path(item), method: :patch, class: "btn btn-primary btn-sm", title: "Confirmar" do %>
-                          <i class="bi bi-check-circle"></i> Confirmar
-                        <% end %>
+                      <%= button_to confirm_delivery_item_path(item), 
+                            method: :patch, 
+                            class: "btn btn-primary btn-sm me-1", 
+                            title: "Confirmar" do %>
+                        <i class="bi bi-check-circle"></i> Confirmar
                       <% end %>
-                      <button class="btn btn-warning btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#reschedule-form-<%= item.id %>">
+                      <button class="btn btn-warning btn-sm" 
+                              type="button" 
+                              data-bs-toggle="collapse" 
+                              data-bs-target="#reschedule-form-<%= item.id %>">
                         <i class="bi bi-calendar2-plus"></i> Reprogramar
                       </button>
                       <div class="collapse mt-2" id="reschedule-form-<%= item.id %>">
-                        <%= render partial: "delivery_items/reschedule_form", locals: { item: item, future_deliveries: @future_deliveries } %>
+                        <%= render partial: "delivery_items/reschedule_form", 
+                              locals: { item: item, future_deliveries: @future_deliveries } %>
                       </div>
                     <% when 'delivered' %>
                       <span class="text-success"><i class="bi bi-check2-circle"></i> Entregado</span>
                     <% else %>
-                      <%= button_to cancel_delivery_item_path(item), method: :patch, class: "btn btn-danger btn-sm", data: { turbo_confirm: "¿Está seguro?" }, title: "Cancelar" do %>
+                      <%= button_to cancel_delivery_item_path(item), 
+                            method: :patch, 
+                            class: "btn btn-danger btn-sm", 
+                            data: { turbo_confirm: "¿Está seguro?" }, 
+                            title: "Cancelar" do %>
                         <i class="bi bi-x-circle"></i> Cancelar
                       <% end %>
                     <% end %>
