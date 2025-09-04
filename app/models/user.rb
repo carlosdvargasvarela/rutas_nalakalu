@@ -61,6 +61,10 @@ class User < ApplicationRecord
     end
   end
 
+  def notifications_enabled?
+    send_notifications?
+  end
+
   private
 
   def set_default_role

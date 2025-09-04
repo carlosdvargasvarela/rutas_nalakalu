@@ -158,6 +158,7 @@ Rails.application.routes.draw do
       member do
         post :send_reset_password
         patch :unlock
+        patch :toggle_notifications
       end
     end
   end

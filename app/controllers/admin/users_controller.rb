@@ -1,7 +1,8 @@
-# app/controllers/users_controller.rb
+# app/controllers/admin/users_controller.rb
 class Admin::UsersController < ApplicationController
   before_action :authenticate_user!
   before_action :require_admin!
+  before_action :set_user, only: [ :send_reset_password, :unlock, :toggle_notifications ]
 
   def index
     @users = User.order(:name)
@@ -33,21 +34,29 @@ class Admin::UsersController < ApplicationController
   end
 
   def send_reset_password
-    user = User.find(params[:id])
-    user.send_reset_password_instructions
-    redirect_to admin_users_path, notice: "Correo de acceso reenviado a #{user.email}"
+    @user.send_reset_password_instructions
+    redirect_to admin_users_path, notice: "Correo de acceso reenviado a #{@user.email}"
   end
 
   def unlock
-    user = User.find(params[:id])
-    user.unlock_access! if user.access_locked?
+    @user.unlock_access! if @user.access_locked?
     redirect_to admin_users_path, notice: "Usuario desbloqueado"
+  end
+
+  def toggle_notifications
+    @user.update!(send_notifications: !@user.send_notifications)
+    status = @user.send_notifications? ? "activadas" : "desactivadas"
+    redirect_to admin_users_path, notice: "Notificaciones #{status} para #{@user.name}"
   end
 
   private
 
+  def set_user
+    @user = User.find(params[:id])
+  end
+
   def user_params
-    params.require(:user).permit(:name, :email, :role, :seller_code)
+    params.require(:user).permit(:name, :email, :role, :seller_code, :send_notifications)
   end
 
   def require_admin!

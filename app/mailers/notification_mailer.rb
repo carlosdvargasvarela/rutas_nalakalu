@@ -9,11 +9,10 @@ class NotificationMailer < ApplicationMailer
     @notifiable_type = params[:notifiable_type]
     @type          = params[:type]
 
-    # Buscar el usuario de forma segura
     @user = User.find_by(id: @user_id)
-    return unless @user # Si el usuario no existe, no enviar correo
+    return unless @user&.send_notifications? 
 
-    # Buscar el objeto notifiable de forma segura (si existe)
+    # Buscar objeto notifiable si aplica...
     if @notifiable_id && @notifiable_type
       begin
         @notifiable = @notifiable_type.constantize.find_by(id: @notifiable_id)

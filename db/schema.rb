@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_08_29_152430) do
+ActiveRecord::Schema[7.2].define(version: 2025_09_04_200445) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -114,8 +114,13 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_29_152430) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "stop_order"
+    t.integer "status", default: 0, null: false
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.text "driver_notes"
     t.index ["delivery_id"], name: "index_delivery_plan_assignments_on_delivery_id"
     t.index ["delivery_plan_id"], name: "index_delivery_plan_assignments_on_delivery_plan_id"
+    t.index ["status"], name: "index_delivery_plan_assignments_on_status"
   end
 
   create_table "delivery_plans", force: :cascade do |t|
@@ -126,6 +131,24 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_29_152430) do
     t.datetime "updated_at", null: false
     t.integer "driver_id"
     t.index ["driver_id"], name: "index_delivery_plans_on_driver_id"
+  end
+
+  create_table "driver_sessions", force: :cascade do |t|
+    t.integer "driver_id", null: false
+    t.integer "delivery_plan_id", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "start_time"
+    t.datetime "end_time"
+    t.decimal "current_latitude", precision: 10, scale: 6
+    t.decimal "current_longitude", precision: 10, scale: 6
+    t.datetime "last_reported_at"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["delivery_plan_id"], name: "index_driver_sessions_on_delivery_plan_id"
+    t.index ["driver_id", "delivery_plan_id"], name: "index_driver_sessions_on_driver_id_and_delivery_plan_id", unique: true
+    t.index ["driver_id"], name: "index_driver_sessions_on_driver_id"
+    t.index ["status"], name: "index_driver_sessions_on_status"
   end
 
   create_table "notifications", force: :cascade do |t|
@@ -166,6 +189,34 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_29_152430) do
     t.index ["seller_id"], name: "index_orders_on_seller_id"
   end
 
+  create_table "qbwc_jobs", force: :cascade do |t|
+    t.string "name"
+    t.string "company", limit: 1000
+    t.string "worker_class", limit: 100
+    t.boolean "enabled", default: false, null: false
+    t.text "request_index"
+    t.text "requests"
+    t.boolean "requests_provided_when_job_added", default: false, null: false
+    t.text "data"
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
+    t.index ["company"], name: "index_qbwc_jobs_on_company"
+    t.index ["name"], name: "index_qbwc_jobs_on_name", unique: true
+  end
+
+  create_table "qbwc_sessions", force: :cascade do |t|
+    t.string "ticket"
+    t.string "user"
+    t.string "company", limit: 1000
+    t.integer "progress", default: 0, null: false
+    t.string "current_job"
+    t.string "iterator_id"
+    t.string "error", limit: 1000
+    t.text "pending_jobs", limit: 1000, null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
+  end
+
   create_table "sellers", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "name"
@@ -195,6 +246,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_29_152430) do
     t.string "unlock_token"
     t.datetime "locked_at"
     t.boolean "force_password_change", default: true, null: false
+    t.boolean "send_notifications", default: true, null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["unlock_token"], name: "index_users_on_unlock_token", unique: true
@@ -222,6 +274,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_29_152430) do
   add_foreign_key "delivery_plan_assignments", "deliveries"
   add_foreign_key "delivery_plan_assignments", "delivery_plans"
   add_foreign_key "delivery_plans", "users", column: "driver_id"
+  add_foreign_key "driver_sessions", "delivery_plans"
+  add_foreign_key "driver_sessions", "users", column: "driver_id"
   add_foreign_key "notifications", "users"
   add_foreign_key "order_items", "orders"
   add_foreign_key "orders", "clients"
