@@ -1,11 +1,14 @@
-# app/controllers/deliveries_controller.rbº
+# app/controllers/deliveries_controller.rb
 class DeliveriesController < ApplicationController
-  before_action :set_delivery, only: [ :show, :edit, :update ]
+  before_action :set_delivery, only: [ :show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all ]
   before_action :set_addresses, only: [ :new, :edit, :create, :update ]
 
   # GET /deliveries
   # Muestra todas las entregas o filtra por semana
   def index
+    # Guardar la URL completa para poder volver con filtros
+    session[:deliveries_return_to] = request.fullpath
+
     @q = Delivery.ransack(params[:q])
     @deliveries = @q.result.includes(order: [ :client, :seller ], delivery_address: :client).order(delivery_date: :asc).page(params[:page])
     authorize Delivery
@@ -83,7 +86,8 @@ class DeliveriesController < ApplicationController
 
       # 3. Actualiza la entrega
       if @delivery.update(delivery_params.except(:delivery_items_attributes, :delivery_address_id))
-        redirect_to @delivery, notice: "Entrega actualizada correctamente."
+        redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
+                    notice: "Entrega actualizada correctamente.")
       else
         @client = order.client
         @addresses = @client.delivery_addresses.order(:description)
@@ -127,7 +131,8 @@ class DeliveriesController < ApplicationController
       @delivery.delivery_items = processed_delivery_items
 
       @delivery.save!
-      redirect_to @delivery, notice: "Entrega creada correctamente."
+      redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
+                  notice: "Entrega creada correctamente.")
     end
   rescue ActiveRecord::RecordInvalid => e
     @delivery = e.record if e.respond_to?(:record) && e.record.is_a?(Delivery)
@@ -143,6 +148,9 @@ class DeliveriesController < ApplicationController
   # GET /deliveries/by_week
   # Muestra un formulario simple para seleccionar semana y año
   def by_week
+    # Guardar también esta URL para el retorno
+    session[:deliveries_return_to] = request.fullpath
+
     @week = params[:week].to_i
     @year = params[:year].to_i
 
@@ -160,14 +168,17 @@ class DeliveriesController < ApplicationController
 
   # PATCH /deliveries/:id/mark_as_delivered
   def mark_as_delivered
-    @delivery = Delivery.find(params[:id])
     @delivery.mark_as_delivered!
-    redirect_to @delivery, notice: "Entrega marcada como completada."
+    redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
+                notice: "Entrega marcada como completada.")
   end
 
   # GET /deliveries/service_cases
   # Muestra solo las entregas que contienen casos de servicio
   def service_cases
+    # Guardar también esta URL para el retorno
+    session[:deliveries_return_to] = request.fullpath
+
     @deliveries = Delivery
       .joins(order: :client)
       .merge(Delivery.with_service_cases)
@@ -194,17 +205,16 @@ class DeliveriesController < ApplicationController
   end
 
   def confirm_all_items
-    @delivery = Delivery.find(params[:id])
     authorize @delivery, :edit? # O crea una policy específica si lo prefieres
 
     updated = @delivery.delivery_items.where(status: [ :pending, :confirmed ]).update_all(status: :confirmed, updated_at: Time.current)
     @delivery.update_status_based_on_items
 
-    redirect_to @delivery, notice: "#{updated} productos confirmados para entrega."
+    redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
+                notice: "#{updated} productos confirmados para entrega.")
   end
 
   def reschedule_all
-    @delivery = Delivery.find(params[:id])
     authorize @delivery, :edit?
 
     # Nueva fecha desde el formulario
@@ -231,9 +241,11 @@ class DeliveriesController < ApplicationController
 
     @delivery.update_status_based_on_items
 
-    redirect_to new_delivery, notice: "Entrega reagendada para el #{l new_date, format: :long}."
+    redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
+                notice: "Entrega reagendada para el #{l new_date, format: :long}.")
   rescue => e
-    redirect_to @delivery, alert: "Error al reagendar: #{e.message}"
+    redirect_to(session[:deliveries_return_to] || deliveries_path,
+                alert: "Error al reagendar: #{e.message}")
   end
 
   private
