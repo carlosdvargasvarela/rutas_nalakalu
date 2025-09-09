@@ -68,6 +68,7 @@
         <th>Notas</th>
         <th>Estado de entrega</th>
         <th>Estado en planta</th>
+        <th>Notas de producción</th>
         <% if policy(@order).edit? && !@order.delivered? %>
           <th>Acción</th>
         <% end %>
@@ -99,10 +100,13 @@
               <span class="badge bg-secondary"><i class="bi bi-hourglass-split me-1"></i>Pendiente de Confirmación</span>
             <% end %>
           </td>
+          <td style="min-width: 300px;">
+            <%= render "order_item_notes/list", item: item %>
+          </td>
           <% if policy(@order).edit? %>
-            <% if !@order.delivered?%>
+            <% if !@order.delivered? %>
               <td>
-                <% if item.confirmed?%>
+                <% if item.confirmed? %>
                   <%= button_to unconfirm_order_item_path(item), method: :patch, class: "btn btn-warning btn-sm", title: "Retirar confirmación" do %>
                     <i class="bi bi-x-circle"></i> Retirar
                   <% end %>
@@ -122,3 +126,17 @@
 <%= link_to orders_path, class: "btn btn-secondary mt-3" do %>
   <i class="bi bi-arrow-left"></i> Volver a Pedidos
 <% end %>
+<!-- Estilos adicionales para las notas -->
+<style>
+  .alert-sm {
+    font-size: 0.875rem;
+  }
+
+  .dropdown-menu-end {
+    --bs-position: end;
+  }
+
+  .table td {
+    vertical-align: middle;
+  }
+</style>

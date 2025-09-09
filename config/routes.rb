@@ -71,8 +71,15 @@ Rails.application.routes.draw do
   # Confirmación individual de items en pedidos
   resources :order_items, only: [] do
     member do
-      patch :confirm    # Confirmar que el item está listo para entrega
-      patch :unconfirm  # Desconfirmar item (volver a producción)
+      patch :confirm
+      patch :unconfirm
+    end
+
+    resources :order_item_notes, except: [ :index, :show ] do
+      member do
+        patch :close
+        patch :reopen
+      end
     end
   end
 

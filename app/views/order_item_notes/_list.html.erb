@@ -1,0 +1,106 @@
+<div id="<%= dom_id(item, :notes) %>">
+  <div class="accordion" id="accordion_notes_<%= item.id %>">
+    <div class="accordion-item border-0">
+      <h2 class="accordion-header" id="heading_notes_<%= item.id %>">
+        <button class="accordion-button collapsed py-2 bg-light fw-semibold text-dark" 
+                type="button" 
+                data-bs-toggle="collapse" 
+                data-bs-target="#collapse_notes_<%= item.id %>" 
+                aria-expanded="false" 
+                aria-controls="collapse_notes_<%= item.id %>">
+          <i class="bi bi-journal-text me-2"></i>
+          Notas de producción 
+          <span class="badge bg-primary ms-2"><%= item.order_item_notes.count %></span>
+        </button>
+      </h2>
+      <div id="collapse_notes_<%= item.id %>" 
+           class="accordion-collapse collapse" 
+           aria-labelledby="heading_notes_<%= item.id %>" 
+           data-bs-parent="#accordion_notes_<%= item.id %>">
+        <div class="accordion-body p-2">
+          <% if item.order_item_notes.any? %>
+            <ul class="list-unstyled timeline">
+              <% item.order_item_notes.order(created_at: :desc).each do |note| %>
+                <li class="mb-3 ps-3 border-start border-2 <%= note.closed? ? 'border-secondary' : 'border-info' %>">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <p class="mb-1 small">
+                        <%= simple_format(note.body, {}, wrapper_tag: "span") %>
+                      </p>
+                      <span class="text-muted small">
+                        <i class="bi bi-person me-1"></i><%= note.user.name %>
+                        • <i class="bi bi-clock me-1"></i><%= l(note.created_at, format: :short) %>
+                        <% if note.closed? %>
+                          <span class="badge bg-secondary ms-1">
+                            <i class="bi bi-lock-fill me-1"></i>Cerrada
+                          </span>
+                        <% end %>
+                      </span>
+                    </div>
+                    <!-- Menú de acciones -->
+                    <% if (current_user.production_manager? || current_user.admin?) && (note.user == current_user || current_user.admin?) %>
+                      <div class="dropdown ms-2">
+                        <button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown">
+                          <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                          <li>
+                            <%= link_to edit_order_item_order_item_note_path(note.order_item, note),
+                                        data: { turbo_frame: "note_modal" },
+                                        class: "dropdown-item" do %>
+                              <i class="bi bi-pencil-square me-2"></i> Editar
+                            <% end %>
+                          </li>
+                          <% unless note.closed? %>
+                            <li>
+                              <%= link_to close_order_item_order_item_note_path(note.order_item, note),
+                                          data: { turbo_method: :patch, turbo_confirm: "¿Cerrar esta nota?" },
+                                          class: "dropdown-item" do %>
+                                <i class="bi bi-check-circle me-2"></i> Cerrar
+                              <% end %>
+                            </li>
+                          <% else %>
+                            <li>
+                              <%= link_to reopen_order_item_order_item_note_path(note.order_item, note),
+                                          data: { turbo_method: :patch, turbo_confirm: "¿Reabrir esta nota?" },
+                                          class: "dropdown-item" do %>
+                                <i class="bi bi-arrow-counterclockwise me-2"></i> Reabrir
+                              <% end %>
+                            </li>
+                          <% end %>
+                          <li>
+                            <hr class="dropdown-divider">
+                          </li>
+                          <li>
+                            <%= link_to order_item_order_item_note_path(note.order_item, note),
+                                        data: { turbo_method: :delete, turbo_confirm: "¿Eliminar esta nota?" },
+                                        class: "dropdown-item text-danger" do %>
+                              <i class="bi bi-trash me-2"></i> Eliminar
+                            <% end %>
+                          </li>
+                        </ul>
+                      </div>
+                    <% end %>
+                  </div>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p class="text-muted fst-italic small">
+              <i class="bi bi-info-circle me-1"></i> No hay notas
+            </p>
+          <% end %>
+          <% if current_user.production_manager? || current_user.admin? %>
+            <div class="mt-2">
+              <%= link_to new_order_item_order_item_note_path(item),
+                          data: { turbo_frame: "note_modal" },
+                          class: "btn btn-sm btn-success" do %>
+                <i class="bi bi-plus-circle"></i> Agregar nota
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

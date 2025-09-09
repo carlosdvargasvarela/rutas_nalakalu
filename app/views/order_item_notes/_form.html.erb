@@ -1,0 +1,9 @@
+<%= simple_form_for([order_item, note], data: { turbo_frame: "note_modal" }) do |f| %>
+  <div class="mb-3">
+    <%= f.input :body, label: "Detalle de la nota", as: :text, input_html: { rows: 4 } %>
+  </div>
+  <div class="d-flex justify-content-end gap-2">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+    <%= f.submit (note.persisted? ? "Actualizar" : "Guardar"), class: "btn btn-primary" %>
+  </div>
+<% end %>

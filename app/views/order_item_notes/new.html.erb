@@ -1,0 +1,9 @@
+<turbo-frame id="note_modal">
+  <div class="modal-header">
+    <h5 class="modal-title">Nueva nota de producción</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+  <div class="modal-body">
+    <%= render "form", note: @order_item_note, order_item: @order_item %>
+  </div>
+</turbo-frame>
