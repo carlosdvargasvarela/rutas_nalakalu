@@ -43,6 +43,9 @@ class OrderItem < ApplicationRecord
   end
 
   def confirm!
+    order_item_notes.each do |note|
+      note.update(closed: true) unless note.closed?
+    end
     update!(confirmed: true, status: :ready)
   end
 

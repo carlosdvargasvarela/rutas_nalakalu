@@ -65,7 +65,6 @@
       <tr>
         <th>Producto</th>
         <th>Cantidad</th>
-        <th>Notas</th>
         <th>Estado de entrega</th>
         <th>Estado en planta</th>
         <th>Notas de producción</th>
@@ -80,13 +79,6 @@
           <td><strong><%= item.product %></strong></td>
           <td>
             <span class="badge bg-secondary"><%= item.quantity %></span>
-          </td>
-          <td>
-            <% if item.notes.present? %>
-              <span class="text-muted"><i class="bi bi-info-circle"></i> <%= item.notes %></span>
-            <% else %>
-              <span class="text-muted">N/A</span>
-            <% end %>
           </td>
           <td>
             <span class="badge bg-<%= delivery_item_status_color(item.item_delivery_status) %>">

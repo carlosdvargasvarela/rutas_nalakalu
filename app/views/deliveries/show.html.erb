@@ -165,6 +165,7 @@
               <th>Observaciones</th>
               <th>Caso Servicio</th>
               <th>Estado</th>
+              <th>Notas de producción</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -193,6 +194,9 @@
                   <span class="badge bg-<%= delivery_item_status_color(item.status) %>">
                     <%= item.status.humanize %>
                   </span>
+                </td>
+                <td style="min-width: 300px;">
+                  <%= render "order_item_notes/list", item: item.order_item %>
                 </td>
                 <td>
                   <% if item.rescheduled? %>
