@@ -1,6 +1,5 @@
 # app/controllers/notifications_controller.rb
 class NotificationsController < ApplicationController
-# app/controllers/notifications_controller.rb
   def index
     @notifications = current_user.notifications.recent.includes(:notifiable)
     @grouped_notifications = @notifications.group_by(&:notification_type)

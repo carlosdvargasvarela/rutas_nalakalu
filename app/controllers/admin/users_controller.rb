@@ -14,7 +14,7 @@ class Admin::UsersController < ApplicationController
 
   def create
     @user = User.new(user_params.except(:seller_code))
-    @user.seller_code = user_params[:seller_code] # Asigna el campo virtual
+    @user.seller_code = user_params[:seller_code]
     @user.password = "Nalakalu.01"
 
     User.transaction do

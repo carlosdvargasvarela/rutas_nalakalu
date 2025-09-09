@@ -20,8 +20,6 @@ class Delivery < ApplicationRecord
     cancelled: 6
   }
 
-  enum delivery_type: { normal_delivery: 0, service_case: 1 }
-
   validates :delivery_date, presence: true
 
   after_save :update_status_based_on_items

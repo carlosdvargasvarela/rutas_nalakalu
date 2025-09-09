@@ -5,6 +5,7 @@ class OrderItem < ApplicationRecord
   # Relaciones
   belongs_to :order
   has_many :delivery_items, dependent: :destroy
+  has_many :order_item_notes, dependent: :destroy
 
   # Validaciones
   validates :product, presence: true

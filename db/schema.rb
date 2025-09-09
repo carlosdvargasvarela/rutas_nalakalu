@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_09_04_200445) do
+ActiveRecord::Schema[7.2].define(version: 2025_09_09_174816) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -166,6 +166,17 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_04_200445) do
     t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
+  create_table "order_item_notes", force: :cascade do |t|
+    t.integer "order_item_id", null: false
+    t.integer "user_id", null: false
+    t.text "body", null: false
+    t.boolean "closed", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_item_id"], name: "index_order_item_notes_on_order_item_id"
+    t.index ["user_id"], name: "index_order_item_notes_on_user_id"
+  end
+
   create_table "order_items", force: :cascade do |t|
     t.integer "order_id", null: false
     t.string "product"
@@ -277,6 +288,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_04_200445) do
   add_foreign_key "driver_sessions", "delivery_plans"
   add_foreign_key "driver_sessions", "users", column: "driver_id"
   add_foreign_key "notifications", "users"
+  add_foreign_key "order_item_notes", "order_items"
+  add_foreign_key "order_item_notes", "users"
   add_foreign_key "order_items", "orders"
   add_foreign_key "orders", "clients"
   add_foreign_key "orders", "sellers"
