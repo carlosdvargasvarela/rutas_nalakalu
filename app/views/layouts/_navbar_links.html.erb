@@ -1,27 +1,27 @@
 <!-- Navbar links partial -->
 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
   <li class="nav-item">
-    <%= link_to root_path, class: "nav-link #{'active' if current_page?(root_path)}" do %>
+    <%= link_to root_path, class: "nav-link" do %>
       <i class="bi bi-speedometer2 me-1"></i> Dashboard
     <% end %>
   </li>
   <li class="nav-item">
-    <%= link_to orders_path, class: "nav-link #{'active' if current_page?(orders_path)}" do %>
+    <%= link_to orders_path, class: "nav-link" do %>
       <i class="bi bi-box-seam me-1"></i> Pedidos
     <% end %>
   </li>
   <li class="nav-item">
-    <%= link_to deliveries_path, class: "nav-link #{'active' if current_page?(deliveries_path)}" do %>
+    <%= link_to deliveries_path, class: "nav-link" do %>
       <i class="bi bi-truck me-1"></i> Entregas
     <% end %>
   </li>
   <li class="nav-item">
-    <%= link_to delivery_plans_path, class: "nav-link #{'active' if current_page?(delivery_plans_path)}" do %>
+    <%= link_to delivery_plans_path, class: "nav-link" do %>
       <i class="bi bi-calendar-check me-1"></i> Planes de Entrega
     <% end %>
   </li>
   <li class="nav-item">
-    <%= link_to new_delivery_import_path, class: "nav-link #{'active' if current_page?(new_delivery_import_path)}" do %>
+    <%= link_to new_delivery_import_path, class: "nav-link" do %>
       <i class="bi bi-file-earmark-arrow-up me-1"></i> Importar Excel
     <% end %>
   </li>
