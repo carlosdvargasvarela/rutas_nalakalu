@@ -1,27 +1,19 @@
 import "@hotwired/turbo-rails"
 import "controllers"
-document.addEventListener("turbo:load", function () {
-    // Inicializa tooltips de Bootstrap (si usas tooltips)
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-        new bootstrap.Tooltip(tooltipTriggerEl)
-    })
-});
 
-// Limpieza antes del cache de Turbo (evita estados pegados entre navegaciones)
-document.addEventListener("turbo:before-cache", () => {
-    // Cierra modales abiertos
-    document.querySelectorAll(".modal.show").forEach(el => {
-        const modalInstance = bootstrap.Modal.getInstance(el)
-        if (modalInstance) modalInstance.hide()
+document.addEventListener("turbo:load", () => {
+    // Inicializar dropdowns
+    document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(el => {
+        new bootstrap.Dropdown(el)
     })
 
-    // Cierra dropdowns abiertos
-    document.querySelectorAll(".dropdown-menu.show").forEach(menu => {
-        const toggle = menu.previousElementSibling
-        if (toggle) {
-            const dropdownInstance = bootstrap.Dropdown.getInstance(toggle)
-            if (dropdownInstance) dropdownInstance.hide()
-        }
+    // Inicializar tooltips
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        new bootstrap.Tooltip(el)
+    })
+
+    // Inicializar popovers
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
+        new bootstrap.Popover(el)
     })
 })
