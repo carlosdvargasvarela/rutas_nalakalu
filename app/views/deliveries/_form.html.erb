@@ -57,6 +57,14 @@
           label_html: { class: "form-label" } %>
     </div>
   </div>
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <%= f.input :delivery_time_preference, 
+        label: "Preferencia de horario", 
+        input_html: { class: "form-control", placeholder: "Ej: Mañana, Por la tarde, 2:00 pm" }, 
+        label_html: { class: "form-label" } %>
+    </div>
+  </div>
   <div class="d-flex justify-content-end gap-2">
     <%= link_to "Cancelar", deliveries_path, class: "btn btn-secondary" %>
     <%= f.button :submit, "Guardar entrega", class: "btn btn-primary" %>

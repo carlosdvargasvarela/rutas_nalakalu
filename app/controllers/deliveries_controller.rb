@@ -387,7 +387,7 @@ class DeliveriesController < ApplicationController
   # Parámetros permitidos para delivery
   def delivery_params
     params.require(:delivery).permit(
-      :delivery_date, :delivery_address_id, :contact_name, :contact_phone, :delivery_notes, :delivery_type,
+      :delivery_date, :delivery_address_id, :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
       delivery_items_attributes: [
         :id, :quantity_delivered, :service_case, :status, :_destroy,
         order_item_attributes: [ :id, :product, :quantity, :notes ]
