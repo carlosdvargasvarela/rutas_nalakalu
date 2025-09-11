@@ -11,12 +11,12 @@
     <div class="card-body">
       <%= search_form_for @q, url: delivery_plans_path, method: :get, html: {class: "row g-2 align-items-end"} do |f| %>
         <div class="col-12 col-md-3">
-          <%= f.label :week_eq, "Semana", class: "form-label" %>
-          <%= f.number_field :week_eq, class: "form-control", min: 1, max: 53, placeholder: "Semana" %>
+          <%= f.label :deliveries_delivery_date_gteq, "Desde", class: "form-label" %>
+          <%= f.date_field :deliveries_delivery_date_gteq, class: "form-control" %>
         </div>
         <div class="col-12 col-md-3">
-          <%= f.label :year_eq, "Año", class: "form-label" %>
-          <%= f.number_field :year_eq, class: "form-control", min: 2020, max: 2100, placeholder: "Año" %>
+          <%= f.label :deliveries_delivery_date_lteq, "Hasta", class: "form-label" %>
+          <%= f.date_field :deliveries_delivery_date_lteq, class: "form-control" %>
         </div>
         <div class="col-12 col-md-3">
           <%= f.label :status_eq, "Estado", class: "form-label" %>
@@ -33,8 +33,7 @@
     <table class="table table-hover align-middle">
       <thead class="table-light">
         <tr>
-          <th>Semana</th>
-          <th>Año</th>
+          <th>Período</th>
           <th>Estado</th>
           <th>Conductor</th>
           <th>Entregas</th>
@@ -43,13 +42,17 @@
       </thead>
       <tbody>
         <% @delivery_plans.each do |plan| %>
+          <% 
+            delivery_dates = plan.deliveries.pluck(:delivery_date)
+            from_date = delivery_dates.min
+            to_date = delivery_dates.max
+          %>
           <tr>
             <td>
               <span class="badge bg-primary">
                 <%= week_range_label(plan.year, plan.week) %>
               </span>
             </td>
-            <td><%= plan.year %></td>
             <td>
               <span class="badge <%= plan.status == "sent_to_logistics" ? "bg-success" : "bg-secondary" %>">
                 <%= plan.status.humanize %>
@@ -78,7 +81,7 @@
         <% end %>
         <% if @delivery_plans.empty? %>
           <tr>
-            <td colspan="6" class="text-center text-muted py-4">
+            <td colspan="5" class="text-center text-muted py-4">
               <i class="bi bi-emoji-frown fs-2"></i><br>
               No hay planes de entrega registrados.
             </td>

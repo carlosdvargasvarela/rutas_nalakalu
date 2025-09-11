@@ -1,4 +1,5 @@
 # app/controllers/deliveries_controller.rb
+# app/controllers/deliveries_controller.rb
 class DeliveriesController < ApplicationController
   before_action :set_delivery, only: [ :show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all ]
   before_action :set_addresses, only: [ :new, :edit, :create, :update ]
@@ -10,7 +11,13 @@ class DeliveriesController < ApplicationController
     session[:deliveries_return_to] = request.fullpath
 
     @q = Delivery.ransack(params[:q])
+
+    # Para HTML: usar paginación
     @deliveries = @q.result.includes(order: [ :client, :seller ], delivery_address: :client).order(delivery_date: :asc).page(params[:page])
+
+    # Para Excel/CSV: todos los registros sin paginación
+    @all_deliveries = @q.result.includes(order: [ :client, :seller ], delivery_address: :client, delivery_items: { order_item: :order }).order(delivery_date: :asc)
+
     authorize Delivery
 
     respond_to do |format|
@@ -19,7 +26,7 @@ class DeliveriesController < ApplicationController
         response.headers["Content-Disposition"] = "attachment; filename=entregas_#{Date.today.strftime('%Y%m%d')}.xlsx"
       }
       format.csv {
-        send_data @deliveries.to_csv, filename: "entregas_#{Date.today.strftime('%Y%m%d')}.csv"
+        send_data @all_deliveries.to_csv, filename: "entregas_#{Date.today.strftime('%Y%m%d')}.csv"
       }
     end
   end
@@ -330,7 +337,7 @@ class DeliveriesController < ApplicationController
     if params[:delivery] && params[:delivery][:delivery_address_id].present?
       addr = DeliveryAddress.find(params[:delivery][:delivery_address_id])
 
-      # 👇 Si vienen campos para actualizar la dirección existente
+      # Si vienen campos para actualizar la dirección existente
       if params[:delivery_address].present?
         addr.update(
           params.require(:delivery_address)

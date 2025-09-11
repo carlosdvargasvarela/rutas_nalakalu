@@ -2,8 +2,9 @@
 class DeliveryPlansController < ApplicationController
   def index
     @q = DeliveryPlan.ransack(params[:q])
-    @delivery_plans = @q.result.includes(:driver).order(year: :desc, week: :desc)
+    @delivery_plans = @q.result.includes(:driver, :deliveries).order(year: :desc, week: :desc)
   end
+
   def new
     # Rango de fechas
     if params.dig(:q, :delivery_date_gteq).present? && params.dig(:q, :delivery_date_lteq).present?
@@ -44,6 +45,11 @@ class DeliveryPlansController < ApplicationController
       return render_new_with_selection(delivery_ids)
     end
 
+    # Calcular week y year basado en las entregas
+    first_date = unique_dates.first
+    @delivery_plan.week = first_date.cweek
+    @delivery_plan.year = first_date.cwyear
+
     if @delivery_plan.save
       delivery_ids.each do |delivery_id|
         DeliveryPlanAssignment.create!(delivery_plan: @delivery_plan, delivery_id: delivery_id)
@@ -60,16 +66,21 @@ class DeliveryPlansController < ApplicationController
     @deliveries = @delivery_plan.deliveries.includes(:order, :delivery_address, order: :client)
     @assignments = @delivery_plan.delivery_plan_assignments.includes(
       delivery: [
-        :delivery_items, 
-        order: [:client, :seller], 
+        :delivery_items,
+        order: [ :client, :seller ],
         delivery_address: :client
       ]
     ).order(:stop_order)
 
+    # Calcular rango de fechas desde las entregas
+    delivery_dates = @deliveries.pluck(:delivery_date)
+    @from_date = delivery_dates.min
+    @to_date = delivery_dates.max
+
     respond_to do |format|
       format.html
       format.xlsx {
-        response.headers['Content-Disposition'] = "attachment; filename=plan_ruta_semana_#{@delivery_plan.week}_#{@delivery_plan.year}.xlsx"
+        response.headers["Content-Disposition"] = "attachment; filename=plan_ruta_#{@from_date&.strftime('%d_%m_%Y')}_#{@to_date&.strftime('%d_%m_%Y')}.xlsx"
       }
     end
   end
