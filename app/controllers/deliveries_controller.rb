@@ -1,5 +1,4 @@
 # app/controllers/deliveries_controller.rb
-# app/controllers/deliveries_controller.rb
 class DeliveriesController < ApplicationController
   before_action :set_delivery, only: [ :show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all ]
   before_action :set_addresses, only: [ :new, :edit, :create, :update ]
@@ -91,10 +90,10 @@ class DeliveriesController < ApplicationController
       address = find_or_create_address(client)
       @delivery.delivery_address = address
 
-      # 2. Procesa los delivery_items nuevos (si hay)
+      # 2. Procesa los delivery_items (existentes y nuevos)
       if params[:delivery][:delivery_items_attributes].present?
         processed_delivery_items = process_delivery_items_params(order)
-        @delivery.delivery_items += processed_delivery_items
+        @delivery.delivery_items = processed_delivery_items
       end
 
       # 3. Actualiza la entrega
@@ -263,7 +262,7 @@ class DeliveriesController < ApplicationController
 
   private
 
-  # Procesa los parámetros de delivery_items y crea/actualiza order_items
+  # Procesa los parámetros de delivery_items (existentes y nuevos)
   def process_delivery_items_params(order)
     delivery_items = []
 
@@ -272,23 +271,48 @@ class DeliveriesController < ApplicationController
     params[:delivery][:delivery_items_attributes].each do |key, item_params|
       next if item_params[:_destroy] == "1"
 
-      # Si ya tiene ID, es un delivery_item existente (skip para update automático)
-      next if item_params[:id].present?
+      if item_params[:id].present?
+        # CASO UPDATE: delivery_item existente
+        di = DeliveryItem.find(item_params[:id])
 
-      next if item_params[:order_item_attributes][:product].blank?
+        # Actualizar delivery_item
+        di.update!(
+          quantity_delivered: item_params[:quantity_delivered] || di.quantity_delivered,
+          service_case: item_params[:service_case] == "1",
+          status: item_params[:status] || di.status
+        )
 
-      # Buscar o crear el order_item
-      order_item = find_or_create_order_item(order, item_params[:order_item_attributes])
+        # También actualizar order_item si cambió
+        if item_params[:order_item_attributes].present?
+          oi_params = item_params[:order_item_attributes]
+          if oi_params[:id].present?
+            order_item = OrderItem.find(oi_params[:id])
+            order_item.update!(
+              product: oi_params[:product] || order_item.product,
+              quantity: oi_params[:quantity] || order_item.quantity,
+              notes: oi_params[:notes] || order_item.notes
+            )
+          end
+        end
 
-      # Crear el delivery_item
-      delivery_item = DeliveryItem.new(
-        order_item: order_item,
-        quantity_delivered: item_params[:quantity_delivered] || 1,
-        service_case: item_params[:service_case] == "1",
-        status: :pending
-      )
+        delivery_items << di
+      else
+        # CASO NUEVO: crear delivery_item
+        next if item_params[:order_item_attributes][:product].blank?
 
-      delivery_items << delivery_item
+        # Buscar o crear el order_item
+        order_item = find_or_create_order_item(order, item_params[:order_item_attributes])
+
+        # Crear el delivery_item
+        delivery_item = DeliveryItem.new(
+          order_item: order_item,
+          quantity_delivered: item_params[:quantity_delivered] || 1,
+          service_case: item_params[:service_case] == "1",
+          status: :pending
+        )
+
+        delivery_items << delivery_item
+      end
     end
 
     delivery_items
@@ -307,13 +331,27 @@ class DeliveriesController < ApplicationController
     existing_item = order.order_items.find_by(product: order_item_params[:product])
 
     if existing_item
-      # Actualizar cantidad si es necesario
+      # LÓGICA ACUMULATIVA: Si el item ya existe, sumar cantidades
       if order_item_params[:quantity].present? &&
         existing_item.quantity != order_item_params[:quantity].to_i
+
+        new_quantity = existing_item.quantity.to_i + order_item_params[:quantity].to_i
+
+        # Combinar notas si hay nuevas
+        combined_notes = if order_item_params[:notes].present? && order_item_params[:notes] != existing_item.notes
+          [ existing_item.notes, order_item_params[:notes] ].compact.reject(&:blank?).join("; ")
+        else
+          existing_item.notes || order_item_params[:notes]
+        end
+
         existing_item.update!(
-          quantity: existing_item.quantity + order_item_params[:quantity].to_i,
-          notes: [ existing_item.notes, order_item_params[:notes] ].compact.join("; ")
+          quantity: new_quantity,
+          notes: combined_notes
         )
+      elsif order_item_params[:notes].present? && order_item_params[:notes] != existing_item.notes
+        # Solo actualizar notas si la cantidad es la misma pero hay notas nuevas
+        combined_notes = [ existing_item.notes, order_item_params[:notes] ].compact.reject(&:blank?).join("; ")
+        existing_item.update!(notes: combined_notes)
       end
       return existing_item
     end
