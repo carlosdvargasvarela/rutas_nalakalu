@@ -94,6 +94,77 @@ class Order < ApplicationRecord
     end
   end
 
+  # Método para corregir las cantidades de order_items basándose en deliveries reales
+  def fix_order_item_quantities!
+    transaction do
+      order_items.each do |order_item|
+        # Obtener todos los delivery_items de este order_item
+        # excluyendo los que pertenecen a deliveries rescheduled
+        valid_delivery_items = DeliveryItem.joins(:delivery)
+                                          .where(order_item: order_item)
+                                          .where.not(deliveries: { status: :rescheduled })
+
+        # Sumar todas las cantidades entregadas reales
+        total_delivered_quantity = valid_delivery_items.sum(:quantity_delivered)
+
+        # Solo actualizar si hay diferencia
+        if order_item.quantity != total_delivered_quantity
+          Rails.logger.info "Order #{number} - #{order_item.product}: #{order_item.quantity} → #{total_delivered_quantity}"
+          order_item.update!(quantity: total_delivered_quantity)
+        end
+      end
+    end
+  end
+
+  # Método de clase para corregir TODAS las órdenes
+  def self.fix_all_order_item_quantities!
+    corrected_count = 0
+    error_count = 0
+
+    Order.includes(:order_items).find_each do |order|
+      begin
+        order.fix_order_item_quantities!
+        corrected_count += 1
+        print "." # Progreso visual
+      rescue => e
+        Rails.logger.error "Error corrigiendo Order #{order.number}: #{e.message}"
+        error_count += 1
+        print "X"
+      end
+    end
+
+    puts "\n✅ Proceso completado:"
+    puts "   - Órdenes corregidas: #{corrected_count}"
+    puts "   - Errores: #{error_count}"
+  end
+
+  # Método para obtener un reporte de diferencias SIN corregir
+  def self.audit_order_item_quantities
+    discrepancies = []
+
+    Order.includes(:order_items).find_each do |order|
+      order.order_items.each do |order_item|
+        valid_delivery_items = DeliveryItem.joins(:delivery)
+                                          .where(order_item: order_item)
+                                          .where.not(deliveries: { status: :rescheduled })
+
+        total_delivered = valid_delivery_items.sum(:quantity_delivered)
+
+        if order_item.quantity != total_delivered
+          discrepancies << {
+            order_number: order.number,
+            product: order_item.product,
+            current_quantity: order_item.quantity,
+            should_be_quantity: total_delivered,
+            difference: total_delivered - order_item.quantity
+          }
+        end
+      end
+    end
+
+    discrepancies
+  end
+
   # Verifica si todos los items están listos
   def all_items_ready?
     order_items.all? { |item| item.ready? }

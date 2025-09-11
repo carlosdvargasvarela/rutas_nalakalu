@@ -1,5 +1,5 @@
 # app/services/route_excel_import_service.rb
-require 'roo'
+require "roo"
 
 class RouteExcelImportService
   def initialize(file_path = nil)
@@ -39,7 +39,7 @@ class RouteExcelImportService
     errors
   end
 
-  # Procesa una fila (hash de datos), asume que ya fue validada
+  # Procesa una fila (hash de datos), creando o actualizando registros según sea necesario
   def process_row(data)
     # Buscar o crear cliente
     client = Client.find_or_create_by!(name: data[:client_name])
@@ -68,9 +68,26 @@ class RouteExcelImportService
       item.status = :in_production
     end
 
-    # Si el item existe pero la cantidad o notas son diferentes, actualizarlas
-    if order_item.quantity != data[:quantity] || order_item.notes != data[:notes]
-      order_item.update!(quantity: data[:quantity], notes: data[:notes])
+    # ✅ LÓGICA ACUMULATIVA: Si el item ya existe, sumar cantidades
+    if order_item.persisted? && order_item.quantity != data[:quantity]
+      # Acumular cantidad en lugar de sobrescribir
+      new_quantity = order_item.quantity.to_i + data[:quantity].to_i
+
+      # Combinar notas si hay nuevas
+      combined_notes = if data[:notes].present? && data[:notes] != order_item.notes
+        [ order_item.notes, data[:notes] ].compact.reject(&:blank?).join("; ")
+      else
+        order_item.notes || data[:notes]
+      end
+
+      order_item.update!(
+        quantity: new_quantity,
+        notes: combined_notes
+      )
+    elsif order_item.persisted? && data[:notes].present? && data[:notes] != order_item.notes
+      # Solo actualizar notas si la cantidad es la misma pero hay notas nuevas
+      combined_notes = [ order_item.notes, data[:notes] ].compact.reject(&:blank?).join("; ")
+      order_item.update!(notes: combined_notes)
     end
 
     # Buscar o crear entrega
@@ -81,46 +98,53 @@ class RouteExcelImportService
     end
 
     # Buscar o crear delivery_item
-    service_case = data[:team].to_s.downcase.include?('c.s') || data[:team].to_s.downcase.include?('cs')
+    service_case = data[:team].to_s.downcase.include?("c.s") || data[:team].to_s.downcase.include?("cs")
     delivery_item = delivery.delivery_items.find_or_create_by!(order_item: order_item) do |di|
       di.quantity_delivered = data[:quantity]
       di.status = :pending
       di.service_case = service_case
     end
 
-    # Si el delivery_item existe pero la cantidad o el flag de service_case son diferentes, actualizarlas
-    if delivery_item.quantity_delivered != data[:quantity] || delivery_item.service_case != service_case
-      delivery_item.update!(quantity_delivered: data[:quantity], service_case: service_case)
+    # LÓGICA ACUMULATIVA PARA DELIVERY_ITEMS: Si el delivery_item ya existe, sumar cantidades
+    if delivery_item.persisted? && delivery_item.quantity_delivered != data[:quantity]
+      new_delivered_quantity = delivery_item.quantity_delivered.to_i + data[:quantity].to_i
+      delivery_item.update!(
+        quantity_delivered: new_delivered_quantity,
+        service_case: service_case
+      )
+    elsif delivery_item.persisted? && delivery_item.service_case != service_case
+      # Solo actualizar service_case si la cantidad es la misma
+      delivery_item.update!(service_case: service_case)
     end
   end
 
   # Extrae los datos de una fila del Excel (para importación masiva)
   def extract_row_data(row)
     {
-      delivery_date: @spreadsheet.cell(row, 'A'),
-      team: @spreadsheet.cell(row, 'B'),
-      order_number: @spreadsheet.cell(row, 'C')&.to_s,
-      client_name: @spreadsheet.cell(row, 'D')&.to_s,
-      product: @spreadsheet.cell(row, 'E')&.to_s,
-      quantity: @spreadsheet.cell(row, 'F').to_i,
-      seller_code: @spreadsheet.cell(row, 'G')&.to_s,
-      place: @spreadsheet.cell(row, 'H')&.to_s,
-      contact: @spreadsheet.cell(row, 'I')&.to_s,
-      notes: @spreadsheet.cell(row, 'J')&.to_s,
-      time_preference: @spreadsheet.cell(row, 'K')&.to_s
+      delivery_date: @spreadsheet.cell(row, "A"),
+      team: @spreadsheet.cell(row, "B"),
+      order_number: @spreadsheet.cell(row, "C")&.to_s,
+      client_name: @spreadsheet.cell(row, "D")&.to_s,
+      product: @spreadsheet.cell(row, "E")&.to_s,
+      quantity: @spreadsheet.cell(row, "F").to_i,
+      seller_code: @spreadsheet.cell(row, "G")&.to_s,
+      place: @spreadsheet.cell(row, "H")&.to_s,
+      contact: @spreadsheet.cell(row, "I")&.to_s,
+      notes: @spreadsheet.cell(row, "J")&.to_s,
+      time_preference: @spreadsheet.cell(row, "K")&.to_s
     }
   end
 
   # Utilidad para parsear el campo de contacto
   def parse_contact(contact_str)
-    if contact_str&.include?('/')
-      parts = contact_str.split('/')
-      [parts[0].strip, parts[1].strip]
-    elsif contact_str&.include?('-')
-      parts = contact_str.split('-')
-      [parts[0].strip, parts[1].strip]
+    if contact_str&.include?("/")
+      parts = contact_str.split("/")
+      [ parts[0].strip, parts[1].strip ]
+    elsif contact_str&.include?("-")
+      parts = contact_str.split("-")
+      [ parts[0].strip, parts[1].strip ]
     else
-      [contact_str, nil]
+      [ contact_str, nil ]
     end
   end
 end
