@@ -51,6 +51,19 @@ class DeliveryItem < ApplicationRecord
   # MÉTODOS PÚBLICOS
   # ============================================================================
 
+  def display_status
+    case status
+    when "pending"     then "Pendiente de confirmar"
+    when "confirmed"   then "Confirmado"
+    when "in_plan"     then "En plan de entregas"
+    when "in_route"    then "En ruta"
+    when "delivered"   then "Entregado"
+    when "rescheduled" then "Reprogramado"
+    when "cancelled"   then "Cancelado"
+    else status.to_s.humanize
+    end
+  end
+
   # Actualiza el estado del order_item basado en los delivery_items
   def update_order_item_status
     order_item.update_status_based_on_deliveries if order_item.present?

@@ -1,4 +1,3 @@
-<%# app/views/deliveries/index.html.erb %>
 <h1 class="mb-4">
   <i class="bi bi-truck me-2"></i>
   Listado de Entregas
@@ -29,10 +28,14 @@
       <div class="col-md-2 d-grid">
         <%= f.submit "Buscar", class: "btn btn-outline-primary" %>
       </div>
+      <div class="col-md-2 form-check mt-4">
+        <%= check_box_tag :show_rescheduled, "1", params[:show_rescheduled] == "1", class: "form-check-input", id: "show_rescheduled" %>
+        <%= label_tag :show_rescheduled, "Mostrar reagendadas", class: "form-check-label" %>
+      </div>
     <% end %>
     <div class="mb-3">
-      <%= link_to "Exportar a Excel", deliveries_path(format: :xlsx, q: params[:q]&.to_unsafe_h), class: "btn btn-outline-success btn-sm" %>
-      <%= link_to "Exportar a CSV", deliveries_path(format: :csv, q: params[:q]&.to_unsafe_h), class: "btn btn-outline-primary btn-sm" %>
+      <%= link_to "Exportar a Excel", deliveries_path(format: :xlsx, q: params[:q]&.to_unsafe_h, show_rescheduled: params[:show_rescheduled]), class: "btn btn-outline-success btn-sm" %>
+      <%= link_to "Exportar a CSV", deliveries_path(format: :csv, q: params[:q]&.to_unsafe_h, show_rescheduled: params[:show_rescheduled]), class: "btn btn-outline-primary btn-sm" %>
     </div>
   </div>
 </div>
@@ -100,7 +103,7 @@
             </td>
             <td>
               <span class="badge bg-<%= delivery_status_color(delivery.status) %>">
-                <%= delivery.status.humanize %>
+                <%= delivery.display_status %>
               </span>
             </td>
             <td>

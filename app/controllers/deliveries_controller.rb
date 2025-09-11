@@ -7,16 +7,22 @@ class DeliveriesController < ApplicationController
   # GET /deliveries
   # Muestra todas las entregas o filtra por semana
   def index
-    # Guardar la URL completa para poder volver con filtros
     session[:deliveries_return_to] = request.fullpath
 
     @q = Delivery.ransack(params[:q])
 
-    # Para HTML: usar paginación
-    @deliveries = @q.result.includes(order: [ :client, :seller ], delivery_address: :client).order(delivery_date: :asc).page(params[:page])
+    deliveries_scope = @q.result.includes(order: [ :client, :seller ], delivery_address: :client)
 
-    # Para Excel/CSV: todos los registros sin paginación
-    @all_deliveries = @q.result.includes(order: [ :client, :seller ], delivery_address: :client, delivery_items: { order_item: :order }).order(delivery_date: :asc)
+    # Por defecto excluir rescheduled, salvo que pidan verlos
+    unless params[:show_rescheduled] == "1"
+      deliveries_scope = deliveries_scope.where.not(status: :rescheduled)
+    end
+
+    # HTML con paginación
+    @deliveries = deliveries_scope.order(delivery_date: :asc).page(params[:page])
+
+    # Excel/CSV sin paginación
+    @all_deliveries = deliveries_scope.includes(delivery_items: { order_item: :order }).order(delivery_date: :asc)
 
     authorize Delivery
 

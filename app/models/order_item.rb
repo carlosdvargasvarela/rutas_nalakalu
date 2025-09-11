@@ -29,6 +29,17 @@ class OrderItem < ApplicationRecord
   after_update :update_order_status
   after_update :notify_ready, if: :saved_change_to_status?
 
+  def display_status
+    case status
+    when "in_production" then "En producción"
+    when "ready"         then "Listo"
+    when "delivered"     then "Entregado"
+    when "cancelled"     then "Cancelado"
+    when "missing"       then "Faltante"
+    else status.to_s.humanize
+    end
+  end
+
   def update_status_based_on_deliveries
     if delivery_items.any? && delivery_items.all? { |di| di.status == "delivered" }
       update_column(:status, OrderItem.statuses[:delivered])

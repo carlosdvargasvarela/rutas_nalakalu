@@ -32,16 +32,8 @@
         <h6 class="card-title text-secondary mb-2">
           <i class="bi bi-flag me-1"></i>Estado
         </h6>
-        <% status_class = case @order.status
-          when "pending" then "bg-warning text-dark"
-          when "in_production" then "bg-info"
-          when "ready_for_delivery" then "bg-primary"
-          when "delivered" then "bg-success"
-          when "cancelled" then "bg-danger"
-          else "bg-secondary"
-        end %>
-        <span class="badge <%= status_class %>">
-          <%= @order.status.humanize %>
+        <span class="badge bg-<%= order_status_color(@order.status) %>">
+          <%= @order.display_status %>
         </span>
       </div>
     </div>
@@ -81,34 +73,34 @@
             <span class="badge bg-secondary"><%= item.quantity %></span>
           </td>
           <td>
-            <span class="badge bg-<%= delivery_item_status_color(item.item_delivery_status) %>">
-              <%= DeliveryItem.human_attribute_name("status.#{item.item_delivery_status}") %>
-            </span>
+            <% if item.item_delivery_status.present? %>
+              <span class="badge bg-<%= delivery_item_status_color(item.item_delivery_status) %>">
+                <%= DeliveryItem.new(status: item.item_delivery_status).display_status %>
+              </span>
+            <% else %>
+              <span class="badge bg-secondary">Sin entrega</span>
+            <% end %>
           </td>
           <td>
-            <% if item.confirmed? %>
-              <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Confirmado</span>
-            <% else %>
-              <span class="badge bg-secondary"><i class="bi bi-hourglass-split me-1"></i>Pendiente de Confirmación</span>
-            <% end %>
+            <span class="badge bg-<%= order_item_status_color(item.status) %>">
+              <%= item.display_status %>
+            </span>
           </td>
           <td style="min-width: 300px;">
             <%= render "order_item_notes/list", item: item %>
           </td>
-          <% if policy(@order).edit? %>
-            <% if !@order.delivered? %>
-              <td>
-                <% if item.confirmed? %>
-                  <%= button_to unconfirm_order_item_path(item), method: :patch, class: "btn btn-warning btn-sm", title: "Retirar confirmación" do %>
-                    <i class="bi bi-x-circle"></i> Retirar
-                  <% end %>
-                <% else %>
-                  <%= button_to confirm_order_item_path(item), method: :patch, class: "btn btn-primary btn-sm", title: "Confirmar" do %>
-                    <i class="bi bi-check-circle"></i> Confirmar
-                  <% end %>
+          <% if policy(@order).edit? && !@order.delivered? %>
+            <td>
+              <% if item.confirmed? %>
+                <%= button_to unconfirm_order_item_path(item), method: :patch, class: "btn btn-warning btn-sm", title: "Retirar confirmación" do %>
+                  <i class="bi bi-x-circle"></i> Retirar
                 <% end %>
-              </td>
-            <% end %>
+              <% else %>
+                <%= button_to confirm_order_item_path(item), method: :patch, class: "btn btn-primary btn-sm", title: "Confirmar" do %>
+                  <i class="bi bi-check-circle"></i> Confirmar
+                <% end %>
+              <% end %>
+            </td>
           <% end %>
         </tr>
       <% end %>
@@ -123,11 +115,9 @@
   .alert-sm {
     font-size: 0.875rem;
   }
-
   .dropdown-menu-end {
     --bs-position: end;
   }
-
   .table td {
     vertical-align: middle;
   }

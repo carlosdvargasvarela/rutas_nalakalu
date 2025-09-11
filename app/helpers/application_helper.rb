@@ -62,27 +62,32 @@ module ApplicationHelper
   def status_badge(status, type = :delivery)
     color = case type
     when :delivery
-        {
-          "scheduled" => "secondary",
-          "ready_to_deliver" => "info",
-          "in_route" => "primary",
-          "delivered" => "success",
-          "rescheduled" => "warning",
-          "cancelled" => "danger"
-        }[status.to_s] || "secondary"
+              {
+                "scheduled" => "secondary",
+                "ready_to_deliver" => "info",
+                "in_route" => "primary",
+                "delivered" => "success",
+                "rescheduled" => "warning",
+                "cancelled" => "danger"
+              }[status.to_s] || "secondary"
     when :order
-        {
-          "in_production" => "info",
-          "ready_for_delivery" => "primary",
-          "delivered" => "success",
-          "rescheduled" => "warning",
-          "cancelled" => "danger"
-        }[status.to_s] || "secondary"
-      # Puedes agregar más tipos si lo necesitas
+              {
+                "pending" => "warning",
+                "in_production" => "info",
+                "ready_for_delivery" => "primary",
+                "delivered" => "success",
+                "rescheduled" => "warning",
+                "cancelled" => "danger"
+              }[status.to_s] || "secondary"
     else
-        "secondary"
+              "secondary"
     end
 
-    content_tag(:span, status_i18n(status, type), class: "badge bg-#{color}")
+    label = I18n.t(
+      "activerecord.attributes.#{type}.statuses.#{status}",
+      default: status.to_s.humanize
+    )
+
+    content_tag(:span, label, class: "badge bg-#{color}")
   end
 end

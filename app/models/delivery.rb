@@ -47,12 +47,26 @@ class Delivery < ApplicationRecord
     pickup? || return_delivery? || onsite_repair?
   end
 
+  def display_status
+    case status
+    when "scheduled"        then "Pendiente de confirmar"
+    when "ready_to_deliver" then "Confirmada para entregar"
+    when "in_plan"          then "En plan"
+    when "in_route"         then "En ruta"
+    when "delivered"        then "Entregada"
+    when "rescheduled"      then "Reprogramada"
+    when "cancelled"        then "Cancelada"
+    else status.to_s.humanize
+    end
+  end
+
   def display_type
     case delivery_type
-    when "normal" then "Entrega normal"
-    when "pickup" then "Recogida de producto"
+    when "normal"         then "Entrega normal"
+    when "pickup"         then "Recogida de producto"
     when "return_delivery" then "Devolución de producto"
-    when "onsite_repair" then "Reparación en sitio"
+    when "onsite_repair"  then "Reparación en sitio"
+    else delivery_type.to_s.humanize
     end
   end
 

@@ -1,4 +1,3 @@
-<%# app/views/orders/index.html.erb %>
 <h1 class="mb-4">
   <i class="bi bi-list-ul me-2"></i>
   Listado de Pedidos
@@ -32,8 +31,6 @@
     <% end %>
   </div>
 </div>
-</div>
-<%# Cierre de card-body del formulario de búsqueda %>
 <div class="d-flex justify-content-end mb-3">
   <% if policy(Delivery).new? %>
     <%= link_to new_delivery_path, class: "btn btn-primary" do %>
@@ -51,6 +48,7 @@
           <th>Cliente</th>
           <th>Vendedor</th>
           <th>Productos</th>
+          <th>Entregas</th>
           <th>Estado</th>
           <th>Acciones</th>
         </tr>
@@ -83,6 +81,10 @@
                           <i class="bi bi-info-circle"></i> <%= item.notes %>
                         </span>
                       <% end %>
+                      <%# Mostrar estado del item también si quieres %>
+                      <span class="badge bg-<%= order_item_status_color(item.status) %>">
+                        <%= item.display_status %>
+                      </span>
                     </li>
                   <% end %>
                 </ul>
@@ -91,16 +93,25 @@
               <% end %>
             </td>
             <td>
-              <% status_class = case order.status
-                when "pending" then "bg-warning text-dark"
-                when "in_production" then "bg-info"
-                when "ready_for_delivery" then "bg-primary"
-                when "delivered" then "bg-success"
-                when "cancelled" then "bg-danger"
-                else "bg-secondary"
-              end %>
-              <span class="badge <%= status_class %>">
-                <%= order.status.humanize %>
+              <% if order.deliveries.any? %>
+                <ul class="mb-0 ps-3 small">
+                  <% order.deliveries.each do |delivery| %>
+                    <li>
+                      <i class="bi bi-calendar-event me-1"></i>
+                      <%= format_date_dd_mm_yyyy(delivery.delivery_date) %>
+                      <span class="badge bg-<%= delivery_status_color(delivery.status) %>">
+                        <%= delivery.display_status %>
+                      </span>
+                    </li>
+                  <% end %>
+                </ul>
+              <% else %>
+                <span class="text-muted">Sin entregas</span>
+              <% end %>
+            </td>
+            <td>
+              <span class="badge bg-<%= order_status_color(order.status) %>">
+                <%= order.display_status %>
               </span>
             </td>
             <td>
@@ -109,13 +120,6 @@
                   <i class="bi bi-eye"></i>
                 <% end %>
               <% end %>
-              <!--
-              <% if policy(order).edit? %>
-                <%#= link_to edit_order_path(order), class: "btn btn-sm btn-outline-secondary", title: "Editar" do %>
-                  <i class="bi bi-pencil"></i>
-                <%# end %>
-              <% end %>
-              -->
               <% if policy(order).destroy? %>
                 <%= button_to order_path(order), method: :delete, data: { confirm: "¿Seguro que deseas eliminar este pedido?" }, class: "btn btn-sm btn-outline-danger", form: { class: "d-inline" } do %>
                   <i class="bi bi-trash"></i>
