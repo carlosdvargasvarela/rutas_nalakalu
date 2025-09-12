@@ -35,12 +35,6 @@ class DeliveryItemsController < ApplicationController
                       alert: "Los vendedores solo pueden reagendar para #{Date::DAYNAMES[Date.today.wday].downcase}s"
           return
         end
-
-        unless new_date > Date.today
-          redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-                      alert: "La fecha debe ser futura"
-          return
-        end
       end
 
       @delivery_item.reschedule!(new_date: new_date)

@@ -41,8 +41,7 @@ class DeliveriesController < ApplicationController
   def show
     @future_deliveries = Delivery
       .where(order_id: @delivery.order_id, delivery_address_id: @delivery.delivery_address_id)
-      .where("delivery_date > ?", @delivery.delivery_date)
-      .where.not(id: @delivery.id)
+      .where.not(id: @delivery.id, status: :rescheduled)
   end
 
   # GET /deliveries/new
