@@ -18,15 +18,18 @@
         <%= f.search_field :number_cont, class: "form-control" %>
       </div>
       <div class="col-md-2">
-        <%= f.label :created_at_gteq, "Desde", class: "form-label" %>
-        <%= f.date_field :created_at_gteq, class: "form-control" %>
+        <%= f.label :deliveries_delivery_date_gteq, "Desde", class: "form-label" %>
+        <%= f.date_field :deliveries_delivery_date_gteq, class: "form-control" %>
       </div>
       <div class="col-md-2">
-        <%= f.label :created_at_lteq, "Hasta", class: "form-label" %>
-        <%= f.date_field :created_at_lteq, class: "form-control" %>
+        <%= f.label :deliveries_delivery_date_lteq, "Hasta", class: "form-label" %>
+        <%= f.date_field :deliveries_delivery_date_lteq, class: "form-control" %>
       </div>
       <div class="col-md-2 d-grid">
         <%= f.submit "Buscar", class: "btn btn-outline-primary" %>
+      </div>
+      <div class="col-md-2 d-grid">
+        <%= link_to "Quitar filtros", orders_path, class: "btn btn-outline-secondary" %>
       </div>
     <% end %>
   </div>

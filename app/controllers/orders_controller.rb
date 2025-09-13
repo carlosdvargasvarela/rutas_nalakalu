@@ -2,11 +2,18 @@
 class OrdersController < ApplicationController
   before_action :set_order, only: [ :show, :destroy, :confirm_all_items_ready ]
 
-  def index
-    @q = Order.ransack(params[:q])
-    @orders = @q.result.includes(:client, :seller, :order_items).order(created_at: :desc).page(params[:page])
-    authorize @orders
-  end
+    def index
+      # Asociar deliveries en el ransack para que entienda los filtros en base a Deliveries
+      @q = Order.joins(:deliveries).ransack(params[:q])
+
+      # Usar distinct porque un pedido puede tener varias deliveries dentro del mismo rango
+      @orders = @q.result
+                  .includes(:client, :seller, :order_items, :deliveries)
+                  .distinct
+                  .order(created_at: :desc)
+                  .page(params[:page])
+      authorize @orders
+    end
 
   def show
     authorize @order

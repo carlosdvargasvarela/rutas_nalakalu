@@ -28,6 +28,9 @@
       <div class="col-md-2 d-grid">
         <%= f.submit "Buscar", class: "btn btn-outline-primary" %>
       </div>
+      <div class="col-md-2 d-grid">
+        <%= link_to "Quitar filtros", deliveries_path, class: "btn btn-outline-secondary" %>
+      </div>
       <div class="col-md-2 form-check mt-4">
         <%= check_box_tag :show_rescheduled, "1", params[:show_rescheduled] == "1", class: "form-check-input", id: "show_rescheduled" %>
         <%= label_tag :show_rescheduled, "Mostrar reagendadas", class: "form-check-label" %>

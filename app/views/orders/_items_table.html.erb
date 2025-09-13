@@ -1,0 +1,85 @@
+<% if (current_user.production_manager? || current_user.admin?) && order.order_items.any? { |item| item.in_production? } %>
+  <%= button_to "Confirmar todos los productos como listos",
+        confirm_all_items_ready_order_path(order),
+        method: :patch,
+        data: { confirm: "¿Seguro que deseas marcar todos los productos como listos?" },
+        class: "btn btn-success mb-3" %>
+<% end %>
+
+<div class="table-responsive">
+  <table class="table table-striped table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Producto</th>
+        <th>Cantidad Pedida</th>
+        <th>Entregado</th>
+        <th>Desglose de entregas</th>
+        <th>Estado en planta</th>
+        <th>Notas de producción</th>
+        <% if policy(order).edit? && !order.delivered? %>
+          <th>Acción</th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody>
+      <% order.order_items.each do |item| %>
+        <% delivered_qty = DeliveryItem.joins(:delivery)
+              .where(order_item: item)
+              .where.not(deliveries: { status: :rescheduled })
+              .sum(:quantity_delivered) %>
+
+        <tr>
+          <td><strong><%= item.product %></strong></td>
+          <td><span class="badge bg-secondary"><%= item.quantity %></span></td>
+          <td>
+            <% if delivered_qty > 0 %>
+              <span class="badge bg-success"><%= delivered_qty %></span>
+            <% else %>
+              <span class="badge bg-secondary">0</span>
+            <% end %>
+          </td>
+          <td style="min-width: 200px;">
+            <% deliveries = DeliveryItem.joins(:delivery)
+                    .where(order_item: item)
+                    .where.not(deliveries: { status: :rescheduled })
+                    .select("deliveries.delivery_date, delivery_items.quantity_delivered") %>
+            <% if deliveries.any? %>
+              <ul class="list-unstyled mb-0">
+                <% deliveries.each do |di| %>
+                  <li>
+                    <i class="bi bi-truck me-1"></i>
+                    <%= l(Date.parse(di.delivery_date.to_s), format: :short) %>
+                    <strong><%= di.quantity_delivered %></strong>
+                  </li>
+                <% end %>
+              </ul>
+            <% else %>
+              <span class="text-muted">Sin entregas</span>
+            <% end %>
+          </td>
+          <td>
+            <span class="badge bg-<%= order_item_status_color(item.status) %>">
+              <%= item.display_status %>
+            </span>
+          </td>
+          <td style="min-width: 300px;">
+            <%= render "order_item_notes/list", item: item %>
+          </td>
+          <% if policy(order).edit? && !order.delivered? %>
+            <td>
+              <% if item.confirmed? %>
+                <%= button_to unconfirm_order_item_path(item), method: :patch, class: "btn btn-warning btn-sm" do %>
+                  <i class="bi bi-x-circle"></i> Retirar
+                <% end %>
+              <% else %>
+                <%= button_to confirm_order_item_path(item), method: :patch, class: "btn btn-primary btn-sm" do %>
+                  <i class="bi bi-check-circle"></i> Confirmar
+                <% end %>
+              <% end %>
+            </td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
