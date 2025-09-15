@@ -1,15 +1,57 @@
 wb = xlsx_package.workbook
+
+# Definir estilos
+header_style = wb.styles.add_style(
+  bg_color: "4472C4",
+  fg_color: "FFFFFF", 
+  b: true,
+  alignment: { horizontal: :center }
+)
+
+scheduled_style = wb.styles.add_style(
+  bg_color: "FFF2CC",  # Amarillo claro para alertar
+  border: { style: :thin, color: "D6B656" }
+)
+
+ready_style = wb.styles.add_style(
+  bg_color: "E2EFDA",  # Verde claro
+  border: { style: :thin, color: "70AD47" }
+)
+
+confirmed_style = wb.styles.add_style(
+  bg_color: "DEEBF7",  # Azul claro
+  border: { style: :thin, color: "5B9BD5" }
+)
+
+default_style = wb.styles.add_style(
+  border: { style: :thin, color: "CCCCCC" }
+)
+
 wb.add_worksheet(name: "Plan de Ruta") do |sheet|
-  # Headers
+  # Headers con estilo
   sheet.add_row [
     "Fecha de entrega", "Pedido", "Producto", "Cantidad", 
-    "Vendedor", "Cliente", "Dirección", "# Parada", "Conductor"
-  ]
-  
-  # Datos
+    "Vendedor", "Cliente", "Dirección", "# Parada", 
+    "Conductor", "Camión", "Estado"
+  ], style: header_style
+
+  # Datos con formato condicional
   @assignments.each do |assignment|
     delivery = assignment.delivery
     delivery.delivery_items.each do |delivery_item|
+
+      # Determinar estilo según estado
+      row_style = case delivery.status
+      when "scheduled"
+        scheduled_style
+      when "ready_to_deliver"
+        ready_style
+      when "confirmed"
+        confirmed_style
+      else
+        default_style
+      end
+
       sheet.add_row [
         delivery.delivery_date.strftime("%d/%m/%Y"),
         delivery.order.number,
@@ -19,16 +61,20 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
         delivery.order.client.name,
         delivery.delivery_address.address,
         assignment.stop_order,
-        @delivery_plan.driver&.name || "Sin asignar"
-      ]
+        @delivery_plan.driver&.name || "Sin asignar",
+        @delivery_plan.truck || "Sin asignar",
+        delivery.display_status
+      ], style: row_style
     end
   end
-  
-  # Opcional: Combinar celdas de la fecha si todas son iguales
+
+  # Ajustar ancho de columnas
+  sheet.column_widths 12, 15, 25, 10, 12, 20, 30, 8, 15, 10, 15
+
+  # Opcional: Combinar celdas de fecha si todas son iguales
   if @assignments.any?
     first_date = @assignments.first.delivery.delivery_date.strftime("%d/%m/%Y")
     if @assignments.all? { |a| a.delivery.delivery_date.strftime("%d/%m/%Y") == first_date }
-      # Calcular cuántas filas de datos hay
       total_rows = @assignments.sum { |a| a.delivery.delivery_items.count }
       if total_rows > 1
         sheet.merge_cells("A2:A#{total_rows + 1}")

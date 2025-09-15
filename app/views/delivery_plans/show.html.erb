@@ -1,56 +1,76 @@
-<div class="alert alert-info mt-3">
-  <i class="bi bi-info-circle me-2"></i>
-  <% if @delivery_plan.all_deliveries_confirmed? %>
-    Todas las entregas de este plan han sido confirmadas ✔️
-  <% else %>
-    Existen entregas pendientes de confirmación ✋
-  <% end %>
+<%# ================== ALERTA DE CONFIRMACIÓN ================== %>
+<div class="alert <%= @delivery_plan.all_deliveries_confirmed? ? 'alert-success' : 'alert-warning' %> mt-3 d-flex align-items-center">
+  <i class="bi <%= @delivery_plan.all_deliveries_confirmed? ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-warning' %> me-2 fs-5"></i>
+  <div>
+    <% if @delivery_plan.all_deliveries_confirmed? %>
+      Todas las entregas de este plan han sido confirmadas ✔️
+    <% else %>
+      Existen entregas pendientes de confirmación ✋
+    <% end %>
+  </div>
 </div>
-<h1 class="mb-4">
-  <i class="bi bi-map me-2"></i>
-  Plan de ruta: <%= week_range_label(@delivery_plan.year, @delivery_plan.week, show_year: true) %>
-</h1>
+<%# ================== ENCABEZADO ================== %>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+  <h1 class="mb-0">
+    <i class="bi bi-map me-2 text-primary"></i>
+    Plan de ruta: <%= week_range_label(@delivery_plan.year, @delivery_plan.week, show_year: true) %>
+  </h1>
+  <div class="d-flex gap-2">
+    <%= link_to delivery_plan_path(@delivery_plan, format: :xlsx), class: "btn btn-outline-success" do %>
+      <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+    <% end %>
+    <%= link_to edit_delivery_plan_path(@delivery_plan), class: "btn btn-outline-primary" do %>
+      <i class="bi bi-pencil"></i> Editar plan
+    <% end %>
+  </div>
+</div>
+<%# ================== INFO GENERAL ================== %>
 <div class="row mb-4">
-  <div class="col-md-6">
-    <div class="card shadow-sm mb-3">
-      <div class="card-header bg-light">
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light fw-bold">
         <i class="bi bi-info-circle me-1"></i> Información General
       </div>
       <div class="card-body">
         <p>
           <strong><i class="bi bi-calendar-week me-1"></i>Semana:</strong>
-          <span class="badge bg-primary"><%= week_range_label(@delivery_plan.year, @delivery_plan.week, show_year: false) %></span>
+          <span class="badge bg-primary"><%= week_range_label(@delivery_plan.year, @delivery_plan.week) %></span>
         </p>
         <p>
           <strong><i class="bi bi-calendar me-1"></i>Año:</strong>
           <span class="badge bg-secondary"><%= @delivery_plan.year %></span>
         </p>
         <p>
-          <strong><i class="bi bi-truck me-1"></i>Conductor asignado:</strong>
+          <strong><i class="bi bi-person me-1"></i>Conductor:</strong>
           <%= @delivery_plan.driver&.name.presence || content_tag(:span, "No asignado", class: "text-muted") %>
         </p>
         <p>
-          <strong><i class="bi bi-flag me-1"></i>Estado:</strong>
-          <%= status_badge(@delivery_plan.status, :delivery) %>
+          <strong><i class="bi bi-truck-front me-1"></i>Camión:</strong>
+          <% if @delivery_plan.truck.present? %>
+            <span class="badge bg-dark"><%= @delivery_plan.truck %></span>
+          <% else %>
+            <span class="text-muted">No asignado</span>
+          <% end %>
         </p>
-        <div class="mb-3">
-          <%= link_to "Exportar Plan a Excel", delivery_plan_path(@delivery_plan, format: :xlsx), class: "btn btn-outline-success btn-sm" %>
-        </div>
-        <%= link_to edit_delivery_plan_path(@delivery_plan), class: "btn btn-outline-primary mt-3" do %>
-          <i class="bi bi-pencil"></i> Editar orden de paradas
-        <% end %>
+        <p>
+          <strong><i class="bi bi-flag me-1"></i>Estado:</strong>
+          <span class="badge bg-<%= delivery_plan_status_color(@delivery_plan.status) %>">
+            <%= @delivery_plan.display_status %>
+          </span>
+        </p>
       </div>
     </div>
   </div>
 </div>
+<%# ================== ENTREGAS ================== %>
 <div class="card shadow-sm mb-4">
-  <div class="card-header bg-light">
-    <i class="bi bi-truck-flatbed me-1"></i> Entregas en este plan
+  <div class="card-header bg-light fw-bold">
+    <i class="bi bi-truck-flatbed me-1"></i> Entregas de este plan
   </div>
   <div class="card-body">
     <% if @delivery_plan.delivery_plan_assignments.any? %>
       <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle">
+        <table class="table table-striped table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
               <th># Parada</th>
@@ -66,24 +86,11 @@
             <% @delivery_plan.delivery_plan_assignments.order(:stop_order).each do |assignment| %>
               <% delivery = assignment.delivery %>
               <tr>
-                <td>
-                  <span class="badge bg-dark"><%= assignment.stop_order %></span>
-                </td>
-                <td>
-                  <%= link_to delivery.order.number, order_path(delivery.order), class: "text-decoration-none" %>
-                </td>
-                <td>
-                  <i class="bi bi-person me-1"></i>
-                  <%= delivery.order.client.name %>
-                </td>
-                <td>
-                  <i class="bi bi-geo-alt me-1"></i>
-                  <%= delivery.delivery_address.address %>
-                </td>
-                <td>
-                  <i class="bi bi-calendar-event me-1"></i>
-                  <%= l delivery.delivery_date, format: :long %>
-                </td>
+                <td><span class="badge bg-primary"><%= assignment.stop_order %></span></td>
+                <td><%= link_to delivery.order.number, order_path(delivery.order), class: "fw-bold" %></td>
+                <td><i class="bi bi-person me-1"></i><%= delivery.order.client.name %></td>
+                <td><i class="bi bi-geo-alt me-1"></i><%= delivery.delivery_address.address %></td>
+                <td><i class="bi bi-calendar-event me-1"></i><%= l delivery.delivery_date, format: :long %></td>
                 <td>
                   <span class="badge bg-<%= delivery_status_color(delivery.status) %>">
                     <%= delivery.display_status %>
@@ -130,10 +137,9 @@
     <% end %>
   </div>
 </div>
+<%# ================== MAPA ================== %>
 <div class="card shadow-sm mb-4">
-  <div class="card-header bg-light">
-    <i class="bi bi-map me-2"></i>Mapa de Ruta
-  </div>
+  <div class="card-header bg-light fw-bold"><i class="bi bi-map me-2"></i> Mapa de Ruta</div>
   <div class="card-body p-0">
     <div data-controller="delivery-plan-map"
          data-delivery-plan-map-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
@@ -149,14 +155,14 @@
                client: a.delivery.order.client.name,
                date: l(a.delivery.delivery_date, format: :short)
              }
-           end.to_json 
-         %>">
-      <div style="height: 400px; width: 100%;" 
-           data-delivery-plan-map-target="map"
-           class="border rounded"></div>
+           end.to_json %>">
+      <div style="height: 420px;" class="border rounded" data-delivery-plan-map-target="map"></div>
     </div>
   </div>
 </div>
-<%= link_to delivery_plans_path, class: "btn btn-secondary" do %>
-  <i class="bi bi-arrow-left"></i> Volver a Planes de Ruta
-<% end %>
+<%# ================== VOLVER ================== %>
+<div class="d-flex">
+  <%= link_to delivery_plans_path, class: "btn btn-secondary" do %>
+    <i class="bi bi-arrow-left"></i> Volver a Planes de Ruta
+  <% end %>
+</div>

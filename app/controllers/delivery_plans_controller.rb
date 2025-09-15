@@ -176,7 +176,7 @@ class DeliveryPlansController < ApplicationController
   private
 
   def delivery_plan_params
-    params.require(:delivery_plan).permit(:week, :year, :status, :driver_id)
+    params.require(:delivery_plan).permit(:week, :year, :status, :driver_id, :truck)
   end
 
   def render_new_with_selection(selected_ids)

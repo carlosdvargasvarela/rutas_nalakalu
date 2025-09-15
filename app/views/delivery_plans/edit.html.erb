@@ -1,3 +1,4 @@
+<%# ================== ERRORES ================== %>
 <% if @delivery_plan.errors.any? %>
   <div class="alert alert-danger mb-4">
     <h6><i class="bi bi-exclamation-triangle me-2"></i> Se encontraron errores:</h6>
@@ -8,65 +9,73 @@
     </ul>
   </div>
 <% end %>
-<h1 class="mb-4">
-  <i class="bi bi-pencil-square me-2"></i>
-  Editar plan de ruta
-  <span class="text-primary"><%= week_range_label(@delivery_plan.year, @delivery_plan.week, show_year: true) %></span>
-</h1>
-<div class="mb-3">
-  <%= status_badge(@delivery_plan.status, :delivery) %>
-  <span class="ms-3 text-muted">
-    <i class="bi bi-truck me-1"></i>
-    <%= @delivery_plan.driver&.name || "Sin conductor asignado" %>
-  </span>
-</div>
-<!-- Mostrar errores si existen -->
-<% if @delivery_plan.errors.any? %>
-  <div class="alert alert-danger mb-4">
-    <h6><i class="bi bi-exclamation-triangle me-2"></i>Se encontraron los siguientes errores:</h6>
-    <ul class="mb-0">
-      <% @delivery_plan.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
+<%# ================== ENCABEZADO ================== %>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-1">
+      <i class="bi bi-pencil-square me-2"></i>
+      Editar plan de ruta
+      <span class="text-primary">
+        <%= week_range_label(@delivery_plan.year, @delivery_plan.week, show_year: true) %>
+      </span>
+    </h1>
+    <div class="small text-muted">
+      Creado el <%= l @delivery_plan.created_at, format: :short %>
+    </div>
   </div>
-<% end %>
+  <div>
+    <span class="badge bg-<%= delivery_plan_status_color(@delivery_plan.status) %>">
+      <%= @delivery_plan.display_status %>
+    </span>
+  </div>
+</div>
+<%# ================== FORMULARIO PRINCIPAL ================== %>
 <%= simple_form_for @delivery_plan, local: true do |f| %>
   <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light fw-bold">
+      <i class="bi bi-truck-front me-1"></i> Datos de Asignación
+    </div>
     <div class="card-body">
-      <%= f.input :driver_id, 
-                  label: "Conductor asignado", 
-                  collection: User.where(role: :driver), 
-                  value_method: :id, 
-                  text_method: :name, 
-                  prompt: "Selecciona un conductor",
-                  input_html: { class: "form-select" },
-                  label_html: { class: "form-label fw-bold" } %>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= f.input :driver_id, 
+                      label: "Conductor asignado", 
+                      collection: User.where(role: :driver), 
+                      value_method: :id, 
+                      text_method: :name, 
+                      prompt: "Selecciona un conductor",
+                      input_html: { class: "form-select" },
+                      label_html: { class: "form-label fw-bold" } %>
+        </div>
+        <div class="col-md-6">
+          <%= f.input :truck, 
+                      label: "Camión asignado", 
+                      collection: DeliveryPlan.trucks.keys.map { |t| [t, t] },
+                      prompt: "Selecciona un camión",
+                      input_html: { class: "form-select" },
+                      label_html: { class: "form-label fw-bold" } %>
+        </div>
+      </div>
     </div>
   </div>
   <div class="d-flex justify-content-end gap-2 mb-4">
-    <%= f.submit "Guardar cambios", class: "btn btn-primary" %>
-    <%= link_to "Cancelar", delivery_plan_path(@delivery_plan), class: "btn btn-secondary" %>
+    <%= f.submit "💾 Guardar cambios", class: "btn btn-primary" %>
+    <%= link_to "Cancelar", delivery_plan_path(@delivery_plan), class: "btn btn-outline-secondary" %>
   </div>
 <% end %>
-<!-- Tabla de paradas -->
+<%# ================== TABLA DE PARADAS ================== %>
 <div class="card shadow-sm mb-4">
-  <div class="card-header bg-light d-flex justify-content-between align-items-center">
-    <div>
-      <i class="bi bi-list-ol me-1"></i> Orden de paradas
-    </div>
-    <small class="text-muted">
-      <i class="bi bi-arrows-move me-1"></i>
-      Arrastra las filas para reordenar
-    </small>
+  <div class="card-header bg-light fw-bold d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-list-ol me-1"></i> Orden de paradas</span>
+    <small class="text-muted"><i class="bi bi-arrows-move me-1"></i>Arrastra para reordenar</small>
   </div>
   <div class="card-body p-0">
     <div class="table-responsive">
-      <table class="table table-sm table-hover align-middle mb-0">
+      <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
             <th style="width: 40px;"></th>
-            <th style="width: 80px;"># Parada</th>
+            <th style="width: 80px;">#</th>
             <th>Pedido</th>
             <th>Cliente</th>
             <th>Dirección</th>
@@ -82,38 +91,23 @@
             <% delivery = assignment.delivery %>
             <tr data-assignment-id="<%= assignment.id %>">
               <td class="text-center">
-                <div class="drag-handle" style="cursor: grab;" title="Arrastrar para reordenar">
-                  <i class="bi bi-grip-vertical text-muted"></i>
-                </div>
+                <i class="bi bi-grip-vertical text-muted drag-handle" style="cursor: grab;"></i>
               </td>
               <td class="text-center">
-                <span class="badge bg-primary stop-number"><%= assignment.stop_order || (idx + 1) %></span>
+                <span class="badge bg-primary"><%= assignment.stop_order || idx + 1 %></span>
+              </td>
+              <td><%= link_to delivery.order.number, order_path(delivery.order), class: "fw-bold" %></td>
+              <td><i class="bi bi-person me-1"></i><%= delivery.order.client.name %></td>
+              <td><i class="bi bi-geo-alt me-1"></i><%= delivery.delivery_address.address %></td>
+              <td>
+                <span class="badge bg-info text-dark"><i class="bi bi-calendar-event me-1"></i><%= l delivery.delivery_date, format: :short %></span>
               </td>
               <td>
-                <%= link_to delivery.order.number, order_path(delivery.order), class: "text-decoration-none fw-bold" %>
+                <span class="badge bg-<%= delivery_status_color(delivery.status) %>"><%= delivery.display_status %></span>
               </td>
               <td>
-                <i class="bi bi-person me-1"></i>
-                <%= delivery.order.client.name %>
-              </td>
-              <td>
-                <i class="bi bi-geo-alt me-1"></i>
-                <%= delivery.delivery_address.address %>
-              </td>
-              <td>
-                <span class="badge bg-info text-dark">
-                  <i class="bi bi-calendar-event me-1"></i>
-                  <%= l delivery.delivery_date, format: :short %>
-                </span>
-              </td>
-              <td>
-                <span class="badge bg-<%= delivery_status_color(delivery.status) %>">
-                  <%= delivery.display_status %>
-                </span>
-              </td>
-              <td>
-                <%= form_with url: delivery_plan_delivery_plan_assignment_path(@delivery_plan, assignment), method: :delete, local: true, class: "d-inline", data: { turbo: false } do %>
-                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Remover entrega" data-confirm="¿Seguro que deseas remover esta entrega del plan?">
+                <%= form_with url: delivery_plan_delivery_plan_assignment_path(@delivery_plan, assignment), method: :delete, local: true, class: "d-inline" do %>
+                  <button type="submit" class="btn btn-sm btn-outline-danger" data-confirm="¿Eliminar entrega del plan?">
                     <i class="bi bi-trash"></i>
                   </button>
                 <% end %>
@@ -125,10 +119,9 @@
     </div>
   </div>
 </div>
+<%# ================== MAPA ================== %>
 <div class="card shadow-sm mb-4">
-  <div class="card-header bg-light">
-    <i class="bi bi-map me-2"></i>Mapa de Ruta
-  </div>
+  <div class="card-header bg-light fw-bold"><i class="bi bi-map me-2"></i> Mapa de Ruta</div>
   <div class="card-body p-0">
     <div data-controller="delivery-plan-map"
          data-delivery-plan-map-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
@@ -144,42 +137,44 @@
                client: a.delivery.order.client.name,
                date: l(a.delivery.delivery_date, format: :short)
              }
-           end.to_json 
-         %>">
-      <div style="height: 400px; width: 100%;" 
-           data-delivery-plan-map-target="map"
-           class="border rounded"></div>
+           end.to_json %>">
+      <div style="height: 400px;" class="border rounded" data-delivery-plan-map-target="map"></div>
     </div>
   </div>
 </div>
+<%# ================== AGREGAR ENTREGA ================== %>
 <% if @available_deliveries.any? %>
-  <div class="card mb-4">
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light fw-bold"><i class="bi bi-plus-circle me-2"></i> Agregar entrega al plan</div>
     <div class="card-body">
       <%= form_with url: add_delivery_to_plan_delivery_plan_path(@delivery_plan), method: :patch, local: true do |f| %>
-        <div class="row align-items-end">
-          <div class="col-md-8">
-            <%= f.label :delivery_id, "Agregar entrega al plan", class: "form-label" %>
+        <div class="row g-3">
+          <div class="col-md-9">
             <%= f.collection_select :delivery_id, @available_deliveries, :id, 
                   ->(d) { "#{d.order.number} - #{d.order.client.name} (#{d.delivery_address.address})" }, 
                   prompt: "Selecciona una entrega", class: "form-select" %>
           </div>
-          <div class="col-md-4">
-            <%= f.submit "Agregar", class: "btn btn-success" %>
+          <div class="col-md-3">
+            <%= f.submit "➕ Agregar", class: "btn btn-success w-100" %>
           </div>
         </div>
       <% end %>
     </div>
   </div>
 <% end %>
-<!-- Botón de enviar a logística -->
+<%# ================== BOTÓN LOGÍSTICA ================== %>
 <% if @delivery_plan.draft? %>
-  <div class="mt-4 d-flex align-items-center gap-3">
-    <% if @delivery_plan.driver.present? %>
-      <%= button_to "Enviar a logística", send_to_logistics_delivery_plan_path(@delivery_plan), method: :patch, class: "btn btn-success" %>
+  <div class="alert alert-warning d-flex justify-content-between align-items-center mt-4">
+    <div>
+      <i class="bi bi-info-circle me-2"></i>
+      <strong>Estado:</strong> El plan aún no se ha enviado a logística.
+    </div>
+    <% if @delivery_plan.driver.present? && @delivery_plan.truck.present? %>
+      <%= button_to "🚚 Enviar a logística", send_to_logistics_delivery_plan_path(@delivery_plan), method: :patch, class: "btn btn-success" %>
     <% else %>
       <span class="text-danger">
         <i class="bi bi-exclamation-triangle me-1"></i>
-        Debes asignar un conductor antes de enviar a logística.
+        Debes asignar un conductor y un camión antes de enviar a logística.
       </span>
     <% end %>
   </div>

@@ -1,84 +1,116 @@
 <div class="container-fluid py-4">
-  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h2 class="mb-0">
-      <i class="bi bi-map me-2 text-primary"></i>
+  <%# ================== ENCABEZADO ================== %>
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h2 class="mb-0 text-dark fw-bold">
+      <i class="bi bi-map text-primary me-2"></i>
       Planes de Entrega
     </h2>
-    <%= link_to "Nuevo plan", new_delivery_plan_path, class: "btn btn-primary" %>
+    <%= link_to new_delivery_plan_path, class: "btn btn-success d-flex align-items-center gap-2" do %>
+      <i class="bi bi-plus-circle"></i> Nuevo Plan
+    <% end %>
   </div>
-  <div class="card mb-4 shadow-sm">
+  <%# ================== FILTROS ================== %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light fw-bold">
+      <i class="bi bi-funnel me-2"></i> Filtros de búsqueda
+    </div>
     <div class="card-body">
-      <%= search_form_for @q, url: delivery_plans_path, method: :get, html: {class: "row g-2 align-items-end"} do |f| %>
+      <%= search_form_for @q, url: delivery_plans_path, method: :get, html: { class: "row g-3 align-items-end" } do |f| %>
         <div class="col-12 col-md-3">
-          <%= f.label :deliveries_delivery_date_gteq, "Desde", class: "form-label" %>
+          <%= f.label :deliveries_delivery_date_gteq, "Desde", class: "form-label fw-bold" %>
           <%= f.date_field :deliveries_delivery_date_gteq, class: "form-control" %>
         </div>
         <div class="col-12 col-md-3">
-          <%= f.label :deliveries_delivery_date_lteq, "Hasta", class: "form-label" %>
+          <%= f.label :deliveries_delivery_date_lteq, "Hasta", class: "form-label fw-bold" %>
           <%= f.date_field :deliveries_delivery_date_lteq, class: "form-control" %>
         </div>
         <div class="col-12 col-md-3">
-          <%= f.label :status_eq, "Estado", class: "form-label" %>
-          <%= f.select :status_eq, DeliveryPlan.statuses.keys.map { |s| [s.humanize, s] }, {include_blank: "Todos"}, class: "form-select" %>
+          <%= f.label :status_eq, "Estado", class: "form-label fw-bold" %>
+          <%= f.select :status_eq, DeliveryPlan.statuses.keys.map { |s| [s.humanize, s] }, { include_blank: "Todos" }, class: "form-select" %>
         </div>
-        <div class="col-12 col-md-3 d-flex align-items-end">
-          <%= f.submit "Buscar", class: "btn btn-outline-primary me-2" %>
+        <div class="col-12 col-md-3">
+          <%= f.label :truck_eq, "Camión", class: "form-label fw-bold" %>
+          <%= f.select :truck_eq, DeliveryPlan.trucks.keys.map { |t| [t, t] }, { include_blank: "Todos" }, class: "form-select" %>
+        </div>
+        <div class="col-12 d-flex justify-content-end gap-2">
+          <%= f.submit "Buscar", class: "btn btn-primary" %>
           <%= link_to "Limpiar", delivery_plans_path, class: "btn btn-outline-secondary" %>
         </div>
       <% end %>
     </div>
   </div>
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead class="table-light">
-        <tr>
-          <th>Período</th>
-          <th>Estado / Conductor</th>
-          <th>Entregas</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @delivery_plans.each do |plan| %>
-          <tr>
-            <td>
-              <span class="badge bg-primary">
-                <%= week_range_label(plan.year, plan.week) %>
-              </span>
-            </td>
-            <td>
-              <div class="d-flex flex-column">
-                <span class="badge bg-<%= delivery_plan_status_color(plan.status) %>">
-                  <%= plan.display_status %>
-                </span>
-                <small class="text-muted mt-1">
-                  <i class="bi bi-person me-1"></i>
-                  <%= plan.driver&.name || "Sin asignar" %>
-                </small>
-              </div>
-            </td>
-            <td>
-              <span class="badge bg-info text-dark"><%= plan.deliveries.count %></span>
-            </td>
-            <td>
-              <%= link_to delivery_plan_path(plan), class: "btn btn-outline-primary btn-sm", title: "Ver" do %>
-                <i class="bi bi-eye"></i>
-              <% end %>
-              <%= link_to edit_delivery_plan_path(plan), class: "btn btn-outline-secondary btn-sm", title: "Editar" do %>
-                <i class="bi bi-pencil"></i>
-              <% end %>
-            </td>
-          </tr>
-        <% end %>
-        <% if @delivery_plans.empty? %>
-          <tr>
-            <td colspan="4" class="text-center text-muted py-4">
-              <i class="bi bi-emoji-frown fs-2"></i><br>
-              No hay planes de entrega registrados.
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+  <%# ================== TABLA ================== %>
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Período</th>
+              <th>Estado</th>
+              <th>Conductor</th>
+              <th>Camión</th>
+              <th>Entregas</th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @delivery_plans.each do |plan| %>
+              <tr>
+                <%# =========== PERÍODO =========== %>
+                <td>
+                  <span class="badge bg-primary">
+                    <%= week_range_label(plan.year, plan.week) %>
+                  </span>
+                </td>
+                <%# =========== ESTADO =========== %>
+                <td>
+                  <span class="badge bg-<%= delivery_plan_status_color(plan.status) %>">
+                    <i class="bi bi-circle-fill me-1 small"></i>
+                    <%= plan.display_status %>
+                  </span>
+                </td>
+                <%# =========== CONDUCTOR =========== %>
+                <td>
+                  <i class="bi bi-person me-1 text-muted"></i>
+                  <%= plan.driver&.name || tag.em("Sin asignar", class: "text-muted") %>
+                </td>
+                <%# =========== CAMIÓN =========== %>
+                <td>
+                  <% if plan.truck.present? %>
+                    <span class="badge bg-dark"><i class="bi bi-truck-front me-1"></i> <%= plan.truck %></span>
+                  <% else %>
+                    <span class="text-muted"><i class="bi bi-dash-lg me-1"></i> Sin camión</span>
+                  <% end %>
+                </td>
+                <%# =========== ENTREGAS =========== %>
+                <td>
+                  <span class="badge bg-info text-dark">
+                    <i class="bi bi-box-seam me-1"></i><%= plan.deliveries.count %>
+                  </span>
+                </td>
+                <%# =========== ACCIONES =========== %>
+                <td class="text-center">
+                  <%= link_to delivery_plan_path(plan), class: "btn btn-sm btn-outline-primary me-1", title: "Ver", data: { bs_toggle: "tooltip" } do %>
+                    <i class="bi bi-eye"></i>
+                  <% end %>
+                  <%= link_to edit_delivery_plan_path(plan), class: "btn btn-sm btn-outline-secondary me-1", title: "Editar", data: { bs_toggle: "tooltip" } do %>
+                    <i class="bi bi-pencil"></i>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+            <% if @delivery_plans.empty? %>
+              <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                  <i class="bi bi-emoji-frown fs-2"></i> <br>
+                  No hay planes de entrega registrados.
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>

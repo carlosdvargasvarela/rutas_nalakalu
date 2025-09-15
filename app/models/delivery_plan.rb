@@ -11,6 +11,8 @@ class DeliveryPlan < ApplicationRecord
 
   enum status: { draft: 0, sent_to_logistics: 1, routes_created: 2 }
 
+  enum truck: { PRI: 0, PRU: 1, GRU: 2, GRI: 3 }
+
   validates :week, :year, presence: true
 
   # Scope para estadisticas rapidas para el dashboard
@@ -80,7 +82,7 @@ class DeliveryPlan < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    %w[id week year status driver_id created_at updated_at]
+    %w[id week year status driver_id created_at updated_at truck] + _ransackers.keys
   end
 
   def self.ransackable_associations(auth_object = nil)
