@@ -9,6 +9,7 @@ class Order < ApplicationRecord
   belongs_to :seller
   has_many :order_items, dependent: :destroy
   has_many :deliveries, dependent: :destroy
+  has_many :order_item_notes, through: :order_items
 
   # ============================================================================
   # VALIDACIONES
@@ -57,6 +58,46 @@ class Order < ApplicationRecord
   scope :active, -> { where(status: [ :pending, :in_production, :ready_for_delivery, :rescheduled ]) }
 
   scope :in_production, -> { where(status: :in_production) }
+
+ ransacker :notes_status,
+            formatter: proc { |value|
+              case value.to_s
+              when "with"   # pedidos con al menos una nota
+                Arel.sql <<-SQL
+                  EXISTS (
+                    SELECT 1
+                    FROM order_item_notes
+                    JOIN order_items ON order_items.id = order_item_notes.order_item_id
+                    WHERE order_items.order_id = orders.id
+                  )
+                SQL
+              when "open"   # pedidos con notas abiertas
+                Arel.sql <<-SQL
+                  EXISTS (
+                    SELECT 1
+                    FROM order_item_notes
+                    JOIN order_items ON order_items.id = order_item_notes.order_item_id
+                    WHERE order_items.order_id = orders.id
+                    AND order_item_notes.closed = 0
+                  )
+                SQL
+              when "closed" # pedidos con notas cerradas
+                Arel.sql <<-SQL
+                  EXISTS (
+                    SELECT 1
+                    FROM order_item_notes
+                    JOIN order_items ON order_items.id = order_item_notes.order_item_id
+                    WHERE order_items.order_id = orders.id
+                    AND order_item_notes.closed = 1
+                  )
+                SQL
+              else
+                nil
+              end
+            } do |parent|
+    # Esta columna dummy permite a Ransack aplicar el predicado `_eq`
+    Arel.sql("1=1")
+  end
 
   # ============================================================================
   # MÉTODOS DE ESTADO Y UTILIDAD
@@ -219,12 +260,12 @@ class Order < ApplicationRecord
   # RANSACK
   # ============================================================================
 
-  def self.ransackable_attributes(auth_object = nil)
-    [ "client_id", "number", "seller_id", "status", "created_at", "updated_at" ]
+  def self.ransackable_attributes(_ = nil)
+    %w[client_id number seller_id status created_at updated_at notes_status]
   end
 
   def self.ransackable_associations(auth_object = nil)
-    [ "client", "seller", "order_items", "deliveries" ]
+    [ "client", "seller", "order_items", "deliveries", "order_item_notes" ]
   end
 
   def self.human_enum_name(enum_name, value)
@@ -248,5 +289,11 @@ class Order < ApplicationRecord
   # Setea el estado por defecto al crear un pedido
   def set_default_status
     self.status ||= :in_production
+  end
+
+  def self.status_options_for_select
+    statuses.keys.map do |s|
+      [ Order.new(status: s).display_status, s ]
+    end
   end
 end

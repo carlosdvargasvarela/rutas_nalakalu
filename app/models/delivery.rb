@@ -230,4 +230,10 @@ class Delivery < ApplicationRecord
       NotificationService.create_for_users(users.uniq, self, message)
     end
   end
+
+  def self.status_options_for_select
+    statuses.keys.map do |s|
+      [ Delivery.new(status: s).display_status, s ]
+    end
+  end
 end

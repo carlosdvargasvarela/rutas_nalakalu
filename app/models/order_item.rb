@@ -72,6 +72,14 @@ class OrderItem < ApplicationRecord
     delivery_items.last.status
   end
 
+  def self.ransackable_associations(auth_object = nil)
+    [ "order", "delivery_items", "order_item_notes" ]
+  end
+
+  def self.ransackable_attributes(auth_object = nil)
+    [ "product", "quantity", "status", "confirmed", "created_at", "updated_at" ]
+  end
+
   private
 
   def notify_ready
@@ -80,7 +88,7 @@ class OrderItem < ApplicationRecord
       puts "Notificando que el producto '#{product}' del pedido #{order.number} está listo para confirmar con el cliente."
       seller_user = order.seller.user
       message = "El producto '#{product}' del pedido #{order.number} está listo para confirmar con el cliente."
-      NotificationService.create_for_users([seller_user], self, message)
+      NotificationService.create_for_users([ seller_user ], self, message)
     end
   end
 end

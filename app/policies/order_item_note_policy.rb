@@ -13,7 +13,7 @@ class OrderItemNotePolicy < ApplicationPolicy
   end
 
   def update?
-    (user.production_manager? || user.admin?) && record.user == user
+    (user.production_manager? && record.user == user) || user.admin?
   end
 
   def destroy?
