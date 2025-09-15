@@ -1,20 +1,36 @@
-<!-- app/views/delivery_plans/edit.html.erb -->
+<% if @delivery_plan.errors.any? %>
+  <div class="alert alert-danger mb-4">
+    <h6><i class="bi bi-exclamation-triangle me-2"></i> Se encontraron errores:</h6>
+    <ul class="mb-0">
+      <% @delivery_plan.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
 <h1 class="mb-4">
   <i class="bi bi-pencil-square me-2"></i>
   Editar plan de ruta
   <span class="text-primary"><%= week_range_label(@delivery_plan.year, @delivery_plan.week, show_year: true) %></span>
 </h1>
 <div class="mb-3">
-  <span class="badge <%= @delivery_plan.draft? ? 'bg-secondary' : 'bg-success' %>">
-    <i class="bi bi-flag me-1"></i>
-    <%= @delivery_plan.status.humanize %>
-  </span>
+  <%= status_badge(@delivery_plan.status, :delivery) %>
   <span class="ms-3 text-muted">
     <i class="bi bi-truck me-1"></i>
     <%= @delivery_plan.driver&.name || "Sin conductor asignado" %>
   </span>
 </div>
-<!-- Form para editar el conductor -->
+<!-- Mostrar errores si existen -->
+<% if @delivery_plan.errors.any? %>
+  <div class="alert alert-danger mb-4">
+    <h6><i class="bi bi-exclamation-triangle me-2"></i>Se encontraron los siguientes errores:</h6>
+    <ul class="mb-0">
+      <% @delivery_plan.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
 <%= simple_form_for @delivery_plan, local: true do |f| %>
   <div class="card shadow-sm mb-4">
     <div class="card-body">
@@ -33,7 +49,7 @@
     <%= link_to "Cancelar", delivery_plan_path(@delivery_plan), class: "btn btn-secondary" %>
   </div>
 <% end %>
-<!-- Tabla de paradas (fuera del form principal) -->
+<!-- Tabla de paradas -->
 <div class="card shadow-sm mb-4">
   <div class="card-header bg-light d-flex justify-content-between align-items-center">
     <div>
@@ -55,6 +71,7 @@
             <th>Cliente</th>
             <th>Dirección</th>
             <th>Fecha</th>
+            <th>Estado</th>
             <th style="width: 120px;">Acción</th>
           </tr>
         </thead>
@@ -62,6 +79,7 @@
                data-sortable-target="list"
                data-sortable-url-value="<%= update_order_delivery_plan_path(@delivery_plan) %>">
           <% @assignments.each_with_index do |assignment, idx| %>
+            <% delivery = assignment.delivery %>
             <tr data-assignment-id="<%= assignment.id %>">
               <td class="text-center">
                 <div class="drag-handle" style="cursor: grab;" title="Arrastrar para reordenar">
@@ -72,20 +90,25 @@
                 <span class="badge bg-primary stop-number"><%= assignment.stop_order || (idx + 1) %></span>
               </td>
               <td>
-                <%= link_to assignment.delivery.order.number, order_path(assignment.delivery.order), class: "text-decoration-none fw-bold" %>
+                <%= link_to delivery.order.number, order_path(delivery.order), class: "text-decoration-none fw-bold" %>
               </td>
               <td>
                 <i class="bi bi-person me-1"></i>
-                <%= assignment.delivery.order.client.name %>
+                <%= delivery.order.client.name %>
               </td>
               <td>
                 <i class="bi bi-geo-alt me-1"></i>
-                <%= assignment.delivery.delivery_address.address %>
+                <%= delivery.delivery_address.address %>
               </td>
               <td>
                 <span class="badge bg-info text-dark">
                   <i class="bi bi-calendar-event me-1"></i>
-                  <%= l assignment.delivery.delivery_date, format: :short %>
+                  <%= l delivery.delivery_date, format: :short %>
+                </span>
+              </td>
+              <td>
+                <span class="badge bg-<%= delivery_status_color(delivery.status) %>">
+                  <%= delivery.display_status %>
                 </span>
               </td>
               <td>

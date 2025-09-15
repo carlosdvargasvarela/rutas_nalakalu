@@ -41,6 +41,9 @@ class Delivery < ApplicationRecord
     .where.not(status: [ Delivery.statuses[:delivered],
                          Delivery.statuses[:rescheduled],
                          Delivery.statuses[:cancelled] ])}
+  scope :eligible_for_plan, -> { where(status: [ :scheduled, :ready_to_deliver ]) }
+  scope :not_assigned_to_plan, -> { where.not(id: DeliveryPlanAssignment.select(:delivery_id)) }
+  scope :available_for_plan, -> { eligible_for_plan.not_assigned_to_plan }
 
   # Métodos de conveniencia
   def service_case?

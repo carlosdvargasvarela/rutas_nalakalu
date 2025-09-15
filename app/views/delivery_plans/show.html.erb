@@ -1,3 +1,11 @@
+<div class="alert alert-info mt-3">
+  <i class="bi bi-info-circle me-2"></i>
+  <% if @delivery_plan.all_deliveries_confirmed? %>
+    Todas las entregas de este plan han sido confirmadas ✔️
+  <% else %>
+    Existen entregas pendientes de confirmación ✋
+  <% end %>
+</div>
 <h1 class="mb-4">
   <i class="bi bi-map me-2"></i>
   Plan de ruta: <%= week_range_label(@delivery_plan.year, @delivery_plan.week, show_year: true) %>
@@ -23,9 +31,7 @@
         </p>
         <p>
           <strong><i class="bi bi-flag me-1"></i>Estado:</strong>
-          <span class="badge bg-<%= delivery_status_color(@delivery_plan.status) %>">
-            <%= @delivery_plan.status.humanize %>
-          </span>
+          <%= status_badge(@delivery_plan.status, :delivery) %>
         </p>
         <div class="mb-3">
           <%= link_to "Exportar Plan a Excel", delivery_plan_path(@delivery_plan, format: :xlsx), class: "btn btn-outline-success btn-sm" %>
@@ -80,7 +86,7 @@
                 </td>
                 <td>
                   <span class="badge bg-<%= delivery_status_color(delivery.status) %>">
-                    <%= delivery.status.humanize %>
+                    <%= delivery.display_status %>
                   </span>
                 </td>
                 <td>
@@ -102,7 +108,9 @@
                           <strong><%= item.order_item.product %></strong>
                           <span class="badge bg-secondary ms-1"><%= item.quantity_delivered %></span>
                           <% if item.order_item.notes.present? %>
-                            <span class="text-muted ms-1"><i class="bi bi-info-circle"></i> <%= item.order_item.notes %></span>
+                            <span class="text-muted ms-1">
+                              <i class="bi bi-info-circle"></i> <%= item.order_item.notes %>
+                            </span>
                           <% end %>
                         </li>
                       <% end %>

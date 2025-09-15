@@ -14,11 +14,10 @@ class DeliveryPlansController < ApplicationController
       from = to = Date.today
     end
 
-    # Solo entregas en el rango y con estado ready_to_deliver, no asignadas a un plan
+    # Usar el scope para entregas disponibles para planes
     base_scope = Delivery
       .where(delivery_date: from..to)
-      .where(status: :ready_to_deliver)
-      .where.not(id: DeliveryPlanAssignment.select(:delivery_id))
+      .available_for_plan
 
     @q = base_scope.ransack(params[:q])
     @deliveries = @q.result.includes(:order, :delivery_address, order: :client).order(:delivery_date)
@@ -92,12 +91,11 @@ class DeliveryPlansController < ApplicationController
     # Fecha de las entregas ya asignadas (todas deben ser iguales)
     delivery_date = @assignments.first&.delivery&.delivery_date
 
-    # Entregas disponibles para agregar (mismo día, no asignadas a ningún plan)
+    # Entregas disponibles para agregar usando el scope
     @available_deliveries = if delivery_date
       Delivery
         .where(delivery_date: delivery_date)
-        .where(status: :ready_to_deliver)
-        .where.not(id: DeliveryPlanAssignment.select(:delivery_id))
+        .available_for_plan
     else
       []
     end
@@ -106,27 +104,43 @@ class DeliveryPlansController < ApplicationController
   def update
     @delivery_plan = DeliveryPlan.find(params[:id])
 
-    # Actualiza los datos del plan (incluyendo driver_id)
-    @delivery_plan.update(delivery_plan_params)
-
-    # Actualiza el orden de las paradas
-    if params[:stop_orders]
-      params[:stop_orders].each do |assignment_id, stop_order|
-        assignment = @delivery_plan.delivery_plan_assignments.find(assignment_id)
-        assignment.update(stop_order: stop_order)
+    if @delivery_plan.update(delivery_plan_params)
+      # Actualiza el orden de las paradas
+      if params[:stop_orders]
+        params[:stop_orders].each do |assignment_id, stop_order|
+          assignment = @delivery_plan.delivery_plan_assignments.find(assignment_id)
+          assignment.update(stop_order: stop_order)
+        end
       end
-    end
 
-    redirect_to @delivery_plan, notice: "Plan de ruta actualizado correctamente."
+      redirect_to @delivery_plan, notice: "Plan de ruta actualizado correctamente."
+    else
+      # Si hay errores, volver a cargar los datos necesarios para la vista
+      @assignments = @delivery_plan.delivery_plan_assignments.includes(
+        delivery: [ :order, :delivery_address, order: :client ]
+      ).order(:stop_order)
+
+      delivery_date = @assignments.first&.delivery&.delivery_date
+      @available_deliveries = if delivery_date
+        Delivery
+          .where(delivery_date: delivery_date)
+          .where(status: :ready_to_deliver)
+          .where.not(id: DeliveryPlanAssignment.select(:delivery_id))
+      else
+        []
+      end
+
+      render :edit, status: :unprocessable_entity
+    end
   end
 
   def send_to_logistics
     @delivery_plan = DeliveryPlan.find(params[:id])
-    if @delivery_plan.driver.present?
+    if @delivery_plan.driver.present? && @delivery_plan.all_deliveries_confirmed?
       @delivery_plan.update!(status: :sent_to_logistics)
       redirect_to @delivery_plan, notice: "Plan enviado a logística."
     else
-      redirect_to edit_delivery_plan_path(@delivery_plan), alert: "Debes asignar un conductor antes de enviar a logística."
+      redirect_to edit_delivery_plan_path(@delivery_plan), alert: "Debes asignar un conductor y confirmar todas las entregas antes de enviar a logística."
     end
   end
 
@@ -176,7 +190,7 @@ class DeliveryPlansController < ApplicationController
 
     base_scope = Delivery
       .where(delivery_date: from..to)
-      .where(status: :ready_to_deliver)
+      .where(status: [ :scheduled, :ready_to_deliver ])
       .where.not(id: DeliveryPlanAssignment.select(:delivery_id))
 
     @q = base_scope.ransack(params[:q])

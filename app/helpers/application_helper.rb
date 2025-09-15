@@ -49,6 +49,16 @@ module ApplicationHelper
     end
   end
 
+  # Colores para estados de plan de entregas
+  def delivery_plan_status_color(status)
+    case status.to_s
+    when "draft"             then "secondary"
+    when "sent_to_logistics" then "info"
+    when "routes_created"    then "primary"
+    else "secondary"
+    end
+  end
+
   # Formatea fechas al estilo dd/mm/yyyy
   def format_date_dd_mm_yyyy(date)
     date.strftime("%d/%m/%Y") if date.present?

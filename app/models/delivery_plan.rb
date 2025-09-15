@@ -7,6 +7,7 @@ class DeliveryPlan < ApplicationRecord
 
   after_update :notify_driver_assignment, if: :saved_change_to_driver_id?
   after_update :update_status_on_driver_change, if: :saved_change_to_driver_id?
+  before_save :force_draft_if_unconfirmed
 
   enum status: { draft: 0, sent_to_logistics: 1, routes_created: 2 }
 
@@ -23,6 +24,19 @@ class DeliveryPlan < ApplicationRecord
       service_cases: deliveries.joins(:delivery_items).where(delivery_items: { service_case: true }).count,
       confirmed_items: deliveries.joins(delivery_items: :order_item).where(order_items: { confirmed: true }).count
     }
+  end
+
+  def display_status
+    case status
+    when "draft"
+      "Borrador"
+    when "sent_to_logistics"
+      "Enviado a logística"
+    when "routes_created"
+      "Rutas creada"
+    else
+      "Desconocido"
+    end
   end
 
   # Nombre completo del plan
@@ -73,6 +87,10 @@ class DeliveryPlan < ApplicationRecord
     %w[driver deliveries delivery_plan_assignments]
   end
 
+  def all_deliveries_confirmed?
+    deliveries.all?(&:confirmed?)
+  end
+
   private
 
   def notify_driver_assignment
@@ -81,11 +99,24 @@ class DeliveryPlan < ApplicationRecord
 
   def update_status_on_driver_change
     if driver_id.present?
-      # Solo cambia si sigue en draft (evita pisar estados más avanzados)
-      update_column(:status, DeliveryPlan.statuses[:sent_to_logistics]) if draft?
+      if all_deliveries_confirmed?
+        update_column(:status, DeliveryPlan.statuses[:sent_to_logistics]) if draft?
+      else
+        # fallback: dejar en draft y quizás notificar al usuario
+        update_column(:status, DeliveryPlan.statuses[:draft])
+      end
     else
-      # Si se desasigna conductor, regresa a draft solo si estaba en sent_to_logistics
       update_column(:status, DeliveryPlan.statuses[:draft]) if sent_to_logistics?
     end
+  end
+
+  def force_draft_if_unconfirmed
+    if driver_id.present? && !all_deliveries_confirmed?
+      errors.add(:base, "No puedes asignar un conductor mientras existan entregas sin confirmar")
+      throw(:abort)
+    end
+
+    # si hay alguna entrega scheduled, siempre obligamos a draft
+    self.status = :draft unless all_deliveries_confirmed?
   end
 end

@@ -1,4 +1,3 @@
-<!-- app/views/delivery_plans/index.html.erb -->
 <div class="container-fluid py-4">
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h2 class="mb-0">
@@ -34,19 +33,13 @@
       <thead class="table-light">
         <tr>
           <th>Período</th>
-          <th>Estado</th>
-          <th>Conductor</th>
+          <th>Estado / Conductor</th>
           <th>Entregas</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         <% @delivery_plans.each do |plan| %>
-          <% 
-            delivery_dates = plan.deliveries.pluck(:delivery_date)
-            from_date = delivery_dates.min
-            to_date = delivery_dates.max
-          %>
           <tr>
             <td>
               <span class="badge bg-primary">
@@ -54,17 +47,15 @@
               </span>
             </td>
             <td>
-              <span class="badge <%= plan.status == "sent_to_logistics" ? "bg-success" : "bg-secondary" %>">
-                <%= plan.status.humanize %>
-              </span>
-            </td>
-            <td>
-              <% if plan.driver %>
-                <i class="bi bi-person-badge me-1"></i>
-                <%= plan.driver.name %>
-              <% else %>
-                <span class="text-muted">Sin asignar</span>
-              <% end %>
+              <div class="d-flex flex-column">
+                <span class="badge bg-<%= delivery_plan_status_color(plan.status) %>">
+                  <%= plan.display_status %>
+                </span>
+                <small class="text-muted mt-1">
+                  <i class="bi bi-person me-1"></i>
+                  <%= plan.driver&.name || "Sin asignar" %>
+                </small>
+              </div>
             </td>
             <td>
               <span class="badge bg-info text-dark"><%= plan.deliveries.count %></span>
@@ -81,7 +72,7 @@
         <% end %>
         <% if @delivery_plans.empty? %>
           <tr>
-            <td colspan="5" class="text-center text-muted py-4">
+            <td colspan="4" class="text-center text-muted py-4">
               <i class="bi bi-emoji-frown fs-2"></i><br>
               No hay planes de entrega registrados.
             </td>
