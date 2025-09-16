@@ -7,7 +7,6 @@ class DeliveryPlan < ApplicationRecord
 
   after_update :notify_driver_assignment, if: :saved_change_to_driver_id?
   after_update :update_status_on_driver_change, if: :saved_change_to_driver_id?
-  before_save :force_draft_if_unconfirmed
   before_destroy :flush_assignments
 
   enum status: { draft: 0, sent_to_logistics: 1, routes_created: 2 }
@@ -105,22 +104,14 @@ class DeliveryPlan < ApplicationRecord
       if all_deliveries_confirmed?
         update_column(:status, DeliveryPlan.statuses[:sent_to_logistics]) if draft?
       else
-        # fallback: dejar en draft y quizás notificar al usuario
-        update_column(:status, DeliveryPlan.statuses[:draft])
+        errors.add(:base, "No puedes asignar a logística mientras existan entregas sin confirmar")
       end
+
+      # si hay alguna entrega scheduled, siempre obligamos a draft
+      self.status = :draft unless all_deliveries_confirmed?
     else
       update_column(:status, DeliveryPlan.statuses[:draft]) if sent_to_logistics?
     end
-  end
-
-  def force_draft_if_unconfirmed
-    if driver_id.present? && !all_deliveries_confirmed?
-      errors.add(:base, "No puedes asignar un conductor mientras existan entregas sin confirmar")
-      throw(:abort)
-    end
-
-    # si hay alguna entrega scheduled, siempre obligamos a draft
-    self.status = :draft unless all_deliveries_confirmed?
   end
 
   def flush_assignments
