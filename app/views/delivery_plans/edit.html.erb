@@ -79,6 +79,8 @@
             <th>Pedido</th>
             <th>Cliente</th>
             <th>Dirección</th>
+            <th>Productos</th>
+            <th>Hora</th>
             <th>Fecha</th>
             <th>Estado</th>
             <th style="width: 120px;">Acción</th>
@@ -98,7 +100,27 @@
               </td>
               <td><%= link_to delivery.order.number, order_path(delivery.order), class: "fw-bold" %></td>
               <td><i class="bi bi-person me-1"></i><%= delivery.order.client.name %></td>
-              <td><i class="bi bi-geo-alt me-1"></i><%= delivery.delivery_address.address %></td>
+              <td>
+                <i class="bi bi-geo-alt me-1"></i>
+                <%= [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - ") %>
+              </td>
+              <td>
+                <ul class="mb-0 ps-3 small">
+                  <% delivery.delivery_items.each do |item| %>
+                    <li><span class="badge bg-secondary"><%= item.quantity_delivered %></span> <%= item.order_item.product %></li>
+                  <% end %>
+                </ul>
+              </td>
+              <td>
+                <% if delivery.delivery_time_preference.present? %>
+                  <span class="badge bg-light text-dark">
+                    <i class="bi bi-clock me-1"></i>
+                    <%= delivery.delivery_time_preference %>
+                  </span>
+                <% else %>
+                  <span class="text-muted fst-italic">Sin preferencia</span>
+                <% end %>
+              </td>
               <td>
                 <span class="badge bg-info text-dark"><i class="bi bi-calendar-event me-1"></i><%= l delivery.delivery_date, format: :short %></span>
               </td>
