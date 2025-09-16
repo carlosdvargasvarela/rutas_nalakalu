@@ -60,43 +60,43 @@ class Order < ApplicationRecord
   scope :in_production, -> { where(status: :in_production) }
 
  ransacker :notes_status,
-            formatter: proc { |value|
-              case value.to_s
-              when "with"   # pedidos con al menos una nota
-                Arel.sql <<-SQL
-                  EXISTS (
-                    SELECT 1
-                    FROM order_item_notes
-                    JOIN order_items ON order_items.id = order_item_notes.order_item_id
-                    WHERE order_items.order_id = orders.id
-                  )
-                SQL
-              when "open"   # pedidos con notas abiertas
-                Arel.sql <<-SQL
-                  EXISTS (
-                    SELECT 1
-                    FROM order_item_notes
-                    JOIN order_items ON order_items.id = order_item_notes.order_item_id
-                    WHERE order_items.order_id = orders.id
-                    AND order_item_notes.closed = 0
-                  )
-                SQL
-              when "closed" # pedidos con notas cerradas
-                Arel.sql <<-SQL
-                  EXISTS (
-                    SELECT 1
-                    FROM order_item_notes
-                    JOIN order_items ON order_items.id = order_item_notes.order_item_id
-                    WHERE order_items.order_id = orders.id
-                    AND order_item_notes.closed = 1
-                  )
-                SQL
-              else
-                nil
-              end
-            } do |parent|
-    # Esta columna dummy permite a Ransack aplicar el predicado `_eq`
-    Arel.sql("1=1")
+    formatter: proc { |value|
+      case value.to_s
+      when "with"
+        Arel.sql <<-SQL
+          EXISTS (
+            SELECT 1
+            FROM order_item_notes
+            JOIN order_items ON order_items.id = order_item_notes.order_item_id
+            WHERE order_items.order_id = orders.id
+          )
+        SQL
+      when "open"
+        Arel.sql <<-SQL
+          EXISTS (
+            SELECT 1
+            FROM order_item_notes
+            JOIN order_items ON order_items.id = order_item_notes.order_item_id
+            WHERE order_items.order_id = orders.id
+            AND order_item_notes.closed = 0
+          )
+        SQL
+      when "closed"
+        Arel.sql <<-SQL
+          EXISTS (
+            SELECT 1
+            FROM order_item_notes
+            JOIN order_items ON order_items.id = order_item_notes.order_item_id
+            WHERE order_items.order_id = orders.id
+            AND order_item_notes.closed = 1
+          )
+        SQL
+      else
+        nil
+      end
+    } do |_parent|
+    # usar literal seguro, no "1=1"
+    Arel::Nodes::SqlLiteral.new("'notes_status'")
   end
 
   # ============================================================================
