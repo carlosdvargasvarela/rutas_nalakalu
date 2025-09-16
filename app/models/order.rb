@@ -255,8 +255,47 @@ class Order < ApplicationRecord
   # RANSACK
   # ============================================================================
 
-  def self.ransackable_scopes(_auth_object = nil)
-    %i[notes_status_with notes_status_open notes_status_closed]
+  ransacker :notes_status,
+    formatter: proc { |value|
+      case value.to_s
+      when "with"
+        Arel.sql <<-SQL
+          EXISTS (
+            SELECT 1
+            FROM order_item_notes
+            JOIN order_items ON order_items.id = order_item_notes.order_item_id
+            WHERE order_items.order_id = orders.id
+          )
+        SQL
+      when "open"
+        Arel.sql <<-SQL
+          EXISTS (
+            SELECT 1
+            FROM order_item_notes
+            JOIN order_items ON order_items.id = order_item_notes.order_item_id
+            WHERE order_items.order_id = orders.id
+            AND order_item_notes.closed = 0
+          )
+        SQL
+      when "closed"
+        Arel.sql <<-SQL
+          EXISTS (
+            SELECT 1
+            FROM order_item_notes
+            JOIN order_items ON order_items.id = order_item_notes.order_item_id
+            WHERE order_items.order_id = orders.id
+            AND order_item_notes.closed = 1
+          )
+        SQL
+      else
+        nil
+      end
+    } do |_parent|
+    Arel.sql("TRUE") # dummy, solo para que ransack lo acepte
+  end
+
+  def self.ransackable_attributes(_ = nil)
+    %w[client_id number seller_id status created_at updated_at notes_status]
   end
 
   def self.ransackable_associations(auth_object = nil)
