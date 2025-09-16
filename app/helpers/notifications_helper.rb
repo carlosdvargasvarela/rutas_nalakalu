@@ -7,6 +7,8 @@ module NotificationsHelper
     when "weekly_reminder" then "Resumen Semanal"
     when "daily_reminder" then "Recordatorio Diario"
     when "next_week_pending_confirmation" then "Pendientes de Confirmar Próxima Semana"
+    when "reschedule_delivery" then "Reprogramación de Entrega"
+    when "reschedule_item" then "Reprogramación de Item"
     else
       type.to_s.humanize
     end
@@ -19,6 +21,8 @@ module NotificationsHelper
     when "weekly_reminder" then "fas fa-calendar-week"
     when "daily_reminder" then "fas fa-clock"
     when "next_week_pending_confirmation" then "fas fa-clipboard-check"
+    when "reschedule_delivery" then "fas fa-calendar-alt"
+    when "reschedule_item" then "fas fa-box-open"
     else
       "fas fa-bell"
     end
@@ -31,6 +35,8 @@ module NotificationsHelper
     when "weekly_reminder" then "info"
     when "daily_reminder" then "warning"
     when "next_week_pending_confirmation" then "success"
+    when "reschedule_delivery" then "warning"
+    when "reschedule_item" then "info"
     else
       "secondary"
     end

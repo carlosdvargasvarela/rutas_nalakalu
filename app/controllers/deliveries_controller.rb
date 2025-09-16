@@ -227,18 +227,14 @@ class DeliveriesController < ApplicationController
 
   def reschedule_all
     authorize @delivery, :edit?
-
-    # Nueva fecha desde el formulario
     new_date = params[:new_date].presence && Date.parse(params[:new_date])
     raise "Debes seleccionar una nueva fecha" unless new_date
 
-    # Crea la nueva entrega
     new_delivery = @delivery.dup
     new_delivery.delivery_date = new_date
     new_delivery.status = :scheduled
     new_delivery.save!
 
-    # Duplica los delivery_items (solo los que no están entregados/cancelados)
     @delivery.delivery_items.where.not(status: [ :delivered, :cancelled, :rescheduled ]).find_each do |item|
       new_delivery.delivery_items.create!(
         order_item: item.order_item,
@@ -246,11 +242,15 @@ class DeliveriesController < ApplicationController
         status: :pending,
         service_case: item.service_case
       )
-      # Marca el original como reagendado
       item.update!(status: :rescheduled)
     end
 
     @delivery.update_status_based_on_items
+
+    # Notificar a usuarios relevantes
+    users = User.where(role: [ :admin, :seller, :production_manager ])
+    message = "La entrega del pedido #{@delivery.order.number} fue reagendada para #{l new_date, format: :long}."
+    NotificationService.create_for_users(users, new_delivery, message, type: "reschedule_delivery")
 
     redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
                 notice: "Entrega reagendada para el #{l new_date, format: :long}.")
@@ -258,7 +258,6 @@ class DeliveriesController < ApplicationController
     redirect_to(session[:deliveries_return_to] || deliveries_path,
                 alert: "Error al reagendar: #{e.message}")
   end
-
   private
 
   # Procesa los parámetros de delivery_items (existentes y nuevos)

@@ -46,6 +46,7 @@ class DeliveryItem < ApplicationRecord
   after_update :notify_all_confirmed, if: :saved_change_to_status?
   after_update :notify_all_order_items_ready, if: :saved_change_to_status?
   after_update :update_order_item_status
+  after_update :notify_reschedule, if: -> { saved_change_to_status? && rescheduled? }
 
   # ============================================================================
   # MÉTODOS PÚBLICOS
@@ -191,6 +192,15 @@ class DeliveryItem < ApplicationRecord
       seller_user = delivery.order.seller.user
       message = "Todos los productos del pedido #{delivery.order.number} para la entrega del #{delivery.delivery_date.strftime('%d/%m/%Y')} están listos para entrega."
       NotificationService.create_for_users([seller_user], delivery, message)
+    end
+  end
+
+  def notify_reschedule
+    if rescheduled?
+      users = User.where(role: [ :admin, :seller, :production_manager ])
+      users << delivery.delivery_plan.driver if delivery.delivery_plan&.driver
+      message = "El item '#{order_item.product}' del pedido #{order_item.order.number} fue reagendado para #{delivery.delivery_date.strftime('%d/%m/%Y')}."
+      NotificationService.create_for_users(users.uniq, self, message, type: "reschedule_item")
     end
   end
 end
