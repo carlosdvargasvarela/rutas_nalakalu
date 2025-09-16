@@ -8,14 +8,14 @@ class DeliveriesController < ApplicationController
   def index
     session[:deliveries_return_to] = request.fullpath
 
-    @q = Delivery.ransack(params[:q])
-
-    deliveries_scope = @q.result.includes(order: [ :client, :seller ], delivery_address: :client)
-
-    # Por defecto excluir rescheduled, salvo que pidan verlos
+    # Aplicar filtro de rescheduled antes de Ransack para evitar conflictos SQL
+    base_scope = Delivery.all
     unless params[:show_rescheduled] == "1"
-      deliveries_scope = deliveries_scope.where.not(status: :rescheduled)
+      base_scope = base_scope.where.not(status: :rescheduled)
     end
+
+    @q = base_scope.ransack(params[:q])
+    deliveries_scope = @q.result.includes(order: [ :client, :seller ], delivery_address: :client)
 
     # HTML con paginación
     @deliveries = deliveries_scope.order(delivery_date: :asc).page(params[:page])
