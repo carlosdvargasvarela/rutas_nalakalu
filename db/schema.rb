@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_09_15_151419) do
+ActiveRecord::Schema[7.2].define(version: 2025_09_16_070418) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -132,24 +132,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_15_151419) do
     t.integer "driver_id"
     t.integer "truck"
     t.index ["driver_id"], name: "index_delivery_plans_on_driver_id"
-  end
-
-  create_table "driver_sessions", force: :cascade do |t|
-    t.integer "driver_id", null: false
-    t.integer "delivery_plan_id", null: false
-    t.integer "status", default: 0, null: false
-    t.datetime "start_time"
-    t.datetime "end_time"
-    t.decimal "current_latitude", precision: 10, scale: 6
-    t.decimal "current_longitude", precision: 10, scale: 6
-    t.datetime "last_reported_at"
-    t.text "notes"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["delivery_plan_id"], name: "index_driver_sessions_on_delivery_plan_id"
-    t.index ["driver_id", "delivery_plan_id"], name: "index_driver_sessions_on_driver_id_and_delivery_plan_id", unique: true
-    t.index ["driver_id"], name: "index_driver_sessions_on_driver_id"
-    t.index ["status"], name: "index_driver_sessions_on_status"
   end
 
   create_table "notifications", force: :cascade do |t|
@@ -286,8 +268,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_15_151419) do
   add_foreign_key "delivery_plan_assignments", "deliveries", on_delete: :restrict
   add_foreign_key "delivery_plan_assignments", "delivery_plans", on_delete: :cascade
   add_foreign_key "delivery_plans", "users", column: "driver_id"
-  add_foreign_key "driver_sessions", "delivery_plans", on_delete: :cascade
-  add_foreign_key "driver_sessions", "users", column: "driver_id"
   add_foreign_key "notifications", "users"
   add_foreign_key "order_item_notes", "order_items"
   add_foreign_key "order_item_notes", "users"

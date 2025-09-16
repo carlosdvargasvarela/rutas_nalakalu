@@ -48,7 +48,7 @@
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown" style="min-width: 350px;">
       <% current_user.notifications.recent.limit(10).each do |notification| %>
         <li class="<%= 'bg-light' unless notification.read %>">
-          <a class="dropdown-item d-flex justify-content-between align-items-center" href="<%= polymorphic_url(notification.notifiable) rescue '#' %>">
+          <a class="dropdown-item d-flex justify-content-between align-items-center" href="<%= notification.target_path %>">
             <span>
               <%= notification.message %>
               <br>
