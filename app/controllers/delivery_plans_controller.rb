@@ -3,7 +3,7 @@ class DeliveryPlansController < ApplicationController
   def index
     authorize DeliveryPlan
     @q = DeliveryPlan.ransack(params[:q])
-    @delivery_plans = @q.result.includes(:driver, :deliveries).order(year: :desc, week: :desc)
+    @delivery_plans = @q.result.includes(:driver, :deliveries).sort_by(&:first_delivery_date)
   end
 
   def new

@@ -41,6 +41,10 @@ class DeliveryPlan < ApplicationRecord
     end
   end
 
+  def first_delivery_date
+    deliveries.minimum(:delivery_date)
+  end
+
   # Nombre completo del plan
   def full_name
     "Plan de entregas semana #{week} - #{year}"
