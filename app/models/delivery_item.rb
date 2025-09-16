@@ -165,14 +165,14 @@ class DeliveryItem < ApplicationRecord
   end
 
   # Notifica cuando un item individual es confirmado
-  def notify_confirmation
-    if status == "confirmed"
-      users = User.where(role: [ :logistics, :admin ])
-      users << delivery.delivery_plan.driver if delivery.delivery_plan&.driver
-      message = "El item '#{order_item.product}' del pedido #{order_item.order.number} fue confirmado por el vendedor."
-      NotificationService.create_for_users(users.uniq, self, message)
-    end
-  end
+  # def notify_confirmation
+  #   if status == "confirmed"
+  #     users = User.where(role: [ :logistics, :admin ])
+  #     users << delivery.delivery_plan.driver if delivery.delivery_plan&.driver
+  #     message = "El item '#{order_item.product}' del pedido #{order_item.order.number} fue confirmado por el vendedor."
+  #     NotificationService.create_for_users(users.uniq, self, message)
+  #   end
+  # end
 
   # Notifica cuando un item es reagendado
   def notify_reschedule
