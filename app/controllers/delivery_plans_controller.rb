@@ -1,12 +1,14 @@
 # app/controllers/delivery_plans_controller.rb
 class DeliveryPlansController < ApplicationController
   def index
+    authorize DeliveryPlan
     @q = DeliveryPlan.ransack(params[:q])
     @delivery_plans = @q.result.includes(:driver, :deliveries).order(year: :desc, week: :desc)
   end
 
   def new
     # Rango de fechas
+    authorize DeliveryPlan
     if params.dig(:q, :delivery_date_gteq).present? && params.dig(:q, :delivery_date_lteq).present?
       from = Date.parse(params[:q][:delivery_date_gteq])
       to = Date.parse(params[:q][:delivery_date_lteq])
@@ -28,6 +30,7 @@ class DeliveryPlansController < ApplicationController
 
   def create
     @delivery_plan = DeliveryPlan.new(delivery_plan_params)
+    authorize @delivery_plan
     delivery_ids = params[:delivery_ids] || []
 
     # Cargar las entregas seleccionadas
@@ -62,6 +65,7 @@ class DeliveryPlansController < ApplicationController
 
   def show
     @delivery_plan = DeliveryPlan.find(params[:id])
+    authorize @delivery_plan
     @deliveries = @delivery_plan.deliveries.includes(:order, :delivery_address, order: :client)
     @assignments = @delivery_plan.delivery_plan_assignments.includes(
       delivery: [
@@ -86,6 +90,7 @@ class DeliveryPlansController < ApplicationController
 
   def edit
     @delivery_plan = DeliveryPlan.find(params[:id])
+    authorize @delivery_plan
     @assignments = @delivery_plan.delivery_plan_assignments.includes(delivery: [ :order, :delivery_address, order: :client ]).order(:stop_order)
 
     # Fecha de las entregas ya asignadas (todas deben ser iguales)
@@ -103,6 +108,7 @@ class DeliveryPlansController < ApplicationController
 
   def update
     @delivery_plan = DeliveryPlan.find(params[:id])
+    authorize @delivery_plan
 
     if @delivery_plan.update(delivery_plan_params)
       # Actualiza el orden de las paradas
@@ -136,6 +142,7 @@ class DeliveryPlansController < ApplicationController
 
   def send_to_logistics
     @delivery_plan = DeliveryPlan.find(params[:id])
+    authorize @delivery_plan
     if @delivery_plan.driver.present? && @delivery_plan.all_deliveries_confirmed?
       @delivery_plan.update!(status: :sent_to_logistics)
       redirect_to @delivery_plan, notice: "Plan enviado a logística."
@@ -146,6 +153,7 @@ class DeliveryPlansController < ApplicationController
 
   def update_order
     @delivery_plan = DeliveryPlan.find(params[:id])
+    authorize @delivery_plan
 
     if params[:stop_orders]
       params[:stop_orders].each do |assignment_id, stop_order|
@@ -161,6 +169,7 @@ class DeliveryPlansController < ApplicationController
 
   def add_delivery_to_plan
     @delivery_plan = DeliveryPlan.find(params[:id])
+    authorize @delivery_plan
     delivery = Delivery.find(params[:delivery_id])
 
     # Validación: misma fecha y no asignada
