@@ -8,6 +8,7 @@ class DeliveryPlan < ApplicationRecord
   after_update :notify_driver_assignment, if: :saved_change_to_driver_id?
   after_update :update_status_on_driver_change, if: :saved_change_to_driver_id?
   before_save :force_draft_if_unconfirmed
+  before_destroy :flush_assignments
 
   enum status: { draft: 0, sent_to_logistics: 1, routes_created: 2 }
 
@@ -120,5 +121,9 @@ class DeliveryPlan < ApplicationRecord
 
     # si hay alguna entrega scheduled, siempre obligamos a draft
     self.status = :draft unless all_deliveries_confirmed?
+  end
+
+  def flush_assignments
+    delivery_plan_assignments.destroy_all
   end
 end

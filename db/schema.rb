@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_09_15_070027) do
+ActiveRecord::Schema[7.2].define(version: 2025_09_15_151419) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -283,10 +283,10 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_15_070027) do
   add_foreign_key "delivery_imports", "users"
   add_foreign_key "delivery_items", "deliveries"
   add_foreign_key "delivery_items", "order_items"
-  add_foreign_key "delivery_plan_assignments", "deliveries"
-  add_foreign_key "delivery_plan_assignments", "delivery_plans"
+  add_foreign_key "delivery_plan_assignments", "deliveries", on_delete: :restrict
+  add_foreign_key "delivery_plan_assignments", "delivery_plans", on_delete: :cascade
   add_foreign_key "delivery_plans", "users", column: "driver_id"
-  add_foreign_key "driver_sessions", "delivery_plans"
+  add_foreign_key "driver_sessions", "delivery_plans", on_delete: :cascade
   add_foreign_key "driver_sessions", "users", column: "driver_id"
   add_foreign_key "notifications", "users"
   add_foreign_key "order_item_notes", "order_items"

@@ -1,31 +1,43 @@
 <!-- app/views/delivery_plans/new.html.erb -->
 <% if @delivery_plan.errors.any? %>
-  <div class="alert alert-danger mb-4">
-    <h6><i class="bi bi-exclamation-triangle me-2"></i> Se encontraron errores:</h6>
-    <ul class="mb-0">
-      <% @delivery_plan.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
+  <div class="alert alert-danger d-flex align-items-start mb-4">
+    <i class="bi bi-exclamation-triangle-fill fs-4 me-2"></i>
+    <div>
+      <h6 class="mb-1">Se encontraron errores:</h6>
+      <ul class="mb-0">
+        <% @delivery_plan.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
   </div>
 <% end %>
 <div data-controller="delivery-plan-table">
-  <h1 class="mb-4">
-    <i class="bi bi-map me-2"></i>
-    Crear Plan de Ruta
-  </h1>
-  <%# Mostrar el rango de la semana seleccionada %>
+  <!-- Encabezado -->
+  <div class="d-flex align-items-center mb-4">
+    <i class="bi bi-map fs-3 text-primary me-2"></i>
+    <div>
+      <h1 class="h3 mb-0">Crear Plan de Ruta</h1>
+      <small class="text-muted">Seleccione las entregas para asignar al plan</small>
+    </div>
+  </div>
+  <!-- Rango seleccionado -->
   <% if @from && @to %>
-    <div class="alert alert-secondary mb-4">
-      <i class="bi bi-calendar-range me-2"></i>
+    <div class="alert alert-light border mb-4">
+      <i class="bi bi-calendar-range me-2 text-primary"></i>
       <strong>Plazo seleccionado:</strong>
       <span class="text-muted">del <%= l @from, format: :long %> al <%= l @to, format: :long %></span>
     </div>
   <% end %>
+  <!-- Buscador -->
   <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white fw-semibold">
+      <i class="bi bi-funnel me-1"></i>
+      Filtros de búsqueda
+    </div>
     <div class="card-body">
       <%= search_form_for @q, url: new_delivery_plan_path, method: :get, html: { class: "mb-0" } do |f| %>
-        <div class="row g-2 align-items-end">
+        <div class="row g-3 align-items-end">
           <div class="col-md-2">
             <%= f.label :delivery_date_gteq, "Desde", class: "form-label" %>
             <%= f.date_field :delivery_date_gteq, value: @from, class: "form-control" %>
@@ -53,8 +65,9 @@
       <% end %>
     </div>
   </div>
+  <!-- Lista de entregas -->
   <h5 class="mb-3">
-    <i class="bi bi-truck-flatbed me-1"></i>
+    <i class="bi bi-truck-flatbed me-1 text-primary"></i>
     Entregas disponibles
     <% if @from == @to %>
       para <%= l @from, format: :long %>
@@ -76,7 +89,7 @@
           <% end %>
           <div class="table-responsive">
             <table class="table table-sm table-hover align-middle">
-              <thead class="table-light">
+              <thead class="table-primary">
                 <tr>
                   <th>
                     <input type="checkbox" id="select-all" class="form-check-input" title="Seleccionar todas">
@@ -95,21 +108,18 @@
                       <%= check_box_tag "delivery_ids[]", delivery.id, @selected_delivery_ids&.include?(delivery.id), class: "form-check-input delivery-checkbox" %>
                     </td>
                     <td>
-                      <%= link_to delivery.order.number, order_path(delivery.order), class: "text-decoration-none fw-bold" %>
+                      <%= link_to delivery.order.number, order_path(delivery.order), class: "fw-bold text-decoration-none" %>
                     </td>
                     <td>
-                      <i class="bi bi-person me-1"></i>
+                      <i class="bi bi-person-fill text-secondary me-1"></i>
                       <%= delivery.order.client.name %>
                     </td>
                     <td>
-                      <i class="bi bi-geo-alt me-1"></i>
+                      <i class="bi bi-geo-alt-fill text-danger me-1"></i>
                       <%= delivery.delivery_address.address %>
                     </td>
                     <td>
-                      <span class="badge bg-info text-dark">
-                        <i class="bi bi-calendar-event me-1"></i>
-                        <%= l delivery.delivery_date, format: :short %>
-                      </span>
+                      <i class="bi bi-calendar-event me-1"></i><%= l delivery.delivery_date, format: :long %>
                     </td>
                     <td>
                       <% if delivery.delivery_items.any? %>
@@ -127,7 +137,7 @@
                           <% end %>
                         </ul>
                       <% else %>
-                        <span class="text-muted">Sin productos</span>
+                        <span class="text-muted fst-italic">Sin productos</span>
                       <% end %>
                     </td>
                   </tr>
@@ -135,16 +145,20 @@
               </tbody>
             </table>
           </div>
+          <!-- Botón CTA -->
           <div class="d-flex justify-content-end mt-3">
-            <%= f.button :submit, "Crear Plan de Ruta", class: "btn btn-primary" %>
+            <%= f.button :submit, class: "btn btn-primary btn-lg" do %>
+              <i class="bi bi-plus-circle me-1"></i>
+              Crear Plan de Ruta
+            <% end %>
           </div>
         <% end %>
       </div>
     </div>
   <% else %>
-    <div class="alert alert-info">
-      <i class="bi bi-info-circle me-2"></i>
-      No hay entregas disponibles para este rango de fechas.
+    <div class="alert alert-info d-flex align-items-center">
+      <i class="bi bi-info-circle-fill fs-4 me-2"></i>
+      <div>No hay entregas disponibles para este rango de fechas.</div>
     </div>
   <% end %>
 </div>

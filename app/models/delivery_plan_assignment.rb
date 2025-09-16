@@ -7,7 +7,6 @@ class DeliveryPlanAssignment < ApplicationRecord
   after_create :change_deliveries_statuses
   before_destroy :revert_statuses
 
-  # Validación opcional
   validates :stop_order, numericality: { only_integer: true, allow_nil: true }
 
   acts_as_list scope: :delivery_plan, column: :stop_order
@@ -15,16 +14,22 @@ class DeliveryPlanAssignment < ApplicationRecord
   private
 
   def change_deliveries_statuses
-    delivery.delivery_items.each do |item|
-      item.update!(status: "in_plan")
+    unless delivery_plan.draft? && delivery.scheduled?
+      delivery.delivery_items.update_all(status: DeliveryItem.statuses[:in_plan])
+      delivery.update_columns(status: Delivery.statuses[:in_plan])
     end
-    delivery.update!(status: "in_plan")
   end
 
   def revert_statuses
-    delivery.delivery_items.each do |item|
-      item.update!(status: "ready_to_deliver")
+    delivery.delivery_items.find_each do |item|
+      new_status = item.confirmed? ? :confirmed : :pending
+      item.update_columns(status: DeliveryItem.statuses[new_status])
     end
-    delivery.update!(status: "confirmed")
+
+    if delivery.delivery_items.where.not(status: DeliveryItem.statuses[:pending]).exists?
+      delivery.update_columns(status: Delivery.statuses[:ready_to_deliver])
+    else
+      delivery.update_columns(status: Delivery.statuses[:scheduled])
+    end
   end
 end
