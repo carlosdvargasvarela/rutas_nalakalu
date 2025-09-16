@@ -230,6 +230,9 @@ class DeliveriesController < ApplicationController
     new_date = params[:new_date].presence && Date.parse(params[:new_date])
     raise "Debes seleccionar una nueva fecha" unless new_date
 
+    old_date = @delivery.delivery_date 
+    raise "La nueva fecha debe ser diferente a la original" if new_date == old_date
+
     new_delivery = @delivery.dup
     new_delivery.delivery_date = new_date
     new_delivery.status = :scheduled
@@ -249,7 +252,7 @@ class DeliveriesController < ApplicationController
 
     # Notificar a usuarios relevantes
     users = User.where(role: [ :admin, :seller, :production_manager ])
-    message = "La entrega del pedido #{@delivery.order.number} fue reagendada para #{l new_date, format: :long}."
+    message = "La entrega del pedido #{@delivery.order.number} con fecha original de #{l old_date, format: :long} fue reagendada para el #{l new_date, format: :long}."
     NotificationService.create_for_users(users, new_delivery, message, type: "reschedule_delivery")
 
     redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
