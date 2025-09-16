@@ -47,6 +47,7 @@
           <thead class="table-light">
             <tr>
               <th>Período</th>
+              <th>Día</th>
               <th>Estado</th>
               <th>Conductor</th>
               <th>Camión</th>
@@ -62,6 +63,11 @@
                   <span class="badge bg-primary">
                     <%= week_range_label(plan.year, plan.week) %>
                   </span>
+                </td>
+                <%# =========== DÍA =========== %>
+                <td>
+                  <i class="bi bi-calendar-event me-1 text-muted"></i>
+                  <%= plan.delivery_plan_assignments.first.delivery.delivery_date.strftime("%d %b, %Y") %>
                 </td>
                 <%# =========== ESTADO =========== %>
                 <td>
