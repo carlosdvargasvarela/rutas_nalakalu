@@ -29,7 +29,7 @@
         </div>
         <div class="col-12 col-md-3">
           <%= f.label :truck_eq, "Camión", class: "form-label fw-bold" %>
-          <%= f.select :truck_eq, DeliveryPlan.trucks.keys.map { |t| [t, t] }, { include_blank: "Todos" }, class: "form-select w-100" %>
+          <%= f.select :truck_eq, DeliveryPlan.trucks.map { |k, v| [k, v] }, { include_blank: "Todos" }, class: "form-select w-100" %>
         </div>
         <div class="col-12 d-flex justify-content-end gap-2">
           <%= f.submit "Buscar", class: "btn btn-primary btn-sm" %>
