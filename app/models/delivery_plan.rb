@@ -45,6 +45,15 @@ class DeliveryPlan < ApplicationRecord
     deliveries.minimum(:delivery_date)
   end
 
+  # Ransacker para filtrar por el rango de fechas de la primera entrega
+  ransacker :first_delivery_date do |parent|
+    Arel.sql("(SELECT MIN(deliveries.delivery_date) 
+               FROM deliveries 
+               INNER JOIN delivery_plan_assignments dpa 
+               ON dpa.delivery_id = deliveries.id 
+               WHERE dpa.delivery_plan_id = delivery_plans.id)")
+  end
+
   # Nombre completo del plan
   def full_name
     "Plan de entregas semana #{week} - #{year}"
@@ -86,7 +95,7 @@ class DeliveryPlan < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    %w[id week year status driver_id created_at updated_at truck] + _ransackers.keys
+    %w[id week year status driver_id created_at updated_at truck first_delivery_date] + _ransackers.keys
   end
 
   def self.ransackable_associations(auth_object = nil)

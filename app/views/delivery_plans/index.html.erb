@@ -16,12 +16,12 @@
     <div class="card-body">
       <%= search_form_for @q, url: delivery_plans_path, method: :get, html: { class: "row g-3 align-items-end" } do |f| %>
         <div class="col-12 col-md-3">
-          <%= f.label :deliveries_delivery_date_gteq, "Desde", class: "form-label fw-bold" %>
-          <%= f.date_field :deliveries_delivery_date_gteq, class: "form-control" %>
+          <%= f.label :first_delivery_date_gteq, "Desde", class: "form-label fw-bold" %>
+          <%= f.date_field :first_delivery_date_gteq, class: "form-control" %>
         </div>
         <div class="col-12 col-md-3">
-          <%= f.label :deliveries_delivery_date_lteq, "Hasta", class: "form-label fw-bold" %>
-          <%= f.date_field :deliveries_delivery_date_lteq, class: "form-control" %>
+          <%= f.label :first_delivery_date_lteq, "Hasta", class: "form-label fw-bold" %>
+          <%= f.date_field :first_delivery_date_lteq, class: "form-control" %>
         </div>
         <div class="col-12 col-md-3">
           <%= f.label :status_eq, "Estado", class: "form-label fw-bold" %>
