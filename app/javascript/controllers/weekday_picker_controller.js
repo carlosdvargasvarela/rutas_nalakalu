@@ -15,28 +15,28 @@ export default class extends Controller {
     this.input.removeEventListener("input", this.validateDate.bind(this))
   }
 
-  validateDate(event) {
-    const selectedValue = this.input.value
-    if (!selectedValue) return
+  // validateDate(event) {
+  //   const selectedValue = this.input.value
+  //   if (!selectedValue) return
 
-    const selected = new Date(selectedValue + "T00:00:00")
-    const requiredWeekday = this.weekdayValue
-    const selectedWeekday = selected.getDay()
+  //   const selected = new Date(selectedValue + "T00:00:00")
+  //   const requiredWeekday = this.weekdayValue
+  //   const selectedWeekday = selected.getDay()
 
-    if (selectedWeekday !== requiredWeekday) {
-      this.showError()
-      this.input.value = "" // resetea el campo
-      this.input.focus()
-    }
-  }
+  //   if (selectedWeekday !== requiredWeekday) {
+  //     this.showError()
+  //     this.input.value = "" // resetea el campo
+  //     this.input.focus()
+  //   }
+  // }
 
-  showError() {
-    const dayName = this.dayName(this.weekdayValue)
-    alert(`⚠️ Solo puedes seleccionar ${dayName} para reagendar`)
-  }
+  // showError() {
+  //   const dayName = this.dayName(this.weekdayValue)
+  //   alert(`⚠️ Solo puedes seleccionar ${dayName} para reagendar`)
+  // }
 
-  dayName(weekday) {
-    const days = ["domingos","lunes","martes","miércoles","jueves","viernes","sábados"]
-    return days[weekday]
-  }
+  // dayName(weekday) {
+  //   const days = ["domingos","lunes","martes","miércoles","jueves","viernes","sábados"]
+  //   return days[weekday]
+  // }
 }

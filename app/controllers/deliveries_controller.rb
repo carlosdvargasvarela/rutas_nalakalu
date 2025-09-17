@@ -230,37 +230,48 @@ class DeliveriesController < ApplicationController
     new_date = params[:new_date].presence && Date.parse(params[:new_date])
     raise "Debes seleccionar una nueva fecha" unless new_date
 
-    old_date = @delivery.delivery_date 
+    old_date = @delivery.delivery_date
     raise "La nueva fecha debe ser diferente a la original" if new_date == old_date
 
-    new_delivery = @delivery.dup
-    new_delivery.delivery_date = new_date
-    new_delivery.status = :scheduled
-    new_delivery.save!
+    ActiveRecord::Base.transaction do
+      # Crear la nueva entrega
+      new_delivery = @delivery.dup
+      new_delivery.delivery_date = new_date
+      new_delivery.status = :scheduled
+      new_delivery.save!
 
-    @delivery.delivery_items.where.not(status: [ :delivered, :cancelled, :rescheduled ]).find_each do |item|
-      new_delivery.delivery_items.create!(
-        order_item: item.order_item,
-        quantity_delivered: item.quantity_delivered,
-        status: :pending,
-        service_case: item.service_case
-      )
-      item.update!(status: :rescheduled)
+      # 🔑 CRÍTICO: Limpiar la asociación clonada para evitar el error de ActiveRecord::Relation
+      new_delivery.delivery_items = []
+
+      # Copiar TODOS los delivery_items que no estén finalizados
+      items_to_reschedule = @delivery.delivery_items.where.not(status: [ :delivered, :cancelled, :rescheduled ])
+
+      items_to_reschedule.find_each do |item|
+        DeliveryItem.create!(
+          delivery: new_delivery,
+          order_item: item.order_item,
+          quantity_delivered: item.quantity_delivered,
+          status: :pending,
+          service_case: item.service_case
+        )
+        item.update!(status: :rescheduled)
+      end
+
+      @delivery.update_status_based_on_items
+
+      # Notificar a usuarios relevantes
+      users = User.where(role: [ :admin, :seller, :production_manager ])
+      message = "La entrega del pedido #{@delivery.order.number} con fecha original de #{l old_date, format: :long} fue reagendada para el #{l new_date, format: :long}."
+      NotificationService.create_for_users(users, new_delivery, message, type: "reschedule_delivery")
+
+      redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
+                  notice: "Entrega reagendada para el #{l new_date, format: :long}.")
     end
-
-    @delivery.update_status_based_on_items
-
-    # Notificar a usuarios relevantes
-    users = User.where(role: [ :admin, :seller, :production_manager ])
-    message = "La entrega del pedido #{@delivery.order.number} con fecha original de #{l old_date, format: :long} fue reagendada para el #{l new_date, format: :long}."
-    NotificationService.create_for_users(users, new_delivery, message, type: "reschedule_delivery")
-
-    redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
-                notice: "Entrega reagendada para el #{l new_date, format: :long}.")
   rescue => e
     redirect_to(session[:deliveries_return_to] || deliveries_path,
                 alert: "Error al reagendar: #{e.message}")
   end
+
   private
 
   # Procesa los parámetros de delivery_items (existentes y nuevos)
