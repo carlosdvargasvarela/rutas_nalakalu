@@ -146,6 +146,13 @@ class Delivery < ApplicationRecord
     delivery_plans.first
   end
 
+  def delivery_history
+    order.deliveries
+        .where(delivery_address_id: delivery_address_id)
+        .includes(delivery_items: :order_item) # <- cargar productos en bloque
+        .order(:delivery_date)
+  end
+
   # Información del cliente para logística
   def client_info
     {

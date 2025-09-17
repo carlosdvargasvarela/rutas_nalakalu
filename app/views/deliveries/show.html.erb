@@ -9,6 +9,7 @@
     <% end %>
   <% end %>
 </div>
+
 <div class="row mb-4">
   <!-- Información General -->
   <div class="col-md-4 mb-3">
@@ -34,6 +35,7 @@
       </div>
     </div>
   </div>
+
   <!-- Información del Pedido -->
   <div class="col-md-4 mb-3">
     <div class="card shadow-sm h-100">
@@ -57,6 +59,7 @@
       </div>
     </div>
   </div>
+
   <!-- Dirección de Entrega -->
   <div class="col-md-4 mb-3">
     <div class="card shadow-sm h-100">
@@ -64,27 +67,21 @@
         <i class="bi bi-geo-alt me-1"></i> Detalles de Entrega
       </div>
       <div class="card-body">
-        <p>
-          <strong>Dirección:</strong>
-          <%= @delivery.delivery_address.address %>
-        </p>
+        <p><strong>Dirección:</strong> <%= @delivery.delivery_address.address %></p>
         <% if @delivery.delivery_address.description.present? %>
           <p>
             <strong><i class="bi bi-signpost-2 me-1"></i>Referencia:</strong>
             <%= @delivery.delivery_address.description %>
           </p>
         <% end %>
-        <p>
-          <strong><i class="bi bi-person-lines-fill me-1"></i>Contacto:</strong>
-          <%= @delivery.contact_name %>
-        </p>
-        <p>
-          <strong><i class="bi bi-telephone me-1"></i>Teléfono Contacto:</strong>
+        <p><strong><i class="bi bi-person-lines-fill me-1"></i>Contacto:</strong> <%= @delivery.contact_name %></p>
+        <p><strong><i class="bi bi-telephone me-1"></i>Teléfono Contacto:</strong>
           <%= @delivery.contact_phone.presence || 'No especificado' %>
         </p>
       </div>
     </div>
   </div>
+
   <!-- Mapa -->
   <div class="col-12 mb-4">
     <div class="card shadow-sm">
@@ -94,10 +91,10 @@
       <div class="card-body">
         <% if @delivery.delivery_address.latitude.present? && @delivery.delivery_address.longitude.present? %>
           <div id="delivery-map"
-              data-controller="delivery-map"
-              style="height: 300px; border:1px solid #ddd; border-radius: 8px;"
-              data-lat="<%= @delivery.delivery_address.latitude %>"
-              data-lng="<%= @delivery.delivery_address.longitude %>">
+               data-controller="delivery-map"
+               style="height: 300px; border:1px solid #ddd; border-radius: 8px;"
+               data-lat="<%= @delivery.delivery_address.latitude %>"
+               data-lng="<%= @delivery.delivery_address.longitude %>">
           </div>
         <% else %>
           <div class="alert alert-info">
@@ -109,6 +106,59 @@
     </div>
   </div>
 </div>
+
+<!-- Historial de entregas -->
+<% if @delivery_history.size > 1 %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+      <i class="bi bi-clock-history me-1"></i> Historial de esta entrega
+    </div>
+    <div class="card-body">
+      <div class="accordion" id="deliveryHistoryAccordion">
+        <% @delivery_history.each do |d| %>
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-<%= d.id %>">
+              <button class="accordion-button <%= d == @delivery ? '' : 'collapsed' %>" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#collapse-<%= d.id %>">
+                <%= l d.delivery_date, format: :long %> —
+                <span class="badge bg-<%= delivery_status_color(d.status) %>"><%= d.display_status %></span>
+                <% if d == @delivery %>
+                  <small class="ms-2 text-primary">(actual)</small>
+                <% end %>
+              </button>
+            </h2>
+            <div id="collapse-<%= d.id %>" class="accordion-collapse collapse <%= d == @delivery ? 'show' : '' %>"
+                 data-bs-parent="#deliveryHistoryAccordion">
+              <div class="accordion-body">
+                <% if d.delivery_items.any? %>
+                  <ul class="list-group list-group-flush">
+                    <% d.delivery_items.includes(:order_item).each do |item| %>
+                      <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                          <strong><%= item.order_item.product %></strong>
+                          <% if item.order_item.notes.present? %>
+                            <small class="text-muted"> — <%= item.order_item.notes %></small>
+                          <% end %>
+                        </span>
+                        <span>
+                          <span class="badge bg-secondary"><%= item.quantity_delivered %></span>
+                          <span class="badge bg-<%= delivery_item_status_color(item.status) %>"><%= item.display_status %></span>
+                        </span>
+                      </li>
+                    <% end %>
+                  </ul>
+                <% else %>
+                  <div class="text-muted">Sin productos asociados</div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
 <div class="card shadow-sm mb-4">
   <div class="card-header d-flex justify-content-between align-items-center bg-light">
     <span>

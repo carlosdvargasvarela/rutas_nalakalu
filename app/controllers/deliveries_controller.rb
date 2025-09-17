@@ -42,6 +42,8 @@ class DeliveriesController < ApplicationController
     @future_deliveries = Delivery
       .where(order_id: @delivery.order_id, delivery_address_id: @delivery.delivery_address_id)
       .where.not(id: @delivery.id, status: :rescheduled)
+
+    @delivery_history = @delivery.delivery_history
   end
 
   # GET /deliveries/new
