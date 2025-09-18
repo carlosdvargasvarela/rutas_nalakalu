@@ -1,6 +1,6 @@
 # app/controllers/delivery_items_controller.rb
 class DeliveryItemsController < ApplicationController
-  before_action :set_delivery_item, only: [ :show, :confirm, :mark_delivered, :reschedule, :cancel ]
+  before_action :set_delivery_item, only: [ :show, :confirm, :mark_delivered, :reschedule, :cancel, :update_notes ]
 
   def show
     @delivery = @delivery_item.delivery
@@ -73,9 +73,58 @@ class DeliveryItemsController < ApplicationController
                   notice: "Producto cancelado."
   end
 
+  def update_notes
+    authorize @delivery_item if respond_to?(:authorize) # Pundit si lo usas
+
+    if @delivery_item.update(notes_params)
+      redirect_back fallback_location: delivery_plan_path(@delivery_item.delivery.delivery_plan),
+                    notice: "Nota actualizada correctamente."
+    else
+      redirect_back fallback_location: delivery_plan_path(@delivery_item.delivery.delivery_plan),
+                    alert: "Error al actualizar la nota."
+    end
+  end
+
+  def bulk_add_notes
+    delivery = Delivery.find(params[:delivery_id])
+    authorize delivery, :update? if respond_to?(:authorize) # Pundit si lo usas
+
+    note_text = params.dig(:note, :body)
+
+    if note_text.blank?
+      redirect_back fallback_location: delivery_plan_path(delivery.delivery_plan),
+                    alert: "La nota no puede estar vacía."
+      return
+    end
+
+    if params[:target] == "all"
+      # Aplicar a todos los delivery_items de la entrega
+      delivery.delivery_items.update_all(notes: note_text)
+      redirect_back fallback_location: delivery_plan_path(delivery.delivery_plan),
+                    notice: "Nota agregada a todos los productos de la entrega."
+    else
+      # Aplicar solo al delivery_item específico
+      item = delivery.delivery_items.find(params[:target])
+      if item.update(notes: note_text)
+        redirect_back fallback_location: delivery_plan_path(delivery.delivery_plan),
+                      notice: "Nota agregada al producto #{item.order_item.product}."
+      else
+        redirect_back fallback_location: delivery_plan_path(delivery.delivery_plan),
+                      alert: "Error al agregar la nota."
+      end
+    end
+  rescue ActiveRecord::RecordNotFound
+    redirect_back fallback_location: delivery_plans_path,
+                  alert: "Entrega o producto no encontrado."
+  end
+
   private
 
   def set_delivery_item
     @delivery_item = DeliveryItem.find(params[:id])
+  end
+
+  def notes_params
+    params.require(:delivery_item).permit(:notes)
   end
 end

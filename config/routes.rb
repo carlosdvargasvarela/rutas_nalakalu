@@ -89,10 +89,14 @@ Rails.application.routes.draw do
   # Gestión del estado de items individuales en entregas
   resources :delivery_items, only: [ :show ] do
     member do
-      patch :confirm     # Confirmar item para entrega
-      patch :mark_delivered # Marcar item como entregado
-      patch :reschedule  # Reprogramar entrega del item
-      patch :cancel      # Cancelar entrega del item
+      patch :confirm
+      patch :mark_delivered
+      patch :reschedule
+      patch :cancel
+      patch :update_notes
+    end
+    collection do
+      post :bulk_add_notes
     end
   end
 

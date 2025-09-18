@@ -84,7 +84,15 @@
               <% delivery = assignment.delivery %>
               <tr>
                 <td><span class="badge bg-primary"><%= assignment.stop_order %></span></td>
-                <td><%= link_to delivery.order.number, order_path(delivery.order), class: "fw-bold" %></td>
+                <td>
+                  <%= link_to delivery.order.number, order_path(delivery.order), class: "fw-bold" %>
+                  <% has_notes = delivery.delivery_items.any? { |di| di.notes.present? || di.order_item.notes.present? } %>
+                  <% if has_notes %>
+                    <span class="badge bg-warning text-dark ms-1">
+                      <i class="bi bi-sticky"></i> Nota
+                    </span>
+                  <% end %>
+                </td>
                 <td><%= delivery.order.client.name %></td>
                 <td><%= delivery.order.seller.seller_code %></td>
                 <td>
@@ -110,10 +118,17 @@
                 </td>
                 <td>
                   <% if delivery.delivery_items.any? %>
-                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="collapse" data-bs-target="#productosEntrega<%= delivery.id %>">
-                      <i class="bi bi-box-seam"></i> Ver productos
-                    </button>
-                  <% else %><span class="text-muted">Sin productos</span><% end %>
+                    <div class="d-flex gap-1 flex-wrap">
+                      <button class="btn btn-sm btn-outline-info" data-bs-toggle="collapse" data-bs-target="#productosEntrega<%= delivery.id %>">
+                        <i class="bi bi-box-seam"></i> Ver productos
+                      </button>
+                      <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#notaEntregaModal<%= delivery.id %>">
+                        <i class="bi bi-sticky"></i> Agregar nota
+                      </button>
+                    </div>
+                  <% else %>
+                    <span class="text-muted">Sin productos</span>
+                  <% end %>
                 </td>
               </tr>
               <% if delivery.delivery_items.any? %>
@@ -121,8 +136,12 @@
                   <td colspan="10" class="bg-light">
                     <ul class="mb-0 ps-3 small">
                       <% delivery.delivery_items.each do |item| %>
-                        <li><strong><%= item.order_item.product %></strong>
+                        <li>
+                          <strong><%= item.order_item.product %></strong>
                           <span class="badge bg-secondary ms-1"><%= item.quantity_delivered %></span>
+                          <% if item.notes.present? %>
+                            <span class="text-primary ms-1"><i class="bi bi-pin-angle-fill"></i> <em><%= item.notes %></em></span>
+                          <% end %>
                           <% if item.order_item.notes.present? %>
                             <span class="text-muted ms-1"><i class="bi bi-info-circle"></i> <%= item.order_item.notes %></span>
                           <% end %>
@@ -174,16 +193,35 @@
                     <% end %>
                   </p>
                   <span class="badge bg-<%= delivery_status_color(delivery.status) %>"><%= delivery.display_status %></span>
+                  <% has_notes = delivery.delivery_items.any? { |di| di.notes.present? || di.order_item.notes.present? } %>
+                  <% if has_notes %>
+                    <div class="mt-2">
+                      <span class="badge bg-warning text-dark">
+                        <i class="bi bi-sticky"></i> Tiene notas
+                      </span>
+                    </div>
+                  <% end %>
                   <% if delivery.delivery_items.any? %>
                     <div class="mt-2">
-                      <button class="btn btn-sm btn-outline-info w-100" type="button" data-bs-toggle="collapse" data-bs-target="#productosMovil<%= delivery.id %>">
-                        <i class="bi bi-box-seam"></i> Ver productos
-                      </button>
+                      <div class="d-flex gap-1 mb-2">
+                        <button class="btn btn-sm btn-outline-info flex-fill" type="button" data-bs-toggle="collapse" data-bs-target="#productosMovil<%= delivery.id %>">
+                          <i class="bi bi-box-seam"></i> Ver productos
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary flex-fill" data-bs-toggle="modal" data-bs-target="#notaEntregaModal<%= delivery.id %>">
+                          <i class="bi bi-sticky"></i> Agregar nota
+                        </button>
+                      </div>
                       <div class="collapse mt-2" id="productosMovil<%= delivery.id %>">
                         <ul class="small ps-3 mb-0">
                           <% delivery.delivery_items.each do |item| %>
-                            <li><strong><%= item.order_item.product %></strong>
-                              <span class="badge bg-secondary ms-1"><%= item.quantity_delivered %></span></li>
+                            <li>
+                              <strong><%= item.order_item.product %></strong>
+                              <span class="badge bg-secondary ms-1"><%= item.quantity_delivered %></span>
+                              <% if item.notes.present? %>
+                                <br>
+                                <span class="text-primary"><i class="bi bi-pin-angle-fill"></i> <em><%= item.notes %></em></span>
+                              <% end %>
+                            </li>
                           <% end %>
                         </ul>
                       </div>
@@ -200,6 +238,44 @@
     <% end %>
   </div>
 </div>
+<%# ================== MODALES PARA NOTAS ================== %>
+<% @delivery_plan.delivery_plan_assignments.order(:stop_order).each do |assignment| %>
+  <% delivery = assignment.delivery %>
+  <% if delivery.delivery_items.any? %>
+    <div class="modal fade" id="notaEntregaModal<%= delivery.id %>" tabindex="-1" aria-labelledby="notaEntregaLabel<%= delivery.id %>" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="notaEntregaLabel<%= delivery.id %>">
+              <i class="bi bi-sticky me-2"></i> Agregar Nota - Pedido <%= delivery.order.number %>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <%= form_with url: bulk_add_notes_delivery_items_path, method: :post, local: true do |f| %>
+              <%= hidden_field_tag :delivery_id, delivery.id %>
+              <div class="mb-3">
+                <%= label_tag :target, "Aplicar nota a:", class: "form-label" %>
+                <%= select_tag :target,
+                      options_for_select([["📌 Nota general (todos los productos)", "all"]] +
+                      delivery.delivery_items.map { |i| ["#{i.order_item.product} (#{i.quantity_delivered})", i.id] }),
+                      class: "form-select" %>
+              </div>
+              <div class="mb-3">
+                <%= label_tag "note[body]", "Detalle de la nota", class: "form-label" %>
+                <%= text_area_tag "note[body]", nil, class: "form-control", rows: 4, placeholder: "Escribe aquí la nota para el conductor o equipo de logística..." %>
+              </div>
+              <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <%= f.submit "Guardar Nota", class: "btn btn-primary" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% end %>
 <%# ================== MAPA ================== %>
 <div class="card shadow-sm mb-4">
   <div class="card-header bg-light fw-bold"><i class="bi bi-map me-2"></i> Mapa de Ruta</div>

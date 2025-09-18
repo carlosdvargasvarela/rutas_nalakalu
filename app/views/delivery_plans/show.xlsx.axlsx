@@ -78,7 +78,7 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
         delivery.display_status,                                                        # 11. Estado
         delivery.delivery_time_preference.presence || "Sin preferencia",               # 12. Hora
         "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}", # 13. Contacto
-        ""                                                                              # 14. Notas
+        ""                                                                              # 14. Notas (vacío para entregas sin productos)
       ], style: row_style
     else
       # Una fila por cada delivery_item
@@ -95,6 +95,21 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
           default_style
         end
 
+        # 🔹 COMBINAR NOTAS EN LISTADO VERTICAL
+        all_notes = []
+        
+        # Primero las notas de order_item (PRODUCCIÓN)
+        if delivery_item.order_item.notes.present?
+          all_notes << "PRODUCCIÓN: #{delivery_item.order_item.notes}"
+        end
+        
+        # Después las notas de delivery_item (LOGÍSTICA)
+        if delivery_item.notes.present?
+          all_notes << "LOGÍSTICA: #{delivery_item.notes}"
+        end
+        
+        notes_text = all_notes.join("\n")
+
         sheet.add_row [
           delivery.delivery_date.strftime("%d/%m/%Y"),                                    # 1. Fecha de entrega
           delivery.order.number,                                                          # 2. Pedido
@@ -109,14 +124,14 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
           delivery.display_status,                                                        # 11. Estado
           delivery.delivery_time_preference.presence || "Sin preferencia",               # 12. Hora
           "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}", # 13. Contacto
-          delivery_item.order_item.notes.presence || ""                                  # 14. Notas
+          notes_text                                                                      # 14. Notas combinadas con saltos de línea
         ], style: row_style
       end
     end
   end
 
-  # Ajustar ancho de columnas - orden antiguo + nuevas
-  sheet.column_widths 12, 15, 25, 10, 12, 20, 30, 8, 15, 10, 15, 15, 25, 30
+  # Ajustar ancho de columnas - orden antiguo + nuevas (aumenté el ancho de Notas a 40)
+  sheet.column_widths 12, 15, 25, 10, 12, 20, 30, 8, 15, 10, 15, 15, 25, 40
 
   # Opcional: Combinar celdas de fecha si todas son iguales
   if @assignments.any?
