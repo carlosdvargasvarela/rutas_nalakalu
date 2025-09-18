@@ -84,6 +84,8 @@ class Delivery < ApplicationRecord
 
   # Actualiza el estado de la entrega basado en los items
   def update_status_based_on_items
+    return if in_plan? || in_route?   # ⬅ protege estos estados de cambios no deseados
+
     statuses = delivery_items.pluck(:status)
     return if statuses.empty?
 
@@ -99,9 +101,8 @@ class Delivery < ApplicationRecord
       update_column(:status, Delivery.statuses[:in_route])
     elsif statuses.all? { |s| [ "pending", "confirmed" ].include?(s) }
       update_column(:status, Delivery.statuses[:scheduled])
-    else
-      update_column(:status, Delivery.statuses[:scheduled])
     end
+    # 🚫 nada de else → no forzar "scheduled"
   end
 
   # Scope para entregas de una semana específica
