@@ -19,6 +19,11 @@
     <%= link_to delivery_plan_path(@delivery_plan, format: :xlsx), class: "btn btn-outline-success btn-sm" do %>
       <i class="bi bi-file-earmark-excel"></i> Exportar Excel
     <% end %>
+    <%= link_to delivery_plan_path(@delivery_plan, format: :pdf),
+            class: "btn btn-outline-danger btn-sm",
+            download: "Hoja_Ruta_#{@from_date&.strftime('%d_%m_%Y')}_#{@delivery_plan.truck.presence || 'Sin_Camion'}.pdf" do %>
+      <i class="bi bi-filetype-pdf"></i> Exportar PDF
+    <% end %>
     <%= link_to edit_delivery_plan_path(@delivery_plan), class: "btn btn-outline-primary btn-sm" do %>
       <i class="bi bi-pencil"></i> Editar plan
     <% end %>

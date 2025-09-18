@@ -28,18 +28,30 @@ default_style = wb.styles.add_style(
 )
 
 wb.add_worksheet(name: "Plan de Ruta") do |sheet|
-  # Headers con estilo
+  # Headers con estilo - coinciden exactamente con la tabla del show
   sheet.add_row [
-    "Fecha de entrega", "Pedido", "Producto", "Cantidad", 
-    "Vendedor", "Cliente", "Dirección", "# Parada", 
-    "Conductor", "Camión", "Estado"
+    "# Parada",
+    "Pedido", 
+    "Cliente",
+    "Vendedor",
+    "Dirección",
+    "Hora",
+    "Fecha",
+    "Estado",
+    "Contacto",
+    "Producto",
+    "Cantidad",
+    "Notas",
+    "Conductor",
+    "Camión"
   ], style: header_style
 
   # Datos con formato condicional
   @assignments.each do |assignment|
     delivery = assignment.delivery
-    delivery.delivery_items.each do |delivery_item|
-
+    
+    # Si no hay delivery_items, crear una fila sin productos
+    if delivery.delivery_items.empty?
       # Determinar estilo según estado
       row_style = case delivery.status
       when "scheduled"
@@ -53,32 +65,69 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
       end
 
       sheet.add_row [
-        delivery.delivery_date.strftime("%d/%m/%Y"),
-        delivery.order.number,
-        delivery_item.order_item.product,
-        delivery_item.order_item.quantity,
-        delivery.order.seller.seller_code,
-        delivery.order.client.name,
-        delivery.delivery_address.address,
         assignment.stop_order,
+        delivery.order.number,
+        delivery.order.client.name,
+        delivery.order.seller.seller_code,
+        [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),
+        delivery.delivery_time_preference.presence || "Sin preferencia",
+        delivery.delivery_date.strftime("%d/%m/%Y"),
+        delivery.display_status,
+        "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
+        "Sin productos",
+        "",
+        "",
         @delivery_plan.driver&.name || "Sin asignar",
-        @delivery_plan.truck || "Sin asignar",
-        delivery.display_status
+        @delivery_plan.truck || "Sin asignar"
       ], style: row_style
+    else
+      # Una fila por cada delivery_item
+      delivery.delivery_items.each do |delivery_item|
+        # Determinar estilo según estado
+        row_style = case delivery.status
+        when "scheduled"
+          scheduled_style
+        when "ready_to_deliver"
+          ready_style
+        when "confirmed"
+          confirmed_style
+        else
+          default_style
+        end
+
+        sheet.add_row [
+          assignment.stop_order,
+          delivery.order.number,
+          delivery.order.client.name,
+          delivery.order.seller.seller_code,
+          [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),
+          delivery.delivery_time_preference.presence || "Sin preferencia",
+          delivery.delivery_date.strftime("%d/%m/%Y"),
+          delivery.display_status,
+          "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
+          delivery_item.order_item.product,
+          delivery_item.quantity_delivered,
+          delivery_item.order_item.notes.presence || "",
+          @delivery_plan.driver&.name || "Sin asignar",
+          @delivery_plan.truck || "Sin asignar"
+        ], style: row_style
+      end
     end
   end
 
-  # Ajustar ancho de columnas
-  sheet.column_widths 12, 15, 25, 10, 12, 20, 30, 8, 15, 10, 15
+  # Ajustar ancho de columnas para que se vea bien
+  sheet.column_widths 8, 15, 20, 12, 35, 15, 12, 15, 25, 25, 10, 30, 15, 12
 
-  # Opcional: Combinar celdas de fecha si todas son iguales
+  # Opcional: Agregar filtros automáticos
   if @assignments.any?
-    first_date = @assignments.first.delivery.delivery_date.strftime("%d/%m/%Y")
-    if @assignments.all? { |a| a.delivery.delivery_date.strftime("%d/%m/%Y") == first_date }
-      total_rows = @assignments.sum { |a| a.delivery.delivery_items.count }
-      if total_rows > 1
-        sheet.merge_cells("A2:A#{total_rows + 1}")
-      end
-    end
+    total_rows = 1 + @assignments.sum { |a| [a.delivery.delivery_items.count, 1].max }
+    sheet.auto_filter = "A1:N#{total_rows}"
+  end
+
+  # Opcional: Congelar la primera fila (headers)
+  sheet.sheet_view.pane do |pane|
+    pane.top_left_cell = "A2"
+    pane.state = :frozen
+    pane.y_split = 1
   end
 end

@@ -83,8 +83,70 @@ class DeliveryPlansController < ApplicationController
     respond_to do |format|
       format.html
       format.xlsx {
-        response.headers["Content-Disposition"] = "attachment; filename=plan_ruta_#{@from_date&.strftime('%d_%m_%Y')}_#{@to_date&.strftime('%d_%m_%Y')}.xlsx"
+        response.headers["Content-Disposition"] = "attachment; filename=Hoja_Ruta_#{@from_date&.strftime('%d_%m_%Y')}_#{@delivery_plan.truck.presence || 'Sin_Camion'}.xlsx"
       }
+      format.pdf do
+        pdf_title = "Hoja_Ruta_#{@from_date&.strftime('%d_%m_%Y')}_#{@delivery_plan.truck.presence || 'Sin_Camion'}"
+
+        pdf = Prawn::Document.new(page_size: "A2", page_layout: :landscape) # Hoja A3 landscape
+
+        pdf.text pdf_title, size: 16, style: :bold, align: :center
+        pdf.move_down 20
+
+        headers = [
+          "# Parada", "Pedido", "Cliente", "Vendedor",
+          "Dirección", # <-- Aquí vamos a incluir el link
+          "Hora", "Fecha", "Estado", "Contacto", "Teléfono",
+          "Producto", "Cantidad", "Notas"
+        ]
+
+        rows = @assignments.flat_map do |assignment|
+          delivery = assignment.delivery
+          address = delivery.delivery_address
+
+          delivery.delivery_items.map do |item|
+            address_text = [address.address, address.description].compact.join(" - ")
+            map_link_text = ""
+
+            if address.latitude.present? && address.longitude.present?
+              map_link_text = " (Maps: https://www.google.com/maps?q=#{address.latitude},#{address.longitude})"
+            elsif address.address.present?
+              map_link_text = " (Maps: https://www.google.com/maps/search/?api=1&query=#{ERB::Util.url_encode(address.address)})"
+            end
+
+            # Combinamos la dirección y el link de Maps
+            full_address_cell = "#{address_text}#{map_link_text}"
+
+            [
+              assignment.stop_order,
+              delivery.order.number,
+              delivery.order.client.name,
+              delivery.order.seller.seller_code,
+              full_address_cell, # <-- Usamos la celda combinada
+              delivery.delivery_time_preference.presence || "Sin preferencia",
+              I18n.l(delivery.delivery_date, format: :long),
+              delivery.display_status,
+              delivery.contact_name,
+              delivery.contact_phone.presence || "-",
+              item.order_item.product,
+              item.quantity_delivered,
+              item.order_item.notes
+            ]
+          end
+        end
+
+        pdf.table([headers] + rows,
+                  header: true,
+                  row_colors: ["F0F0F0", "FFFFFF"],
+                  position: :center,
+                  cell_style: { inline_format: true } # <-- ¡Importante para que los links sean clickeables!
+                )
+
+        send_data pdf.render,
+                  filename: "#{pdf_title}.pdf",
+                  type: "application/pdf",
+                  disposition: "attachment"
+      end
     end
   end
 
