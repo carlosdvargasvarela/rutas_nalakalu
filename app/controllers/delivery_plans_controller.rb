@@ -117,12 +117,18 @@ class DeliveryPlansController < ApplicationController
             # Combinamos la dirección y el link de Maps
             full_address_cell = "#{address_text}#{map_link_text}"
 
+            # 🔹 Combinar notas en listado
+            all_notes = []
+            all_notes << "PRODUCCIÓN: #{item.order_item.notes}" if item.order_item.notes.present?
+            all_notes << "LOGÍSTICA: #{item.notes}" if item.notes.present?
+            notes_text = all_notes.join("\n")
+
             [
               assignment.stop_order,
               delivery.order.number,
               delivery.order.client.name,
               delivery.order.seller.seller_code,
-              full_address_cell, # <-- Usamos la celda combinada
+              full_address_cell,
               delivery.delivery_time_preference.presence || "Sin preferencia",
               I18n.l(delivery.delivery_date, format: :long),
               delivery.display_status,
@@ -130,7 +136,7 @@ class DeliveryPlansController < ApplicationController
               delivery.contact_phone.presence || "-",
               item.order_item.product,
               item.quantity_delivered,
-              item.order_item.notes
+              notes_text
             ]
           end
         end
