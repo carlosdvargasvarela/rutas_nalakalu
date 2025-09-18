@@ -13,6 +13,15 @@
           <%= f.search_field :order_client_name_cont, class: "form-control", placeholder: "Cliente" %>
         </div>
       </div>
+      <!-- Dirección -->
+      <div class="col-md-3">
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+          <%= f.search_field :delivery_address_address_cont, 
+            class: "form-control", 
+            placeholder: "Dirección" %>
+        </div>
+      </div>
       <!-- Vendedor -->
       <div class="col-md-2">
         <div class="input-group">
