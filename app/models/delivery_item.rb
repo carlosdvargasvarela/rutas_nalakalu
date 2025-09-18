@@ -150,18 +150,7 @@ class DeliveryItem < ApplicationRecord
 
   # Notifica cuando todos los productos de una entrega están confirmados
   def notify_all_confirmed
-    return unless status == "confirmed"
-
-    delivery = self.delivery
-    # Solo cuenta los delivery_items que siguen en este delivery
-    all_confirmed = delivery.delivery_items.all? { |di| di.status == "confirmed" }
-
-    if all_confirmed
-      users = User.where(role: [ :logistics, :admin ])
-      users << delivery.delivery_plan.driver if delivery.delivery_plan&.driver
-      message = "Todos los productos del pedido #{delivery.order.number} para la entrega del #{delivery.delivery_date.strftime('%d/%m/%Y')} fueron confirmados por el vendedor."
-      NotificationService.create_for_users(users.uniq, delivery, message)
-    end
+    delivery.notify_all_confirmed
   end
 
   # Notifica cuando un item individual es confirmado
@@ -191,7 +180,7 @@ class DeliveryItem < ApplicationRecord
     if all_ready
       seller_user = delivery.order.seller.user
       message = "Todos los productos del pedido #{delivery.order.number} para la entrega del #{delivery.delivery_date.strftime('%d/%m/%Y')} están listos para entrega."
-      NotificationService.create_for_users([seller_user], delivery, message)
+      NotificationService.create_for_users([ seller_user ], delivery, message)
     end
   end
 

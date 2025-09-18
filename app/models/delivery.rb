@@ -96,7 +96,11 @@ class Delivery < ApplicationRecord
     elsif statuses.all? { |s| s == "rescheduled" }
       update_column(:status, Delivery.statuses[:rescheduled])
     elsif statuses.all? { |s| [ "rescheduled", "confirmed" ].include?(s) }
-      update_column(:status, Delivery.statuses[:ready_to_deliver])
+      if delivery_plans.exists?
+        update_column(:status, Delivery.statuses[:in_plan])
+      else
+        update_column(:status, Delivery.statuses[:ready_to_deliver])
+      end
     elsif statuses.any? { |s| s == "in_route" }
       update_column(:status, Delivery.statuses[:in_route])
     elsif statuses.all? { |s| [ "pending", "confirmed" ].include?(s) }
@@ -226,22 +230,17 @@ class Delivery < ApplicationRecord
     end
   end
 
-  private
-
   def notify_all_confirmed
-    return unless confirmed?  # Usa el método que ya tienes
+    return unless delivery_items.all? { |di| di.status == "confirmed" }
 
-    items = delivery_items
-    all_confirmed = items.all? { |di| di.status == "confirmed" }
-
-    if all_confirmed
-      users = User.where(role: [ :logistics, :admin ])
+      users = User.where(role: [ :logistics, :admin ]).to_a
       users << delivery_plan.driver if delivery_plan&.driver
+
       message = "Todos los productos del pedido #{order.number} para la entrega del #{delivery_date.strftime('%d/%m/%Y')} fueron confirmados por el vendedor."
-      NotificationService.create_for_users(users.uniq, self, message)
-    end
+      NotificationService.create_for_users(users.compact.uniq, self, message)
   end
 
+  private
   def self.status_options_for_select
     statuses.keys.map do |s|
       [ Delivery.new(status: s).display_status, s ]
