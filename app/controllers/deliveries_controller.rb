@@ -232,22 +232,23 @@ class DeliveriesController < ApplicationController
     new_date = params[:new_date].presence && Date.parse(params[:new_date])
     raise "Debes seleccionar una nueva fecha" unless new_date
 
-    old_date = @delivery.delivery_date
+    old_date   = @delivery.delivery_date
+    old_status = @delivery.status.to_sym   # ✅ guardamos estado original
+
     raise "La nueva fecha debe ser diferente a la original" if new_date == old_date
 
     ActiveRecord::Base.transaction do
-      # Crear la nueva entrega
+      # Crear la nueva entrega clonada
       new_delivery = @delivery.dup
       new_delivery.delivery_date = new_date
-      new_delivery.status = :scheduled
+      new_delivery.status = old_status      # ✅ hereda el estado de la original
       new_delivery.save!
 
-      # 🔑 CRÍTICO: Limpiar la asociación clonada para evitar el error de ActiveRecord::Relation
+      # Limpiar items clonados
       new_delivery.delivery_items = []
 
-      # Copiar TODOS los delivery_items que no estén finalizados
+      # Copiar los items no finalizados
       items_to_reschedule = @delivery.delivery_items.where.not(status: [ :delivered, :cancelled, :rescheduled ])
-
       items_to_reschedule.find_each do |item|
         DeliveryItem.create!(
           delivery: new_delivery,
@@ -259,9 +260,10 @@ class DeliveriesController < ApplicationController
         item.update!(status: :rescheduled)
       end
 
-      @delivery.update_status_based_on_items
+      # Dejar la entrega original marcada como rescheduled
+      @delivery.update_column(:status, :rescheduled)   # ✅ queda histórico
 
-      # Notificar a usuarios relevantes
+      # Notificar
       users = User.where(role: [ :admin, :seller, :production_manager ])
       message = "La entrega del pedido #{@delivery.order.number} con fecha original de #{l old_date, format: :long} fue reagendada para el #{l new_date, format: :long}."
       NotificationService.create_for_users(users, new_delivery, message, type: "reschedule_delivery")

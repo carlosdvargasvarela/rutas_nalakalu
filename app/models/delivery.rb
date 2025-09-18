@@ -106,7 +106,6 @@ class Delivery < ApplicationRecord
     elsif statuses.all? { |s| [ "pending", "confirmed" ].include?(s) }
       update_column(:status, Delivery.statuses[:scheduled])
     end
-    # 🚫 nada de else → no forzar "scheduled"
   end
 
   # Scope para entregas de una semana específica
