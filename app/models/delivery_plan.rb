@@ -11,7 +11,7 @@ class DeliveryPlan < ApplicationRecord
 
   enum status: { draft: 0, sent_to_logistics: 1, routes_created: 2 }
 
-  enum truck: { PRI: 0, PRU: 1, GRU: 2, GRI: 3, GRIR: 4, PickUp_Ricardo: 5, PickUp_Ruben: 6 }
+  enum truck: { PRI: 0, PRU: 1, GRU: 2, GRI: 3, GRIR: 4, PickUp_Ricardo: 5, PickUp_Ruben: 6, Recoje_Sala: 7 }
 
   validates :week, :year, presence: true
 
