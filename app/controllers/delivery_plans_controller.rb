@@ -131,7 +131,6 @@ class DeliveryPlansController < ApplicationController
               full_address_cell,
               delivery.delivery_time_preference.presence || "Sin preferencia",
               I18n.l(delivery.delivery_date, format: :long),
-              delivery.display_status,
               delivery.contact_name,
               delivery.contact_phone.presence || "-",
               item.order_item.product,
