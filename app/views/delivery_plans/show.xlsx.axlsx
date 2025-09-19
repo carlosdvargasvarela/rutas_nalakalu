@@ -1,25 +1,27 @@
 wb = xlsx_package.workbook
 
-# Definir estilos
+# =====================
+# Estilos
+# =====================
 header_style = wb.styles.add_style(
   bg_color: "4472C4",
-  fg_color: "FFFFFF", 
+  fg_color: "FFFFFF",
   b: true,
   alignment: { horizontal: :center }
 )
 
 scheduled_style = wb.styles.add_style(
-  bg_color: "FFF2CC",  # Amarillo claro para alertar
+  bg_color: "FFF2CC",
   border: { style: :thin, color: "D6B656" }
 )
 
 ready_style = wb.styles.add_style(
-  bg_color: "E2EFDA",  # Verde claro
+  bg_color: "E2EFDA",
   border: { style: :thin, color: "70AD47" }
 )
 
 confirmed_style = wb.styles.add_style(
-  bg_color: "DEEBF7",  # Azul claro
+  bg_color: "DEEBF7",
   border: { style: :thin, color: "5B9BD5" }
 )
 
@@ -27,133 +29,125 @@ default_style = wb.styles.add_style(
   border: { style: :thin, color: "CCCCCC" }
 )
 
+# =====================
+# Hoja
+# =====================
 wb.add_worksheet(name: "Plan de Ruta") do |sheet|
-  # Headers con estilo - ORDEN ANTIGUO + columnas nuevas al final
+  # =====================
+  # Header
+  # =====================
   sheet.add_row [
-    "Fecha de entrega",  # 1. Original
-    "Pedido",           # 2. Original
-    "Producto",         # 3. Original
-    "Cantidad",         # 4. Original
-    "Vendedor",         # 5. Original
-    "Cliente",          # 6. Original
-    "Dirección",        # 7. Original
-    "# Parada",         # 8. Original
-    "Conductor",        # 9. Original
-    "Camión",           # 10. Original
-    "Estado",           # 11. Original
-    "Hora",             # 12. NUEVA (del formato nuevo)
-    "Contacto",         # 13. NUEVA (del formato nuevo)
-    "Notas"             # 14. NUEVA (del formato nuevo)
+    "Fecha de entrega",
+    "Pedido",
+    "Producto",
+    "Cantidad",
+    "Vendedor",
+    "Cliente",
+    "Dirección",
+    "# Parada",
+    "Conductor",
+    "Camión",
+    "Estado",
+    "Hora",
+    "Contacto",
+    "Notas"
   ], style: header_style
 
-  # Datos con formato condicional
+  # =====================
+  # Filas de datos
+  # =====================
   @assignments.each do |assignment|
     delivery = assignment.delivery
-    
-    # Si no hay delivery_items, crear una fila sin productos
-    if delivery.delivery_items.empty?
-      # Determinar estilo según estado
+
+    if delivery.active_items_for_plan.empty?
+      # Estilo según estado
       row_style = case delivery.status
-      when "scheduled"
-        scheduled_style
-      when "ready_to_deliver"
-        ready_style
-      when "confirmed"
-        confirmed_style
-      else
-        default_style
-      end
+                  when "scheduled"        then scheduled_style
+                  when "ready_to_deliver" then ready_style
+                  when "confirmed"        then confirmed_style
+                  else default_style
+                  end
 
       sheet.add_row [
-        delivery.delivery_date.strftime("%d/%m/%Y"),                                    # 1. Fecha de entrega
-        delivery.order.number,                                                          # 2. Pedido
-        "Sin productos",                                                                # 3. Producto
-        "",                                                                             # 4. Cantidad
-        delivery.order.seller.seller_code,                                             # 5. Vendedor
-        delivery.order.client.name,                                                    # 6. Cliente
-        [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "), # 7. Dirección
-        assignment.stop_order,                                                          # 8. # Parada
-        @delivery_plan.driver&.name || "Sin asignar",                                  # 9. Conductor
-        @delivery_plan.truck || "Sin asignar",                                         # 10. Camión
-        delivery.display_status,                                                        # 11. Estado
-        delivery.delivery_time_preference.presence || "Sin preferencia",               # 12. Hora
-        "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}", # 13. Contacto
-        ""                                                                              # 14. Notas (vacío para entregas sin productos)
+        delivery.delivery_date.strftime("%d/%m/%Y"),
+        delivery.order.number,
+        "Sin productos",
+        "",
+        delivery.order.seller.seller_code,
+        delivery.order.client.name,
+        [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),
+        assignment.stop_order,
+        @delivery_plan.driver&.name || "Sin asignar",
+        @delivery_plan.truck || "Sin asignar",
+        delivery.display_status,
+        delivery.delivery_time_preference.presence || "Sin preferencia",
+        "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
+        ""
       ], style: row_style
-    else
-      # Una fila por cada delivery_item
-      delivery.delivery_items.each do |delivery_item|
-        # Determinar estilo según estado
-        row_style = case delivery.status
-        when "scheduled"
-          scheduled_style
-        when "ready_to_deliver"
-          ready_style
-        when "confirmed"
-          confirmed_style
-        else
-          default_style
-        end
 
-        # 🔹 COMBINAR NOTAS EN LISTADO VERTICAL
+    else
+      delivery.active_items_for_plan.each do |delivery_item|
+        # Estilo según estado
+        row_style = case delivery.status
+                    when "scheduled"        then scheduled_style
+                    when "ready_to_deliver" then ready_style
+                    when "confirmed"        then confirmed_style
+                    else default_style
+                    end
+
+        # Combinar notas
         all_notes = []
-        
-        # Primero las notas de order_item (PRODUCCIÓN)
-        if delivery_item.order_item.notes.present?
-          all_notes << "PRODUCCIÓN: #{delivery_item.order_item.notes}"
-        end
-        
-        # Después las notas de delivery_item (LOGÍSTICA)
-        if delivery_item.notes.present?
-          all_notes << "LOGÍSTICA: #{delivery_item.notes}"
-        end
-        
+        all_notes << "PRODUCCIÓN: #{delivery_item.order_item.notes}" if delivery_item.order_item.notes.present?
+        all_notes << "LOGÍSTICA: #{delivery_item.notes}" if delivery_item.notes.present?
         notes_text = all_notes.join("\n")
 
         sheet.add_row [
-          delivery.delivery_date.strftime("%d/%m/%Y"),                                    # 1. Fecha de entrega
-          delivery.order.number,                                                          # 2. Pedido
-          delivery_item.order_item.product,                                               # 3. Producto
-          delivery_item.quantity_delivered,                                               # 4. Cantidad
-          delivery.order.seller.seller_code,                                             # 5. Vendedor
-          delivery.order.client.name,                                                    # 6. Cliente
-          [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "), # 7. Dirección
-          assignment.stop_order,                                                          # 8. # Parada
-          @delivery_plan.driver&.name || "Sin asignar",                                  # 9. Conductor
-          @delivery_plan.truck || "Sin asignar",                                         # 10. Camión
-          delivery.display_status,                                                        # 11. Estado
-          delivery.delivery_time_preference.presence || "Sin preferencia",               # 12. Hora
-          "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}", # 13. Contacto
-          notes_text                                                                      # 14. Notas combinadas con saltos de línea
+          delivery.delivery_date.strftime("%d/%m/%Y"),
+          delivery.order.number,
+          delivery_item.order_item.product,
+          delivery_item.quantity_delivered,
+          delivery.order.seller.seller_code,
+          delivery.order.client.name,
+          [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),
+          assignment.stop_order,
+          @delivery_plan.driver&.name || "Sin asignar",
+          @delivery_plan.truck || "Sin asignar",
+          delivery.display_status,
+          delivery.delivery_time_preference.presence || "Sin preferencia",
+          "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
+          notes_text
         ], style: row_style
       end
     end
   end
 
-  # Ajustar ancho de columnas - orden antiguo + nuevas (aumenté el ancho de Notas a 40)
+  # =====================
+  # Ajustes de hoja
+  # =====================
   sheet.column_widths 12, 15, 25, 10, 12, 20, 30, 8, 15, 10, 15, 15, 25, 40
 
-  # Opcional: Combinar celdas de fecha si todas son iguales
+  # Combinar celdas de fecha si todas son iguales
   if @assignments.any?
     first_date = @assignments.first.delivery.delivery_date.strftime("%d/%m/%Y")
+
     if @assignments.all? { |a| a.delivery.delivery_date.strftime("%d/%m/%Y") == first_date }
-      total_rows = @assignments.sum { |a| [a.delivery.delivery_items.count, 1].max }
+      total_rows = @assignments.sum { |a| [a.delivery.active_items_for_plan.count, 1].max }
       if total_rows > 1
         sheet.merge_cells("A2:A#{total_rows + 1}")
       end
     end
   end
 
-  # Opcional: Agregar filtros automáticos
+  # Filtros automáticos
   if @assignments.any?
-    total_rows = 1 + @assignments.sum { |a| [a.delivery.delivery_items.count, 1].max }
+    total_rows = 1 + @assignments.sum { |a| [a.delivery.active_items_for_plan.count, 1].max }
     sheet.auto_filter = "A1:N#{total_rows}"
   end
 
-  # Opcional: Congelar la primera fila (headers)
+  # Congelar primera fila
   sheet.sheet_view.pane do |pane|
-    pane.top_left_cell = "A2"
-    pane.state = :frozen
     pane.y_split = 1
+    pane.state   = :frozen
+    pane.top_left_cell = "A2"
   end
 end

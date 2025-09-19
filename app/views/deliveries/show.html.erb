@@ -9,7 +9,6 @@
     <% end %>
   <% end %>
 </div>
-
 <div class="row mb-4">
   <!-- Información General -->
   <div class="col-md-4 mb-3">
@@ -35,7 +34,6 @@
       </div>
     </div>
   </div>
-
   <!-- Información del Pedido -->
   <div class="col-md-4 mb-3">
     <div class="card shadow-sm h-100">
@@ -59,7 +57,6 @@
       </div>
     </div>
   </div>
-
   <!-- Dirección de Entrega -->
   <div class="col-md-4 mb-3">
     <div class="card shadow-sm h-100">
@@ -81,7 +78,6 @@
       </div>
     </div>
   </div>
-
   <!-- Mapa -->
   <div class="col-12 mb-4">
     <div class="card shadow-sm">
@@ -106,7 +102,6 @@
     </div>
   </div>
 </div>
-
 <!-- Historial de entregas -->
 <% if @delivery_history.size > 1 %>
   <div class="card shadow-sm mb-4">
@@ -158,7 +153,6 @@
     </div>
   </div>
 <% end %>
-
 <div class="card shadow-sm mb-4">
   <div class="card-header d-flex justify-content-between align-items-center bg-light">
     <span>
@@ -266,6 +260,18 @@
                         <%= render partial: "delivery_items/reschedule_form",
                                    locals: { item: item, future_deliveries: @future_deliveries } %>
                       </div>
+                    <% when 'confirmed', 'in_route' %>
+                      <%= button_to mark_delivered_delivery_item_path(item), method: :patch,
+                          class: "btn btn-success btn-sm me-1",
+                          data: { turbo_confirm: "¿Marcar este producto como entregado?" },
+                          title: "Marcar entregado" do %>
+                        <i class="bi bi-check2-circle"></i> Entregado
+                      <% end %>
+                      <%= button_to cancel_delivery_item_path(item), method: :patch,
+                          class: "btn btn-danger btn-sm",
+                          data: { turbo_confirm: "¿Está seguro?" }, title: "Cancelar" do %>
+                        <i class="bi bi-x-circle"></i> Cancelar
+                      <% end %>
                     <% when 'delivered' %>
                       <span class="text-success"><i class="bi bi-check2-circle"></i> Entregado</span>
                     <% else %>

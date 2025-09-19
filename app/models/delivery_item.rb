@@ -29,6 +29,7 @@ class DeliveryItem < ApplicationRecord
   # ============================================================================
 
   scope :service_cases, -> { where(service_case: true) }
+  scope :eligible_for_plan, -> { where.not(status: [ :delivered, :cancelled, :rescheduled ]) }
 
   # ============================================================================
   # VALIDACIONES
@@ -79,6 +80,7 @@ class DeliveryItem < ApplicationRecord
   def mark_as_delivered!
     transaction do
       update!(status: :delivered)
+      update_delivery_status
     end
   end
 

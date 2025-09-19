@@ -15,21 +15,22 @@ class DeliveryPlanAssignment < ApplicationRecord
 
   def change_deliveries_statuses
     unless delivery_plan.draft? && delivery.scheduled?
-      delivery.delivery_items.update_all(status: DeliveryItem.statuses[:in_plan])
+      # ✅ Solo actualizar los items confirmados a in_plan
+      delivery.delivery_items
+              .where(status: DeliveryItem.statuses[:confirmed])
+              .update_all(status: DeliveryItem.statuses[:in_plan])
+
       delivery.update_columns(status: Delivery.statuses[:in_plan])
     end
   end
 
   def revert_statuses
-    delivery.delivery_items.find_each do |item|
-      new_status = item.confirmed? ? :confirmed : :pending
-      item.update_columns(status: DeliveryItem.statuses[new_status])
-    end
+    # ✅ Solo revertir los items que están en plan
+    delivery.delivery_items
+            .where(status: DeliveryItem.statuses[:in_plan])
+            .update_all(status: DeliveryItem.statuses[:confirmed])
 
-    if delivery.delivery_items.where.not(status: DeliveryItem.statuses[:pending]).exists?
-      delivery.update_columns(status: Delivery.statuses[:ready_to_deliver])
-    else
-      delivery.update_columns(status: Delivery.statuses[:scheduled])
-    end
+    # Actualizar el estado del delivery basado en sus items actuales
+    delivery.update_status_based_on_items
   end
 end

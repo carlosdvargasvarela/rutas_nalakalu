@@ -95,8 +95,8 @@ class DeliveryPlansController < ApplicationController
 
         headers = [
           "# Parada", "Pedido", "Cliente", "Vendedor",
-          "Dirección", # <-- Aquí vamos a incluir el link
-          "Hora", "Fecha", "Estado", "Contacto", "Teléfono",
+          "Dirección",
+          "Hora", "Fecha", "Contacto", "Teléfono",
           "Producto", "Cantidad", "Notas"
         ]
 
@@ -104,7 +104,7 @@ class DeliveryPlansController < ApplicationController
           delivery = assignment.delivery
           address = delivery.delivery_address
 
-          delivery.delivery_items.map do |item|
+          delivery.active_items_for_plan.map do |item|
             address_text = [address.address, address.description].compact.join(" - ")
             map_link_text = ""
 

@@ -37,11 +37,11 @@ class Delivery < ApplicationRecord
   scope :normal_deliveries, -> { where(delivery_type: :normal) }
   scope :pending, -> { where(status: [ :scheduled, :ready_to_deliver, :in_route ]) }
   scope :overdue, -> {
-  where("delivery_date < ?", Date.current)
-    .where.not(status: [ Delivery.statuses[:delivered],
-                         Delivery.statuses[:rescheduled],
-                         Delivery.statuses[:cancelled] ])}
-  scope :eligible_for_plan, -> { where(status: [ :scheduled, :ready_to_deliver ]) }
+                      where("delivery_date < ?", Date.current)
+                        .where.not(status: [ Delivery.statuses[:delivered],
+                                            Delivery.statuses[:rescheduled],
+                                            Delivery.statuses[:cancelled] ])}
+  scope :eligible_for_plan, -> { where.not(status: [ :delivered, :cancelled, :rescheduled, :in_plan, :in_route ]) }
   scope :not_assigned_to_plan, -> { where.not(id: DeliveryPlanAssignment.select(:delivery_id)) }
   scope :available_for_plan, -> { eligible_for_plan.not_assigned_to_plan }
 
@@ -95,7 +95,7 @@ class Delivery < ApplicationRecord
       update_column(:status, Delivery.statuses[:cancelled])
     elsif statuses.all? { |s| s == "rescheduled" }
       update_column(:status, Delivery.statuses[:rescheduled])
-    elsif statuses.all? { |s| [ "rescheduled", "confirmed" ].include?(s) }
+    elsif statuses.all? { |s| [ "rescheduled", "confirmed", "delivered" ].include?(s) }
       if delivery_plans.exists?
         update_column(:status, Delivery.statuses[:in_plan])
       else
@@ -106,6 +106,10 @@ class Delivery < ApplicationRecord
     elsif statuses.all? { |s| [ "pending", "confirmed" ].include?(s) }
       update_column(:status, Delivery.statuses[:scheduled])
     end
+  end
+
+  def active_items_for_plan
+    delivery_items.eligible_for_plan
   end
 
   # Scope para entregas de una semana específica

@@ -106,7 +106,7 @@
               </td>
               <td>
                 <ul class="mb-0 ps-3 small">
-                  <% delivery.delivery_items.each do |item| %>
+                  <% delivery.active_items_for_plan.each do |item| %>
                     <li><span class="badge bg-secondary"><%= item.quantity_delivered %></span> <%= item.order_item.product %></li>
                   <% end %>
                 </ul>

@@ -17,6 +17,12 @@ class DeliveryItemsController < ApplicationController
   end
 
   def mark_delivered
+    if @delivery_item.rescheduled?
+      redirect_back fallback_location: delivery_path(@delivery_item.delivery),
+                    alert: "No se puede marcar como entregado un producto reagendado."
+      return
+    end
+
     @delivery_item.mark_as_delivered!
     redirect_back fallback_location: delivery_path(@delivery_item.delivery),
                   notice: "Producto marcado como entregado."
