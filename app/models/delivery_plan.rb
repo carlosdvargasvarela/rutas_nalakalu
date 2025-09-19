@@ -103,7 +103,7 @@ class DeliveryPlan < ApplicationRecord
   end
 
   def all_deliveries_confirmed?
-    deliveries.all?(&:confirmed?)
+    deliveries.all?(&:confirmed?) || deliveries.all?(&:in_plan?) 
   end
 
   private
