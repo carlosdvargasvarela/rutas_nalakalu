@@ -94,10 +94,10 @@ class DeliveryPlansController < ApplicationController
         pdf.move_down 20
 
         headers = [
-          "# Parada", "Pedido", "Cliente", "Vendedor",
+          "# Parada", "Pedido",
+          "Producto", "Cantidad", "Cliente", "Vendedor",
           "Dirección",
-          "Hora", "Fecha", "Contacto", "Teléfono",
-          "Producto", "Cantidad", "Notas"
+          "Hora", "Fecha", "Contacto", "Teléfono", "Notas"
         ]
 
         rows = @assignments.flat_map do |assignment|
@@ -126,6 +126,8 @@ class DeliveryPlansController < ApplicationController
             [
               assignment.stop_order,
               delivery.order.number,
+              item.order_item.product,
+              item.quantity_delivered,
               delivery.order.client.name,
               delivery.order.seller.seller_code,
               full_address_cell,
@@ -133,8 +135,6 @@ class DeliveryPlansController < ApplicationController
               I18n.l(delivery.delivery_date, format: :long),
               delivery.contact_name,
               delivery.contact_phone.presence || "-",
-              item.order_item.product,
-              item.quantity_delivered,
               notes_text
             ]
           end
