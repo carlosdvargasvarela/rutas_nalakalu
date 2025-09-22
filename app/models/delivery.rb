@@ -26,10 +26,11 @@ class Delivery < ApplicationRecord
 
   # Nuevos tipos de delivery
   enum delivery_type: {
-    normal: 0,           # Entrega normal de productos
-    pickup: 1,           # Recogida de producto en casa del cliente
-    return_delivery: 2,  # Devolución de producto reparado
-    onsite_repair: 3     # Reparación en sitio del cliente
+    normal: 0,
+    pickup: 1,
+    return_delivery: 2,
+    onsite_repair: 3,
+    internal_delivery: 4
   }
 
   # Scopes útiles
@@ -65,10 +66,11 @@ class Delivery < ApplicationRecord
 
   def display_type
     case delivery_type
-    when "normal"         then "Entrega normal"
-    when "pickup"         then "Recogida de producto"
+    when "normal"          then "Entrega normal"
+    when "pickup"          then "Recogida de producto"
     when "return_delivery" then "Devolución de producto"
-    when "onsite_repair"  then "Reparación en sitio"
+    when "onsite_repair"   then "Reparación en sitio"
+    when "internal_delivery" then "Mandado Interno" # <-- Texto para la vista
     else delivery_type.to_s.humanize
     end
   end

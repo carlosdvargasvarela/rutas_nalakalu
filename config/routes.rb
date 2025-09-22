@@ -53,13 +53,17 @@ Rails.application.routes.draw do
   # Gestión completa de entregas de muebles
   resources :deliveries, only: [ :index, :show, :new, :create, :edit, :update ] do
     collection do
-      get :by_week              # Filtrar entregas por semana específica
-      get :service_cases        # Ver solo casos de servicio técnico
-      get :addresses_for_client # AJAX: obtener direcciones de un cliente
-      get :orders_for_client    # AJAX: obtener pedidos de un cliente
+      get :by_week
+      get :service_cases
+      get :addresses_for_client
+      get :orders_for_client
+
+      # Rutas para Mandados Internos
+      get :new_internal_delivery   # Formulario para crear un mandado interno
+      post :create_internal_delivery # Acción para guardar el mandado interno
     end
     member do
-      patch :mark_as_delivered  # Marcar entrega como completada
+      patch :mark_as_delivered
       patch :confirm_all_items
       patch :reschedule_all
     end

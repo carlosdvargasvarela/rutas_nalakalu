@@ -276,6 +276,133 @@ class DeliveriesController < ApplicationController
                 alert: "Error al reagendar: #{e.message}")
   end
 
+  def new_internal_delivery
+    @delivery = Delivery.new(
+      delivery_type: :internal_delivery,
+      status: :scheduled,
+      delivery_date: Date.current
+    )
+
+    # Construir los objetos anidados para que funcione el simple_fields_for
+    delivery_item = @delivery.delivery_items.build
+    delivery_item.build_order_item
+
+    authorize @delivery
+  end
+
+  def create_internal_delivery
+    ActiveRecord::Base.transaction do
+      # 1. Crear o buscar cliente interno de la empresa
+      company_client = Client.find_or_create_by!(name: "NaLakalu Interno") do |client|
+        client.email = "interno@nalakalu.com"
+        client.phone = "0000-0000"
+      end
+
+      # 2. Crear o buscar seller interno
+      company_seller = Seller.find_or_create_by!(seller_code: "NALAKALU_INT") do |seller|
+        seller.user = current_user
+        seller.name = "Logística Interna"
+      end
+
+      # 3. Crear orden interna con número único
+      order_number = "MANDADO"
+      internal_order = Order.create!(
+        client: company_client,
+        seller: company_seller,
+        number: order_number,
+        status: :ready_for_delivery  # ✅ Correcto para Order
+      )
+
+      # 4. Crear dirección de entrega
+      delivery_address = if params[:delivery_address].present? && params[:delivery_address][:address].present?
+        company_client.delivery_addresses.create!(
+          params.require(:delivery_address).permit(:address, :description, :latitude, :longitude, :plus_code)
+        )
+      else
+        company_client.delivery_addresses.find_or_create_by!(address: "Oficinas Centrales NaLakalu") do |addr|
+          addr.description = "Dirección por defecto para mandados internos"
+        end
+      end
+
+      # 5. Procesar los delivery_items anidados
+      processed_delivery_items = process_internal_delivery_items(internal_order)
+
+      # 6. Crear la entrega
+      @delivery = Delivery.new(
+        internal_delivery_params.merge(
+          delivery_type: :internal_delivery,
+          status: :ready_to_deliver,  # ✅ Correcto para Delivery
+          order: internal_order,
+          delivery_address: delivery_address
+        )
+      )
+
+      # 7. Asignar los delivery_items procesados
+      @delivery.delivery_items = processed_delivery_items
+      @delivery.save!
+
+      redirect_to deliveries_path, notice: "Mandado interno creado correctamente."
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    # Reconstruir los objetos anidados para el formulario en caso de error
+    @delivery ||= Delivery.new(delivery_type: :internal_delivery)
+    if @delivery.delivery_items.empty?
+      delivery_item = @delivery.delivery_items.build
+      delivery_item.build_order_item
+    end
+
+    flash.now[:alert] = "Error al crear el mandado interno: #{e.message}"
+    render :new_internal_delivery, status: :unprocessable_entity
+  end
+
+  private
+
+  # Nuevo método para procesar delivery_items de mandados internos
+  def process_internal_delivery_items(order)
+    delivery_items = []
+
+    return delivery_items unless params[:delivery][:delivery_items_attributes]
+
+    params[:delivery][:delivery_items_attributes].each do |key, item_params|
+      next if item_params[:_destroy] == "1"
+
+      # Para mandados internos, siempre creamos nuevos items
+      if item_params[:order_item_attributes].present?
+        oi_params = item_params[:order_item_attributes]
+        next if oi_params[:product].blank?
+
+        # Crear el order_item
+        order_item = order.order_items.create!(
+          product: oi_params[:product],
+          quantity: 1, # Los mandados siempre son cantidad 1
+          status: :ready
+        )
+
+        # Crear el delivery_item
+        delivery_item = DeliveryItem.new(
+          order_item: order_item,
+          quantity_delivered: 1,
+          status: :confirmed
+        )
+
+        delivery_items << delivery_item
+      end
+    end
+
+    delivery_items
+  end
+
+  # Actualizar los parámetros permitidos para mandados internos
+  def internal_delivery_params
+    params.require(:delivery).permit(
+      :delivery_date, :contact_name, :contact_phone, :delivery_notes, :delivery_time_preference,
+      delivery_items_attributes: [
+        :id, :_destroy,
+        order_item_attributes: [ :id, :product ]
+      ]
+    )
+  end
+
   private
 
   # Procesa los parámetros de delivery_items (existentes y nuevos)
