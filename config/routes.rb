@@ -61,6 +61,10 @@ Rails.application.routes.draw do
       # Rutas para Mandados Internos
       get :new_internal_delivery   # Formulario para crear un mandado interno
       post :create_internal_delivery # Acción para guardar el mandado interno
+
+      # Casos de servicio
+      get  :new_service_case     # formulario
+      post :create_service_case  # acción de crear
     end
     member do
       patch :mark_as_delivered

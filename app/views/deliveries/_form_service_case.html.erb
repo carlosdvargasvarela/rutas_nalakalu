@@ -1,0 +1,40 @@
+<%= simple_form_for delivery, url: create_service_case_deliveries_path, html: {
+      data: {
+        controller: "delivery-form",
+        "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
+        "delivery-form-orders-url-value": orders_for_client_deliveries_path
+      }
+    } do |f| %>
+  
+  <%= render "client_fields", f: f, clients: clients %>
+  <%= render "address_fields", f: f, addresses: addresses, delivery: delivery %>
+  <%= render "order_fields", f: f %>
+  <%= render "order_items_fields", f: f %>
+
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <%= f.input :delivery_type, 
+          collection: [
+            ["Recogida de producto", "pickup"],
+            ["Devolución de producto", "return_delivery"],
+            ["Reparación en sitio", "onsite_repair"]
+          ],
+          prompt: "Selecciona el tipo de caso de servicio",
+          label: "Tipo de servicio",
+          input_html: { class: "form-select" },
+          label_html: { class: "form-label" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.date_field :delivery_date, as: :date, label: "Fecha del servicio", 
+          input_html: { class: "form-control" }, 
+          label_html: { class: "form-label" } %>
+    </div>
+  </div>
+
+  <%= render "delivery_detail_fields", f: f %>
+
+  <div class="d-flex justify-content-end gap-2">
+    <%= link_to "Cancelar", deliveries_path, class: "btn btn-secondary" %>
+    <%= f.button :submit, "Guardar caso de servicio", class: "btn btn-warning" %>
+  </div>
+<% end %>

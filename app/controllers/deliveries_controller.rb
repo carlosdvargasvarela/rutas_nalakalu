@@ -355,6 +355,60 @@ class DeliveriesController < ApplicationController
     render :new_internal_delivery, status: :unprocessable_entity
   end
 
+  def new_service_case
+    @delivery = Delivery.new(
+      delivery_type: :pickup, # Valor por defecto
+      status: :scheduled,
+      delivery_date: Date.current
+    )
+    @delivery.delivery_items.build.build_order_item
+
+    @clients = Client.all.order(:name)
+    @addresses = []
+    @order = nil
+
+    authorize @delivery
+    render :new_service_case
+  end
+
+  def create_service_case
+    ActiveRecord::Base.transaction do
+      # 1. Cliente
+      client = find_or_create_client
+
+      # 2. Dirección
+      address = find_or_create_address(client)
+
+      # 3. Pedido
+      order = find_or_create_order(client)
+
+      # 4. Procesar delivery items
+      processed_items = process_delivery_items_params(order)
+
+      # 5. Crear la entrega con tipo explicitado (pickup, return_delivery, onsite_repair)
+      @delivery = Delivery.new(
+        delivery_params.except(:delivery_items_attributes).merge(
+          order: order,
+          delivery_address: address,
+          status: :scheduled,
+          delivery_type: params[:delivery][:delivery_type] # importante
+        )
+      )
+      @delivery.delivery_items = processed_items
+      @delivery.save!
+
+      redirect_to deliveries_path, notice: "Caso de servicio creado correctamente."
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    @delivery = e.record if e.respond_to?(:record) && e.record.is_a?(Delivery)
+    @delivery ||= Delivery.new(delivery_type: params[:delivery][:delivery_type] || :pickup)
+    @clients = Client.all.order(:name)
+    @addresses = @delivery.order&.client&.delivery_addresses || []
+    @order = @delivery.order
+    flash.now[:alert] = "Error al crear el caso de servicio: #{e.message}"
+    render :new_service_case, status: :unprocessable_entity
+  end
+
   private
 
   # Nuevo método para procesar delivery_items de mandados internos
