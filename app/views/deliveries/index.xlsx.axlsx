@@ -16,7 +16,7 @@ wb.add_worksheet(name: "Entregas") do |sheet|
         delivery.order.seller.seller_code,
         delivery.order.client.name,
         delivery.delivery_address.address,
-        delivery.status_humanize,
+        delivery.display_status,
         delivery.delivery_type_humanize
       ]
     end

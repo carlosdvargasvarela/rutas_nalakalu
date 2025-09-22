@@ -62,10 +62,11 @@
           {}, class: "form-select" %>
       </div>
       <!-- Estado de entrega -->
+      <!-- Estado de la entrega -->
       <div class="col-md-3">
         <%= f.select :status_eq,
           options_for_select(Delivery.status_options_for_select, params.dig(:q, :status_eq)),
-          { include_blank: '-- Filtrar por estado de la entrega--' }, class: "form-select" %>
+          { include_blank: '-- Filtrar por estado de la entrega --' }, class: "form-select" %>
       </div>
       <!-- Mostrar reagendadas -->
       <div class="col-md-3 d-flex align-items-center">

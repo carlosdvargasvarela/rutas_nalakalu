@@ -75,15 +75,6 @@ class Delivery < ApplicationRecord
     end
   end
 
-  # Ransack (para filtros)
-  def self.ransackable_attributes(auth_object = nil)
-    %w[delivery_date status delivery_type contact_name contact_phone delivery_notes delivery_time_preference]
-  end
-
-  def self.ransackable_associations(auth_object = nil)
-    %w[order delivery_address delivery_items]
-  end
-
   # Actualiza el estado de la entrega basado en los items
   def update_status_based_on_items
     return if in_plan? || in_route?   # ⬅ protege estos estados de cambios no deseados
@@ -175,20 +166,7 @@ class Delivery < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    [
-      "contact_id",
-      "contact_name",
-      "contact_phone",
-      "created_at",
-      "delivery_address_id",
-      "delivery_date",
-      "delivery_notes",
-      "delivery_time_preference",
-      "id",
-      "order_id",
-      "status",
-      "updated_at"
-    ] + _ransackers.keys
+    %w[delivery_date status delivery_type contact_name contact_phone delivery_notes delivery_time_preference]
   end
 
   def self.ransackable_associations(auth_object = nil)
@@ -245,7 +223,6 @@ class Delivery < ApplicationRecord
       NotificationService.create_for_users(users.compact.uniq, self, message)
   end
 
-  private
   def self.status_options_for_select
     statuses.keys.map do |s|
       [ Delivery.new(status: s).display_status, s ]
