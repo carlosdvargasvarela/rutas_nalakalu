@@ -77,7 +77,8 @@ class Delivery < ApplicationRecord
 
   # Actualiza el estado de la entrega basado en los items
   def update_status_based_on_items
-    return if in_plan? || in_route?   # ⬅ protege estos estados de cambios no deseados
+    # Solo proteger si todavía está asignado a un plan
+    return if (in_plan? || in_route?) && delivery_plans.exists?
 
     statuses = delivery_items.pluck(:status)
     return if statuses.empty?
