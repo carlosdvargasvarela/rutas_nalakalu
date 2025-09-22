@@ -104,14 +104,14 @@ class DeliveriesController < ApplicationController
       else
         @client = order.client
         @addresses = @client.delivery_addresses.order(:description)
-        @order = order
+        @order = @delivery.order
         render :edit, status: :unprocessable_entity
       end
     end
   rescue ActiveRecord::RecordInvalid => e
-    @client = @delivery.order.client
+    @order  = @delivery.order
+    @client = @order.client
     @addresses = @client.delivery_addresses.order(:description)
-    @order = @delivery.order
     flash.now[:alert] = "Error al actualizar la entrega: #{e.message}"
     render :edit, status: :unprocessable_entity
   end
@@ -149,9 +149,12 @@ class DeliveriesController < ApplicationController
     end
   rescue ActiveRecord::RecordInvalid => e
     @delivery = e.record if e.respond_to?(:record) && e.record.is_a?(Delivery)
-    @delivery ||= Delivery.new # Asegurar que @delivery existe
-    @client = @order&.client || Client.new
-    @order = @order || Order.new
+    @delivery ||= Delivery.new(delivery_params) # <- preserva lo que envió el usuario
+
+    # reconstruir asociaciones
+    @client = find_or_initialize_client_from_params
+    @order  = find_or_initialize_order_from_params(@client)
+    @addresses = @client.delivery_addresses.to_a
     @clients = Client.all.order(:name)
     @addresses = @client.delivery_addresses.to_a
     flash.now[:alert] = "Error al crear la entrega: #{e.message}"
@@ -457,8 +460,6 @@ class DeliveriesController < ApplicationController
     )
   end
 
-  private
-
   # Procesa los parámetros de delivery_items (existentes y nuevos)
   def process_delivery_items_params(order)
     delivery_items = []
@@ -517,24 +518,20 @@ class DeliveriesController < ApplicationController
 
   # Busca o crea un order_item para la orden
   def find_or_create_order_item(order, order_item_params)
-    # Si tiene ID, es un order_item existente
     if order_item_params[:id].present?
       order_item = OrderItem.find(order_item_params[:id])
       order_item.update!(order_item_params.except(:id))
       return order_item
     end
 
-    # Buscar si ya existe un order_item con el mismo producto en esta orden
     existing_item = order.order_items.find_by(product: order_item_params[:product])
 
     if existing_item
-      # LÓGICA ACUMULATIVA: Si el item ya existe, sumar cantidades
       if order_item_params[:quantity].present? &&
         existing_item.quantity != order_item_params[:quantity].to_i
 
         new_quantity = existing_item.quantity.to_i + order_item_params[:quantity].to_i
 
-        # Combinar notas si hay nuevas
         combined_notes = if order_item_params[:notes].present? && order_item_params[:notes] != existing_item.notes
           [ existing_item.notes, order_item_params[:notes] ].compact.reject(&:blank?).join("; ")
         else
@@ -546,19 +543,17 @@ class DeliveriesController < ApplicationController
           notes: combined_notes
         )
       elsif order_item_params[:notes].present? && order_item_params[:notes] != existing_item.notes
-        # Solo actualizar notas si la cantidad es la misma pero hay notas nuevas
         combined_notes = [ existing_item.notes, order_item_params[:notes] ].compact.reject(&:blank?).join("; ")
         existing_item.update!(notes: combined_notes)
       end
       return existing_item
     end
 
-    # Crear nuevo order_item, asegurando el order_id correcto
     order.order_items.create!(
       product: order_item_params[:product],
-      quantity: order_item_params[:quantity] || 1,
+      quantity: order_item_params[:quantity].presence || 1,
       notes: order_item_params[:notes],
-      status: :in_production # o :pending, según tu enum final
+      status: :in_production
     )
   end
 
@@ -629,6 +624,26 @@ class DeliveriesController < ApplicationController
       @addresses = @delivery.order.client.delivery_addresses.to_a
     else
       @addresses = []
+    end
+  end
+
+  def find_or_initialize_client_from_params
+    if params[:client_id].present?
+      Client.find(params[:client_id])
+    elsif params[:client].present?
+      Client.new(params.require(:client).permit(:name, :phone, :email))
+    else
+      Client.new
+    end
+  end
+
+  def find_or_initialize_order_from_params(client)
+    if params[:order_id].present?
+      client.orders.find_by(id: params[:order_id]) || Order.new
+    elsif params[:order].present?
+      client.orders.build(params.require(:order).permit(:number, :seller_id))
+    else
+      Order.new
     end
   end
 
