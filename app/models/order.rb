@@ -15,7 +15,7 @@ class Order < ApplicationRecord
   # VALIDACIONES
   # ============================================================================
 
-  validates :number, presence: true, uniqueness: true
+  validates :number, presence: true
 
   # ============================================================================
   # ENUMS
