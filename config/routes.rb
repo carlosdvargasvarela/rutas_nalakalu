@@ -58,18 +58,23 @@ Rails.application.routes.draw do
       get :addresses_for_client
       get :orders_for_client
 
-      # Rutas para Mandados Internos
-      get :new_internal_delivery   # Formulario para crear un mandado interno
-      post :create_internal_delivery # Acción para guardar el mandado interno
+      # Mandados internos
+      get  :new_internal_delivery
+      post :create_internal_delivery
 
-      # Casos de servicio
-      get  :new_service_case     # formulario
-      post :create_service_case  # acción de crear
+      # Casos de servicio "nuevos", globales
+      get  :new_service_case
+      post :create_service_case
     end
+
     member do
       patch :mark_as_delivered
       patch :confirm_all_items
       patch :reschedule_all
+
+      # ✅ Casos de servicio derivados de una entrega existente
+      get  :new_service_case_for_existing
+      post :create_service_case_for_existing
     end
   end
 

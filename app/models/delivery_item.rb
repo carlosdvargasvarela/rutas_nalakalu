@@ -47,7 +47,7 @@ class DeliveryItem < ApplicationRecord
   after_update :notify_all_confirmed, if: :saved_change_to_status?
   after_update :notify_all_order_items_ready, if: :saved_change_to_status?
   after_update :update_order_item_status
-  after_update :notify_reschedule, if: -> { saved_change_to_status? && rescheduled? }
+  # after_commit :notify_reschedule, on: :update, if: -> { saved_change_to_status? && rescheduled? }  # ← CAMBIO AQUÍ
 
   # ============================================================================
   # MÉTODOS PÚBLICOS

@@ -221,12 +221,13 @@ class DeliveriesController < ApplicationController
   end
 
   def confirm_all_items
-    authorize @delivery, :edit? # O crea una policy específica si lo prefieres
+    authorize @delivery, :edit?
 
-    updated = @delivery.delivery_items.where(status: [ :pending, :confirmed ]).update_all(status: :confirmed, updated_at: Time.current)
+    # Solo confirmar items que están pendientes
+    updated = @delivery.delivery_items.where(status: :pending).update_all(status: :confirmed, updated_at: Time.current)
     @delivery.update_status_based_on_items
 
-    redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
+    redirect_to(session.delete(:deliveries_return_to) || delivery_path(@delivery),
                 notice: "#{updated} productos confirmados para entrega.")
   end
 
@@ -236,19 +237,25 @@ class DeliveriesController < ApplicationController
     raise "Debes seleccionar una nueva fecha" unless new_date
 
     old_date   = @delivery.delivery_date
-    old_status = @delivery.status.to_sym   # ✅ guardamos estado original
+    old_status = @delivery.status.to_sym
 
     raise "La nueva fecha debe ser diferente a la original" if new_date == old_date
+
+    new_delivery = nil # 👈 Declarar fuera para usarla después
 
     ActiveRecord::Base.transaction do
       # Crear la nueva entrega clonada
       new_delivery = @delivery.dup
       new_delivery.delivery_date = new_date
-      new_delivery.status = old_status      # ✅ hereda el estado de la original
+      new_delivery.status = old_status
       new_delivery.save!
 
-      # Limpiar items clonados
-      new_delivery.delivery_items = []
+      # 🔑 Reseteamos asociaciones fantasma heredadas del dup
+      new_delivery.delivery_items.reset
+      new_delivery.delivery_plan_assignments.reset
+
+      # Limpiar items clonados en DB (aunque normalmente no debe haber)
+      new_delivery.delivery_items.destroy_all
 
       # Copiar los items no finalizados
       items_to_reschedule = @delivery.delivery_items.where.not(status: [ :delivered, :cancelled, :rescheduled ])
@@ -264,16 +271,21 @@ class DeliveriesController < ApplicationController
       end
 
       # Dejar la entrega original marcada como rescheduled
-      @delivery.update_column(:status, :rescheduled)   # ✅ queda histórico
+      @delivery.update_column(:status, :rescheduled)
+    end
 
-      # Notificar
+    # 🔔 Notificar FUERA de la transacción
+    begin
       users = User.where(role: [ :admin, :seller, :production_manager ])
       message = "La entrega del pedido #{@delivery.order.number} con fecha original de #{l old_date, format: :long} fue reagendada para el #{l new_date, format: :long}."
       NotificationService.create_for_users(users, new_delivery, message, type: "reschedule_delivery")
-
-      redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
-                  notice: "Entrega reagendada para el #{l new_date, format: :long}.")
+    rescue => notification_error
+      Rails.logger.error "Error al enviar notificación de reagendamiento: #{notification_error.message}"
+      # No fallar por esto, solo loguear
     end
+
+    redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
+                notice: "Entrega reagendada para el #{l new_date, format: :long}.")
   rescue => e
     redirect_to(session[:deliveries_return_to] || deliveries_path,
                 alert: "Error al reagendar: #{e.message}")
@@ -412,6 +424,102 @@ class DeliveriesController < ApplicationController
     render :new_service_case, status: :unprocessable_entity
   end
 
+  def new_service_case_for_existing
+    @delivery = Delivery.find(params[:id])
+    @service_case = Delivery.new(
+      order: @delivery.order,
+      delivery_address: @delivery.delivery_address,
+      contact_name: @delivery.contact_name,
+      contact_phone: @delivery.contact_phone,
+      delivery_type: :pickup,
+      delivery_date: Date.today,
+      status: :scheduled
+    )
+
+    authorize @delivery, :edit?
+
+    @addresses = @delivery.order.client.delivery_addresses.to_a
+
+    # Precargar todos los productos del pedido original como delivery_items
+    @delivery.order.order_items.each do |oi|
+      @service_case.delivery_items.build(
+        order_item: oi,
+        quantity_delivered: oi.quantity,
+        service_case: true,
+        status: :pending
+      )
+    end
+  end
+
+  def create_service_case_for_existing
+    parent_delivery = Delivery.find(params[:id])
+    authorize parent_delivery, :edit?
+
+    ActiveRecord::Base.transaction do
+      service_type = params[:delivery][:delivery_type] || :pickup
+      service_date = params[:delivery][:delivery_date].present? ? Date.parse(params[:delivery][:delivery_date]) : nil
+      raise "Debes seleccionar una fecha de servicio" unless service_date
+
+      # Crear la nueva entrega (caso de servicio)
+      @service_case = Delivery.new(
+        order: parent_delivery.order,
+        delivery_address: parent_delivery.delivery_address,
+        contact_name: params[:delivery][:contact_name] || parent_delivery.contact_name,
+        contact_phone: params[:delivery][:contact_phone] || parent_delivery.contact_phone,
+        delivery_notes: params[:delivery][:delivery_notes],
+        delivery_time_preference: params[:delivery][:delivery_time_preference],
+        delivery_date: service_date,
+        status: :scheduled,
+        delivery_type: service_type
+      )
+
+      # Procesar los delivery_items desde el formulario
+      if params[:delivery][:delivery_items_attributes].present?
+        processed_items = process_service_case_delivery_items(parent_delivery.order)
+        @service_case.delivery_items = processed_items
+      elsif params[:copy_items] == "1"
+        # Fallback: copiar items de la entrega original si no vienen del form
+        parent_delivery.delivery_items.each do |item|
+          @service_case.delivery_items.build(
+            order_item: item.order_item,
+            quantity_delivered: item.quantity_delivered,
+            service_case: true,
+            status: :pending
+          )
+        end
+      end
+
+      @service_case.save!
+
+      redirect_to delivery_path(@service_case),
+        notice: "Se creó un caso de servicio (#{@service_case.display_type}) para el #{I18n.l service_date, format: :long}."
+    end
+  rescue => e
+    # En caso de error, reconstruir el formulario
+    @delivery = parent_delivery
+    @service_case ||= Delivery.new(
+      order: parent_delivery.order,
+      delivery_address: parent_delivery.delivery_address,
+      delivery_type: service_type || :pickup,
+      delivery_date: service_date
+    )
+
+    # Reconstruir delivery_items si están vacíos
+    if @service_case.delivery_items.empty?
+      parent_delivery.order.order_items.each do |oi|
+        @service_case.delivery_items.build(
+          order_item: oi,
+          quantity_delivered: oi.quantity,
+          service_case: true,
+          status: :pending
+        )
+      end
+    end
+
+    flash.now[:alert] = "Error al generar caso de servicio: #{e.message}"
+    render :new_service_case_for_existing, status: :unprocessable_entity
+  end
+
   private
 
   # Nuevo método para procesar delivery_items de mandados internos
@@ -444,6 +552,41 @@ class DeliveriesController < ApplicationController
 
         delivery_items << delivery_item
       end
+    end
+
+    delivery_items
+  end
+
+  # Método específico para procesar delivery_items de casos de servicio
+  def process_service_case_delivery_items(order)
+    delivery_items = []
+
+    return delivery_items unless params[:delivery][:delivery_items_attributes]
+
+    params[:delivery][:delivery_items_attributes].each do |key, item_params|
+      next if item_params[:_destroy] == "1"
+      next if key == "NEW_RECORD" && item_params[:order_item_attributes][:product].blank?
+
+      # Para casos de servicio, siempre usar order_items existentes
+      order_item = if item_params[:order_item_attributes][:id].present?
+        order.order_items.find(item_params[:order_item_attributes][:id])
+      else
+        # Si no hay ID, buscar por producto
+        order.order_items.find_by(product: item_params[:order_item_attributes][:product])
+      end
+
+      next unless order_item
+
+      # Crear el delivery_item para el caso de servicio
+      delivery_item = DeliveryItem.new(
+        order_item: order_item,
+        quantity_delivered: item_params[:quantity_delivered].presence || 1,
+        notes: item_params[:notes],
+        service_case: true,
+        status: :pending
+      )
+
+      delivery_items << delivery_item
     end
 
     delivery_items
@@ -485,11 +628,13 @@ class DeliveriesController < ApplicationController
           oi_params = item_params[:order_item_attributes]
           if oi_params[:id].present?
             order_item = OrderItem.find(oi_params[:id])
-            order_item.update!(
+            # Permitir parámetros explícitamente
+            permitted_params = {
               product: oi_params[:product] || order_item.product,
               quantity: oi_params[:quantity] || order_item.quantity,
               notes: oi_params[:notes] || order_item.notes
-            )
+            }
+            order_item.update!(permitted_params)
           end
         end
 
@@ -516,43 +661,55 @@ class DeliveriesController < ApplicationController
     delivery_items
   end
 
-  # Busca o crea un order_item para la orden
+  # Busca o crea un order_item para la orden (CORREGIDO)
   def find_or_create_order_item(order, order_item_params)
-    if order_item_params[:id].present?
-      order_item = OrderItem.find(order_item_params[:id])
-      order_item.update!(order_item_params.except(:id))
+    # Permitir los parámetros explícitamente
+    permitted_params = {
+      id: order_item_params[:id],
+      product: order_item_params[:product],
+      quantity: order_item_params[:quantity],
+      notes: order_item_params[:notes]
+    }.compact
+
+    if permitted_params[:id].present?
+      order_item = OrderItem.find(permitted_params[:id])
+
+      # Solo actualizar si hay cambios en los parámetros permitidos
+      update_params = permitted_params.except(:id)
+      order_item.update!(update_params) if update_params.any?
+
       return order_item
     end
 
-    existing_item = order.order_items.find_by(product: order_item_params[:product])
+    existing_item = order.order_items.find_by(product: permitted_params[:product])
 
     if existing_item
-      if order_item_params[:quantity].present? &&
-        existing_item.quantity != order_item_params[:quantity].to_i
+      if permitted_params[:quantity].present? &&
+        existing_item.quantity != permitted_params[:quantity].to_i
 
-        new_quantity = existing_item.quantity.to_i + order_item_params[:quantity].to_i
+        new_quantity = existing_item.quantity.to_i + permitted_params[:quantity].to_i
 
-        combined_notes = if order_item_params[:notes].present? && order_item_params[:notes] != existing_item.notes
-          [ existing_item.notes, order_item_params[:notes] ].compact.reject(&:blank?).join("; ")
+        combined_notes = if permitted_params[:notes].present? && permitted_params[:notes] != existing_item.notes
+          [ existing_item.notes, permitted_params[:notes] ].compact.reject(&:blank?).join("; ")
         else
-          existing_item.notes || order_item_params[:notes]
+          existing_item.notes || permitted_params[:notes]
         end
 
         existing_item.update!(
           quantity: new_quantity,
           notes: combined_notes
         )
-      elsif order_item_params[:notes].present? && order_item_params[:notes] != existing_item.notes
-        combined_notes = [ existing_item.notes, order_item_params[:notes] ].compact.reject(&:blank?).join("; ")
+      elsif permitted_params[:notes].present? && permitted_params[:notes] != existing_item.notes
+        combined_notes = [ existing_item.notes, permitted_params[:notes] ].compact.reject(&:blank?).join("; ")
         existing_item.update!(notes: combined_notes)
       end
       return existing_item
     end
 
     order.order_items.create!(
-      product: order_item_params[:product],
-      quantity: order_item_params[:quantity].presence || 1,
-      notes: order_item_params[:notes],
+      product: permitted_params[:product],
+      quantity: permitted_params[:quantity].presence || 1,
+      notes: permitted_params[:notes],
       status: :in_production
     )
   end
@@ -650,9 +807,10 @@ class DeliveriesController < ApplicationController
   # Parámetros permitidos para delivery
   def delivery_params
     params.require(:delivery).permit(
-      :delivery_date, :delivery_address_id, :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
+      :delivery_date, :delivery_address_id, :contact_name, :contact_phone,
+      :delivery_notes, :delivery_type, :delivery_time_preference,
       delivery_items_attributes: [
-        :id, :quantity_delivered, :service_case, :status, :_destroy,
+        :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
         order_item_attributes: [ :id, :product, :quantity, :notes ]
       ]
     )

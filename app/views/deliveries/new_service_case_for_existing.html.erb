@@ -1,0 +1,64 @@
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-warning bg-opacity-10 border-bottom-0">
+    <h5 class="mb-0 text-warning">
+      <i class="bi bi-tools me-2"></i>
+      Nuevo Caso de Servicio
+    </h5>
+  </div>
+  <div class="card-body">
+    <%= simple_form_for @service_case,
+          url: create_service_case_for_existing_delivery_path(@delivery),
+          method: :post,
+          html: {
+            data: {
+              controller: "delivery-form",
+              "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
+              "delivery-form-orders-url-value": orders_for_client_deliveries_path
+            }
+          } do |f| %>
+      <!-- Dirección -->
+      <%= render "address_fields", f: f, addresses: @addresses, delivery: @service_case %>
+      <!-- Productos (usa el mismo partial de deliveries/new) -->
+      <%= render "order_items_fields", f: f %>
+      <!-- Datos del servicio -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <h5 class="text-secondary mb-3">
+            <i class="bi bi-calendar-event me-2"></i>Datos del servicio
+          </h5>
+        </div>
+        <div class="col-md-6">
+          <%= f.input :delivery_type,
+                collection: [
+                  ["Recogida de producto", "pickup"],
+                  ["Devolución de producto", "return_delivery"],
+                  ["Reparación en sitio", "onsite_repair"]
+                ],
+                label: "Tipo de servicio",
+                prompt: "Selecciona tipo de servicio",
+                input_html: { class: "form-select" },
+                label_html: { class: "form-label" } %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :delivery_date, "Fecha de servicio", class: "form-label" %>
+          <%= f.date_field :delivery_date, class: "form-control", required: true %>
+        </div>
+      </div>
+      <!-- switch de copiar -->
+      <div class="form-check form-switch mb-4">
+        <%= check_box_tag :copy_items, "1", false,
+              class: "form-check-input", id: "copy_items" %>
+        <%= label_tag :copy_items, "Copiar productos de la entrega original", class: "form-check-label" %>
+      </div>
+      <!-- Acciones -->
+      <div class="d-flex justify-content-end gap-2">
+        <%= link_to delivery_path(@delivery), class: "btn btn-light border" do %>
+          <i class="bi bi-x-circle me-1"></i> Cancelar
+        <% end %>
+        <%= f.button :submit, "Crear caso de servicio", class: "btn btn-warning" do %>
+          <i class="bi bi-check-circle me-1"></i>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
