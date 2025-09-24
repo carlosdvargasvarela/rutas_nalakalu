@@ -247,7 +247,7 @@ class DeliveriesController < ApplicationController
       # Crear la nueva entrega clonada
       new_delivery = @delivery.dup
       new_delivery.delivery_date = new_date
-      new_delivery.status = old_status
+      new_delivery.status = old_status == :in_plan ? :scheduled : old_status
       new_delivery.save!
 
       # 🔑 Reseteamos asociaciones fantasma heredadas del dup
