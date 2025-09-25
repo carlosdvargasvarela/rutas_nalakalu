@@ -17,26 +17,13 @@
         <i class="bi bi-calendar-event me-2"></i>Datos de la entrega
       </h5>
     </div>
-    <% unless current_user.seller? %>
+    <% if !current_user.seller? || delivery.new_record? %>
       <div class="col-md-6">
-        <%= f.date_field :delivery_date, as: :date, label: "Fecha de entrega", 
-          input_html: { class: "form-control" }, 
-          label_html: { class: "form-label" } %>
+        <%= f.date_field :delivery_date, as: :date, label: "Fecha de entrega",
+        input_html: { class: "form-control" },
+        label_html: { class: "form-label" } %>
       </div>
     <% end %>
-    <!--div class="col-md-6">
-      <%= f.input :delivery_type, 
-          collection: [
-            ["Entrega normal", "normal"],
-            ["Recogida de producto", "pickup"],
-            ["Devolución de producto", "return_delivery"],
-            ["Reparación en sitio", "onsite_repair"]
-          ],
-          prompt: "Selecciona el tipo",
-          label: "Tipo de entrega",
-          input_html: { class: "form-select" },
-          label_html: { class: "form-label" } %>
-    </div-->
   </div>
   <div class="row mb-4">
     <div class="col-md-6">
