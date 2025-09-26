@@ -1,0 +1,236 @@
+wb = xlsx_package.workbook
+
+# =====================
+# Estilos
+# =====================
+header_style = wb.styles.add_style(
+  bg_color: "4472C4",
+  fg_color: "FFFFFF",
+  b: true,
+  alignment: { horizontal: :center }
+)
+
+scheduled_style = wb.styles.add_style(
+  bg_color: "FFF2CC",
+  border: { style: :thin, color: "D6B656" }
+)
+
+ready_style = wb.styles.add_style(
+  bg_color: "E2EFDA",
+  border: { style: :thin, color: "70AD47" }
+)
+
+confirmed_style = wb.styles.add_style(
+  bg_color: "DEEBF7",
+  border: { style: :thin, color: "5B9BD5" }
+)
+
+delivered_style = wb.styles.add_style(
+  bg_color: "D5E8D4",
+  border: { style: :thin, color: "82B366" }
+)
+
+cancelled_style = wb.styles.add_style(
+  bg_color: "F8CECC",
+  border: { style: :thin, color: "B85450" }
+)
+
+default_style = wb.styles.add_style(
+  border: { style: :thin, color: "CCCCCC" }
+)
+
+# =====================
+# Hoja
+# =====================
+wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
+  # =====================
+  # Header
+  # =====================
+  sheet.add_row [
+    "Semana",
+    "Año",
+    "Fecha de entrega",
+    "Pedido",
+    "Producto",
+    "Cantidad",
+    "Vendedor",
+    "Cliente",
+    "Dirección",
+    "# Parada",
+    "Conductor",
+    "Camión",
+    "Estado Plan",
+    "Estado Entrega",
+    "Hora",
+    "Contacto",
+    "Notas"
+  ], style: header_style
+
+  # =====================
+  # Filas de datos
+  # =====================
+  @delivery_plans.each do |delivery_plan|
+    # Obtener todas las asignaciones de este plan
+    assignments = delivery_plan.delivery_plan_assignments.includes(
+      delivery: [
+        { order: [:client, :seller] },
+        :delivery_address,
+        { delivery_items: :order_item }
+      ]
+    ).order(:stop_order)
+
+    assignments.each do |assignment|
+      delivery = assignment.delivery
+
+      # Determinar estilo según estado de la entrega
+      row_style = case delivery.status&.to_s
+                  when "scheduled"        then scheduled_style
+                  when "ready_to_deliver" then ready_style
+                  when "confirmed"        then confirmed_style
+                  when "delivered"        then delivered_style
+                  when "cancelled"        then cancelled_style
+                  else default_style
+                  end
+
+      if delivery.active_items_for_plan.empty?
+        # Fila sin productos
+        sheet.add_row [
+          delivery_plan.week || "N/A",
+          delivery_plan.year || "N/A",
+          delivery.delivery_date&.strftime("%d/%m/%Y") || "Sin fecha",
+          delivery.order.number,
+          "Sin productos",
+          "",
+          delivery.order.seller&.seller_code || "Sin vendedor",
+          delivery.order.client&.name || "Sin cliente",
+          [delivery.delivery_address&.address, delivery.delivery_address&.description].compact.join(" - "),
+          assignment.stop_order || "N/A",
+          delivery_plan.driver&.name || "Sin asignar",
+          delivery_plan.truck || "Sin asignar",
+          delivery_plan.display_status || "Sin estado",
+          delivery.display_status || "Sin estado",
+          delivery.delivery_time_preference.presence || "Sin preferencia",
+          "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
+          ""
+        ], style: row_style
+
+      else
+        # Una fila por cada producto
+        delivery.active_items_for_plan.each do |delivery_item|
+          # Combinar notas
+          all_notes = []
+          all_notes << "PRODUCCIÓN: #{delivery_item.order_item.notes}" if delivery_item.order_item&.notes.present?
+          all_notes << "LOGÍSTICA: #{delivery_item.notes}" if delivery_item.notes.present?
+          notes_text = all_notes.join("\n")
+
+          sheet.add_row [
+            delivery_plan.week || "N/A",
+            delivery_plan.year || "N/A",
+            delivery.delivery_date&.strftime("%d/%m/%Y") || "Sin fecha",
+            delivery.order.number,
+            delivery_item.order_item&.product || "Producto sin nombre",
+            delivery_item.quantity_delivered || 0,
+            delivery.order.seller&.seller_code || "Sin vendedor",
+            delivery.order.client&.name || "Sin cliente",
+            [delivery.delivery_address&.address, delivery.delivery_address&.description].compact.join(" - "),
+            assignment.stop_order || "N/A",
+            delivery_plan.driver&.name || "Sin asignar",
+            delivery_plan.truck || "Sin asignar",
+            delivery_plan.display_status || "Sin estado",
+            delivery.display_status || "Sin estado",
+            delivery.delivery_time_preference.presence || "Sin preferencia",
+            "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
+            notes_text
+          ], style: row_style
+        end
+      end
+    end
+  end
+
+  # =====================
+  # Ajustes de hoja
+  # =====================
+  sheet.column_widths 8, 8, 12, 15, 25, 10, 12, 20, 30, 8, 15, 10, 15, 15, 15, 25, 40
+
+  # Filtros automáticos
+  if @delivery_plans.any?
+    total_rows = 1 + @delivery_plans.sum do |plan|
+      plan.delivery_plan_assignments.sum { |a| [a.delivery.active_items_for_plan.count, 1].max }
+    end
+    sheet.auto_filter = "A1:Q#{total_rows}" if total_rows > 1
+  end
+
+  # Congelar primera fila
+  sheet.sheet_view.pane do |pane|
+    pane.y_split = 1
+    pane.state   = :frozen
+    pane.top_left_cell = "A2"
+  end
+end
+
+# =====================
+# Hoja de Resumen
+# =====================
+wb.add_worksheet(name: "Resumen por Plan") do |sheet|
+  # Header del resumen
+  sheet.add_row [
+    "Semana",
+    "Año",
+    "Estado Plan",
+    "Conductor",
+    "Camión",
+    "Total Entregas",
+    "Entregas Completadas",
+    "Progreso %",
+    "Clientes Únicos",
+    "Productos Únicos"
+  ], style: header_style
+
+  # Datos del resumen
+  @delivery_plans.each do |plan|
+    delivered_count = plan.deliveries.where(status: :delivered).count
+    total_count = plan.deliveries.count
+    progress = total_count > 0 ? (delivered_count.to_f / total_count * 100).round(1) : 0
+    
+    unique_clients = plan.deliveries.joins(:order).distinct.count('orders.client_id')
+    unique_products = plan.deliveries.joins(delivery_items: :order_item).distinct.count('order_items.product')
+
+    # Estilo según estado del plan
+    row_style = case plan.status&.to_s
+                when "scheduled"        then scheduled_style
+                when "ready_to_deliver" then ready_style
+                when "confirmed"        then confirmed_style
+                when "delivered"        then delivered_style
+                when "cancelled"        then cancelled_style
+                else default_style
+                end
+
+    sheet.add_row [
+      plan.week || "N/A",
+      plan.year || "N/A",
+      plan.display_status || "Sin estado",
+      plan.driver&.name || "Sin asignar",
+      plan.truck || "Sin asignar",
+      total_count,
+      delivered_count,
+      "#{progress}%",
+      unique_clients,
+      unique_products
+    ], style: row_style
+  end
+
+  # Ajustes de columnas para el resumen
+  sheet.column_widths 8, 8, 15, 20, 15, 12, 15, 10, 12, 15
+
+  # Filtros automáticos para el resumen
+  if @delivery_plans.any?
+    sheet.auto_filter = "A1:J#{@delivery_plans.count + 1}"
+  end
+
+  # Congelar primera fila
+  sheet.sheet_view.pane do |pane|
+    pane.y_split = 1
+    pane.state   = :frozen
+    pane.top_left_cell = "A2"
+  end
+end

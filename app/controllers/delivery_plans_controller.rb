@@ -1,9 +1,15 @@
 # app/controllers/delivery_plans_controller.rb
 class DeliveryPlansController < ApplicationController
   def index
-    authorize DeliveryPlan
     @q = DeliveryPlan.ransack(params[:q])
-    @delivery_plans = @q.result.includes(:driver, :deliveries).sort_by(&:first_delivery_date)
+    @delivery_plans = @q.result.includes(:driver, :deliveries)
+
+    respond_to do |format|
+      format.html
+      format.xlsx {
+        response.headers["Content-Disposition"] = 'attachment; filename="planes_entrega.xlsx"'
+      }
+    end
   end
 
   def new
@@ -105,7 +111,7 @@ class DeliveryPlansController < ApplicationController
           address = delivery.delivery_address
 
           delivery.active_items_for_plan.map do |item|
-            address_text = [address.address, address.description].compact.join(" - ")
+            address_text = [ address.address, address.description ].compact.join(" - ")
             map_link_text = ""
 
             if address.latitude.present? && address.longitude.present?
@@ -140,9 +146,9 @@ class DeliveryPlansController < ApplicationController
           end
         end
 
-        pdf.table([headers] + rows,
+        pdf.table([ headers ] + rows,
                   header: true,
-                  row_colors: ["F0F0F0", "FFFFFF"],
+                  row_colors: [ "F0F0F0", "FFFFFF" ],
                   position: :center,
                   cell_style: { inline_format: true } # <-- ¡Importante para que los links sean clickeables!
                 )
