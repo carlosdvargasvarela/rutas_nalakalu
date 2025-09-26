@@ -2,11 +2,11 @@
 <div class="row" data-controller="delivery-plan-sidebar">
   <!-- Panel izquierdo: filtros + tabla -->
   <div class="col-md-7">
-    <%= render "filters", q: @q, from: @from, to: @to %>
-    <%= render "deliveries_table", deliveries: @deliveries, selected_ids: @selected_delivery_ids %>
+    <%= render "delivery_plans/new_partials/filters", q: @q, from: @from, to: @to %>
+    <%= render "delivery_plans/new_partials/deliveries_table", deliveries: @deliveries, selected_ids: @selected_delivery_ids %>
   </div>
   <!-- Panel derecho: seleccionadas -->
   <div class="col-md-5">
-    <%= render "selected_sidebar", delivery_plan: @delivery_plan %>
+    <%= render "delivery_plans/new_partials/selected_sidebar", delivery_plan: @delivery_plan %>
   </div>
 </div>

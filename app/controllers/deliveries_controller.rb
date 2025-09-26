@@ -1,6 +1,6 @@
 # app/controllers/deliveries_controller.rb
 class DeliveriesController < ApplicationController
-  before_action :set_delivery, only: [ :show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all, :approve ]
+  before_action :set_delivery, only: [ :show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all, :approve, :note ]
   before_action :set_addresses, only: [ :new, :edit, :create, :update ]
 
   # GET /deliveries
@@ -229,6 +229,10 @@ class DeliveriesController < ApplicationController
                           .order("deliveries.delivery_date ASC")
                           .page(params[:page])
     render :index
+  end
+
+  def note
+    render partial: "delivery_items/form_note", locals: { delivery: @delivery }
   end
 
   # PATCH /deliveries/:id/mark_as_delivered

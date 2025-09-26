@@ -11,6 +11,10 @@ class DeliveryAddress < ApplicationRecord
 
   after_validation :geocode_and_set_plus_code, if: :will_save_change_to_address?
 
+  def full_address
+    [ address, description ].compact.join(" - ")
+  end
+
   private
 
   def geocode_and_set_plus_code
