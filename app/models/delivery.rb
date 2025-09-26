@@ -17,7 +17,8 @@ class Delivery < ApplicationRecord
     in_route: 3,
     delivered: 4,
     rescheduled: 5,
-    cancelled: 6
+    cancelled: 6,
+    archived: 7
   }
 
   validates :delivery_date, presence: true
@@ -42,7 +43,9 @@ class Delivery < ApplicationRecord
                         .where.not(status: [ Delivery.statuses[:delivered],
                                             Delivery.statuses[:rescheduled],
                                             Delivery.statuses[:cancelled] ])}
-  scope :eligible_for_plan, -> { where.not(status: [ :delivered, :cancelled, :rescheduled, :in_plan, :in_route ]) }
+  scope :eligible_for_plan, -> {
+          where.not(status: [:delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived])
+        }
   scope :not_assigned_to_plan, -> { where.not(id: DeliveryPlanAssignment.select(:delivery_id)) }
   scope :available_for_plan, -> { eligible_for_plan.not_assigned_to_plan }
 
@@ -60,6 +63,7 @@ class Delivery < ApplicationRecord
     when "delivered"        then "Entregada"
     when "rescheduled"      then "Reprogramada"
     when "cancelled"        then "Cancelada"
+    when "archived"         then "Archivada"
     else status.to_s.humanize
     end
   end
@@ -79,6 +83,7 @@ class Delivery < ApplicationRecord
   def update_status_based_on_items
     # Solo proteger si todavía está asignado a un plan
     return if (in_plan? || in_route?) && delivery_plans.exists?
+    return if archived?
 
     statuses = delivery_items.pluck(:status)
     return if statuses.empty?
