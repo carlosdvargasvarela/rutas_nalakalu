@@ -61,60 +61,62 @@ class RouteExcelImportService
     # Si el pedido existe pero el vendedor es diferente, actualizarlo
     order.update!(seller: seller) if order.seller != seller
 
-    # Buscar o crear item del pedido
-    order_item = order.order_items.find_or_create_by!(product: data[:product]) do |item|
-      item.quantity = data[:quantity]
-      item.notes = data[:notes]
-      item.status = :in_production
-    end
-
-    # ✅ LÓGICA ACUMULATIVA: Si el item ya existe, sumar cantidades
-    if order_item.persisted? && order_item.quantity != data[:quantity]
-      # Acumular cantidad en lugar de sobrescribir
-      new_quantity = order_item.quantity.to_i + data[:quantity].to_i
-
-      # Combinar notas si hay nuevas
+    # ✅ OrderItem (blindaje: sin acumular)
+    order_item = order.order_items.find_or_initialize_by(product: data[:product])
+    if order_item.new_record?
+      order_item.assign_attributes(
+        quantity: data[:quantity],
+        notes: data[:notes],
+        status: :in_production
+      )
+      order_item.save!
+    else
       combined_notes = if data[:notes].present? && data[:notes] != order_item.notes
-        [ order_item.notes, data[:notes] ].compact.reject(&:blank?).join("; ")
+        [ order_item.notes, data[:notes] ].compact.reject(&:blank?).uniq.join("; ")
       else
         order_item.notes || data[:notes]
       end
 
       order_item.update!(
-        quantity: new_quantity,
+        quantity: data[:quantity],
         notes: combined_notes
       )
-    elsif order_item.persisted? && data[:notes].present? && data[:notes] != order_item.notes
-      # Solo actualizar notas si la cantidad es la misma pero hay notas nuevas
-      combined_notes = [ order_item.notes, data[:notes] ].compact.reject(&:blank?).join("; ")
-      order_item.update!(notes: combined_notes)
     end
 
-    # Buscar o crear entrega
-    delivery = order.deliveries.find_or_create_by!(delivery_date: data[:delivery_date], delivery_address: address) do |d|
-      d.contact_name, d.contact_phone = parse_contact(data[:contact])
-      d.delivery_time_preference = data[:time_preference]
-      d.status = :scheduled
+    # ✅ Delivery (blindaje: evitar duplicados con la misma orden, fecha y dirección)
+    # aquí nos aseguramos de que no se creen dos deliveries "idénticos"
+    delivery = order.deliveries
+                    .joins(:delivery_address)
+                    .where(delivery_date: data[:delivery_date], delivery_address_id: address.id)
+                    .first_or_initialize
+
+    if delivery.new_record?
+      delivery.assign_attributes(
+        delivery_address: address,
+        contact_name: (parse_contact(data[:contact]).first),
+        contact_phone: (parse_contact(data[:contact]).last),
+        delivery_time_preference: data[:time_preference],
+        status: :scheduled
+      )
+      delivery.save!
     end
 
-    # Buscar o crear delivery_item
+    # ✅ DeliveryItem (blindaje: sin acumular)
     service_case = data[:team].to_s.downcase.include?("c.s") || data[:team].to_s.downcase.include?("cs")
-    delivery_item = delivery.delivery_items.find_or_create_by!(order_item: order_item) do |di|
-      di.quantity_delivered = data[:quantity]
-      di.status = :pending
-      di.service_case = service_case
-    end
 
-    # LÓGICA ACUMULATIVA PARA DELIVERY_ITEMS: Si el delivery_item ya existe, sumar cantidades
-    if delivery_item.persisted? && delivery_item.quantity_delivered != data[:quantity]
-      new_delivered_quantity = delivery_item.quantity_delivered.to_i + data[:quantity].to_i
-      delivery_item.update!(
-        quantity_delivered: new_delivered_quantity,
+    delivery_item = delivery.delivery_items.find_or_initialize_by(order_item: order_item)
+    if delivery_item.new_record?
+      delivery_item.assign_attributes(
+        quantity_delivered: data[:quantity],
+        status: :pending,
         service_case: service_case
       )
-    elsif delivery_item.persisted? && delivery_item.service_case != service_case
-      # Solo actualizar service_case si la cantidad es la misma
-      delivery_item.update!(service_case: service_case)
+      delivery_item.save!
+    else
+      delivery_item.update!(
+        quantity_delivered: data[:quantity],
+        service_case: service_case
+      )
     end
   end
 

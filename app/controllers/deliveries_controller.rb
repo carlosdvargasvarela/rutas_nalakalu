@@ -89,15 +89,32 @@ class DeliveriesController < ApplicationController
 
       client = order.client
       address = find_or_create_address(client)
+
+      # 2. Verificar si los cambios crearían un duplicado
+      new_date = delivery_params[:delivery_date]
+      if new_date != @delivery.delivery_date || address != @delivery.delivery_address
+        existing_delivery = Delivery.find_by(
+          order: order,
+          delivery_date: new_date,
+          delivery_address: address
+        )
+
+        if existing_delivery && existing_delivery != @delivery
+          redirect_to existing_delivery,
+            alert: "Ya existe una entrega para ese pedido en esa fecha y dirección. Se redirigió a la existente."
+          return
+        end
+      end
+
       @delivery.delivery_address = address
 
-      # 2. Procesa los delivery_items (existentes y nuevos)
+      # 3. Procesa los delivery_items (existentes y nuevos)
       if params[:delivery][:delivery_items_attributes].present?
         processed_delivery_items = process_delivery_items_params(order)
         @delivery.delivery_items = processed_delivery_items
       end
 
-      # 3. Actualiza la entrega
+      # 4. Actualiza la entrega
       if @delivery.update(delivery_params.except(:delivery_items_attributes, :delivery_address_id))
         redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
                     notice: "Entrega actualizada correctamente.")
@@ -108,12 +125,18 @@ class DeliveriesController < ApplicationController
         render :edit, status: :unprocessable_entity
       end
     end
+  rescue ActiveRecord::RecordNotUnique
+    # Si la actualización crearía un duplicado
+    redirect_to @delivery, alert: "No se puede actualizar: ya existe otra entrega con esa combinación de pedido, fecha y dirección."
   rescue ActiveRecord::RecordInvalid => e
     @order  = @delivery.order
     @client = @order.client
     @addresses = @client.delivery_addresses.order(:description)
     flash.now[:alert] = "Error al actualizar la entrega: #{e.message}"
     render :edit, status: :unprocessable_entity
+  rescue => e
+    Rails.logger.error "Error inesperado en DeliveriesController#update: #{e.message}"
+    redirect_to @delivery, alert: "Ocurrió un error inesperado al actualizar la entrega."
   end
 
   # POST /deliveries
@@ -128,10 +151,22 @@ class DeliveriesController < ApplicationController
       # 3. Pedido
       order = find_or_create_order(client)
 
-      # 4. Procesar los delivery_items y crear order_items si es necesario
+      # 🔒 4. Blindaje: verificar duplicado ANTES de instanciar nada
+      existing_delivery = Delivery.find_by(
+        order: order,
+        delivery_date: delivery_params[:delivery_date],
+        delivery_address: address
+      )
+
+      if existing_delivery
+        redirect_to existing_delivery, alert: "Ya existe una entrega para ese pedido en esa fecha y dirección. Se reutilizó la existente."
+        return
+      end
+
+      # 5. Procesar items
       processed_delivery_items = process_delivery_items_params(order)
 
-      # 5. Crear la entrega
+      # 6. Crear entrega NUEVA
       delivery_attrs = delivery_params.except(:delivery_items_attributes).merge(
         order: order,
         delivery_address: address,
@@ -139,26 +174,40 @@ class DeliveriesController < ApplicationController
       )
 
       @delivery = Delivery.new(delivery_attrs)
-
-      # 6. Asignar los delivery_items procesados
       @delivery.delivery_items = processed_delivery_items
 
       @delivery.save!
+
       redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
                   notice: "Entrega creada correctamente.")
     end
   rescue ActiveRecord::RecordInvalid => e
     @delivery = e.record if e.respond_to?(:record) && e.record.is_a?(Delivery)
-    @delivery ||= Delivery.new(delivery_params) # <- preserva lo que envió el usuario
+    @delivery ||= Delivery.new(delivery_params)
 
-    # reconstruir asociaciones
     @client = find_or_initialize_client_from_params
     @order  = find_or_initialize_order_from_params(@client)
     @addresses = @client.delivery_addresses.to_a
     @clients = Client.all.order(:name)
-    @addresses = @client.delivery_addresses.to_a
+
     flash.now[:alert] = "Error al crear la entrega: #{e.message}"
     render :new, status: :unprocessable_entity
+  rescue ActiveRecord::RecordNotUnique
+    # Para carrera de concurrencia: alguien creó el mismo delivery justo antes
+    existing_delivery = Delivery.find_by(
+      order_id: params[:order_id],
+      delivery_date: delivery_params[:delivery_date],
+      delivery_address_id: delivery_params[:delivery_address_id]
+    )
+
+    if existing_delivery
+      redirect_to existing_delivery, alert: "Esa entrega fue creada casi al mismo tiempo. Se redirigió a la existente."
+    else
+      redirect_to new_delivery_path, alert: "Ocurrió un conflicto. Intenta nuevamente."
+    end
+  rescue => e
+    Rails.logger.error "Error inesperado en DeliveriesController#create: #{e.message}"
+    redirect_to new_delivery_path, alert: "Ocurrió un error inesperado. Intenta nuevamente."
   end
 
   # GET /deliveries/by_week
@@ -684,10 +733,12 @@ class DeliveriesController < ApplicationController
     existing_item = order.order_items.find_by(product: permitted_params[:product])
 
     if existing_item
+      # ⚠️ CORRECCIÓN: NO sumar cantidades, solo actualizar si es diferente
       if permitted_params[:quantity].present? &&
         existing_item.quantity != permitted_params[:quantity].to_i
 
-        new_quantity = existing_item.quantity.to_i + permitted_params[:quantity].to_i
+        # CAMBIO: Reemplazar en lugar de sumar
+        new_quantity = permitted_params[:quantity].to_i
 
         combined_notes = if permitted_params[:notes].present? && permitted_params[:notes] != existing_item.notes
           [ existing_item.notes, permitted_params[:notes] ].compact.reject(&:blank?).join("; ")

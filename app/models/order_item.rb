@@ -7,8 +7,9 @@ class OrderItem < ApplicationRecord
   has_many :delivery_items, dependent: :destroy
   has_many :order_item_notes, dependent: :destroy
 
-  # Validaciones
+  # ✅ BLINDAJE: Validaciones de unicidad
   validates :product, presence: true
+  validates :product, uniqueness: { scope: :order_id, message: "ya existe en este pedido" }
   validates :quantity, presence: true, numericality: { greater_than: 0 }
 
   # Scopes
@@ -24,10 +25,19 @@ class OrderItem < ApplicationRecord
     missing: 4
   }
 
-  # Callback para actualizar el estado del order_item basado en las entregas
+  # Callbacks
   after_save :update_status_based_on_deliveries
   after_update :update_order_status
   after_update :notify_ready, if: :saved_change_to_status?
+
+  # ✅ MÉTODOS DE AYUDA PARA CLARIDAD (Capa 2)
+  def delivered_quantity
+    delivery_items.sum(:quantity_delivered)
+  end
+
+  def pending_quantity
+    quantity - delivered_quantity
+  end
 
   def display_status
     case status
@@ -84,8 +94,6 @@ class OrderItem < ApplicationRecord
 
   def notify_ready
     if status == "ready"
-      # Marcar el último delivery_item como confirmado si existe
-      puts "Notificando que el producto '#{product}' del pedido #{order.number} está listo para confirmar con el cliente."
       seller_user = order.seller.user
       message = "El producto '#{product}' del pedido #{order.number} está listo para confirmar con el cliente."
       NotificationService.create_for_users([ seller_user ], self, message)

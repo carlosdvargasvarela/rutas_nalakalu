@@ -36,6 +36,7 @@ class DeliveryItem < ApplicationRecord
   # ============================================================================
 
   validate :order_item_must_be_ready_to_confirm, if: -> { status_changed?(from: "pending", to: "confirmed") }
+  validates :order_item_id, uniqueness: { scope: :delivery_id, message: "ya existe en esta entrega" }
 
   # ============================================================================
   # CALLBACKS
@@ -74,6 +75,15 @@ class DeliveryItem < ApplicationRecord
   # Actualiza el estado del delivery basado en los delivery_items
   def update_delivery_status
     delivery.update_status_based_on_items if delivery.present?
+  end
+
+  def not_exceed_order_item_quantity
+    return unless order_item && quantity_delivered
+
+    total_delivered = order_item.delivery_items.where.not(id: id).sum(:quantity_delivered)
+    if total_delivered + quantity_delivered > order_item.quantity
+      errors.add(:quantity_delivered, "excede la cantidad solicitada en el pedido (#{order_item.quantity})")
+    end
   end
 
   # Marca como entregado y actualiza el order_item
