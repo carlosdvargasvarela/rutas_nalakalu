@@ -1,0 +1,30 @@
+<!-- app/views/delivery_plans/_selected_sidebar.html.erb -->
+<div class="card shadow-sm sticky-top" style="top:20px;">
+  <!-- ↑ Quité data-controller="delivery-plan-sidebar" de aquí -->
+  <div class="card-header bg-primary text-white fw-semibold">
+    <i class="bi bi-list-check me-1"></i> Seleccionadas
+  </div>
+  <div class="card-body p-0">
+    <ul id="selected-deliveries" 
+        class="list-group list-group-flush small"
+        data-delivery-plan-sidebar-target="list">
+      <!-- Stimulus llenará aquí las entregas seleccionadas -->
+    </ul>
+  </div>
+  <div class="card-footer d-flex justify-content-between">
+    <span id="selected-summary" 
+          data-delivery-plan-sidebar-target="summary">
+      0 entregas
+    </span>
+    <%= simple_form_for delivery_plan, url: delivery_plans_path do |f| %>
+      <%= f.hidden_field :week, value: Date.today.cweek %>
+      <%= f.hidden_field :year, value: Date.today.cwyear %>
+      <!-- Contenedor hidden que Stimulus llenará dinámicamente -->
+      <div data-delivery-plan-sidebar-target="hiddenInputs"></div>
+      <%= f.submit "Crear Plan",
+            class: "btn btn-success btn-sm",
+            data: { delivery_plan_sidebar_target: "submit" },
+            disabled: true %>
+    <% end %>
+  </div>
+</div>

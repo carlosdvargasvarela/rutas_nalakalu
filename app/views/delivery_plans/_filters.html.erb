@@ -1,0 +1,29 @@
+<div class="card shadow-sm mb-3">
+  <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-funnel me-1"></i>Filtros</span>
+    <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#filters-body">
+      <i class="bi bi-chevron-down"></i>
+    </button>
+  </div>
+  <div class="collapse show" id="filters-body">
+    <div class="card-body">
+      <%= search_form_for q, url: new_delivery_plan_path, method: :get, html: { class: "row g-2" } do |f| %>
+        <div class="col-md-3">
+          <%= f.label :delivery_date_gteq, "Desde", class: "form-label" %>
+          <%= f.date_field :delivery_date_gteq, value: from, class: "form-control" %>
+        </div>
+        <div class="col-md-3">
+          <%= f.label :delivery_date_lteq, "Hasta", class: "form-label" %>
+          <%= f.date_field :delivery_date_lteq, value: to, class: "form-control" %>
+        </div>
+        <div class="col-md-3">
+          <%= f.label :order_client_name_cont, "Cliente", class: "form-label" %>
+          <%= f.search_field :order_client_name_cont, class: "form-control" %>
+        </div>
+        <div class="col-md-3 d-grid align-items-end">
+          <%= f.submit "Buscar", class: "btn btn-outline-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

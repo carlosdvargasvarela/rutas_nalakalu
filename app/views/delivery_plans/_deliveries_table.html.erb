@@ -1,0 +1,48 @@
+<% if deliveries.any? %>
+  <div class="card shadow-sm">
+    <div class="card-header bg-light fw-semibold">
+      <i class="bi bi-truck me-1"></i> Entregas disponibles
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover table-sm align-middle">
+        <thead class="table-primary">
+          <tr>
+            <th>
+              <%= check_box_tag "select_all", "", false,
+                    class: "form-check-input",
+                    data: { action: "delivery-plan-sidebar#toggleAll" } %>
+            </th>
+            <th>Pedido</th>
+            <th>Cliente</th>
+            <th>Dirección</th>
+            <th>Fecha</th>
+            <th>Productos</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% deliveries.each do |delivery| %>
+            <tr class="js-delivery-row" data-delivery-id="<%= delivery.id %>">
+              <td>
+                <%= check_box_tag "delivery_ids[]", delivery.id, selected_ids&.include?(delivery.id),
+                            class: "form-check-input",
+                            data: { action: "delivery-plan-sidebar#toggle",
+                                    label: "#{delivery.order.number} - #{delivery.order.client.name}" } %>
+              </td>
+              <td><%= delivery.order.number %></td>
+              <td><%= delivery.order.client.name %></td>
+              <td><%= delivery.delivery_address.address.truncate(40) %></td>
+              <td><%= l delivery.delivery_date, format: :short %></td>
+              <td>
+                <% delivery.active_items_for_plan.each do |item| %>
+                  <span class="badge bg-light text-dark"><%= item.order_item.product %> (<%= item.quantity_delivered %>)</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% else %>
+  <div class="alert alert-info">No hay entregas disponibles para este rango.</div>
+<% end %>

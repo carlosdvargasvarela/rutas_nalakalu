@@ -31,7 +31,7 @@ class DeliveryPlansController < ApplicationController
   def create
     @delivery_plan = DeliveryPlan.new(delivery_plan_params)
     authorize @delivery_plan
-    delivery_ids = params[:delivery_ids] || []
+    delivery_ids = Array(params[:delivery_ids]).reject(&:blank?)
 
     # Cargar las entregas seleccionadas
     deliveries = Delivery.where(id: delivery_ids)
