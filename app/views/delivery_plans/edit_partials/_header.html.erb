@@ -1,0 +1,19 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-1">
+      <i class="bi bi-pencil-square me-2"></i>
+      Editar plan de ruta
+      <span class="text-primary">
+        <%= week_range_label(delivery_plan.year, delivery_plan.week, show_year: true) %>
+      </span>
+    </h1>
+    <div class="small text-muted">
+      Creado el <%= l delivery_plan.created_at, format: :short %>
+    </div>
+  </div>
+  <div>
+    <span class="badge bg-<%= delivery_plan_status_color(delivery_plan.status) %>">
+      <%= delivery_plan.display_status %>
+    </span>
+  </div>
+</div>

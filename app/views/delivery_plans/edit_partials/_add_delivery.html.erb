@@ -1,0 +1,23 @@
+<% if available_deliveries.any? %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light fw-bold">
+      <i class="bi bi-plus-circle me-1"></i> Agregar entrega al plan
+    </div>
+    <div class="card-body">
+      <%= form_with url: add_delivery_to_plan_delivery_plan_path(delivery_plan), method: :patch, local: true do |f| %>
+        <div class="row g-3">
+          <div class="col-md-9">
+            <%= f.collection_select :delivery_id, available_deliveries, :id,
+                  ->(d) { "#{d.order.number} - #{d.order.client.name} (#{d.delivery_address.address})" },
+                  prompt: "Selecciona una entrega", class: "form-select" %>
+          </div>
+          <div class="col-md-3">
+            <%= f.submit "➕ Agregar", class: "btn btn-success w-100" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% else %>
+  <div class="alert alert-info">No hay entregas disponibles para agregar.</div>
+<% end %>

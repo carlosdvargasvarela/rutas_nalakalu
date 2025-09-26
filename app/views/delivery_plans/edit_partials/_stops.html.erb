@@ -1,0 +1,74 @@
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light fw-bold d-flex justify-content-between">
+    <span><i class="bi bi-list-ol me-1"></i> Orden de paradas</span>
+    <small class="text-muted"><i class="bi bi-arrows-move me-1"></i> Arrastra para reordenar</small>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="width:40px;"></th>
+          <th>#</th>
+          <th>Cliente</th>
+          <th>Dirección</th>
+          <th>Hora pref.</th>
+          <th style="width:200px;">Productos</th>
+          <th style="width:70px;">Acción</th>
+        </tr>
+      </thead>
+      <tbody data-controller="sortable"
+             data-sortable-target="list"
+             data-sortable-url-value="<%= update_order_delivery_plan_path(delivery_plan) %>">
+        <% assignments.each_with_index do |assignment, idx| %>
+          <% d = assignment.delivery %>
+          <!-- Fila principal + productos (misma fila colapsable) -->
+          <tr data-assignment-id="<%= assignment.id %>">
+            <td class="text-center">
+              <i class="bi bi-grip-vertical drag-handle text-muted"></i>
+            </td>
+            <td class="text-center">
+              <span class="badge bg-primary stop-number"><%= assignment.stop_order || idx+1 %></span>
+            </td>
+            <td><%= d.order.client.name %></td>
+            <td><%= d.delivery_address.address %></td>
+            <td><%= d.delivery_time_preference.presence || "--" %></td>
+            <td>
+              <a data-bs-toggle="collapse" href="#products_<%= assignment.id %>" 
+                 role="button" aria-expanded="false" 
+                 aria-controls="products_<%= assignment.id %>">
+                <i class="bi bi-caret-down"></i> Ver productos
+              </a>
+              <div class="collapse mt-2" id="products_<%= assignment.id %>">
+                <ul class="list-unstyled small mb-0">
+                  <% d.delivery_items.includes(:order_item).each do |di| %>
+                    <li>
+                      • <strong><%= di.order_item.product %></strong>
+                      <span class="badge bg-info">
+                        <%= di.quantity_delivered || di.order_item.quantity %> unidades
+                      </span>
+                      <% if di.service_case %>
+                        <span class="badge bg-warning text-dark">Caso de servicio</span>
+                      <% end %>
+                      <% if di.notes.present? %>
+                        <div class="text-muted small">
+                          <i class="bi bi-chat-left-text me-1"></i> <%= di.notes %>
+                        </div>
+                      <% end %>
+                    </li>
+                  <% end %>
+                </ul>
+              </div>
+            </td>
+            <td>
+              <%= link_to delivery_plan_delivery_plan_assignment_path(delivery_plan, assignment),
+                    method: :delete, class: "btn btn-sm btn-outline-danger",
+                    data: { turbo_confirm: "¿Eliminar esta parada?" } do %>
+                <i class="bi bi-trash"></i>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

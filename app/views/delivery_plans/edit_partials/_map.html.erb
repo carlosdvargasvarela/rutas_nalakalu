@@ -1,0 +1,16 @@
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light fw-bold"><i class="bi bi-map"></i> Mapa de la ruta</div>
+  <div class="card-body p-0">
+    <div data-controller="delivery-plan-map"
+         data-delivery-plan-map-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
+         data-delivery-plan-map-points-value="<%= assignments.map { |a|
+           { id: a.id, stop_order: a.stop_order || 0,
+             lat: a.delivery.delivery_address.latitude,
+             lng: a.delivery.delivery_address.longitude,
+             client: a.delivery.order.client.name,
+             order_number: a.delivery.order.number }
+         }.to_json %>">
+      <div class="border rounded" style="height:400px;" data-delivery-plan-map-target="map"></div>
+    </div>
+  </div>
+</div>

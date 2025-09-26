@@ -1,0 +1,29 @@
+<%= simple_form_for delivery_plan, local: true do |f| %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light fw-bold">
+      <i class="bi bi-truck-front me-1"></i> Datos de asignación
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= f.input :driver_id,
+                      label: "Conductor asignado",
+                      collection: User.where(role: :driver),
+                      text_method: :name, value_method: :id,
+                      prompt: "Selecciona un conductor",
+                      input_html: { class: "form-select" } %>
+        </div>
+        <div class="col-md-6">
+          <%= f.input :truck,
+                      label: "Camión asignado",
+                      collection: DeliveryPlan.trucks.keys.map { |t| [t, t] },
+                      prompt: "Selecciona un camión",
+                      input_html: { class: "form-select" } %>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer text-end">
+      <%= f.submit "💾 Guardar cambios", class: "btn btn-primary" %>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,23 @@
+<div class="card shadow-sm sticky-top" style="top:20px;">
+  <div class="card-header bg-primary text-white"><i class="bi bi-info-circle me-1"></i> Resumen del plan</div>
+  <div class="card-body">
+    <p><i class="bi bi-box-seam me-1"></i> <strong>Total entregas:</strong> <%= assignments.count %></p>
+    <p><i class="bi bi-people me-1"></i> <strong>Clientes únicos:</strong> <%= assignments.map { |a| a.delivery.order.client_id }.uniq.count %></p>
+    <p><strong>Estado:</strong> 
+      <span class="badge bg-<%= delivery_plan_status_color(delivery_plan.status) %>">
+        <%= delivery_plan.display_status %>
+      </span>
+    </p>
+
+    <% if delivery_plan.draft? %>
+      <% if delivery_plan.driver.present? && delivery_plan.truck.present? %>
+        <%= button_to "🚚 Enviar a logística", send_to_logistics_delivery_plan_path(delivery_plan),
+              method: :patch, class: "btn btn-success w-100" %>
+      <% else %>
+        <div class="alert alert-warning small mt-2">
+          Debes asignar conductor y camión antes de enviar.
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>
