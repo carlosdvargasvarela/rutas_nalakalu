@@ -115,9 +115,9 @@ class DeliveryPlansController < ApplicationController
             map_link_text = ""
 
             if address.latitude.present? && address.longitude.present?
-              map_link_text = " (Maps: https://www.google.com/maps?q=#{address.latitude},#{address.longitude})"
+              map_link_text = " (Waze: https://waze.com/ul?ll=#{address.latitude},#{address.longitude}&navigate=yes)"
             elsif address.address.present?
-              map_link_text = " (Maps: https://www.google.com/maps/search/?api=1&query=#{ERB::Util.url_encode(address.address)})"
+              map_link_text = " (Waze: https://waze.com/ul?q=#{ERB::Util.url_encode(address.address)}&navigate=yes)"
             end
 
             # Combinamos la dirección y el link de Maps
