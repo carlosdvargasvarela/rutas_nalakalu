@@ -2,7 +2,9 @@
 class DeliveryPlansController < ApplicationController
   def index
     @q = DeliveryPlan.ransack(params[:q])
-    @delivery_plans = @q.result.includes(:driver, :deliveries)
+    @delivery_plans = @q.result
+                        .includes(:driver, :deliveries)
+                        .ordered_by_first_delivery_desc
 
     respond_to do |format|
       format.html

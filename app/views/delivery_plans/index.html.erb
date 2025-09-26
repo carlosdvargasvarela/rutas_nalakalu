@@ -22,19 +22,18 @@
       <div class="d-flex align-items-center gap-3">
         <span>
           <i class="bi bi-info-circle me-1"></i>
-          Se encontraron <strong><%= @delivery_plans.size %></strong> planes de entrega
+          Se encontraron <strong><%= @delivery_plans.to_a.size %></strong> planes de entrega
         </span>
         <span class="badge bg-white text-primary">
           <i class="bi bi-truck me-1"></i>
-          <%= @delivery_plans.sum { |p| p.deliveries.count } %> entregas totales
+          <%= @delivery_plans.sum { |plan| plan.deliveries.size } %> entregas totales
         </span>
       </div>
       <div class="d-flex gap-2">
-        <% status_counts = @delivery_plans.group_by(&:status).transform_values(&:count) %>
-        <% status_counts.each do |status, count| %>
+        <% @delivery_plans.group_by(&:status).each do |status, plans| %>
           <% label = status.present? ? status.to_s.humanize : "Sin estado" %>
           <span class="badge bg-<%= delivery_plan_status_color(status || "pending") %>">
-            <%= label %>: <%= count %>
+            <%= label %>: <%= plans.size %>
           </span>
         <% end %>
       </div>

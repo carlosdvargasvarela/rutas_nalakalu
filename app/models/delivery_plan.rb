@@ -19,6 +19,13 @@ class DeliveryPlan < ApplicationRecord
   scope :upcoming, -> {
     where("year > ? OR (year = ? AND week >= ?)", Date.current.year, Date.current.year, Date.current.cweek)
   }
+
+  scope :ordered_by_first_delivery_desc, -> {
+    joins(:deliveries)
+      .group("delivery_plans.id")
+      .order(Arel.sql("MIN(deliveries.delivery_date) DESC"))
+  }
+
   def stats
     {
       total_deliveries: deliveries.count,
@@ -47,10 +54,10 @@ class DeliveryPlan < ApplicationRecord
 
   # Ransacker para filtrar por el rango de fechas de la primera entrega
   ransacker :first_delivery_date do |parent|
-    Arel.sql("(SELECT MIN(deliveries.delivery_date) 
-               FROM deliveries 
-               INNER JOIN delivery_plan_assignments dpa 
-               ON dpa.delivery_id = deliveries.id 
+    Arel.sql("(SELECT MIN(deliveries.delivery_date)
+               FROM deliveries
+               INNER JOIN delivery_plan_assignments dpa
+               ON dpa.delivery_id = deliveries.id
                WHERE dpa.delivery_plan_id = delivery_plans.id)")
   end
 
@@ -103,7 +110,7 @@ class DeliveryPlan < ApplicationRecord
   end
 
   def all_deliveries_confirmed?
-    deliveries.all?(&:confirmed?) || deliveries.all?(&:in_plan?) 
+    deliveries.all?(&:confirmed?) || deliveries.all?(&:in_plan?)
   end
 
   private
