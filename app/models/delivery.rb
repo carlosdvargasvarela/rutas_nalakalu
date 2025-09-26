@@ -52,6 +52,8 @@ class Delivery < ApplicationRecord
   scope :available_for_plan, -> { eligible_for_plan.not_assigned_to_plan.approved }
   scope :approved, -> { where(approved: true) }
   scope :not_approved, -> { where(approved: false) }
+  scope :active, -> { where(archived: false) }
+  scope :archived, -> { where(archived: true) }
 
   # Métodos de conveniencia
   def service_case?

@@ -215,6 +215,21 @@
             <%= f.button "Reagendar toda la entrega", class: "btn btn-warning btn-sm uniform-btn" %>
           <% end %>
         <% end %>
+        <% if @delivery.archived? %>
+          <%= button_to archive_delivery_path(@delivery),
+                method: :patch,
+                class: "btn btn-success",
+                data: { turbo_confirm: "¿Seguro que querés restaurar esta entrega?" } do %>
+            <i class="bi bi-arrow-counterclockwise"></i> Restaurar
+          <% end %>
+        <% else %>
+          <%= button_to archive_delivery_path(@delivery),
+                method: :patch,
+                class: "btn btn-danger",
+                data: { turbo_confirm: "¿Seguro que querés archivar esta entrega?" } do %>
+            <i class="bi bi-archive"></i> Archivar
+          <% end %>
+        <% end %>
       </div>
     <% else %>
       <div class="text-muted">

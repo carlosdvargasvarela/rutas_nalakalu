@@ -351,6 +351,15 @@ class DeliveriesController < ApplicationController
     redirect_to @delivery, notice: "Entrega aprobada correctamente para esta semana."
   end
 
+  def archive
+  @delivery = Delivery.find(params[:id])
+    if @delivery.update(status: :archived)
+      redirect_to @delivery, notice: "🚚 La entrega fue archivada correctamente."
+    else
+      redirect_to @delivery, alert: "⚠️ No se pudo archivar la entrega."
+    end
+  end
+
   def new_internal_delivery
     @delivery = Delivery.new(
       delivery_type: :internal_delivery,

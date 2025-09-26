@@ -15,7 +15,17 @@
                   Pedido: <%= delivery.order.number %>
                 </h6>
                 <p><i class="bi bi-person me-1"></i><%= delivery.order.client.name %></p>
-                <p><i class="bi bi-geo-alt me-1"></i><%= delivery.delivery_address.full_address %></p>
+                <p>
+                  <% if delivery.delivery_address.latitude.present? && delivery.delivery_address.longitude.present? %>
+                    <%= link_to [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),
+                            "https://www.google.com/maps?q=#{delivery.delivery_address.latitude},#{delivery.delivery_address.longitude}",
+                            target: "_blank", rel: "noopener", class: "text-decoration-none fw-bold" %>
+                  <% else %>
+                    <%= link_to [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),
+                            "https://www.google.com/maps/search/?api=1&query=#{ERB::Util.url_encode(delivery.delivery_address.address)}",
+                            target: "_blank", rel: "noopener", class: "text-decoration-none fw-bold" %>
+                  <% end %>
+                </p>
                 <p><i class="bi bi-calendar-event me-1"></i><%= l delivery.delivery_date, format: :short %></p>
                 <p><i class="bi bi-telephone me-1"></i><%= delivery.contact_name %>
                   <%= link_to delivery.contact_phone, "tel:#{delivery.contact_phone}" if delivery.contact_phone.present? %>
