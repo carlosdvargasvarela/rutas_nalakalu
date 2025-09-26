@@ -15,7 +15,8 @@ class DeliveryPlanAssignment < ApplicationRecord
 
   def change_deliveries_statuses
     unless delivery_plan.draft? && delivery.scheduled?
-      # ✅ Solo actualizar los items confirmados a in_plan
+      raise ActiveRecord::RecordInvalid, "Entrega no aprobada" unless delivery.approved?
+
       delivery.delivery_items
               .where(status: DeliveryItem.statuses[:confirmed])
               .update_all(status: DeliveryItem.statuses[:in_plan])

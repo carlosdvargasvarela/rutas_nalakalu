@@ -32,6 +32,55 @@
   <div class="row g-4">
     <%= render "dashboard/summary_cards" %>
   </div>
+  <!-- Panel de entregas pendientes de aprobación -->
+  <% if @pending_approvals.any? %>
+    <div class="row mt-4">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+              <i class="bi bi-shield-exclamation me-2 text-warning"></i>
+              Entregas pendientes de aprobación
+            </h5>
+            <span class="badge bg-warning text-dark"><%= @pending_approvals.count %> pendientes</span>
+          </div>
+          <div class="card-body table-responsive">
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>ID</th>
+                  <th>Fecha</th>
+                  <th>Pedido</th>
+                  <th>Cliente</th>
+                  <th>Vendedor</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @pending_approvals.each do |delivery| %>
+                  <tr>
+                    <td><%= link_to "##{delivery.id}", delivery_path(delivery), class: "text-decoration-none" %></td>
+                    <td><%= l delivery.delivery_date, format: :short %></td>
+                    <td><%= link_to delivery.order.number, order_path(delivery.order), class: "text-decoration-none" %></td>
+                    <td><%= delivery.order.client.name %></td>
+                    <td><%= delivery.order.seller.name %></td>
+                    <td>
+                      <%= button_to approve_delivery_path(delivery),
+                        method: :patch,
+                        class: "btn btn-sm btn-outline-success",
+                        data: { turbo_confirm: "¿Aprobar la entrega ##{delivery.id}?" } do %>
+                        <i class="bi bi-check-circle"></i> Aprobar
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
   <!-- Panel de notificaciones recientes -->
   <div class="row mt-4">
     <div class="col-12 col-lg-6">

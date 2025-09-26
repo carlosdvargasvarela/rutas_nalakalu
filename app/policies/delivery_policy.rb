@@ -34,6 +34,10 @@ class DeliveryPolicy < ApplicationPolicy
     user.admin? || user.logistics? || user.production_manager? || user.seller?
   end
 
+  def approve?
+    user.admin? || user.logistics? || user.production_manager?
+  end
+
   class Scope < Scope
     def resolve
       if user.admin? || user.production_manager? || user.logistics?

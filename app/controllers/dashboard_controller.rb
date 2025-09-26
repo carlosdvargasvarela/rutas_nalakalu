@@ -26,6 +26,14 @@ class DashboardController < ApplicationController
     @orders_per_seller = Seller.joins(:orders).where(orders: { status: [ :pending, :in_production ] }).group("sellers.name").count
     @deliveries_per_driver = User.where(role: :driver).left_joins(delivery_plans: { delivery_plan_assignments: :delivery }).group("users.name").count("deliveries.id")
     @orders_per_week = Order.group_by_week(:created_at, last: 8, format: "%d/%m").count
+
+    if current_user.admin? || current_user.production_manager?
+    @pending_approvals = Delivery.where(approved: false)
+                                 .where("delivery_date BETWEEN ? AND ?", Date.current.beginning_of_week, Date.current.end_of_week)
+                                 .order(:delivery_date)
+    else
+      @pending_approvals = []
+    end
   end
 
   private

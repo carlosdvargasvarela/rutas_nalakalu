@@ -1,6 +1,6 @@
 # app/controllers/deliveries_controller.rb
 class DeliveriesController < ApplicationController
-  before_action :set_delivery, only: [ :show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all ]
+  before_action :set_delivery, only: [ :show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all, :approve ]
   before_action :set_addresses, only: [ :new, :edit, :create, :update ]
 
   # GET /deliveries
@@ -338,6 +338,13 @@ class DeliveriesController < ApplicationController
   rescue => e
     redirect_to(session[:deliveries_return_to] || deliveries_path,
                 alert: "Error al reagendar: #{e.message}")
+  end
+
+  def approve
+    authorize @delivery, :approve?
+
+    @delivery.approve!
+    redirect_to @delivery, notice: "Entrega aprobada correctamente para esta semana."
   end
 
   def new_internal_delivery

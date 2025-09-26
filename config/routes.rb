@@ -72,6 +72,8 @@ Rails.application.routes.draw do
       patch :confirm_all_items
       patch :reschedule_all
 
+      patch :approve
+
       # ✅ Casos de servicio derivados de una entrega existente
       get  :new_service_case_for_existing
       post :create_service_case_for_existing

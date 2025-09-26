@@ -23,6 +23,8 @@ class Delivery < ApplicationRecord
 
   validates :delivery_date, presence: true
 
+  # 🔒 Validación: si la entrega es de semana actual -> debe ser aprobada
+  before_create :set_default_approval
   after_save :update_status_based_on_items
 
   # Nuevos tipos de delivery
@@ -44,10 +46,12 @@ class Delivery < ApplicationRecord
                                             Delivery.statuses[:rescheduled],
                                             Delivery.statuses[:cancelled] ])}
   scope :eligible_for_plan, -> {
-          where.not(status: [:delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived])
+          where.not(status: [ :delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived ])
         }
   scope :not_assigned_to_plan, -> { where.not(id: DeliveryPlanAssignment.select(:delivery_id)) }
-  scope :available_for_plan, -> { eligible_for_plan.not_assigned_to_plan }
+  scope :available_for_plan, -> { eligible_for_plan.not_assigned_to_plan.approved }
+  scope :approved, -> { where(approved: true) }
+  scope :not_approved, -> { where(approved: false) }
 
   # Métodos de conveniencia
   def service_case?
@@ -160,6 +164,16 @@ class Delivery < ApplicationRecord
         .order(:delivery_date)
   end
 
+  def needs_approval?
+    delivery_date.present? &&
+      delivery_date.cweek == Date.current.cweek &&
+      delivery_date.cwyear == Date.current.cwyear
+  end
+
+  def approve!
+    update!(approved: true)
+  end
+
   # Información del cliente para logística
   def client_info
     {
@@ -233,5 +247,11 @@ class Delivery < ApplicationRecord
     statuses.keys.map do |s|
       [ Delivery.new(status: s).display_status, s ]
     end
+  end
+
+   private
+
+  def set_default_approval
+    self.approved = false if needs_approval?
   end
 end

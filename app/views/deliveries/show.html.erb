@@ -1,9 +1,29 @@
+<% if policy(@delivery).approve? && @delivery.needs_approval? && !@delivery.approved? %>
+  <div class="alert alert-warning d-flex justify-content-between align-items-center mt-3">
+    <span>
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      Esta entrega requiere aprobación de producción.
+    </span>
+    <%= button_to approve_delivery_path(@delivery),
+        method: :patch,
+        class: "btn btn-sm btn-success",
+        data: { turbo_confirm: "¿Marcar esta entrega como aprobada para la semana actual?" } do %>
+      <i class="bi bi-check-circle"></i> Aprobar Entrega
+    <% end %>
+  </div>
+<% end %>
+<% if @delivery.needs_approval? && !@delivery.approved? %>
+  <div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    <strong>Entrega bloqueada:</strong> No se pueden realizar acciones hasta que sea aprobada por producción.
+  </div>
+<% end %>
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1>
     <i class="bi bi-truck me-2"></i>
-    Detalles de Entrega <span class="text-primary">#<%= @delivery.id %></span>
+    Entrega <span class="text-primary">#<%= @delivery.id %></span>
   </h1>
-  <% if policy(@delivery).edit? %>
+  <% if policy(@delivery).edit? && (!@delivery.needs_approval? || @delivery.approved?) %>
     <%= link_to edit_delivery_path(@delivery), class: "btn btn-sm btn-outline-secondary", title: "Editar" do %>
       <i class="bi bi-pencil-square"></i> Editar
     <% end %>
@@ -23,9 +43,18 @@
         </p>
         <p>
           <strong><i class="bi bi-flag me-1"></i>Estado:</strong>
-          <span class="badge bg-<%= delivery_status_color(@delivery.status) %>">
+          <span class="badge bg-<%= delivery_status_color(@delivery.status) %> me-1">
             <%= @delivery.display_status %>
           </span>
+          <% if @delivery.approved? %>
+            <span class="badge bg-success"><i class="bi bi-shield-check me-1"></i> Aprobada</span>
+          <% elsif @delivery.needs_approval? %>
+            <span class="badge bg-warning text-dark">
+              <i class="bi bi-hourglass-split me-1"></i> Pendiente
+            </span>
+          <% else %>
+            <span class="badge bg-secondary"><i class="bi bi-slash-circle me-1"></i> No requiere</span>
+          <% end %>
         </p>
         <p>
           <strong><i class="bi bi-clock me-1"></i>Preferencia de Hora:</strong>
@@ -158,36 +187,41 @@
     <span>
       <i class="bi bi-box-seam me-1"></i> Productos en esta Entrega
     </span>
-    <div class="d-flex gap-2 flex-wrap">
-  <% unless @delivery.delivered? || @delivery.cancelled? %>
-    <%= button_to mark_as_delivered_delivery_path(@delivery),
-        method: :patch, class: "btn btn-success btn-sm uniform-btn",
-        data: { turbo_confirm: "¿Está seguro de marcar toda la entrega como completada?" } do %>
-      Marcar todos los productos como entregados
+    <!-- 🔒 BOTONES BLOQUEADOS SI NO ESTÁ APROBADA -->
+    <% if !@delivery.needs_approval? || @delivery.approved? %>
+      <div class="d-flex gap-2 flex-wrap">
+        <% unless @delivery.delivered? || @delivery.cancelled? %>
+          <%= button_to mark_as_delivered_delivery_path(@delivery),
+          method: :patch, class: "btn btn-success btn-sm uniform-btn",
+          data: { turbo_confirm: "¿Está seguro de marcar toda la entrega como completada?" } do %>
+            Marcar todos los productos como entregados
+          <% end %>
+        <% end %>
+        <%= link_to new_service_case_for_existing_delivery_path(@delivery),
+          class: "btn btn-sm btn-warning uniform-btn" do %>
+          <i class="bi bi-tools"></i> Generar caso de servicio
+        <% end %>
+        <% if policy(@delivery).edit? && @delivery.delivery_items.any? { |item| item.pending? || item.confirmed? } && !@delivery.delivery_items.all?(&:confirmed?) %>
+          <%= button_to confirm_all_items_delivery_path(@delivery),
+        method: :patch, class: "btn btn-primary btn-sm uniform-btn",
+        data: { turbo_confirm: "¿Estás seguro que deseas confirmar todos los productos para entrega?" } do %>
+            <i class="bi bi-check-circle"></i> Confirmar todos los productos
+          <% end %>
+        <% end %>
+        <% if policy(@delivery).edit? && @delivery.delivery_items.any? { |item| !["delivered", "cancelled", "rescheduled"].include?(item.status) } %>
+          <%= form_with url: reschedule_all_delivery_path(@delivery), method: :patch, class: "d-flex align-items-center gap-2",
+                    data: { turbo_confirm: "¿Reagendar toda la entrega para otra fecha?" } do |f| %>
+            <%= f.date_field :new_date, class: "form-control form-control-sm", style: "width: 150px;" %>
+            <%= f.button "Reagendar toda la entrega", class: "btn btn-warning btn-sm uniform-btn" %>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="text-muted">
+        <i class="bi bi-lock me-1"></i>
+        Acciones bloqueadas hasta aprobación
+      </div>
     <% end %>
-  <% end %>
-
-  <%= link_to new_service_case_for_existing_delivery_path(@delivery),
-        class: "btn btn-sm btn-warning uniform-btn" do %>
-    <i class="bi bi-tools"></i> Generar caso de servicio
-  <% end %>
-
-  <% if policy(@delivery).edit? && @delivery.delivery_items.any? { |item| item.pending? || item.confirmed? } && !@delivery.delivery_items.all?(&:confirmed?) %>
-    <%= button_to confirm_all_items_delivery_path(@delivery),
-      method: :patch, class: "btn btn-primary btn-sm uniform-btn",
-      data: { turbo_confirm: "¿Estás seguro que deseas confirmar todos los productos para entrega?" } do %>
-      <i class="bi bi-check-circle"></i> Confirmar todos los productos
-    <% end %>
-  <% end %>
-  
-  <% if policy(@delivery).edit? && @delivery.delivery_items.any? { |item| !["delivered", "cancelled", "rescheduled"].include?(item.status) } %>
-    <%= form_with url: reschedule_all_delivery_path(@delivery), method: :patch, class: "d-flex align-items-center gap-2",
-                  data: { turbo_confirm: "¿Reagendar toda la entrega para otra fecha?" } do |f| %>
-      <%= f.date_field :new_date, class: "form-control form-control-sm", style: "width: 150px;" %>
-      <%= f.button "Reagendar toda la entrega", class: "btn btn-warning btn-sm uniform-btn" %>
-    <% end %>
-  <% end %>
-</div>
   </div>
   <div class="card-body">
     <% if @delivery.delivery_items.any? %>
@@ -232,7 +266,12 @@
                   <%= render "order_item_notes/list", item: item.order_item %>
                 </td>
                 <td>
-                  <% if item.rescheduled? %>
+                  <!-- 🔒 ACCIONES BLOQUEADAS SI NO ESTÁ APROBADA -->
+                  <% if @delivery.needs_approval? && !@delivery.approved? %>
+                    <span class="text-muted">
+                      <i class="bi bi-lock"></i> Bloqueado
+                    </span>
+                  <% elsif item.rescheduled? %>
                     <span class="text-warning">Reagendado</span>
                   <% else %>
                     <% case item.status %>
