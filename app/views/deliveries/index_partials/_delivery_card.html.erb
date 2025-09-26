@@ -1,7 +1,6 @@
 <div class="col-md-6 col-lg-4 mb-3">
   <div class="card h-100 shadow-sm border-<%= delivery_status_color(delivery.status) %>">
     <div class="card-body d-flex flex-column">
-
       <!-- Order Number destacado -->
       <div class="d-flex justify-content-between align-items-center mb-2">
         <h5 class="fw-bold mb-0 text-primary">
@@ -11,7 +10,6 @@
           <i class="bi bi-calendar-event"></i> <%= l delivery.delivery_date, format: :short %>
         </span>
       </div>
-
       <!-- Estado principal -->
       <div class="mb-3">
         <span class="badge bg-<%= delivery_status_color(delivery.status) %> px-3 py-2 fs-6">
@@ -21,7 +19,6 @@
           <span class="badge bg-warning text-dark ms-1">Caso servicio</span>
         <% end %>
       </div>
-
       <!-- Cliente + direccion -->
       <p class="mb-1 small">
         <i class="bi bi-person"></i> <%= delivery.order.client.name %><br>
@@ -30,13 +27,11 @@
               "https://maps.google.com/?q=#{delivery.delivery_address.latitude},#{delivery.delivery_address.longitude}",
               target: "_blank", class: "text-decoration-none text-muted small" %>
       </p>
-
       <!-- Vendedor -->
       <span class="small text-muted mb-2 d-block">
-        <i class="bi bi-person-badge"></i> <%= delivery.order.seller.name %> 
+        <i class="bi bi-person-badge"></i> <%= delivery.order.seller.name %>
         (<%= delivery.order.seller.seller_code %>)
       </span>
-
       <!-- Productos del pedido con acordeón -->
       <div class="accordion accordion-flush mb-3" id="accordion-<%= delivery.id %>">
         <div class="accordion-item">
@@ -69,45 +64,15 @@
           </div>
         </div>
       </div>
-
       <!-- Footer acciones rápidas -->
       <div class="mt-auto d-flex justify-content-between gap-2">
         <!-- Acción segura -->
         <%= link_to delivery_path(delivery), class: "btn btn-sm btn-outline-primary flex-fill" do %>
           <i class="bi bi-eye"></i> Ver
         <% end %>
-
-        <!-- Dropdown contextual en vez de botón directo -->
+        <!-- 🔥 USAR EL PARTIAL -->
         <% if policy(delivery).edit? %>
-          <div class="dropup">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle flex-fill" type="button" 
-                    data-bs-toggle="dropdown" aria-expanded="false">
-              Acciones
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li>
-                <%= link_to confirm_all_items_delivery_path(delivery), method: :patch,
-                      data: { turbo_confirm: "⚠️ ¿Deseas confirmar TODOS los productos de la orden #{delivery.order.number}?" }, 
-                      class: "dropdown-item text-success" do %>
-                  <i class="bi bi-check2-all"></i> Confirmar todos los productos
-                <% end %>
-              </li>
-              <li>
-                <%= link_to reschedule_all_delivery_path(delivery), method: :patch,
-                      data: { turbo_confirm: "¿Reagendar esta entrega completa?" }, 
-                      class: "dropdown-item text-warning" do %>
-                  <i class="bi bi-calendar-plus"></i> Reagendar entrega
-                <% end %>
-              </li>
-              <li>
-                <%= link_to archive_delivery_path(delivery), method: :patch,
-                      data: { turbo_confirm: "¿Archivar esta entrega?" }, 
-                      class: "dropdown-item text-muted" do %>
-                  <i class="bi bi-archive"></i> Archivar
-                <% end %>
-              </li>
-            </ul>
-          </div>
+          <%= render 'deliveries/index_partials/delivery_actions', delivery: delivery %>
         <% end %>
       </div>
     </div>
