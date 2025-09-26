@@ -88,6 +88,7 @@
           <thead class="table-light">
             <tr>
               <th>Semana</th>
+              <th>Fechas</th>
               <th>Período</th>
               <th>Estado</th>
               <th>Conductor</th>
@@ -130,6 +131,22 @@
                       <i class="bi bi-question-circle me-1"></i>
                       Sin definir
                     </span>
+                  <% end %>
+                </td>
+                <td>
+                  <% if plan.deliveries.any? %>
+                    <% first_date = plan.deliveries.minimum(:delivery_date) %>
+                    <% last_date  = plan.deliveries.maximum(:delivery_date) %>
+                    <% if first_date == last_date %>
+                      <span class="fw-bold"><%= l first_date, format: :short %></span>
+                    <% else %>
+                      <div class="d-flex flex-column">
+                        <span class="fw-bold"><%= l first_date, format: :short %></span>
+                        <small class="text-muted">al <%= l last_date, format: :short %></small>
+                      </div>
+                    <% end %>
+                  <% else %>
+                    <span class="text-muted fst-italic">Sin entregas</span>
                   <% end %>
                 </td>
                 <td>
@@ -296,6 +313,19 @@
                       <%= l start_date, format: :short %> – <%= l end_date, format: :short %>
                     <% else %>
                       Fechas no definidas
+                    <% end %>
+                  </small>
+                  <small class="text-muted d-block">
+                    <% if plan.deliveries.any? %>
+                      <% first_date = plan.deliveries.minimum(:delivery_date) %>
+                      <% last_date  = plan.deliveries.maximum(:delivery_date) %>
+                      <% if first_date == last_date %>
+                        Entrega: <%= l first_date, format: :short %>
+                      <% else %>
+                        Entregas: <%= l first_date, format: :short %> – <%= l last_date, format: :short %>
+                      <% end %>
+                    <% else %>
+                      Sin entregas programadas
                     <% end %>
                   </small>
                 </div>
