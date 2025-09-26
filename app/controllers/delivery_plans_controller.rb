@@ -3,8 +3,11 @@ class DeliveryPlansController < ApplicationController
   def index
     @q = DeliveryPlan.ransack(params[:q])
     @delivery_plans = @q.result
-                        .includes(:driver, :deliveries)
-                        .ordered_by_first_delivery_desc
+                    .preload(:driver, :deliveries) # 👉 no mete users.* en SELECT
+                    .left_joins(:deliveries)
+                    .select("delivery_plans.*, MIN(deliveries.delivery_date) AS first_delivery_date")
+                    .group("delivery_plans.id")
+                    .order("MIN(deliveries.delivery_date) DESC")
 
     respond_to do |format|
       format.html
