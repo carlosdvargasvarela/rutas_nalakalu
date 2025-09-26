@@ -1,0 +1,115 @@
+<div class="col-md-6 col-lg-4 mb-3">
+  <div class="card h-100 shadow-sm border-<%= delivery_status_color(delivery.status) %>">
+    <div class="card-body d-flex flex-column">
+
+      <!-- Order Number destacado -->
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="fw-bold mb-0 text-primary">
+          <i class="bi bi-hash"></i> <%= delivery.order.number %>
+        </h5>
+        <span class="fw-bold text-muted">
+          <i class="bi bi-calendar-event"></i> <%= l delivery.delivery_date, format: :short %>
+        </span>
+      </div>
+
+      <!-- Estado principal -->
+      <div class="mb-3">
+        <span class="badge bg-<%= delivery_status_color(delivery.status) %> px-3 py-2 fs-6">
+          <i class="bi bi-activity"></i> <%= delivery.display_status %>
+        </span>
+        <% if delivery.has_service_cases? %>
+          <span class="badge bg-warning text-dark ms-1">Caso servicio</span>
+        <% end %>
+      </div>
+
+      <!-- Cliente + direccion -->
+      <p class="mb-1 small">
+        <i class="bi bi-person"></i> <%= delivery.order.client.name %><br>
+        <i class="bi bi-geo-alt"></i>
+        <%= link_to delivery.delivery_address.address,
+              "https://maps.google.com/?q=#{delivery.delivery_address.latitude},#{delivery.delivery_address.longitude}",
+              target: "_blank", class: "text-decoration-none text-muted small" %>
+      </p>
+
+      <!-- Vendedor -->
+      <span class="small text-muted mb-2 d-block">
+        <i class="bi bi-person-badge"></i> <%= delivery.order.seller.name %> 
+        (<%= delivery.order.seller.seller_code %>)
+      </span>
+
+      <!-- Productos del pedido con acordeón -->
+      <div class="accordion accordion-flush mb-3" id="accordion-<%= delivery.id %>">
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="heading-<%= delivery.id %>">
+            <button class="accordion-button collapsed small px-2 py-1" type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#collapse-<%= delivery.id %>" 
+                    aria-expanded="false" 
+                    aria-controls="collapse-<%= delivery.id %>">
+              <i class="bi bi-box-seam me-1"></i> Ver productos (<%= delivery.delivery_items.size %>)
+            </button>
+          </h2>
+          <div id="collapse-<%= delivery.id %>" class="accordion-collapse collapse" 
+                aria-labelledby="heading-<%= delivery.id %>" data-bs-parent="#accordion-<%= delivery.id %>">
+            <div class="accordion-body small">
+              <ul class="list-unstyled mb-0">
+                <% delivery.delivery_items.each do |item| %>
+                  <li class="d-flex justify-content-between align-items-center border-bottom py-1">
+                    <span>
+                      <span class="badge bg-secondary"><%= item.quantity_delivered %></span>
+                      <%= item.order_item.product %>
+                    </span>
+                    <span class="badge bg-<%= delivery_status_color(item.status) %>">
+                      <%= item.display_status %>
+                    </span>
+                  </li>
+                <% end %>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer acciones rápidas -->
+      <div class="mt-auto d-flex justify-content-between gap-2">
+        <!-- Acción segura -->
+        <%= link_to delivery_path(delivery), class: "btn btn-sm btn-outline-primary flex-fill" do %>
+          <i class="bi bi-eye"></i> Ver
+        <% end %>
+
+        <!-- Dropdown contextual en vez de botón directo -->
+        <% if policy(delivery).edit? %>
+          <div class="dropup">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle flex-fill" type="button" 
+                    data-bs-toggle="dropdown" aria-expanded="false">
+              Acciones
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li>
+                <%= link_to confirm_all_items_delivery_path(delivery), method: :patch,
+                      data: { turbo_confirm: "⚠️ ¿Deseas confirmar TODOS los productos de la orden #{delivery.order.number}?" }, 
+                      class: "dropdown-item text-success" do %>
+                  <i class="bi bi-check2-all"></i> Confirmar todos los productos
+                <% end %>
+              </li>
+              <li>
+                <%= link_to reschedule_all_delivery_path(delivery), method: :patch,
+                      data: { turbo_confirm: "¿Reagendar esta entrega completa?" }, 
+                      class: "dropdown-item text-warning" do %>
+                  <i class="bi bi-calendar-plus"></i> Reagendar entrega
+                <% end %>
+              </li>
+              <li>
+                <%= link_to archive_delivery_path(delivery), method: :patch,
+                      data: { turbo_confirm: "¿Archivar esta entrega?" }, 
+                      class: "dropdown-item text-muted" do %>
+                  <i class="bi bi-archive"></i> Archivar
+                <% end %>
+              </li>
+            </ul>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

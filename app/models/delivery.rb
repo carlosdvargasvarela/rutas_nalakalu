@@ -155,6 +155,10 @@ class Delivery < ApplicationRecord
     order_items.all? { |oi| oi.status == "ready" }
   end
 
+  ransacker :status, formatter: proc { |v| statuses[v] } do |parent|
+    parent.table[:status]
+  end
+
   def delivery_plan
     delivery_plans.first
   end
@@ -245,9 +249,10 @@ class Delivery < ApplicationRecord
       NotificationService.create_for_users(users.compact.uniq, self, message)
   end
 
+
   def self.status_options_for_select
     statuses.keys.map do |s|
-      [ Delivery.new(status: s).display_status, s ]
+      [ Delivery.new(status: s).display_status, s.to_s ]
     end
   end
 

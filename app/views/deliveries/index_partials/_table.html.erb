@@ -1,0 +1,62 @@
+<div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
+  <table class="table table-striped table-hover align-middle">
+    <thead class="table-light sticky-top">
+      <tr>
+        <th>Orden</th>
+        <th>Fecha</th>
+        <th>Cliente</th>
+        <th>Dirección</th>
+        <th>Contacto</th>
+        <th>Vendedor</th>
+        <th style="width:20%;">Productos</th>
+        <th>Estado</th>
+        <th>Servicio</th>
+        <th class="text-center">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% deliveries.each do |delivery| %>
+        <tr>
+          <td class="fw-bold text-primary">
+            <i class="bi bi-hash"></i>
+            <%= link_to delivery.order.number, order_path(delivery.order),
+                  class: "text-decoration-none" %>
+          </td>
+          <td><i class="bi bi-calendar-event me-1"></i> <%= l delivery.delivery_date, format: :short %></td>
+          <td><i class="bi bi-person me-1"></i> <%= delivery.order.client.name %></td>
+          <td><i class="bi bi-geo-alt me-1"></i> <%= delivery.delivery_address.address %></td>
+          <td><i class="bi bi-person-lines-fill me-1"></i> <%= delivery.contact_name %></td>
+          <td><%= delivery.order.seller.name %>
+            <small class="text-muted">(<%= delivery.order.seller.seller_code %>)</small>
+          </td>
+          <td>
+            <ul class="list-unstyled mb-0 small">
+              <% delivery.delivery_items.each do |item| %>
+                <li><span class="badge bg-secondary"><%= item.quantity_delivered %></span> <%= item.order_item.product %></li>
+              <% end %>
+            </ul>
+          </td>
+          <td>
+            <span class="badge bg-<%= delivery_status_color(delivery.status) %>">
+              <%= delivery.display_status %>
+            </span>
+          </td>
+          <td>
+            <% if delivery.has_service_cases? %>
+              <span class="badge bg-warning text-dark">Sí</span>
+            <% else %>
+              <span class="badge bg-light text-muted">No</span>
+            <% end %>
+          </td>
+          <td class="text-center">
+            <% if policy(delivery).show? %>
+              <%= link_to delivery_path(delivery), class: "btn btn-sm btn-outline-primary", title: "Ver detalles" do %>
+                <i class="bi bi-eye"></i>
+              <% end %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

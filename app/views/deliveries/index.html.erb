@@ -2,169 +2,51 @@
   <i class="bi bi-truck me-2 text-primary"></i>
   <span>Listado de Entregas</span>
 </h1>
-<div class="card shadow-sm mb-4">
-  <div class="card-body">
-    <%= search_form_for @q, url: deliveries_path, method: :get, 
-        html: { class: "row gy-2 gx-2 align-items-end" } do |f| %>
-      <!-- Cliente -->
-      <div class="col-md-3">
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-person"></i></span>
-          <%= f.search_field :order_client_name_cont, class: "form-control", placeholder: "Cliente" %>
-        </div>
-      </div>
-      <!-- Dirección -->
-      <div class="col-md-3">
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
-          <%= f.search_field :delivery_address_address_cont, 
-            class: "form-control", 
-            placeholder: "Dirección" %>
-        </div>
-      </div>
-      <!-- Vendedor -->
-      <div class="col-md-2">
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
-          <%= f.search_field :order_seller_seller_code_cont, class: "form-control", placeholder: "Vendedor" %>
-        </div>
-      </div>
-      <!-- Número de orden -->
-      <div class="col-md-2">
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-hash"></i></span>
-          <%= f.search_field :order_number_cont, class: "form-control", placeholder: "N° Orden" %>
-        </div>
-      </div>
-      <!-- Fecha desde -->
-      <div class="col-md-2">
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-calendar-date"></i></span>
-          <%= f.date_field :delivery_date_gteq, class: "form-control", placeholder: "Desde" %>
-        </div>
-      </div>
-      <!-- Fecha hasta -->
-      <div class="col-md-2">
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-calendar-date"></i></span>
-          <%= f.date_field :delivery_date_lteq, class: "form-control", placeholder: "Hasta" %>
-        </div>
-      </div>
-      <!-- Notas -->
-      <div class="col-md-3">
-        <%= f.select :order_notes_status_eq,
-          options_for_select([
-            ['-- Filtrar por notas --', nil],
-            ['Con notas', 'with'],
-            ['Con notas abiertas', 'open'],
-            ['Con notas cerradas', 'closed']
-          ], params.dig(:q, :order_notes_status_eq)),
-          {}, class: "form-select" %>
-      </div>
-      <!-- Estado de entrega -->
-      <!-- Estado de la entrega -->
-      <div class="col-md-3">
-        <%= f.select :status_eq,
-          options_for_select(Delivery.status_options_for_select, params.dig(:q, :status_eq)),
-          { include_blank: '-- Filtrar por estado de la entrega --' }, class: "form-select" %>
-      </div>
-      <!-- Mostrar reagendadas -->
-      <div class="col-md-3 d-flex align-items-center">
-        <div class="form-check mt-2">
-          <%= check_box_tag :show_rescheduled, "1", params[:show_rescheduled] == "1", 
-                class: "form-check-input", id: "show_rescheduled" %>
-          <%= label_tag :show_rescheduled, "Mostrar reagendadas", class: "form-check-label" %>
-        </div>
-      </div>
-      <!-- Botones -->
-      <div class="col-md-3 text-end">
-        <%= f.submit "Buscar", class: "btn btn-primary w-100" %>
-      </div>
-      <div class="col-md-3 text-end">
-        <%= link_to "Quitar filtros", deliveries_path, class: "btn btn-outline-secondary w-100" %>
-      </div>
+<!-- Filtros -->
+<%= render "deliveries/index_partials/filters", q: @q %>
+<!-- Selector de Vista -->
+<div class="d-flex justify-content-between mb-3">
+  <div class="btn-group" role="group" aria-label="Selector de vista">
+    <%= link_to deliveries_path(request.query_parameters.merge(view: "table")),
+          class: "btn btn-sm #{params[:view] == 'table' || params[:view].blank? ? 'btn-primary' : 'btn-outline-secondary'}" do %>
+      <i class="bi bi-table"></i> Tabla
+    <% end %>
+    <%= link_to deliveries_path(request.query_parameters.merge(view: "cards")),
+          class: "btn btn-sm #{params[:view] == 'cards' ? 'btn-primary' : 'btn-outline-secondary'}" do %>
+      <i class="bi bi-grid-3x3-gap"></i> Cards
     <% end %>
   </div>
 </div>
-<div class="d-flex justify-content-end gap-2 mb-3">
+<!-- Botones globales -->
+<div class="d-flex gap-2">
   <% if policy(Delivery).new? %>
-    <%= link_to new_delivery_path, class: "btn btn-success" do %>
+    <%= link_to new_delivery_path, class: "btn btn-success btn-sm" do %>
       <i class="bi bi-plus-circle me-1"></i> Nueva entrega
     <% end %>
-    <%= link_to new_internal_delivery_deliveries_path, class: "btn btn-warning" do %>
-      <i class="bi bi-bag-plus me-1"></i> Nuevo mandado
+    <%= link_to new_internal_delivery_deliveries_path, class: "btn btn-warning btn-sm" do %>
+      <i class="bi bi-bag-plus me-1"></i> Mandado
     <% end %>
-    <%= link_to new_service_case_deliveries_path, class: "btn btn-info text-white" do %>
-      <i class="bi bi-tools me-1"></i> Nuevo caso de servicio
+    <%= link_to new_service_case_deliveries_path, class: "btn btn-info text-white btn-sm" do %>
+      <i class="bi bi-tools me-1"></i> Caso servicio
     <% end %>
   <% end %>
-  <!-- Botones de exportar -->
   <div class="btn-group">
-    <%= link_to deliveries_path(request.query_parameters.merge(format: :xlsx)), class: "btn btn-outline-success" do %>
+    <%= link_to deliveries_path(request.query_parameters.merge(format: :xlsx)),
+                  class: "btn btn-outline-success btn-sm" do %>
       <i class="bi bi-file-earmark-excel me-1"></i> Excel
     <% end %>
   </div>
 </div>
+</div>
 <% if @deliveries.any? %>
-  <div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
-    <table class="table table-hover align-middle">
-      <thead class="table-light sticky-top">
-        <tr>
-          <th>Fecha Entrega</th>
-          <th>Pedido</th>
-          <th>Cliente</th>
-          <th>Dirección</th>
-          <th>Contacto</th>
-          <th>Vendedor</th>
-          <th style="width:18%;">Productos</th>
-          <th>Estado</th>
-          <th>Caso Servicio</th>
-          <th class="text-center">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @deliveries.each do |delivery| %>
-          <tr>
-            <td><i class="bi bi-calendar-event me-1"></i><%= l delivery.delivery_date, format: :short %></td>
-            <td><%= link_to delivery.order.number, order_path(delivery.order), class: "fw-semibold text-decoration-none" %></td>
-            <td><i class="bi bi-person me-1"></i><%= delivery.order.client.name %></td>
-            <td><i class="bi bi-geo-alt me-1"></i><%= delivery.delivery_address.address %></td>
-            <td><i class="bi bi-person-lines-fill me-1"></i><%= delivery.contact_name %></td>
-            <td><%= delivery.order.seller.name %> <span class="text-muted small">(<%= delivery.order.seller.seller_code %>)</span></td>
-            <td>
-              <ul class="mb-0 ps-3 small">
-                <% delivery.delivery_items.each do |item| %>
-                  <li><span class="badge bg-secondary"><%= item.quantity_delivered %></span> <%= item.order_item.product %></li>
-                <% end %>
-              </ul>
-            </td>
-            <td>
-              <span class="badge bg-<%= delivery_status_color(delivery.status) %>"><%= delivery.display_status %></span>
-            </td>
-            <td>
-              <% if delivery.has_service_cases? %>
-                <span class="badge bg-warning text-dark">Sí</span>
-              <% else %>
-                <span class="badge bg-secondary">No</span>
-              <% end %>
-            </td>
-            <td class="text-center">
-              <% if policy(delivery).show? %>
-                <%= link_to delivery_path(delivery), class: "btn btn-sm btn-outline-primary", title: "Ver detalles" do %>
-                  <i class="bi bi-eye"></i>
-                <% end %>
-              <% end %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-  <div class="d-flex justify-content-center">
+  <% if params[:view] == "cards" %>
+    <%= render "deliveries/index_partials/cards", deliveries: @deliveries %>
+  <% else %>
+    <%= render "deliveries/index_partials/table", deliveries: @deliveries %>
+  <% end %>
+  <div class="d-flex justify-content-center mt-3">
     <%= paginate @deliveries %>
   </div>
 <% else %>
-  <div class="alert alert-info d-flex align-items-center">
-    <i class="bi bi-info-circle me-2"></i>No hay entregas para mostrar.
-  </div>
+  <%= render "deliveries/index_partials/no_results" %>
 <% end %>
