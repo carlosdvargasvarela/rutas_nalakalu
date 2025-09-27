@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_09_26_053020) do
+ActiveRecord::Schema[7.2].define(version: 2025_09_27_174343) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -64,7 +64,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_26_053020) do
     t.index ["approved"], name: "index_deliveries_on_approved"
     t.index ["delivery_address_id"], name: "index_deliveries_on_delivery_address_id"
     t.index ["delivery_type"], name: "index_deliveries_on_delivery_type"
-    t.index ["order_id", "delivery_date", "delivery_address_id"], name: "index_deliveries_on_order_date_address_unique", unique: true
+    t.index ["order_id", "delivery_date", "delivery_address_id", "status"], name: "index_deliveries_on_order_date_address_archived_unique", unique: true
     t.index ["order_id"], name: "index_deliveries_on_order_id"
   end
 
