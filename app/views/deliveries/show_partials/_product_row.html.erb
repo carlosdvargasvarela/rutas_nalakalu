@@ -1,0 +1,76 @@
+<tr>
+  <!-- Producto -->
+  <td><strong><%= item.order_item.product %></strong></td>
+  <!-- Cantidad -->
+  <td>
+    <span class="badge bg-secondary"><%= item.quantity_delivered %></span>
+  </td>
+  <!-- Observaciones -->
+  <td>
+    <% if item.order_item.notes.present? %>
+      <span class="text-muted"><i class="bi bi-info-circle"></i> <%= item.order_item.notes %></span>
+    <% else %>
+      <span class="text-muted">N/A</span>
+    <% end %>
+  </td>
+  <!-- Caso Servicio -->
+  <td>
+    <% if item.service_case? %>
+      <span class="badge bg-warning text-dark">Sí</span>
+    <% else %>
+      <span class="badge bg-secondary">No</span>
+    <% end %>
+  </td>
+  <!-- Estado -->
+  <td>
+    <span class="badge bg-<%= delivery_item_status_color(item.status) %>">
+      <%= item.display_status %>
+    </span>
+  </td>
+  <!-- Notas de producción -->
+  <td style="min-width: 300px;">
+    <%= render "order_item_notes/list", item: item.order_item %>
+  </td>
+  <!-- Acciones -->
+  <td>
+    <% if delivery.needs_approval? && !delivery.approved? %>
+      <!-- Bloqueado -->
+      <span class="text-muted"><i class="bi bi-lock"></i> Bloqueado</span>
+    <% elsif item.rescheduled? %>
+      <!-- Reagendado -->
+      <span class="text-warning"><i class="bi bi-calendar-x"></i> Reagendado</span>
+    <% elsif item.delivered? %>
+      <!-- Entregado -->
+      <span class="text-success"><i class="bi bi-check2-circle"></i> Entregado</span>
+    <% else %>
+      <!-- Confirmar -->
+      <% if item.pending? %>
+        <%= button_to confirm_delivery_item_path(item), method: :patch,
+          class: "btn btn-primary btn-sm me-1" do %>
+          <i class="bi bi-check-circle"></i> Confirmar
+        <% end %>
+      <% end %>
+      <!-- Entregado (✔️ ahora disponible siempre que no esté en estado delivered/rescheduled/cancelled) -->
+      <%= button_to mark_delivered_delivery_item_path(item), method: :patch,
+        class: "btn btn-success btn-sm me-1",
+        data: { turbo_confirm: "¿Marcar este producto como entregado?" } do %>
+        <i class="bi bi-check2-circle"></i> Entregado
+      <% end %>
+      <!-- Reagendar -->
+      <button class="btn btn-warning btn-sm me-1" type="button"
+              data-bs-toggle="collapse" data-bs-target="#reschedule-form-<%= item.id %>">
+        <i class="bi bi-calendar2-plus"></i> Reagendar
+      </button>
+      <div class="collapse mt-2" id="reschedule-form-<%= item.id %>">
+        <%= render partial: "delivery_items/reschedule_form",
+                   locals: { item: item, future_deliveries: future_deliveries } %>
+      </div>
+      <!-- Cancelar -->
+      <%= button_to cancel_delivery_item_path(item), method: :patch,
+        class: "btn btn-danger btn-sm",
+        data: { turbo_confirm: "¿Está seguro?" } do %>
+        <i class="bi bi-x-circle"></i> Cancelar
+      <% end %>
+    <% end %>
+  </td>
+</tr>

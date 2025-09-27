@@ -1,0 +1,23 @@
+<div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Producto</th>
+        <th>Cantidad</th>
+        <th>Observaciones</th>
+        <th>Caso Servicio</th>
+        <th>Estado</th>
+        <th>Notas de producción</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% delivery.delivery_items.each do |item| %>
+        <%= render "deliveries/show_partials/product_row",
+                   item: item, 
+                   delivery: delivery, 
+                   future_deliveries: future_deliveries %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

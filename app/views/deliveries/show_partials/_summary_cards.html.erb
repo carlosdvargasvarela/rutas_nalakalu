@@ -1,0 +1,69 @@
+<!-- Información General -->
+<div class="col-md-4 mb-3">
+  <div class="card shadow-sm h-100">
+    <div class="card-header bg-light">
+      <i class="bi bi-info-circle me-1"></i> Información General
+    </div>
+    <div class="card-body">
+      <p>
+        <strong><i class="bi bi-calendar-event me-1"></i>Fecha de Entrega:</strong>
+        <%= l delivery.delivery_date, format: :long %>
+      </p>
+      <p>
+        <strong><i class="bi bi-flag me-1"></i>Estado:</strong>
+        <span class="badge bg-<%= delivery_status_color(delivery.status) %> me-1">
+          <%= delivery.display_status %>
+        </span>
+        <% if delivery.approved? %>
+          <span class="badge bg-success"><i class="bi bi-shield-check me-1"></i> Aprobada</span>
+        <% elsif delivery.needs_approval? %>
+          <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Pendiente</span>
+        <% else %>
+          <span class="badge bg-secondary"><i class="bi bi-slash-circle me-1"></i> No requiere</span>
+        <% end %>
+      </p>
+      <p>
+        <strong><i class="bi bi-clock me-1"></i>Preferencia de Hora:</strong>
+        <%= delivery.delivery_time_preference.presence || 'No especificado' %>
+      </p>
+    </div>
+  </div>
+</div>
+<!-- Información del Pedido -->
+<div class="col-md-4 mb-3">
+  <div class="card shadow-sm h-100">
+    <div class="card-header bg-light">
+      <i class="bi bi-receipt me-1"></i> Información del Pedido
+    </div>
+    <div class="card-body">
+      <p><strong>Número de Pedido:</strong>
+        <%= link_to delivery.order.number, order_path(delivery.order), class: "text-decoration-none" %>
+      </p>
+      <p><strong><i class="bi bi-person me-1"></i>Cliente:</strong> <%= delivery.order.client.name %></p>
+      <p><strong><i class="bi bi-person-badge me-1"></i>Vendedor:</strong>
+        <%= delivery.order.seller.name %>
+        <span class="text-muted small">(<%= delivery.order.seller.seller_code %>)</span>
+      </p>
+    </div>
+  </div>
+</div>
+<!-- Dirección -->
+<div class="col-md-4 mb-3">
+  <div class="card shadow-sm h-100">
+    <div class="card-header bg-light">
+      <i class="bi bi-geo-alt me-1"></i> Detalles de Entrega
+    </div>
+    <div class="card-body">
+      <p><strong>Dirección:</strong> <%= delivery.delivery_address.address %></p>
+      <% if delivery.delivery_address.description.present? %>
+        <p><strong><i class="bi bi-signpost-2 me-1"></i>Referencia:</strong>
+          <%= delivery.delivery_address.description %>
+        </p>
+      <% end %>
+      <p><strong><i class="bi bi-person-lines-fill me-1"></i>Contacto:</strong> <%= delivery.contact_name %></p>
+      <p><strong><i class="bi bi-telephone me-1"></i>Teléfono Contacto:</strong>
+        <%= delivery.contact_phone.presence || 'No especificado' %>
+      </p>
+    </div>
+  </div>
+</div>

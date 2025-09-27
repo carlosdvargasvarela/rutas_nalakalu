@@ -1,0 +1,76 @@
+<div class="card shadow-sm mb-4">
+  <!-- Header con acciones globales -->
+  <div class="sticky-top bg-white border-bottom p-2 d-flex justify-content-between align-items-center" style="z-index: 10;">
+    <span>
+      <i class="bi bi-box-seam me-1"></i> Productos en esta entrega
+    </span>
+
+    <% if !delivery.needs_approval? || delivery.approved? %>
+      <div class="d-flex gap-2 flex-wrap">
+        <% unless delivery.delivered? || delivery.cancelled? %>
+          <%= button_to mark_as_delivered_delivery_path(delivery),
+            method: :patch, class: "btn btn-success btn-sm",
+            data: { turbo_confirm: "¿Está seguro de marcar toda la entrega como completada?" } do %>
+            <i class="bi bi-check-circle-fill"></i> Marcar todos como entregados
+          <% end %>
+        <% end %>
+
+        <%= link_to new_service_case_for_existing_delivery_path(delivery),
+          class: "btn btn-sm btn-warning" do %>
+          <i class="bi bi-tools"></i> Caso servicio
+        <% end %>
+
+        <% if policy(delivery).edit? && delivery.delivery_items.any? { |item| item.pending? || item.confirmed? } && !delivery.delivery_items.all?(&:confirmed?) %>
+          <%= button_to confirm_all_items_delivery_path(delivery),
+            method: :patch, class: "btn btn-primary btn-sm",
+            data: { turbo_confirm: "¿Confirmar todos los productos?" } do %>
+            <i class="bi bi-check-circle"></i> Confirmar todos
+          <% end %>
+        <% end %>
+
+        <% if policy(delivery).edit? && delivery.delivery_items.any? { |i| !%w[delivered cancelled rescheduled].include?(i.status) } %>
+          <%= form_with url: reschedule_all_delivery_path(delivery), method: :patch,
+            class: "d-flex align-items-center gap-2",
+            data: { turbo_confirm: "¿Reagendar toda la entrega para otra fecha?" } do |f| %>
+            <%= f.date_field :new_date, class: "form-control form-control-sm", style: "width: 150px;" %>
+            <%= f.button "Reagendar", class: "btn btn-warning btn-sm" %>
+          <% end %>
+        <% end %>
+
+        <!-- Toggle de vista -->
+        <% if params[:view] == "table" %>
+          <%= link_to delivery_path(delivery, view: "cards"),
+                      class: "btn btn-outline-secondary btn-sm" do %>
+            <i class="bi bi-grid-3x3-gap"></i> Vista Cards
+          <% end %>
+        <% else %>
+          <%= link_to delivery_path(delivery, view: "table"),
+                      class: "btn btn-outline-secondary btn-sm" do %>
+            <i class="bi bi-table"></i> Vista Tabla
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="text-muted">
+        <i class="bi bi-lock me-1"></i> Acciones bloqueadas
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Body con listado -->
+  <div class="card-body">
+    <% if delivery.delivery_items.any? %>
+      <% if params[:view] == "table" %>
+        <%= render "deliveries/show_partials/products_table",
+                   delivery: delivery, future_deliveries: future_deliveries %>
+      <% else %>
+        <%= render "deliveries/show_partials/products_cards",
+                   delivery: delivery, future_deliveries: future_deliveries %>
+      <% end %>
+    <% else %>
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i> No hay productos asociados.
+      </div>
+    <% end %>
+  </div>
+</div>

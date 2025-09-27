@@ -1,0 +1,57 @@
+<% if delivery_history.size > 1 %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+      <i class="bi bi-clock-history me-1"></i> Historial de esta entrega
+    </div>
+    <div class="card-body">
+      <div class="accordion" id="deliveryHistoryAccordion">
+        <% delivery_history.each do |d| %>
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-<%= d.id %>">
+              <button class="accordion-button <%= d == delivery ? '' : 'collapsed' %>" 
+                      type="button"
+                      data-bs-toggle="collapse" 
+                      data-bs-target="#collapse-<%= d.id %>">
+                <%= l d.delivery_date, format: :long %> —
+                <span class="badge bg-<%= delivery_status_color(d.status) %>">
+                  <%= d.display_status %>
+                </span>
+                <% if d == delivery %>
+                  <small class="ms-2 text-primary">(actual)</small>
+                <% end %>
+              </button>
+            </h2>
+            <div id="collapse-<%= d.id %>" 
+                 class="accordion-collapse collapse <%= d == delivery ? 'show' : '' %>"
+                 data-bs-parent="#deliveryHistoryAccordion">
+              <div class="accordion-body">
+                <% if d.delivery_items.any? %>
+                  <ul class="list-group list-group-flush">
+                    <% d.delivery_items.includes(:order_item).each do |item| %>
+                      <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                          <strong><%= item.order_item.product %></strong>
+                          <% if item.order_item.notes.present? %>
+                            <small class="text-muted"> — <%= item.order_item.notes %></small>
+                          <% end %>
+                        </span>
+                        <span>
+                          <span class="badge bg-secondary"><%= item.quantity_delivered %></span>
+                          <span class="badge bg-<%= delivery_item_status_color(item.status) %>">
+                            <%= item.display_status %>
+                          </span>
+                        </span>
+                      </li>
+                    <% end %>
+                  </ul>
+                <% else %>
+                  <div class="text-muted">Sin productos asociados</div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,8 @@
+<div class="row">
+  <% delivery.delivery_items.each do |item| %>
+    <%= render "deliveries/show_partials/product_card",
+               item: item, 
+               delivery: delivery, 
+               future_deliveries: future_deliveries %>
+  <% end %>
+</div>
