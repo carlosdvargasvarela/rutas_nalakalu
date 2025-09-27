@@ -27,6 +27,9 @@
                   <% end %>
                 </p>
                 <p><i class="bi bi-calendar-event me-1"></i><%= l delivery.delivery_date, format: :short %></p>
+                <p><i class="bi bi-clock me-1"></i>
+                  <%= delivery.delivery_time_preference.presence || "Sin preferencia" %>
+                </p>
                 <p><i class="bi bi-telephone me-1"></i><%= delivery.contact_name %>
                   <%= link_to delivery.contact_phone, "tel:#{delivery.contact_phone}" if delivery.contact_phone.present? %>
                 </p>
