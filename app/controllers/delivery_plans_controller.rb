@@ -2,17 +2,22 @@
 class DeliveryPlansController < ApplicationController
   def index
     @q = DeliveryPlan.ransack(params[:q])
-    @delivery_plans = @q.result
-                    .preload(:driver, :deliveries)
-                    .left_joins(:deliveries)
-                    .select("delivery_plans.*, MIN(deliveries.delivery_date) AS first_delivery_date")
-                    .group("delivery_plans.id")
-                    .order("MIN(deliveries.delivery_date) DESC")
+    base_query = @q.result
+                  .preload(:driver, :deliveries)
+                  .left_joins(:deliveries)
+                  .select("delivery_plans.*, MIN(deliveries.delivery_date) AS first_delivery_date")
+                  .group("delivery_plans.id")
+                  .order("MIN(deliveries.delivery_date) DESC")
 
     respond_to do |format|
-      format.html
-      format.xlsx {
-        @delivery_plans = @delivery_plans.includes(
+      format.html do
+        # 👉 en HTML dejamos la relación tal cual (para paginación, etc.)
+        @delivery_plans = base_query
+      end
+
+      format.xlsx do
+        # 👉 en Excel usamos el mismo set filtrado, pero ya cargado y con includes
+        @delivery_plans = base_query.includes(
           delivery_plan_assignments: {
             delivery: [
               { order: [ :client, :seller ] },
@@ -23,7 +28,7 @@ class DeliveryPlansController < ApplicationController
         ).to_a
 
         response.headers["Content-Disposition"] = 'attachment; filename="planes_entrega.xlsx"'
-      }
+      end
     end
   end
 
