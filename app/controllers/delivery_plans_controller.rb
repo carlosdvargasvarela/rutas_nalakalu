@@ -3,7 +3,7 @@ class DeliveryPlansController < ApplicationController
   def index
     @q = DeliveryPlan.ransack(params[:q])
     @delivery_plans = @q.result
-                    .preload(:driver, :deliveries) # 👉 no mete users.* en SELECT
+                    .preload(:driver, :deliveries)
                     .left_joins(:deliveries)
                     .select("delivery_plans.*, MIN(deliveries.delivery_date) AS first_delivery_date")
                     .group("delivery_plans.id")
@@ -12,6 +12,16 @@ class DeliveryPlansController < ApplicationController
     respond_to do |format|
       format.html
       format.xlsx {
+        @delivery_plans = @delivery_plans.includes(
+          delivery_plan_assignments: {
+            delivery: [
+              { order: [ :client, :seller ] },
+              :delivery_address,
+              { delivery_items: :order_item }
+            ]
+          }
+        ).to_a
+
         response.headers["Content-Disposition"] = 'attachment; filename="planes_entrega.xlsx"'
       }
     end
