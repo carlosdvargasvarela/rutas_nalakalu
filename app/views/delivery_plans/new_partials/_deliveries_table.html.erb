@@ -32,7 +32,7 @@
               <td><%= delivery.order.number %></td>
               <td><%= delivery.order.client.name %></td>
               <td><%= delivery.delivery_address.address.truncate(40) %></td>
-              <td><%= delivery.delivery_time_preference %></td>
+              <td><%= delivery.delivery_time_preference || "Sin preferencia" %></td>
               <td><%= l delivery.delivery_date, format: :short %></td>
               <td>
                 <% delivery.active_items_for_plan.each do |item| %>
