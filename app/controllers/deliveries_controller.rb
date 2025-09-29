@@ -240,8 +240,7 @@ class DeliveriesController < ApplicationController
   # PATCH /deliveries/:id/mark_as_delivered
   def mark_as_delivered
     @delivery.mark_as_delivered!
-    redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
-                notice: "Entrega marcada como completada.")
+    redirect_to @delivery, notice: "Entrega marcada como completada."
   end
 
   # GET /deliveries/service_cases

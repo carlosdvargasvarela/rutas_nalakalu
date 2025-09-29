@@ -33,7 +33,17 @@
                 <p><i class="bi bi-telephone me-1"></i><%= delivery.contact_name %>
                   <%= link_to delivery.contact_phone, "tel:#{delivery.contact_phone}" if delivery.contact_phone.present? %>
                 </p>
-                <span class="badge bg-<%= delivery_status_color(delivery.status) %>"><%= delivery.display_status %></span>
+                <p>
+                  <strong><i class="bi bi-flag me-1"></i>Estado:</strong>
+                  <span class="badge bg-<%= delivery_status_color(delivery.status) %>"><%= delivery.display_status %></span>
+                </p>
+                <p>
+                  <!-- Notas de Entrega -->
+                  <% if delivery.delivery_notes.present? %>
+                    <strong><i class="bi bi-sticky me-1"></i>Notas de Entrega:</strong>
+                    <span class="text-muted small"><%= delivery.delivery_notes %></span>
+                  <% end %>
+                </p>
                 <% if delivery.delivery_items.any? %>
                   <div class="mt-2 d-flex gap-1">
                     <button class="btn btn-sm btn-outline-info flex-fill"

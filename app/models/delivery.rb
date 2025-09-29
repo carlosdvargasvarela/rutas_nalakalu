@@ -88,10 +88,10 @@ class Delivery < ApplicationRecord
   # Actualiza el estado de la entrega basado en los items
   def update_status_based_on_items
     # Solo proteger si todavía está asignado a un plan
-    return if (in_plan? || in_route?) && delivery_plans.exists?
+    statuses = delivery_items.pluck(:status)
+    return if ((in_plan? || in_route?) && !((statuses.any? { |s| s == "cancelled" }) || (statuses.any? { |s| s == "rescheduled" })) || (statuses.all? { |s| s == "delivered" })) && delivery_plans.exists?
     return if archived?
 
-    statuses = delivery_items.pluck(:status)
     return if statuses.empty?
 
     if statuses.all? { |s| s == "delivered" }

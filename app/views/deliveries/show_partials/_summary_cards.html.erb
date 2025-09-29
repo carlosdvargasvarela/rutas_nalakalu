@@ -64,6 +64,9 @@
       <p><strong><i class="bi bi-telephone me-1"></i>Teléfono Contacto:</strong>
         <%= delivery.contact_phone.presence || 'No especificado' %>
       </p>
+      <% if delivery.delivery_notes.present? %>
+        <p><strong><i class="bi bi-sticky me-1"></i>Notas de Entrega:</strong> <%= delivery.delivery_notes %></p>
+      <% end %>
     </div>
   </div>
 </div>
