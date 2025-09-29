@@ -1,108 +1,96 @@
 <!-- app/views/dashboard/index.html.erb -->
 <div class="container-fluid py-4">
-  <!-- Bienvenida -->
-  <div class="row mb-4">
-    <div class="col-12 col-md-8">
-      <h3 class="fw-bold mb-2">
+  <!-- Header -->
+  <div class="row align-items-center mb-5">
+    <div class="col-md-8">
+      <h2 class="fw-bold">
         <i class="bi bi-truck me-2 text-primary"></i>
-        ¡Bienvenido, <%= current_user.name %>!
-      </h3>
-      <p class="text-muted mb-0">
-        Rol: <span class="badge bg-primary"><%= current_user.display_role %></span>
+        Bienvenido, <%= current_user.name %>
+      </h2>
+      <p class="text-muted mb-1">
+        Rol: <span class="badge bg-primary rounded-pill"><%= current_user.display_role %></span>
       </p>
-      <%# Mensaje motivacional o de la empresa %>
-      <p class="text-secondary mt-2">"Transformando espacios, entregando calidad."</p>
+      <p class="fst-italic text-secondary">“Transformando espacios, entregando calidad.”</p>
     </div>
-    <div class="col-12 col-md-4 d-flex align-items-center justify-content-md-end mt-3 mt-md-0">
-      <div class="btn-group" role="group">
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+      <div class="btn-toolbar justify-content-md-end gap-2">
         <% if current_user.seller? || current_user.admin? %>
-          <%= link_to "Nuevo Pedido", orders_path, class: "btn btn-outline-primary btn-sm" %>
+          <%= link_to "➕ Pedido", orders_path, class: "btn btn-primary btn-sm rounded-pill" %>
         <% end %>
         <% if current_user.logistics? || current_user.admin? %>
-          <%= link_to "Nueva Entrega", new_delivery_path, class: "btn btn-outline-success btn-sm" %>
+          <%= link_to "🚚 Nueva entrega", new_delivery_path, class: "btn btn-success btn-sm rounded-pill" %>
         <% end %>
         <% if current_user.admin? || current_user.production_manager? %>
-          <%= link_to "Importar Excel", new_delivery_import_path, class: "btn btn-outline-secondary btn-sm" %>
+          <%= link_to "📥 Importar Excel", new_delivery_import_path, class: "btn btn-secondary btn-sm rounded-pill" %>
         <% end %>
-        <%= link_to "Ver Notificaciones", notifications_path, class: "btn btn-outline-info btn-sm" %>
+        <%= link_to "🔔 Notificaciones", notifications_path, class: "btn btn-info btn-sm rounded-pill" %>
       </div>
     </div>
   </div>
-  <!-- Cards resumen -->
+  <!-- KPIs -->
   <div class="row g-4">
     <%= render "dashboard/summary_cards" %>
   </div>
-  <!-- Panel de entregas pendientes de aprobación -->
+  <!-- Pendientes de aprobación -->
   <% if @pending_approvals.any? %>
-    <div class="row mt-4">
-      <div class="col-12">
-        <div class="card shadow-sm">
-          <div class="card-header bg-light d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">
-              <i class="bi bi-shield-exclamation me-2 text-warning"></i>
-              Entregas pendientes de aprobación
-            </h5>
-            <span class="badge bg-warning text-dark"><%= @pending_approvals.count %> pendientes</span>
-          </div>
-          <div class="card-body table-responsive">
-            <table class="table table-sm align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th>ID</th>
-                  <th>Fecha</th>
-                  <th>Pedido</th>
-                  <th>Cliente</th>
-                  <th>Vendedor</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% @pending_approvals.each do |delivery| %>
-                  <tr>
-                    <td><%= link_to "##{delivery.id}", delivery_path(delivery), class: "text-decoration-none" %></td>
-                    <td><%= l delivery.delivery_date, format: :short %></td>
-                    <td><%= link_to delivery.order.number, order_path(delivery.order), class: "text-decoration-none" %></td>
-                    <td><%= delivery.order.client.name %></td>
-                    <td><%= delivery.order.seller.name %></td>
-                    <td>
-                      <%= button_to approve_delivery_path(delivery),
-                        method: :patch,
-                        class: "btn btn-sm btn-outline-success",
+    <div class="card shadow-sm border-0 rounded-3 mt-5">
+      <div class="card-header bg-light d-flex align-items-center justify-content-between">
+        <h5 class="mb-0 fw-semibold">
+          <i class="bi bi-shield-exclamation me-2 text-warning"></i> Entregas por aprobar
+        </h5>
+        <span class="badge bg-warning text-dark px-3 py-2">
+          <%= @pending_approvals.count %> pendientes
+        </span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Fecha</th>
+              <th>Pedido</th>
+              <th>Cliente</th>
+              <th>Vendedor</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @pending_approvals.each do |delivery| %>
+              <tr>
+                <td><%= link_to "##{delivery.id}", delivery_path(delivery), class: "fw-medium text-primary" %></td>
+                <td><%= l delivery.delivery_date, format: :short %></td>
+                <td><%= link_to delivery.order.number, order_path(delivery.order), class: "text-decoration-none" %></td>
+                <td><%= delivery.order.client.name %></td>
+                <td><%= delivery.order.seller.name %></td>
+                <td class="text-end">
+                  <%= button_to approve_delivery_path(delivery), method: :patch,
+                        class: "btn btn-outline-success btn-sm rounded-pill",
                         data: { turbo_confirm: "¿Aprobar la entrega ##{delivery.id}?" } do %>
-                        <i class="bi bi-check-circle"></i> Aprobar
-                      <% end %>
-                    </td>
-                  </tr>
-                <% end %>
-              </tbody>
-            </table>
-          </div>
-        </div>
+                    <i class="bi bi-check-circle"></i> Aprobar
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
       </div>
     </div>
   <% end %>
-  <!-- Panel de notificaciones recientes -->
-  <div class="row mt-4">
-    <div class="col-12 col-lg-6">
-      <%= render "dashboard/recent_notifications", notifications: @recent_notifications %>
-    </div>
-    <div class="col-12 col-lg-6">
-      <%= render "dashboard/pending_tasks", tasks: @pending_tasks %>
-    </div>
+  <!-- Notificaciones y tareas -->
+  <div class="row mt-5 g-4">
+    <div class="col-lg-6"><%= render "dashboard/recent_notifications", notifications: @recent_notifications %></div>
+    <div class="col-lg-6"><%= render "dashboard/pending_tasks", tasks: @pending_tasks %></div>
   </div>
-  <!-- (Opcional) Gráfico de avance semanal -->
-  <div class="row mt-4">
-    <div class="col-12">
-      <%= render "dashboard/progress_chart", chart_data: @chart_data if @chart_data.present? %>
-    </div>
+  <!-- Gráficos -->
+  <div class="row mt-5">
+    <%= render "dashboard/stats" %>
   </div>
-  <!-- Sección de ayuda/contacto -->
-  <div class="row mt-4">
-    <div class="col-12">
-      <div class="alert alert-info d-flex align-items-center" role="alert">
-        <i class="bi bi-question-circle-fill me-2"></i>
-        ¿Necesitas ayuda? <a href="mailto:cvargas@nalakalu.com" class="ms-2">Contacta al equipo de soporte</a>
-      </div>
-    </div>
+  <!-- Soporte -->
+  <div class="alert alert-info mt-5 rounded-3 d-flex align-items-center shadow-sm">
+    <i class="bi bi-question-circle-fill fs-4 me-2"></i>
+    <span>
+      ¿Necesitas ayuda? 
+      <a href="mailto:cvargas@nalakalu.com" class="fw-semibold ms-1">Contacta al equipo de soporte</a>
+    </span>
   </div>
 </div>

@@ -15,4 +15,14 @@ class NotificationsController < ApplicationController
     current_user.notifications.unread.update_all(read: true)
     redirect_to notifications_path, notice: "Todas las notificaciones fueron marcadas como leídas"
   end
+
+  def mark_group_as_read
+    notification_type = params[:notification_type]
+
+    current_user.notifications
+                .where(notification_type: notification_type, read: false)
+                .update_all(read: true)
+
+    redirect_to notifications_path, notice: "Todas las notificaciones de tipo '#{helpers.notification_type_label(notification_type)}' fueron marcadas como leídas"
+  end
 end

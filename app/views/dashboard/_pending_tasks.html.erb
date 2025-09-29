@@ -1,30 +1,28 @@
-<!-- app/views/dashboard/_pending_tasks.html.erb -->
-<div class="card shadow-sm border-0 h-100">
-  <div class="card-header bg-success text-white">
-    <h5 class="mb-0">
-      <i class="bi bi-list-check me-2"></i>
-      Tareas pendientes
-    </h5>
+<div class="card shadow-sm border-0 rounded-3 h-100">
+  <div class="card-header bg-success text-white fw-semibold">
+    <i class="bi bi-list-check me-2"></i> Tareas pendientes
   </div>
   <div class="card-body">
     <% if tasks.present? %>
-      <% tasks.each do |task| %>
-        <div class="task-item d-flex align-items-center mb-3 p-2 rounded bg-light">
-          <div class="task-icon me-3">
-            <i class="<%= task[:icon] %> text-<%= task[:color] %>"></i>
-          </div>
-          <div class="flex-grow-1">
-            <p class="mb-1 fw-medium"><%= task[:title] %></p>
-            <small class="text-muted"><%= task[:description] %></small>
-          </div>
-          <div class="task-action">
-            <%= link_to task[:action_text], task[:action_url], class: "btn btn-sm btn-outline-#{task[:color]}" %>
-          </div>
-        </div>
-      <% end %>
+      <ul class="list-unstyled mb-0">
+        <% tasks.each do |task| %>
+          <li class="d-flex align-items-start mb-4">
+            <div class="flex-shrink-0 me-3">
+              <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-<%= task[:color] %> bg-opacity-10" style="width:48px; height:48px;">
+                <i class="<%= task[:icon] %> fs-4 text-<%= task[:color] %>"></i>
+              </span>
+            </div>
+            <div class="flex-grow-1">
+              <h6 class="fw-semibold mb-1"><%= task[:title] %></h6>
+              <p class="text-muted small mb-2"><%= task[:description] %></p>
+              <%= link_to task[:action_text], task[:action_url], class: "btn btn-sm btn-outline-#{task[:color]} rounded-pill" %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
     <% else %>
       <div class="text-center text-muted py-4">
-        <i class="bi bi-check-circle fs-3 mb-2 d-block text-success"></i>
+        <i class="bi bi-check-circle fs-3 text-success mb-2 d-block"></i>
         ¡Excelente! No tienes tareas pendientes
       </div>
     <% end %>

@@ -36,9 +36,18 @@
                   <i class="<%= notification_type_icon(type) %> me-2"></i>
                   <%= notification_type_label(type) %>
                 </h5>
-                <span class="badge bg-light text-dark">
-                  <%= notifications.count %> <%= notifications.count == 1 ? 'notificación' : 'notificaciones' %>
-                </span>
+                <div class="d-flex gap-2 align-items-center">
+                  <span class="badge bg-light text-dark">
+                    <%= notifications.count %> <%= notifications.count == 1 ? 'notificación' : 'notificaciones' %>
+                  </span>
+                  <% if notifications.any? { |n| !n.read } %>
+                    <%= button_to "Marcar grupo como leído", 
+                          mark_group_as_read_notifications_path(notification_type: type),
+                          method: :patch,
+                          class: "btn btn-sm btn-outline-light",
+                          data: { confirm: "¿Marcar todas las notificaciones de este grupo como leídas?" } %>
+                  <% end %>
+                </div>
               </div>
             </div>
             <div class="card-body p-0">

@@ -151,12 +151,13 @@ Rails.application.routes.draw do
   # NOTIFICACIONES
   # =============================================================================
   # Sistema de notificaciones para usuarios
-  resources :notifications, only: [ :index ] do
-    member do
-      patch :mark_as_read # Marcar notificación individual como leída
+  resources :notifications, only: [:index] do
+  member do
+      patch :mark_as_read
     end
     collection do
-      patch :mark_all_as_read # Marcar todas las notificaciones como leídas
+      patch :mark_all_as_read
+      patch :mark_group_as_read
     end
   end
 
