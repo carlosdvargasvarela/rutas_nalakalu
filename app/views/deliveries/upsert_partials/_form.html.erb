@@ -1,4 +1,24 @@
 <%# app/views/deliveries/_form.html.erb %>
+<style>
+  .nav-pills .nav-link {
+    transition: all 0.3s ease;
+    font-weight: 500;
+    border-radius: 8px;
+    margin: 0 2px;
+  }
+
+  .nav-pills .nav-link.bg-success {
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+  }
+
+  .nav-pills .nav-link.bg-danger {
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+  }
+
+  .nav-pills .nav-link.border-warning {
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.4);
+  }
+</style>
 <%= simple_form_for delivery, html: {
   data: {
     controller: "delivery-wizard delivery-form",
@@ -6,7 +26,7 @@
     "delivery-form-orders-url-value": orders_for_client_deliveries_path
   }
 } do |f| %>
-  <!-- Navegación tipo wizard -->
+  <!-- Navegación tipo wizard con estilo semáforo -->
   <ul class="nav nav-pills justify-content-center mb-4" data-delivery-wizard-target="nav">
     <li class="nav-item">
       <a class="nav-link active" href="#" data-index="0" data-action="delivery-wizard#goToStep">
@@ -45,27 +65,22 @@
       </a>
     </li>
   </ul>
-  <!-- Step 1: Cliente -->
+  <!-- Resto de tu formulario igual... -->
   <div class="step" data-delivery-wizard-target="step">
     <%= render "deliveries/upsert_partials/client_fields", f: f, clients: clients %>
   </div>
-  <!-- Step 2: Pedido -->
   <div class="step d-none" data-delivery-wizard-target="step">
     <%= render "deliveries/upsert_partials/order_fields", f: f %>
   </div>
-  <!-- Step 3: Dirección -->
   <div class="step d-none" data-delivery-wizard-target="step">
     <%= render "deliveries/upsert_partials/address_fields", f: f, addresses: addresses, delivery: delivery %>
   </div>
-  <!-- Step 4: Datos de entrega -->
   <div class="step d-none" data-delivery-wizard-target="step">
     <%= render "deliveries/upsert_partials/delivery_data_fields", f: f, delivery: delivery %>
   </div>
-  <!-- Step 5: Productos -->
   <div class="step d-none" data-delivery-wizard-target="step">
     <%= render "deliveries/upsert_partials/order_items_fields", f: f %>
   </div>
-  <!-- Step 6: Confirmación -->
   <div class="step d-none" data-delivery-wizard-target="step">
     <%= render "deliveries/upsert_partials/confirm_summary", f: f %>
   </div>
@@ -73,6 +88,6 @@
   <div class="d-flex justify-content-between mt-4">
     <button type="button" class="btn btn-outline-secondary" data-action="delivery-wizard#prev">← Atrás</button>
     <button type="button" class="btn btn-primary" data-action="delivery-wizard#next" data-delivery-wizard-target="nextButton">Siguiente →</button>
-    <%= f.submit "✅ Guardar entrega", class: "btn btn-success d-none", data: { delivery_wizard_target: "submitButton" } %>
+    <%= f.submit "Guardar entrega", class: "btn btn-success d-none", data: { delivery_wizard_target: "submitButton" } %>
   </div>
 <% end %>

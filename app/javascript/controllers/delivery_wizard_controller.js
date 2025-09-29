@@ -19,7 +19,14 @@ export default class extends Controller {
         this.currentStep = index
 
         const links = this.navTarget.querySelectorAll(".nav-link")
-        links.forEach((link, i) => link.classList.toggle("active", i === index))
+        links.forEach((link, i) => {
+            // Remover active de todos
+            link.classList.remove("active")
+            // Agregar active solo al actual
+            if (i === index) {
+                link.classList.add("active")
+            }
+        })
 
         const total = this.stepTargets.length
         this.nextButtonTarget.classList.toggle("d-none", index === total - 1)
@@ -44,12 +51,37 @@ export default class extends Controller {
         }
     }
 
-    // === Check Completion ===
+    // === 🚦 SEMÁFORO: Cambiar color de tabs según completitud ===
     updateIcons() {
+        const links = this.navTarget.querySelectorAll(".nav-link")
+
         this.iconTargets.forEach(icon => {
             const step = parseInt(icon.dataset.step, 10)
             const completed = this.isStepComplete(step)
-            icon.className = completed ? "bi bi-check-circle text-success me-1" : "bi bi-circle text-muted me-1"
+            const link = links[step]
+
+            if (!link) return // Protección
+
+            // 🔄 Resetear todas las clases de estado
+            link.classList.remove("bg-success", "bg-danger", "text-white", "text-success", "text-danger")
+
+            // 🚦 Aplicar estilo según completitud
+            if (completed) {
+                // ✅ Completado: fondo verde con texto blanco
+                link.classList.add("bg-success", "text-white")
+                icon.className = "bi bi-check-circle me-1"
+            } else {
+                // ❌ Incompleto: fondo rojo con texto blanco
+                link.classList.add("bg-danger", "text-white")
+                icon.className = "bi bi-exclamation-circle me-1"
+            }
+
+            // 🎯 Si es el paso activo, agregar un borde para destacar
+            if (step === this.currentStep) {
+                link.classList.add("border", "border-warning", "border-2")
+            } else {
+                link.classList.remove("border", "border-warning", "border-2")
+            }
         })
     }
 
@@ -62,7 +94,7 @@ export default class extends Controller {
             case 4:
                 const visibleRows = this.element.querySelectorAll("#delivery-items-container tr:not(.delivery-item-template):not(.no-items-row)")
                 return Array.from(visibleRows).some(row => row.style.display !== "none")
-            case 5: return true
+            case 5: return true // Confirmación siempre está "completa"
             default: return false
         }
     }

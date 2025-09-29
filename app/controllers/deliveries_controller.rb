@@ -61,7 +61,7 @@ class DeliveriesController < ApplicationController
     end
 
     # Construir un delivery_item vacío con order_item anidado para el formulario
-    @delivery.delivery_items.build.build_order_item
+    # @delivery.delivery_items.build.build_order_item
 
     @clients = Client.all.order(:name)
     @addresses = (@client&.delivery_addresses || []).to_a
