@@ -1,0 +1,92 @@
+<%# app/views/deliveries/_order_items_fields.html.erb %>
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-box-seam me-2 text-primary"></i><strong>Productos</strong></span>
+    <%= link_to "Agregar producto", "#", class: "btn btn-outline-secondary btn-sm", 
+          data: { action: "click->delivery-form#addDeliveryItem" } %>
+  </div>
+  <div class="card-body p-0">
+    <table class="table mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Producto</th>
+          <th>Cantidad pedida</th>
+          <th>A entregar</th>
+          <th>Notas</th>
+          <th width="80"></th>
+        </tr>
+      </thead>
+      <tbody id="delivery-items-container">
+        <%# Items existentes %>
+        <%= f.simple_fields_for :delivery_items do |di_f| %>
+          <tr class="delivery-item-row">
+            <%= di_f.hidden_field :id %>
+            <td>
+              <%= di_f.simple_fields_for :order_item do |oi_f| %>
+                <%= oi_f.hidden_field :id %>
+                <%= oi_f.input :product, label: false, placeholder: "Nombre del producto", 
+                    input_html: { class: "form-control" } %>
+              <% end %>
+            </td>
+            <td>
+              <%= di_f.simple_fields_for :order_item do |oi_f| %>
+                <%= oi_f.input :quantity, label: false, placeholder: "Cantidad", 
+                    input_html: { class: "form-control", type: "number", min: 1 } %>
+              <% end %>
+            </td>
+            <td>
+              <%= di_f.input :quantity_delivered, label: false, placeholder: "A entregar", 
+                  input_html: { class: "form-control", type: "number", min: 1 } %>
+            </td>
+            <td>
+              <%= di_f.simple_fields_for :order_item do |oi_f| %>
+                <%= oi_f.input :notes, label: false, placeholder: "Notas (opcional)", 
+                    input_html: { class: "form-control", rows: 1 } %>
+              <% end %>
+            </td>
+            <td class="text-center">
+              <% unless f.object.persisted? %>
+                <%= link_to "×", "#", class: "btn btn-outline-danger btn-sm", 
+                    data: { action: "click->delivery-form#removeDeliveryItem" } %>
+              <% end %>
+              <%= di_f.hidden_field :_destroy, class: "destroy-flag" %>
+            </td>
+          </tr>
+        <% end %>
+        <%# Template oculto para nuevos items %>
+        <tr class="delivery-item-template delivery-item-row" style="display:none;">
+          <td>
+            <input class="form-control" placeholder="Nombre del producto" 
+                   name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][product]" />
+          </td>
+          <td>
+            <input class="form-control" type="number" min="1" value="1" placeholder="Cantidad"
+                   name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][quantity]" />
+          </td>
+          <td>
+            <input class="form-control" type="number" min="1" value="1" placeholder="A entregar"
+                   name="delivery[delivery_items_attributes][NEW_RECORD][quantity_delivered]" />
+          </td>
+          <td>
+            <textarea class="form-control" rows="1" placeholder="Notas (opcional)"
+                      name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][notes]"></textarea>
+          </td>
+          <td class="text-center">
+            <a href="#" class="btn btn-outline-danger btn-sm" 
+               data-action="click->delivery-form#removeDeliveryItem">×</a>
+            <input type="hidden" name="delivery[delivery_items_attributes][NEW_RECORD][_destroy]" class="destroy-flag" />
+          </td>
+        </tr>
+        <%# Fila para mostrar cuando no hay productos %>
+        <% if f.object.delivery_items.empty? %>
+          <tr class="no-items-row">
+            <td colspan="5" class="text-center text-muted py-4">
+              <i class="bi bi-box me-2"></i>
+              No hay productos agregados. Haz clic en "Agregar producto" para comenzar.
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

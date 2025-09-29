@@ -205,30 +205,18 @@ export default class extends Controller {
 
     // === DELIVERY ITEMS MANAGEMENT (opcional, si usas productos dinámicos) ===
     addDeliveryItem(event) {
-        event.preventDefault()
-        const container = document.getElementById("delivery-items-container")
-        const template = document.querySelector(".delivery-item-template")
-        const newItem = template.cloneNode(true)
+        event.preventDefault();
+        const container = document.getElementById("delivery-items-container");
+        const template = document.querySelector(".delivery-item-template");
+        const newItem = template.cloneNode(true);
 
-        // Mostrar el elemento clonado
-        newItem.style.display = ""
-        newItem.classList.remove("delivery-item-template")
+        newItem.style.display = "";
+        newItem.classList.remove("delivery-item-template");
 
-        // Generar un timestamp único para reemplazar NEW_RECORD
-        const timestamp = new Date().getTime()
-        newItem.innerHTML = newItem.innerHTML.replace(/NEW_RECORD/g, timestamp)
+        const timestamp = new Date().getTime();
+        newItem.innerHTML = newItem.innerHTML.replace(/NEW_RECORD/g, timestamp);
 
-        // Limpiar valores
-        newItem.querySelectorAll("input, textarea, select").forEach(input => {
-            if (input.type !== "checkbox") {
-                input.value = input.type === "number" ? "1" : ""
-            } else {
-                input.checked = false
-            }
-        })
-
-        const addButtonRow = container.querySelector(".row:last-child")
-        container.insertBefore(newItem, addButtonRow)
+        container.appendChild(newItem);
     }
 
     removeDeliveryItem(event) {

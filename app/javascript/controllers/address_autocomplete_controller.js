@@ -9,14 +9,10 @@ export default class extends Controller {
     }
     static targets = [
         "input", "lat", "lng", "plus", "map",
-        "selectedAddressInfo", "selectedAddressText", "useSelectedButton"
+        "selectedAddressInfo", "selectedAddressText"
     ]
 
     connect() {
-        console.log("🚀 AddressAutocomplete conectado")
-        console.log("📍 Direcciones disponibles:", this.addressesValue)
-        console.log("🎯 Dirección seleccionada ID:", this.selectedAddressIdValue)
-
         // Solo inicializar si el contenedor ya está visible
         if (this.isContainerVisible()) {
             this.initializeWhenReady()
@@ -27,7 +23,6 @@ export default class extends Controller {
 
     // Método público para inicializar cuando se muestra el contenedor
     initialize() {
-        console.log("🎯 Inicializando desde método público...")
         if (!this.map && this.isContainerVisible()) {
             this.initializeWhenReady()
         } else if (this.map) {
@@ -40,7 +35,6 @@ export default class extends Controller {
 
     // Método llamado desde delivery-form cuando cambia el select
     updateSelectedAddress(addressId) {
-        console.log("🔄 Actualizando dirección seleccionada:", addressId)
         this.selectedAddressIdValue = addressId
         this.updateSelectedAddressInfo()
 
@@ -49,17 +43,17 @@ export default class extends Controller {
         }
     }
 
+    // 🔥 MÉTODO FALTANTE: Actualizar la información de dirección seleccionada
     updateSelectedAddressInfo() {
         const selectedAddress = this.getSelectedAddress()
 
-        if (selectedAddress) {
-            this.selectedAddressTextTarget.textContent = selectedAddress.address
-            this.selectedAddressInfoTarget.style.display = "block"
-            this.useSelectedButtonTarget.style.display = "inline-block"
-            console.log("✅ Información de dirección actualizada:", selectedAddress.address)
-        } else {
-            this.selectedAddressInfoTarget.style.display = "none"
-            this.useSelectedButtonTarget.style.display = "none"
+        if (this.hasSelectedAddressInfoTarget && this.hasSelectedAddressTextTarget) {
+            if (selectedAddress) {
+                this.selectedAddressTextTarget.textContent = selectedAddress.address
+                this.selectedAddressInfoTarget.style.display = "block"
+            } else {
+                this.selectedAddressInfoTarget.style.display = "none"
+            }
         }
     }
 
@@ -80,8 +74,6 @@ export default class extends Controller {
             const lat = parseFloat(selectedAddress.latitude)
             const lng = parseFloat(selectedAddress.longitude)
 
-            console.log(`🗺️ Centrando mapa en dirección seleccionada: ${lat}, ${lng}`)
-
             this.map.setCenter({ lat, lng })
             this.updateMarkerPosition(lat, lng)
 
@@ -98,8 +90,6 @@ export default class extends Controller {
         const selectedAddress = this.getSelectedAddress()
 
         if (selectedAddress) {
-            console.log("✅ Usando dirección seleccionada")
-
             // Llenar todos los campos
             this.inputTarget.value = selectedAddress.address
 
@@ -122,8 +112,6 @@ export default class extends Controller {
     }
 
     clearForm() {
-        console.log("🧹 Limpiando formulario")
-
         this.inputTarget.value = ""
         this.latTarget.value = ""
         this.lngTarget.value = ""
@@ -165,10 +153,8 @@ export default class extends Controller {
 
     initializeWhenReady() {
         if (this.isGoogleMapsReady()) {
-            console.log("✅ Google Maps listo, inicializando...")
             this.initMap()
         } else {
-            console.log("⏳ Esperando Google Maps...")
             this.loadGoogleMaps()
         }
     }
@@ -186,7 +172,6 @@ export default class extends Controller {
         script.defer = true
         script.onload = () => this.waitForGoogleMaps()
         script.onerror = () => {
-            console.error("❌ Error cargando Google Maps")
             this.fallbackToBasicInput()
         }
         document.head.appendChild(script)
@@ -199,10 +184,8 @@ export default class extends Controller {
         const checkGoogle = () => {
             attempts++
             if (this.isGoogleMapsReady()) {
-                console.log("✅ Google Maps disponible!")
                 this.initMap()
             } else if (attempts >= maxAttempts) {
-                console.error("❌ Timeout esperando Google Maps")
                 this.fallbackToBasicInput()
             } else {
                 setTimeout(checkGoogle, 200)
@@ -227,7 +210,6 @@ export default class extends Controller {
 
         try {
             if (!this.isContainerVisible() || this.mapTarget.offsetWidth === 0) {
-                console.warn("⚠️ Contenedor del mapa no visible")
                 return
             }
 
@@ -239,7 +221,6 @@ export default class extends Controller {
             if (selectedAddress && selectedAddress.latitude && selectedAddress.longitude) {
                 initialLat = parseFloat(selectedAddress.latitude)
                 initialLng = parseFloat(selectedAddress.longitude)
-                console.log(`🎯 Usando posición de dirección seleccionada: ${initialLat}, ${initialLng}`)
             }
 
             // Inicializar mapa
@@ -250,8 +231,6 @@ export default class extends Controller {
                 streetViewControl: false,
                 fullscreenControl: false
             })
-
-            console.log("✅ Mapa creado")
 
             // Crear marcador
             await this.createMarker(initialLat, initialLng)
@@ -267,7 +246,6 @@ export default class extends Controller {
             }
 
         } catch (error) {
-            console.error("❌ Error en initMap:", error)
             this.fallbackToBasicInput()
         }
     }
@@ -276,8 +254,6 @@ export default class extends Controller {
         try {
             // Intentar usar AdvancedMarkerElement (nuevo)
             if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
-                console.log("✅ Usando AdvancedMarkerElement")
-
                 this.marker = new google.maps.marker.AdvancedMarkerElement({
                     map: this.map,
                     position: { lat, lng },
@@ -288,14 +264,10 @@ export default class extends Controller {
                 this.marker.addListener("dragend", (event) => {
                     const newLat = event.latLng.lat()
                     const newLng = event.latLng.lng()
-                    console.log(`📍 Marcador movido a: ${newLat}, ${newLng}`)
-                    // 🎯 CAMBIO: Pasar true para forzar actualización del input
                     this.updateCoordinates(newLat, newLng, true)
                 })
 
             } else {
-                console.log("⚠️ Usando Marker clásico (deprecated)")
-
                 this.marker = new google.maps.Marker({
                     map: this.map,
                     position: { lat, lng },
@@ -306,13 +278,9 @@ export default class extends Controller {
                 this.marker.addListener("dragend", (event) => {
                     const newLat = event.latLng.lat()
                     const newLng = event.latLng.lng()
-                    console.log(`📍 Marcador movido a: ${newLat}, ${newLng}`)
-                    // 🎯 CAMBIO: Pasar true para forzar actualización del input
                     this.updateCoordinates(newLat, newLng, true)
                 })
             }
-
-            console.log("✅ Marcador creado")
 
         } catch (error) {
             console.error("❌ Error creando marcador:", error)
@@ -320,10 +288,7 @@ export default class extends Controller {
     }
 
     setupAutocomplete() {
-        console.log("🔍 Configurando autocompletado...")
-
         try {
-            // 🎯 AQUÍ ESTÁ EL CAMBIO PRINCIPAL - Ampliar tipos de resultados
             this.autocomplete = new google.maps.places.Autocomplete(this.inputTarget, {
                 // 👇 Permitir direcciones, locales, POIs y establecimientos
                 types: ["geocode", "establishment"],
@@ -339,14 +304,10 @@ export default class extends Controller {
                 ]
             })
 
-            console.log("✅ Autocompletado creado con tipos ampliados")
-
             this.autocomplete.addListener("place_changed", () => {
                 const place = this.autocomplete.getPlace()
-                console.log("📍 Lugar seleccionado desde autocomplete:", place)
 
                 if (!place.geometry) {
-                    console.warn("⚠️ Sin información geográfica")
                     return
                 }
 
@@ -385,10 +346,6 @@ export default class extends Controller {
 
                 this.map.setCenter({ lat, lng })
                 this.updateMarkerPosition(lat, lng)
-
-                console.log(`✅ Coordenadas actualizadas desde autocomplete: ${lat}, ${lng}`)
-                console.log(`📍 Plus Code: ${plusCode}`)
-                console.log(`🏪 Tipo de lugar: ${place.types?.join(", ")}`)
             })
 
         } catch (error) {
@@ -425,7 +382,6 @@ export default class extends Controller {
                 // 🎯 LÓGICA MEJORADA: Actualizar input si se fuerza o está vacío
                 if (forceUpdateInput || !this.inputTarget.value || this.inputTarget.value.trim() === "") {
                     this.inputTarget.value = results[0].formatted_address
-                    console.log("✅ Input actualizado por geocodificación inversa")
                 }
 
                 // Actualizar plus code si no se tiene
@@ -433,8 +389,6 @@ export default class extends Controller {
                     this.plusTarget.value = results[0].plus_code.global_code ||
                         results[0].plus_code.compound_code || ""
                 }
-
-                console.log("✅ Geocodificación inversa exitosa")
             } else {
                 console.warn("⚠️ Error en geocodificación inversa:", status)
             }
@@ -443,7 +397,6 @@ export default class extends Controller {
 
     refreshMap() {
         if (this.map) {
-            console.log("🔄 Refrescando mapa...")
             setTimeout(() => {
                 google.maps.event.trigger(this.map, "resize")
 
@@ -461,7 +414,6 @@ export default class extends Controller {
     }
 
     fallbackToBasicInput() {
-        console.warn("⚠️ Usando fallback - input básico")
         if (this.mapTarget) {
             this.mapTarget.innerHTML = '<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>Mapa no disponible. Ingrese la dirección manualmente.</div>'
         }

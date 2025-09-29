@@ -6,10 +6,10 @@
       }
     } do |f| %>
   
-  <%= render "client_fields", f: f, clients: clients %>
-  <%= render "address_fields", f: f, addresses: addresses, delivery: delivery %>
-  <%= render "order_fields", f: f %>
-  <%= render "order_items_fields", f: f %>
+  <%= render "deliveries/upsert_partials/client_fields", f: f, clients: clients %>
+  <%= render "deliveries/upsert_partials/address_fields", f: f, addresses: addresses, delivery: delivery %>
+  <%= render "deliveries/upsert_partials/order_fields", f: f %>
+  <%= render "deliveries/upsert_partials/order_items_fields", f: f %>
 
   <div class="row mb-4">
     <div class="col-md-6">
@@ -31,7 +31,7 @@
     </div>
   </div>
 
-  <%= render "delivery_detail_fields", f: f %>
+  <%= render "deliveries/upsert_partials/delivery_detail_fields", f: f %>
 
   <div class="d-flex justify-content-end gap-2">
     <%= link_to "Cancelar", deliveries_path, class: "btn btn-secondary" %>

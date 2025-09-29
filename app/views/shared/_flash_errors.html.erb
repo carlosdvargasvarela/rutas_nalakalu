@@ -1,0 +1,14 @@
+<%# app/views/shared/_flash_errors.html.erb %>
+<% if flash[:alert] %>
+  <div class="alert alert-danger d-flex align-items-center"><i class="bi bi-exclamation-triangle me-2"></i><%= flash[:alert] %></div>
+<% end %>
+<% objects.each do |obj| %>
+  <% if obj&.errors&.any? %>
+    <div class="alert alert-danger">
+      <strong><%= obj.class.name %>:</strong>
+      <ul class="mb-0"><% obj.errors.full_messages.each { |msg| %>
+        <li><%= msg %></li>
+        <% } %></ul>
+    </div>
+  <% end %>
+<% end %>

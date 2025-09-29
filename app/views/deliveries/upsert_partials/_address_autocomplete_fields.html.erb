@@ -1,0 +1,63 @@
+<%# app/views/shared/_address_autocomplete_fields.html.erb %>
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <span class="fw-bold text-primary">
+    <i class="bi bi-geo-alt-plus me-2"></i>Nueva dirección
+  </span>
+  <button type="button" class="btn btn-outline-danger btn-sm"
+          data-action="click->delivery-form#cancelNewAddressFields">
+    <i class="bi bi-x-lg"></i> Cancelar
+  </button>
+</div>
+<!-- Info dirección seleccionada -->
+<div data-address-autocomplete-target="selectedAddressInfo" 
+     class="alert alert-info mb-3" 
+     style="display:none;">
+  <div class="d-flex align-items-center">
+    <i class="bi bi-info-circle me-2"></i>
+    <div>
+      <strong>Dirección seleccionada:</strong><br>
+      <span data-address-autocomplete-target="selectedAddressText"></span>
+    </div>
+  </div>
+</div>
+<!-- Campo de búsqueda -->
+<div class="mb-3">
+  <%= label_tag "delivery_address[address]", "Buscar dirección", class: "form-label" %>
+  <%= text_field_tag "delivery_address[address]", nil,
+      placeholder: "Ej: Walmart Escazú, GCode 7JXW+5FH...",
+      class: "form-control",
+      data: { 
+        "address-autocomplete-target": "input",
+        "delivery-form-target": "newAddressInput"
+      } %>
+  <div class="form-text">💡 Busca una dirección o selecciona una existente para modificar.</div>
+</div>
+<!-- Mapa -->
+<div data-address-autocomplete-target="map"
+     style="height: 250px;"
+     class="mb-3 border rounded"></div>
+<!-- Hidden fields -->
+<%= hidden_field_tag "delivery_address[client_id]", (client&.id || delivery.order&.client&.id), 
+    data: { "delivery-form-target": "newAddressClientId" } %>
+<%= hidden_field_tag "delivery_address[latitude]", nil,
+    data: { 
+      "address-autocomplete-target": "lat",
+      "delivery-form-target": "newAddressLat"
+    } %>
+<%= hidden_field_tag "delivery_address[longitude]", nil,
+    data: { 
+      "address-autocomplete-target": "lng",
+      "delivery-form-target": "newAddressLng"
+    } %>
+<%= hidden_field_tag "delivery_address[plus_code]", nil,
+    data: { 
+      "address-autocomplete-target": "plus",
+      "delivery-form-target": "newAddressPlusCode"
+    } %>
+<div class="mb-3">
+  <%= label_tag "delivery_address[description]", "Referencia", class: "form-label" %>
+  <%= text_field_tag "delivery_address[description]", nil,
+      placeholder: "Ej: Casa blanca, portón negro",
+      class: "form-control",
+      data: { "delivery-form-target": "newAddressDescription" } %>
+</div>

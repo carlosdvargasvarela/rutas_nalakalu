@@ -1,0 +1,49 @@
+<% delivery = f.object %>
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light">
+    <i class="bi bi-receipt me-2 text-primary"></i><strong>Pedido</strong>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-8">
+        <%= label_tag :order_id, "Pedido existente", class: "form-label" %>
+        <%= select_tag :order_id,
+          "",
+          prompt: "Selecciona un pedido",
+          class: "form-select",
+          data: { 
+            controller: "tom-select",
+            "delivery-form-target": "orderSelect",
+            action: "change->delivery-form#orderChanged"
+          } %>
+      </div>
+      <div class="col-md-4 d-flex align-items-end">
+        <% unless delivery.persisted? %>
+          <button type="button"
+                  class="btn btn-outline-primary btn-sm"
+                  data-action="click->delivery-form#toggleNewOrderFields"
+            data-delivery-form-target="addOrderButton">
+            <i class="bi bi-plus-circle me-1"></i> Nuevo pedido
+          </button>
+        <% end %>
+      </div>
+    </div>
+    <div data-delivery-form-target="newOrderFields" class="card card-body border-primary mt-3" style="display:none;">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= text_field_tag "order[number]", nil, class:"form-control", placeholder:"Ej: PED-2025-001" %>
+        </div>
+        <div class="col-md-6">
+          <%= select_tag :seller_id,
+              options_from_collection_for_select(
+                Seller.all,
+                :id,
+                ->(s){ "#{s.name} (#{s.seller_code})" }
+              ),
+              prompt: "Selecciona vendedor",
+              class: "form-select" %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

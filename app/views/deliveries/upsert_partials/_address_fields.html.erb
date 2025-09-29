@@ -1,0 +1,32 @@
+<%# app/views/deliveries/_address_fields.html.erb %>
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light">
+    <i class="bi bi-geo-alt me-2 text-primary"></i><strong>Dirección</strong>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-8">
+        <%= f.select :delivery_address_id,
+            [],
+            { prompt: "Selecciona una dirección" },
+            class: "form-select",
+            data: { controller: "tom-select",
+                    "delivery-form-target": "addressSelect",
+                    action: "change->delivery-form#addressChanged" } %>
+      </div>
+      <div class="col-md-4 d-flex align-items-end">
+        <button type="button"
+                class="btn btn-outline-primary btn-sm"
+                data-action="click->delivery-form#toggleNewAddressFields">
+          <i class="bi bi-geo-alt-plus me-1"></i> Nueva dirección
+        </button>
+      </div>
+    </div>
+    <div data-delivery-form-target="newAddressFields"
+         data-controller="address-autocomplete"
+         data-address-autocomplete-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
+         class="card card-body border-primary mt-3" style="display:none;">
+      <%= render "deliveries/upsert_partials/address_autocomplete_fields", delivery: f.object, client: @client %>
+    </div>
+  </div>
+</div>
