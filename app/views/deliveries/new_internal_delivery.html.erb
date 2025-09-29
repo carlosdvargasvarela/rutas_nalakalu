@@ -28,9 +28,8 @@
       </h5>
       <div class="row mb-4">
         <div class="col-md-6">
-          <%= f.date_field :delivery_date, as: :date, label: "Fecha de entrega", 
-                input_html: { class: "form-control" }, 
-                label_html: { class: "form-label" } %>
+          <%= f.label :delivery_date, "Fecha de servicio", class: "form-label" %>
+          <%= f.date_field :delivery_date, class: "form-control", required: true %>
         </div>
         <div class="col-md-6">
           <%= f.input :delivery_time_preference,
