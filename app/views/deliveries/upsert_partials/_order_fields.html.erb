@@ -1,4 +1,5 @@
 <% delivery = f.object %>
+<% delivery = f.object %>
 <div class="card shadow-sm mb-4">
   <div class="card-header bg-light">
     <i class="bi bi-receipt me-2 text-primary"></i><strong>Pedido</strong>
@@ -8,7 +9,9 @@
       <div class="col-md-8">
         <%= label_tag :order_id, "Pedido existente", class: "form-label" %>
         <%= select_tag :order_id,
-          "",
+          options_from_collection_for_select(
+            @orders || [], :id, :number, delivery.order_id
+          ),
           prompt: "Selecciona un pedido",
           class: "form-select",
           data: { 

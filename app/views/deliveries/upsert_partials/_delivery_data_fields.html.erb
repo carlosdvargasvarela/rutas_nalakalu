@@ -1,0 +1,18 @@
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light">
+    <i class="bi bi-calendar-event me-2 text-primary"></i><strong>Datos de entrega</strong>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <% unless current_user.seller? && !delivery.new_record? %>
+        <div class="col-md-4">
+          <%= f.date_field :delivery_date, as: :date, label: "Fecha *", class: "form-control" %>
+        </div>
+      <% end %>
+      <div class="col-md-4"><%= f.input :contact_name, label: "Contacto" %></div>
+      <div class="col-md-4"><%= f.input :contact_phone, label: "Teléfono" %></div>
+      <div class="col-12"><%= f.input :delivery_notes, as: :text, label: "Notas", input_html: { rows: 2 } %></div>
+      <div class="col-md-6"><%= f.input :delivery_time_preference, label: "Preferencia de horario", placeholder: "Ej: Mañana, tarde, 2:00 pm" %></div>
+    </div>
+  </div>
+</div>

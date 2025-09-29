@@ -1,45 +1,78 @@
 <%# app/views/deliveries/_form.html.erb %>
 <%= simple_form_for delivery, html: {
-      data: {
-        controller: "delivery-form",
-        "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
-        "delivery-form-orders-url-value": orders_for_client_deliveries_path
-      }
-    } do |f| %>
-  <%= render "deliveries/upsert_partials/client_fields", f: f, clients: clients %>
-  <%= render "deliveries/upsert_partials/address_fields", f: f, addresses: addresses, delivery: delivery %>
-  <%= render "deliveries/upsert_partials/order_fields", f: f %>
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-light">
-      <i class="bi bi-calendar-event me-2 text-primary"></i><strong>Datos de entrega</strong>
-    </div>
-    <div class="card-body">
-      <div class="row g-3">
-        <% unless current_user.seller? && !delivery.new_record? %>
-          <div class="col-md-4">
-            <%= f.date_field :delivery_date, as: :date, label: "Fecha *", input_html: { class: "form-control" } %>
-          </div>
-        <% end %>
-        <div class="col-md-4">
-          <%= f.input :contact_name, label: "Contacto", input_html: { class: "form-control" } %>
-        </div>
-        <div class="col-md-4">
-          <%= f.input :contact_phone, label: "Teléfono", input_html: { class: "form-control" } %>
-        </div>
-        <div class="col-12">
-          <%= f.input :delivery_notes, as: :text, label: "Notas", input_html: { class: "form-control", rows: 2 } %>
-        </div>
-        <div class="col-md-6">
-          <%= f.input :delivery_time_preference,
-              label: "Preferencia de horario",
-              input_html: { class: "form-control", placeholder: "Ej: Mañana, Por la tarde, 2:00 pm" } %>
-        </div>
-      </div>
-    </div>
+  data: {
+    controller: "delivery-wizard delivery-form",
+    "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
+    "delivery-form-orders-url-value": orders_for_client_deliveries_path
+  }
+} do |f| %>
+  <!-- Navegación tipo wizard -->
+  <ul class="nav nav-pills justify-content-center mb-4" data-delivery-wizard-target="nav">
+    <li class="nav-item">
+      <a class="nav-link active" href="#" data-index="0" data-action="delivery-wizard#goToStep">
+        <i class="bi bi-circle me-1" data-delivery-wizard-target="icon" data-step="0"></i>
+        Cliente
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#" data-index="1" data-action="delivery-wizard#goToStep">
+        <i class="bi bi-circle me-1" data-delivery-wizard-target="icon" data-step="1"></i>
+        Pedido
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#" data-index="2" data-action="delivery-wizard#goToStep">
+        <i class="bi bi-circle me-1" data-delivery-wizard-target="icon" data-step="2"></i>
+        Dirección
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#" data-index="3" data-action="delivery-wizard#goToStep">
+        <i class="bi bi-circle me-1" data-delivery-wizard-target="icon" data-step="3"></i>
+        Datos
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#" data-index="4" data-action="delivery-wizard#goToStep">
+        <i class="bi bi-circle me-1" data-delivery-wizard-target="icon" data-step="4"></i>
+        Productos
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#" data-index="5" data-action="delivery-wizard#goToStep">
+        <i class="bi bi-circle me-1" data-delivery-wizard-target="icon" data-step="5"></i>
+        Confirmación
+      </a>
+    </li>
+  </ul>
+  <!-- Step 1: Cliente -->
+  <div class="step" data-delivery-wizard-target="step">
+    <%= render "deliveries/upsert_partials/client_fields", f: f, clients: clients %>
   </div>
-  <%= render "deliveries/upsert_partials/order_items_fields", f: f %>
-  <div class="d-flex justify-content-end gap-2">
-    <%= link_to "Cancelar", deliveries_path, class: "btn btn-outline-secondary" %>
-    <%= f.submit "Guardar entrega", class: "btn btn-primary" %>
+  <!-- Step 2: Pedido -->
+  <div class="step d-none" data-delivery-wizard-target="step">
+    <%= render "deliveries/upsert_partials/order_fields", f: f %>
+  </div>
+  <!-- Step 3: Dirección -->
+  <div class="step d-none" data-delivery-wizard-target="step">
+    <%= render "deliveries/upsert_partials/address_fields", f: f, addresses: addresses, delivery: delivery %>
+  </div>
+  <!-- Step 4: Datos de entrega -->
+  <div class="step d-none" data-delivery-wizard-target="step">
+    <%= render "deliveries/upsert_partials/delivery_data_fields", f: f, delivery: delivery %>
+  </div>
+  <!-- Step 5: Productos -->
+  <div class="step d-none" data-delivery-wizard-target="step">
+    <%= render "deliveries/upsert_partials/order_items_fields", f: f %>
+  </div>
+  <!-- Step 6: Confirmación -->
+  <div class="step d-none" data-delivery-wizard-target="step">
+    <%= render "deliveries/upsert_partials/confirm_summary", f: f %>
+  </div>
+  <!-- Botones -->
+  <div class="d-flex justify-content-between mt-4">
+    <button type="button" class="btn btn-outline-secondary" data-action="delivery-wizard#prev">← Atrás</button>
+    <button type="button" class="btn btn-primary" data-action="delivery-wizard#next" data-delivery-wizard-target="nextButton">Siguiente →</button>
+    <%= f.submit "✅ Guardar entrega", class: "btn btn-success d-none", data: { delivery_wizard_target: "submitButton" } %>
   </div>
 <% end %>

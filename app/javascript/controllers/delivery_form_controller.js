@@ -68,6 +68,13 @@ export default class extends Controller {
             this.addressSelectTarget.innerHTML = '<option value="">Selecciona una dirección</option>'
             this.orderSelectTarget.innerHTML = '<option value="">Selecciona un pedido</option>'
         }
+
+        const wizardController = this.application.getControllerForElementAndIdentifier(
+            this.element, "delivery-wizard"
+        )
+        if (wizardController) {
+            wizardController.refreshIcons()
+        }
     }
 
     // DIRECCIÓN

@@ -65,6 +65,7 @@ class DeliveriesController < ApplicationController
 
     @clients = Client.all.order(:name)
     @addresses = (@client&.delivery_addresses || []).to_a
+    @orders = (@client&.orders || []).to_a
   end
 
   # GET /deliveries/:id/edit
@@ -72,6 +73,10 @@ class DeliveriesController < ApplicationController
     @delivery = Delivery.includes(delivery_items: :order_item).find(params[:id])
     @client = @delivery.order.client
     @order = @delivery.order
+
+    @addresses = @client.delivery_addresses.to_a
+    @orders = @client.orders.to_a
+    @clients = [@client] # Para el select de cliente (solo el actual en edit)
 
     # Agregar un delivery_item vacío si no hay ninguno
     @delivery.delivery_items.build.build_order_item if @delivery.delivery_items.empty?
