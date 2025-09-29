@@ -6,7 +6,8 @@
     <div class="row g-3">
       <% unless current_user.seller? && !delivery.new_record? %>
         <div class="col-md-4">
-          <%= f.date_field :delivery_date, as: :date, label: "Fecha *", class: "form-control" %>
+          <%= f.label :delivery_date, "Fecha de servicio", class: "form-label" %>
+          <%= f.date_field :delivery_date, class: "form-control", required: true %>
         </div>
       <% end %>
       <div class="col-md-4"><%= f.input :contact_name, label: "Contacto" %></div>

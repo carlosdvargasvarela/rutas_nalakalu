@@ -5,12 +5,10 @@
         "delivery-form-orders-url-value": orders_for_client_deliveries_path
       }
     } do |f| %>
-  
   <%= render "deliveries/upsert_partials/client_fields", f: f, clients: clients %>
   <%= render "deliveries/upsert_partials/address_fields", f: f, addresses: addresses, delivery: delivery %>
   <%= render "deliveries/upsert_partials/order_fields", f: f %>
   <%= render "deliveries/upsert_partials/order_items_fields", f: f %>
-
   <div class="row mb-4">
     <div class="col-md-6">
       <%= f.input :delivery_type, 
@@ -25,14 +23,11 @@
           label_html: { class: "form-label" } %>
     </div>
     <div class="col-md-6">
-      <%= f.date_field :delivery_date, as: :date, label: "Fecha del servicio", 
-          input_html: { class: "form-control" }, 
-          label_html: { class: "form-label" } %>
+      <%= f.label :delivery_date, "Fecha de servicio", class: "form-label" %>
+      <%= f.date_field :delivery_date, class: "form-control", required: true %>
     </div>
   </div>
-
-  <%= render "deliveries/upsert_partials/delivery_detail_fields", f: f %>
-
+  <%= render "deliveries/upsert_partials/delivery_data_fields", f: f, delivery: delivery %>
   <div class="d-flex justify-content-end gap-2">
     <%= link_to "Cancelar", deliveries_path, class: "btn btn-secondary" %>
     <%= f.button :submit, "Guardar caso de servicio", class: "btn btn-warning" %>

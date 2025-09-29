@@ -17,9 +17,9 @@
             }
           } do |f| %>
       <!-- Dirección -->
-      <%= render "address_fields", f: f, addresses: @addresses, delivery: @service_case %>
+      <%= render "deliveries/upsert_partials/address_fields", f: f, addresses: @addresses, delivery: @service_case %>
       <!-- Productos (usa el mismo partial de deliveries/new) -->
-      <%= render "order_items_fields", f: f %>
+      <%= render "deliveries/upsert_partials/order_items_fields", f: f %>
       <!-- Datos del servicio -->
       <div class="row mb-4">
         <div class="col-12">

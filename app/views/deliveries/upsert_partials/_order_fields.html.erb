@@ -7,7 +7,6 @@
   <div class="card-body">
     <div class="row g-3">
       <div class="col-md-8">
-        <%= label_tag :order_id, "Pedido existente", class: "form-label" %>
         <%= select_tag :order_id,
           options_from_collection_for_select(
             @orders || [], :id, :number, delivery.order_id

@@ -76,7 +76,7 @@ class DeliveriesController < ApplicationController
 
     @addresses = @client.delivery_addresses.to_a
     @orders = @client.orders.to_a
-    @clients = [@client] # Para el select de cliente (solo el actual en edit)
+    @clients = [ @client ] # Para el select de cliente (solo el actual en edit)
 
     # Agregar un delivery_item vacío si no hay ninguno
     @delivery.delivery_items.build.build_order_item if @delivery.delivery_items.empty?
@@ -121,8 +121,7 @@ class DeliveriesController < ApplicationController
 
       # 4. Actualiza la entrega
       if @delivery.update(delivery_params.except(:delivery_items_attributes, :delivery_address_id))
-        redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
-                    notice: "Entrega actualizada correctamente.")
+        redirect_to @delivery, notice: "Entrega actualizada correctamente."
       else
         @client = order.client
         @addresses = @client.delivery_addresses.order(:description)
@@ -183,8 +182,7 @@ class DeliveriesController < ApplicationController
 
       @delivery.save!
 
-      redirect_to(session.delete(:deliveries_return_to) || deliveries_path,
-                  notice: "Entrega creada correctamente.")
+      redirect_to @delivery, notice: "Entrega creada correctamente."
     end
   rescue ActiveRecord::RecordInvalid => e
     @delivery = e.record if e.respond_to?(:record) && e.record.is_a?(Delivery)

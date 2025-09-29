@@ -6,7 +6,6 @@
   <div class="card-body">
     <div class="row g-3">
       <div class="col-md-8">
-        <%= label_tag :client_id, "Cliente *", class: "form-label" %>
         <%= select_tag :client_id,
           options_from_collection_for_select(clients, :id, :name, f.object.order&.client_id),
           prompt: "Selecciona un cliente",
