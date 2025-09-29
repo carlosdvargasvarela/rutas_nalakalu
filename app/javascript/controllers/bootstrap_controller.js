@@ -1,10 +1,12 @@
 // app/javascript/controllers/bootstrap_controller.js
 import { Controller } from "@hotwired/stimulus"
+import { Tooltip } from "bootstrap"
 
 export default class extends Controller {
   connect() {
     // Solo inicializar una vez al conectar
     this.initializeBootstrap()
+    new Tooltip(this.element)
   }
 
   initializeBootstrap() {

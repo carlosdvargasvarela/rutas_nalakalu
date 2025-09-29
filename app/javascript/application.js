@@ -1,5 +1,6 @@
 import "@hotwired/turbo-rails"
 import "controllers"
+import "bootstrap"
 
 document.addEventListener("turbo:load", () => {
     // Inicializar Bootstrap como ya tenías

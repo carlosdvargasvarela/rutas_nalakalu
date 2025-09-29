@@ -52,7 +52,7 @@ gem "devise"
 gem "geocoder"
 
 # Bootstrap for styling
-gem "bootstrap", "~> 5.3.5"
+gem "bootstrap"
 gem "jquery-rails"
 
 # Other frontemd gems

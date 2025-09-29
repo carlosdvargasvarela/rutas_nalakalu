@@ -471,7 +471,7 @@ DEPENDENCIES
   acts_as_list
   aws-sdk-s3
   bootsnap
-  bootstrap (~> 5.3.5)
+  bootstrap
   brakeman
   byebug
   capybara
