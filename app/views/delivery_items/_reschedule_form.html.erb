@@ -10,7 +10,6 @@
       <%= date_field_tag "new_date", next_same_weekday,
             class: "form-control mt-1",
             data: {
-              controller: "weekday-picker",
               weekday_picker_weekday_value: Date.today.wday,
               min: next_same_weekday.strftime("%Y-%m-%d")
             } %>
@@ -28,13 +27,12 @@
     
     <% if current_user.role == "seller" %>
       <%# Filtrar entregas futuras solo del mismo día de la semana %>
-      <% seller_allowed_deliveries = future_deliveries.select { |d| d.delivery_date.wday == Date.today.wday } %>
       <%= select_tag "target_delivery_id",
             options_for_select([["Selecciona una entrega existente", ""]] +
-              seller_allowed_deliveries.map { |d| ["Entrega ##{d.id} - #{l d.delivery_date, format: :long}", d.id] }),
+              future_deliveries.map { |d| ["Entrega ##{d.id} - #{l d.delivery_date, format: :long}", d.id] }),
             class: "form-select mt-1" %>
-      <% if seller_allowed_deliveries.empty? %>
-        <small class="text-muted">No hay entregas existentes para <%= Date::DAYNAMES[Date.today.wday].downcase %>s</small>
+      <% if future_deliveries.empty? %>
+        <small class="text-muted">No hay entregas existentes</small>
       <% end %>
     <% else %>
       <%= select_tag "target_delivery_id",
