@@ -42,6 +42,9 @@
     <% elsif item.delivered? %>
       <!-- Entregado -->
       <span class="text-success"><i class="bi bi-check2-circle"></i> Entregado</span>
+    <% elsif item.cancelled? %>
+      <!-- Cancelado -->
+      <span class="text-danger"><i class="bi bi-x-circle"></i> Cancelado</span>
     <% else %>
       <!-- Confirmar -->
       <% if item.pending? %>

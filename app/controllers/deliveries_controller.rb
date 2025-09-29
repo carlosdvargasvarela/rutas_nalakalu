@@ -139,8 +139,7 @@ class DeliveriesController < ApplicationController
     flash.now[:alert] = "Error al actualizar la entrega: #{e.message}"
     render :edit, status: :unprocessable_entity
   rescue => e
-    Rails.logger.error "Error inesperado en DeliveriesController#update: #{e.message}"
-    redirect_to @delivery, alert: "Ocurrió un error inesperado al actualizar la entrega."
+    redirect_to @delivery, alert: "Error al actualizar la entrega: #{e.message}"
   end
 
   # POST /deliveries
@@ -808,7 +807,7 @@ class DeliveriesController < ApplicationController
       if params[:delivery_address].present?
         addr.update(
           params.require(:delivery_address)
-                .permit(:address, :description, :latitude, :longitude, :plus_code)
+                .permit(:address, :description, :latitude, :longitude, :plus_code, :client_id)
         )
       end
 

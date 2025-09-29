@@ -124,7 +124,7 @@ class DeliveryPlansController < ApplicationController
           "# Parada", "Pedido",
           "Producto", "Cantidad", "Cliente", "Vendedor",
           "Dirección",
-          "Hora", "Fecha", "Contacto", "Teléfono", "Notas"
+          "Hora", "Fecha", "Contacto", "Teléfono", "Notas", "Estado"
         ]
 
         rows = @assignments.flat_map do |assignment|
@@ -148,6 +148,7 @@ class DeliveryPlansController < ApplicationController
             all_notes = []
             all_notes << "PRODUCCIÓN: #{item.order_item.notes}" if item.order_item.notes.present?
             all_notes << "LOGÍSTICA: #{item.notes}" if item.notes.present?
+            all_notes << "VENDEDOR: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
             notes_text = all_notes.join("\n")
 
             [
@@ -162,7 +163,8 @@ class DeliveryPlansController < ApplicationController
               I18n.l(delivery.delivery_date, format: :long),
               delivery.contact_name,
               delivery.contact_phone.presence || "-",
-              notes_text
+              notes_text,
+              item.display_status
             ]
           end
         end

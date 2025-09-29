@@ -26,6 +26,8 @@
           <span class="text-warning"><i class="bi bi-calendar-x"></i> Reagendado</span>
         <% elsif item.delivered? %>
           <span class="text-success"><i class="bi bi-check2-circle"></i> Entregado</span>
+        <% elsif item.cancelled? %>
+          <span class="text-danger"><i class="bi bi-x-circle"></i> Cancelado</span>
         <% else %>
           <!-- ✅ Confirmar -->
           <% if item.pending? %>

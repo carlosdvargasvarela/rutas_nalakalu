@@ -21,7 +21,8 @@ class DeliveryItem < ApplicationRecord
     in_route: 3,
     delivered: 4,
     rescheduled: 5,
-    cancelled: 6
+    cancelled: 6,
+    other: 99
   }
 
   # ============================================================================
@@ -29,7 +30,7 @@ class DeliveryItem < ApplicationRecord
   # ============================================================================
 
   scope :service_cases, -> { where(service_case: true) }
-  scope :eligible_for_plan, -> { where.not(status: [ :delivered, :cancelled, :rescheduled ]) }
+  scope :eligible_for_plan, -> { where.not(status: [ :other ]) }
 
   # ============================================================================
   # VALIDACIONES

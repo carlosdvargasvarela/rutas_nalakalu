@@ -20,7 +20,7 @@ module ApplicationHelper
     when "in_route"    then "info"
     when "delivered"   then "success"
     when "rescheduled" then "warning"
-    when "cancelled"   then "secondary"
+    when "cancelled"   then "danger"
     else "info"
     end
   end
