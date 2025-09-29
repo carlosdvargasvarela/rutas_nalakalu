@@ -5,14 +5,17 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <!-- CSS compilado -->
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <!-- JavaScript con Importmap -->
     <%= javascript_importmap_tags %>
+    <!-- Chartkick -->
     <%= javascript_include_tag "chartkick", "Chart.bundle" %>
     <!-- Google Maps -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=<%= ENV['GOOGLE_MAPS_API_KEY'] %>&libraries=places"></script>
   </head>
-  <body>
-    <!-- 🚩 Navbar ya no se destruye con Turbo -->
+  <body class="bg-light" data-controller="bootstrap">
+    <!-- 🚩 Navbar persistente (no se destruye con Turbo) -->
     <div id="navbar-container" data-turbo-permanent>
       <%= render "layouts/navbar" %>
     </div>
@@ -20,7 +23,7 @@
       <%= render "layouts/flashes" %>
       <%= yield %>
     </main>
-    <!-- Modal global -->
+    <!-- Modal global controlado por Stimulus -->
     <div class="modal fade" id="noteModal" tabindex="-1" aria-hidden="true" data-controller="modal">
       <div class="modal-dialog">
         <div class="modal-content">
@@ -28,8 +31,7 @@
         </div>
       </div>
     </div>
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <!-- Expone la API key al front -->
     <script>
       window.GOOGLE_MAPS_API_KEY = "<%= ENV['GOOGLE_MAPS_API_KEY'] %>";
     </script>

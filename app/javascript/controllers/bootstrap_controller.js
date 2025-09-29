@@ -1,43 +1,51 @@
 // app/javascript/controllers/bootstrap_controller.js
 import { Controller } from "@hotwired/stimulus"
-import { Tooltip } from "bootstrap"
 
 export default class extends Controller {
   connect() {
-    // Solo inicializar una vez al conectar
     this.initializeBootstrap()
-    new Tooltip(this.element)
-  }
 
-  initializeBootstrap() {
-    if (typeof bootstrap === 'undefined') return
-
-    // Solo inicializar elementos que no tengan instancia ya
-    this.element.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-      if (!bootstrap.Tooltip.getInstance(el)) {
-        new bootstrap.Tooltip(el)
-      }
-    })
-
-    this.element.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
-      if (!bootstrap.Popover.getInstance(el)) {
-        new bootstrap.Popover(el)
-      }
+    document.addEventListener("turbo:load", () => {
+      this.initializeBootstrap()
     })
   }
 
   disconnect() {
-    // Limpiar instancias al desconectar
-    if (typeof bootstrap === 'undefined') return
+    if (typeof window.bootstrap === 'undefined') return
 
     this.element.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-      const instance = bootstrap.Tooltip.getInstance(el)
+      const instance = window.bootstrap.Tooltip.getInstance(el)
       if (instance) instance.dispose()
     })
 
     this.element.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
-      const instance = bootstrap.Popover.getInstance(el)
+      const instance = window.bootstrap.Popover.getInstance(el)
       if (instance) instance.dispose()
+    })
+  }
+
+  initializeBootstrap() {
+    if (typeof window.bootstrap === 'undefined') return
+
+    // Tooltips
+    this.element.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+      if (!window.bootstrap.Tooltip.getInstance(el)) {
+        new window.bootstrap.Tooltip(el)
+      }
+    })
+
+    // Popovers
+    this.element.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
+      if (!window.bootstrap.Popover.getInstance(el)) {
+        new window.bootstrap.Popover(el)
+      }
+    })
+
+    // Dropdowns
+    this.element.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(el => {
+      if (!window.bootstrap.Dropdown.getInstance(el)) {
+        new window.bootstrap.Dropdown(el)
+      }
     })
   }
 }

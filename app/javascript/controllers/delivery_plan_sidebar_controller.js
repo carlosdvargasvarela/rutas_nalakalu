@@ -5,17 +5,26 @@ export default class extends Controller {
     static targets = ["list", "summary", "hiddenInputs", "submit"]
 
     connect() {
-        this.selected = new Map()
+        this.selected = this.selected || new Map()
         this.refresh()
+        this.syncCheckboxes()
         console.log("DeliveryPlanSidebarController connected")
     }
 
-    toggle(event) {
-        const checkbox = event.target
-        const id = checkbox.value
-        const label = checkbox.dataset.label || `Entrega #${id}`
+    syncCheckboxes() {
+        const checkboxes = document.querySelectorAll(".delivery-checkbox")
+        checkboxes.forEach(cb => {
+            cb.checked = this.selected.has(cb.value)
+        })
+    }
 
-        if (checkbox.checked) {
+    // Toggle de un checkbox individual
+    toggle(event) {
+        const cb = event.target
+        const id = cb.value
+        const label = cb.dataset.label || `Entrega #${id}`
+
+        if (cb.checked) {
             this.selected.set(id, label)
         } else {
             this.selected.delete(id)
@@ -24,9 +33,10 @@ export default class extends Controller {
         this.refresh()
     }
 
+    // Toggle de "seleccionar todos"
     toggleAll(event) {
         const master = event.target
-        const checkboxes = document.querySelectorAll('input[name="delivery_ids[]"]')
+        const checkboxes = document.querySelectorAll(".delivery-checkbox")
 
         checkboxes.forEach(cb => {
             cb.checked = master.checked
@@ -43,8 +53,9 @@ export default class extends Controller {
         this.refresh()
     }
 
+    // Refrescar sidebar
     refresh() {
-        // 1. Actualizar lista visual
+        // 1. Limpiar y rellenar lista visual
         this.listTarget.innerHTML = ""
         this.selected.forEach((label, id) => {
             const li = document.createElement("li")
@@ -53,7 +64,7 @@ export default class extends Controller {
             this.listTarget.appendChild(li)
         })
 
-        // 2. Actualizar hidden inputs
+        // 2. Actualizar hidden inputs del form
         this.hiddenInputsTarget.innerHTML = ""
         this.selected.forEach((_label, id) => {
             const input = document.createElement("input")
@@ -63,10 +74,10 @@ export default class extends Controller {
             this.hiddenInputsTarget.appendChild(input)
         })
 
-        // 3. Summary
+        // 3. Actualizar resumen
         this.summaryTarget.textContent = `${this.selected.size} entrega(s) seleccionada(s)`
 
-        // 4. Habilitar/deshabilitar submit
+        // 4. Habilitar/deshabilitar botón submit
         this.submitTarget.disabled = this.selected.size === 0
     }
 }

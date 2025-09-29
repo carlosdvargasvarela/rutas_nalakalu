@@ -73,7 +73,7 @@ class DeliveryItemsController < ApplicationController
   end
 
   def cancel
-    @delivery_item.update!(status: :pending)
+    @delivery_item.update!(status: :cancelled)
     @delivery_item.update_delivery_status
     redirect_back fallback_location: delivery_path(@delivery_item.delivery),
                   notice: "Producto cancelado."

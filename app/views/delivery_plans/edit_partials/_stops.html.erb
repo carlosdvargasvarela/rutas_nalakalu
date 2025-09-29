@@ -60,9 +60,11 @@
               </div>
             </td>
             <td>
-              <%= link_to delivery_plan_delivery_plan_assignment_path(delivery_plan, assignment),
-                    method: :delete, class: "btn btn-sm btn-outline-danger",
-                    data: { turbo_confirm: "¿Eliminar esta parada?" } do %>
+              <%= button_to delivery_plan_delivery_plan_assignment_path(delivery_plan, assignment),
+                method: :delete,
+                class: "btn btn-sm btn-outline-danger",
+                form: { data: { turbo_confirm: "¿Eliminar esta parada?" },
+                        class: "d-inline" } do %>
                 <i class="bi bi-trash"></i>
               <% end %>
             </td>

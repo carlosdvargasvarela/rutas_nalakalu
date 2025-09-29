@@ -24,7 +24,7 @@
             <tr class="js-delivery-row" data-delivery-id="<%= delivery.id %>">
               <td>
                 <%= check_box_tag "delivery_ids[]", delivery.id, selected_ids&.include?(delivery.id),
-                            class: "form-check-input",
+                            class: "form-check-input delivery-checkbox",
                             data: { action: "delivery-plan-sidebar#toggle",
                                     label: "#{delivery.order.number} - #{delivery.order.client.name}" } %>
               </td>

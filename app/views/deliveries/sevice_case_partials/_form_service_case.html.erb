@@ -22,10 +22,6 @@
           input_html: { class: "form-select" },
           label_html: { class: "form-label" } %>
     </div>
-    <div class="col-md-6">
-      <%= f.label :delivery_date, "Fecha de servicio", class: "form-label" %>
-      <%= f.date_field :delivery_date, class: "form-control", required: true %>
-    </div>
   </div>
   <%= render "deliveries/upsert_partials/delivery_data_fields", f: f, delivery: delivery %>
   <div class="d-flex justify-content-end gap-2">
