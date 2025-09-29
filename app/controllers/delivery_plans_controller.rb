@@ -1,31 +1,32 @@
 # app/controllers/delivery_plans_controller.rb
 class DeliveryPlansController < ApplicationController
+
   def index
     @q = DeliveryPlan.ransack(params[:q])
-    base_query = @q.result
-                  .preload(:driver, :deliveries)
-                  .left_joins(:deliveries)
-                  .select("delivery_plans.*, MIN(deliveries.delivery_date) AS first_delivery_date")
-                  .group("delivery_plans.id")
-                  .order("MIN(deliveries.delivery_date) DESC")
 
     respond_to do |format|
       format.html do
-        # 👉 en HTML dejamos la relación tal cual (para paginación, etc.)
-        @delivery_plans = base_query
+        # HTML: con agregación para usar first_delivery_date en ORDER y SELECT
+        @delivery_plans = @q.result
+                            .preload(:driver, :deliveries)
+                            .left_joins(:deliveries)
+                            .select("delivery_plans.*, MIN(deliveries.delivery_date) AS first_delivery_date")
+                            .group("delivery_plans.id")
+                            .order("MIN(deliveries.delivery_date) DESC")
       end
 
       format.xlsx do
-        # 👉 en Excel usamos el mismo set filtrado, pero ya cargado y con includes
-        @delivery_plans = base_query.includes(
+        # Excel: los filtros de first_delivery_date ya funcionan gracias al ransacker
+        @delivery_plans = @q.result.includes(
+          :driver,
           delivery_plan_assignments: {
             delivery: [
-              { order: [ :client, :seller ] },
+              { order: [:client, :seller] },
               :delivery_address,
               { delivery_items: :order_item }
             ]
           }
-        ).to_a
+        ).distinct.to_a
 
         response.headers["Content-Disposition"] = 'attachment; filename="planes_entrega.xlsx"'
       end
