@@ -40,8 +40,9 @@ class DeliveriesController < ApplicationController
   # Muestra los detalles de una entrega específica
   def show
     @future_deliveries = Delivery
-      .where(order_id: @delivery.order_id, delivery_address_id: @delivery.delivery_address_id)
-      .where.not(id: @delivery.id, status: :rescheduled)
+        .where(order_id: @delivery.order_id, delivery_address_id: @delivery.delivery_address_id)
+        .where.not(id: @delivery.id)
+        .where(status: [ :scheduled, :ready_to_deliver, :in_plan, :in_route ])
 
     @delivery_history = @delivery.delivery_history
   end

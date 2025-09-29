@@ -14,9 +14,6 @@
               weekday_picker_weekday_value: Date.today.wday,
               min: next_same_weekday.strftime("%Y-%m-%d")
             } %>
-      <small class="text-muted">
-        Solo puedes reagendar para <%= Date::DAYNAMES[Date.today.wday].downcase %>s
-      </small>
     <% else %>
       <%= date_field_tag "new_date", Date.today + 7.days,
             class: "form-control mt-1" %>
