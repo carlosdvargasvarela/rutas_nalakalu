@@ -7,121 +7,97 @@ class DeliveryItemsController < ApplicationController
   end
 
   def confirm
-    if @delivery_item.rescheduled?
-     redirect_back fallback_location: delivery_path(@delivery_item.delivery), alert: "No se puede modificar un producto reagendado."
-     return
-    end
-    @delivery_item.update!(status: :confirmed)
-    @delivery_item.update_delivery_status
-    redirect_back fallback_location: delivery_path(@delivery_item.delivery), notice: "Producto confirmado para entrega."
+    DeliveryItems::StatusUpdater.new(
+      delivery_item: @delivery_item,
+      new_status: :confirmed,
+      current_user: current_user
+    ).call
+
+    redirect_back fallback_location: delivery_path(@delivery_item.delivery),
+                  notice: "Producto confirmado para entrega."
+  rescue => e
+    handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
   end
 
   def mark_delivered
-    if @delivery_item.rescheduled?
-      redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-                    alert: "No se puede marcar como entregado un producto reagendado."
-      return
-    end
+    DeliveryItems::StatusUpdater.new(
+      delivery_item: @delivery_item,
+      new_status: :delivered,
+      current_user: current_user
+    ).call
 
-    @delivery_item.mark_as_delivered!
     redirect_back fallback_location: delivery_path(@delivery_item.delivery),
                   notice: "Producto marcado como entregado."
+  rescue => e
+    handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
   end
 
   def reschedule
-    @delivery_item = DeliveryItem.find(params[:id])
+    DeliveryItems::Rescheduler.new(
+      delivery_item: @delivery_item,
+      params: params,
+      current_user: current_user
+    ).call
 
-    if params[:new_delivery] == "true"
-      new_date = params[:new_date].presence && Date.parse(params[:new_date])
-
-      # 🔒 Validación para vendedores
-      if current_user.role == "seller" && new_date
-        unless new_date.wday == Date.today.wday
-          redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-                      alert: "Los vendedores solo pueden reagendar para #{Date::DAYNAMES[Date.today.wday].downcase}s"
-          return
-        end
-      end
-
-      @delivery_item.reschedule!(new_date: new_date)
-      notice = "Producto reagendado en una nueva entrega."
-
-    elsif params[:target_delivery_id].present?
-      target_delivery = Delivery.find(params[:target_delivery_id])
-
-      # 🔒 Validación para vendedores - la entrega destino debe ser del mismo día
-      if current_user.role == "seller"
-        unless target_delivery.delivery_date.wday == Date.today.wday
-          redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-                      alert: "Solo puedes mover a entregas de #{Date::DAYNAMES[Date.today.wday].downcase}s"
-          return
-        end
-      end
-
-      @delivery_item.reschedule!(target_delivery: target_delivery)
-      notice = "Producto reagendado en una entrega existente."
-    else
-      redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-                  alert: "Debes seleccionar una opción de reagendado."
-      return
-    end
+    notice = params[:new_delivery] == "true" ?
+      "Producto reagendado en una nueva entrega." :
+      "Producto reagendado en una entrega existente."
 
     redirect_to delivery_path(@delivery_item.delivery), notice: notice
   rescue => e
-    redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-                alert: "Error al reagendar: #{e.message}"
+    handle_item_error(e, fallback: delivery_path(@delivery_item.delivery), prefix: "Error al reagendar")
   end
 
   def cancel
-    @delivery_item.update!(status: :cancelled)
-    @delivery_item.update_delivery_status
+    DeliveryItems::StatusUpdater.new(
+      delivery_item: @delivery_item,
+      new_status: :cancelled,
+      current_user: current_user
+    ).call
+
     redirect_back fallback_location: delivery_path(@delivery_item.delivery),
                   notice: "Producto cancelado."
+  rescue => e
+    handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
   end
 
   def update_notes
-    authorize @delivery_item if respond_to?(:authorize) # Pundit si lo usas
+    authorize @delivery_item if respond_to?(:authorize)
 
-    if @delivery_item.update(notes_params)
-      redirect_back fallback_location: delivery_plan_path(@delivery_item.delivery.delivery_plan),
-                    notice: "Nota actualizada correctamente."
-    else
-      redirect_back fallback_location: delivery_plan_path(@delivery_item.delivery.delivery_plan),
-                    alert: "Error al actualizar la nota."
-    end
+    DeliveryItems::NotesUpdater.new(
+      delivery_item: @delivery_item,
+      note_text: notes_params[:notes],
+      current_user: current_user
+    ).call
+
+    redirect_back fallback_location: delivery_plan_path(@delivery_item.delivery.delivery_plan),
+                  notice: "Nota actualizada correctamente."
+  rescue => e
+    handle_item_error(e, fallback: delivery_plan_path(@delivery_item.delivery.delivery_plan),
+                         prefix: "Error al actualizar la nota")
   end
 
   def bulk_add_notes
     delivery = Delivery.find(params[:delivery_id])
-    authorize delivery, :update? if respond_to?(:authorize) # Pundit si lo usas
+    authorize delivery, :update? if respond_to?(:authorize)
 
-    note_text = params.dig(:note, :body)
+    DeliveryItems::NotesUpdater.new(
+      delivery: delivery,
+      note_text: params.dig(:note, :body),
+      target: params[:target],
+      current_user: current_user
+    ).call
 
-    if note_text.blank?
-      redirect_back fallback_location: delivery_plan_path(delivery.delivery_plan),
-                    alert: "La nota no puede estar vacía."
-      return
-    end
+    notice = params[:target] == "all" ?
+      "Nota agregada a todos los productos de la entrega." :
+      "Nota agregada al producto."
 
-    if params[:target] == "all"
-      # Aplicar a todos los delivery_items de la entrega
-      delivery.delivery_items.update_all(notes: note_text)
-      redirect_back fallback_location: delivery_plan_path(delivery.delivery_plan),
-                    notice: "Nota agregada a todos los productos de la entrega."
-    else
-      # Aplicar solo al delivery_item específico
-      item = delivery.delivery_items.find(params[:target])
-      if item.update(notes: note_text)
-        redirect_back fallback_location: delivery_plan_path(delivery.delivery_plan),
-                      notice: "Nota agregada al producto #{item.order_item.product}."
-      else
-        redirect_back fallback_location: delivery_plan_path(delivery.delivery_plan),
-                      alert: "Error al agregar la nota."
-      end
-    end
+    redirect_back fallback_location: delivery_plan_path(delivery.delivery_plan), notice: notice
   rescue ActiveRecord::RecordNotFound
     redirect_back fallback_location: delivery_plans_path,
                   alert: "Entrega o producto no encontrado."
+  rescue => e
+    handle_item_error(e, fallback: delivery_plan_path(delivery.delivery_plan))
   end
 
   private
@@ -132,5 +108,12 @@ class DeliveryItemsController < ApplicationController
 
   def notes_params
     params.require(:delivery_item).permit(:notes)
+  end
+
+  # 🔹 Handler centralizado
+  def handle_item_error(exception, fallback:, prefix: nil)
+    message = prefix.present? ? "#{prefix}: #{exception.message}" : exception.message
+    Rails.logger.error("❌ Error DeliveryItemsController: #{message}")
+    redirect_back fallback_location: fallback, alert: message
   end
 end

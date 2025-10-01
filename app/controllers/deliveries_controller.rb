@@ -1,6 +1,6 @@
 # app/controllers/deliveries_controller.rb
 class DeliveriesController < ApplicationController
-  before_action :set_delivery, only: [ :show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all, :approve, :note, :archive ]
+  before_action :set_delivery, only: [ :show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing ]
   before_action :set_addresses, only: [ :new, :edit, :create, :update ]
 
   # GET /deliveries
@@ -86,12 +86,42 @@ class DeliveriesController < ApplicationController
     redirect_to(session[:deliveries_return_to] || deliveries_path, alert: "Error al reagendar: #{e.message}")
   end
 
+  def new_internal_delivery
+    @delivery = Delivery.new(
+      delivery_type: :internal_delivery,
+      status: :scheduled,
+      delivery_date: Date.current
+    )
+
+    # Construir los objetos anidados para que funcione el simple_fields_for
+    delivery_item = @delivery.delivery_items.build
+    delivery_item.build_order_item
+
+    authorize @delivery
+  end
+
   def create_internal_delivery
     authorize Delivery
     @delivery = Deliveries::InternalCreator.new(params: params, current_user: current_user).call
     redirect_to deliveries_path, notice: "Mandado interno creado correctamente."
   rescue => e
     handle_internal_error(e)
+  end
+
+  def new_service_case
+    @delivery = Delivery.new(
+      delivery_type: :pickup, # Valor por defecto
+      status: :scheduled,
+      delivery_date: Date.current
+    )
+    @delivery.delivery_items.build.build_order_item
+
+    @clients = Client.all.order(:name)
+    @addresses = []
+    @order = nil
+
+    authorize @delivery
+    render :new_service_case
   end
 
   def create_service_case
@@ -102,10 +132,45 @@ class DeliveriesController < ApplicationController
     handle_service_case_error(e)
   end
 
+  # GET /deliveries/:id/new_service_case_for_existing
+  def new_service_case_for_existing
+    # @delivery ya está seteado por before_action :set_delivery
+    authorize @delivery, :edit?
+
+    @service_case = Delivery.new(
+      order: @delivery.order,
+      delivery_address: @delivery.delivery_address,
+      contact_name: @delivery.contact_name,
+      contact_phone: @delivery.contact_phone,
+      delivery_type: :pickup,
+      delivery_date: Date.today,
+      status: :scheduled
+    )
+
+    @addresses = @delivery.order.client.delivery_addresses.to_a
+
+    # Precargar todos los productos del pedido original como delivery_items
+    @delivery.order.order_items.each do |oi|
+      @service_case.delivery_items.build(
+        order_item: oi,
+        quantity_delivered: oi.quantity,
+        service_case: true,
+        status: :pending
+      )
+    end
+  end
+
+  # POST /deliveries/:id/create_service_case_for_existing
   def create_service_case_for_existing
     parent_delivery = Delivery.find(params[:id])
     authorize parent_delivery, :edit?
-    @service_case = Deliveries::ServiceCaseForExistingCreator.new(parent_delivery: parent_delivery, params: params, current_user: current_user).call
+
+    @service_case = Deliveries::ServiceCaseForExistingCreator.new(
+      parent_delivery: parent_delivery,
+      params: params,
+      current_user: current_user
+    ).call
+
     redirect_to delivery_path(@service_case),
       notice: "Se creó un caso de servicio (#{@service_case.display_type}) para el #{I18n.l @service_case.delivery_date, format: :long}."
   rescue => e
@@ -181,6 +246,26 @@ class DeliveriesController < ApplicationController
     str.present? ? Date.parse(str) : nil
   end
 
+  def find_or_initialize_client_from_params
+    if params[:client_id].present?
+      Client.find(params[:client_id])
+    elsif params[:client].present?
+      Client.new(params.require(:client).permit(:name, :phone, :email))
+    else
+      Client.new
+    end
+  end
+
+  def find_or_initialize_order_from_params(client)
+    if params[:order_id].present?
+      client.orders.find_by(id: params[:order_id]) || Order.new
+    elsif params[:order].present?
+      client.orders.build(params.require(:order).permit(:number, :seller_id))
+    else
+      Order.new
+    end
+  end
+
   # 🔹 Helpers de error centralizados
   def handle_create_error(e)
     Rails.logger.error "Error crear entrega: #{e.message}"
@@ -218,12 +303,27 @@ class DeliveriesController < ApplicationController
   end
 
   def handle_service_case_existing_error(e, parent_delivery)
+    @delivery = parent_delivery # 👈 CLAVE: setear @delivery para que la vista pueda usarlo
     @service_case ||= Delivery.new(
       order: parent_delivery.order,
       delivery_address: parent_delivery.delivery_address,
       delivery_type: params.dig(:delivery, :delivery_type) || :pickup,
       delivery_date: params.dig(:delivery, :delivery_date)
     )
+    @addresses = parent_delivery.order.client.delivery_addresses.to_a
+
+    # Reconstruir delivery_items si están vacíos
+    if @service_case.delivery_items.empty?
+      parent_delivery.order.order_items.each do |oi|
+        @service_case.delivery_items.build(
+          order_item: oi,
+          quantity_delivered: oi.quantity,
+          service_case: true,
+          status: :pending
+        )
+      end
+    end
+
     flash.now[:alert] = "Error al generar caso de servicio: #{e.message}"
     render :new_service_case_for_existing, status: :unprocessable_entity
   end

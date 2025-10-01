@@ -38,6 +38,14 @@ class DeliveryPolicy < ApplicationPolicy
     user.admin? || user.logistics? || user.production_manager?
   end
 
+  def create_service_case?
+    new_service_case?
+  end
+
+  def create_internal_delivery?
+    new_internal_delivery?
+  end
+
   class Scope < Scope
     def resolve
       if user.admin? || user.production_manager? || user.logistics?
