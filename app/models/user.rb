@@ -66,6 +66,18 @@ class User < ApplicationRecord
     send_notifications?
   end
 
+  def seller?
+    role == "seller"
+  end
+
+  def production_manager?
+    role == "production_manager"
+  end
+
+  def admin?
+    role == "admin"
+  end
+
   private
 
   def set_default_role

@@ -7,7 +7,9 @@
         <th>Observaciones</th>
         <th>Caso Servicio</th>
         <th>Estado</th>
-        <th>Notas de producción</th>
+        <% unless current_user.seller? %>
+          <th>Notas de producción</th>
+        <% end %>
         <th>Acciones</th>
       </tr>
     </thead>

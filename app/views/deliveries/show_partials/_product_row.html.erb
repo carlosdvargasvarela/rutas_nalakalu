@@ -28,9 +28,11 @@
     </span>
   </td>
   <!-- Notas de producción -->
-  <td style="min-width: 300px;">
-    <%= render "order_item_notes/list", item: item.order_item %>
-  </td>
+  <% unless current_user.seller? %>
+    <td style="min-width: 300px;">
+      <%= render "order_item_notes/list", item: item.order_item %>
+    </td>
+  <% end %>
   <!-- Acciones -->
   <td>
     <% if delivery.needs_approval? && !delivery.approved? %>
