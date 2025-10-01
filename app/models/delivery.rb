@@ -259,6 +259,6 @@ class Delivery < ApplicationRecord
    private
 
   def set_default_approval
-    self.approved = false if needs_approval?
+    self.approved = true if needs_approval?
   end
 end

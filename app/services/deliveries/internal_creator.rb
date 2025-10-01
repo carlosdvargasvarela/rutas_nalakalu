@@ -54,7 +54,7 @@ module Deliveries
 
     def create_internal_order(client, seller)
       client.orders.create!(
-        number: "MANDADO-#{SecureRandom.hex(4).upcase}",
+        number: "MANDADO",
         seller: seller,
         status: :ready_for_delivery
       )
