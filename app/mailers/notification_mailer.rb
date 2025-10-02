@@ -19,7 +19,7 @@ class NotificationMailer < ApplicationMailer
 
     mail(
       to: @user.email,
-      subject: subject_for(@type)
+      subject: subject_for(@type, @notifiable)
     )
   end
 
@@ -34,7 +34,7 @@ class NotificationMailer < ApplicationMailer
 
     mail(
       to: params[:email],
-      subject: subject_for(@type)
+      subject: subject_for(@type, @notifiable)
     )
   end
 
@@ -47,13 +47,18 @@ class NotificationMailer < ApplicationMailer
     nil
   end
 
-  def subject_for(type)
+  def subject_for(type, notifiable = nil)
     case type
     when "production_reminder" then "📊 Recordatorio de Producción"
     when "weekly_reminder"     then "📋 Resumen Semanal de Ventas"
     when "daily_reminder"      then "🔔 Recordatorio Diario de Entregas"
     when "urgent_alert"        then "🚨 Alerta Urgente de Producción"
-    when "reschedule_delivery" then "🔄 Pedido reagendado"
+    when "reschedule_delivery"
+      if notifiable.is_a?(Delivery) && notifiable.order.present?
+        "🔄 Pedido ##{notifiable.order.number} reagendado"
+      else
+        "🔄 Pedido reagendado"
+      end
     else "Notificación del Sistema"
     end
   end
