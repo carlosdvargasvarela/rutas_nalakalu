@@ -30,7 +30,7 @@ class DeliveryItem < ApplicationRecord
   # ============================================================================
 
   scope :service_cases, -> { where(service_case: true) }
-  scope :eligible_for_plan, -> { where.not(status: [ :other ]) }
+  scope :eligible_for_plan, -> { where.not(status: [ :delivered, :cancelled, :rescheduled ]) }
 
   # ============================================================================
   # VALIDACIONES

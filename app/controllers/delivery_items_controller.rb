@@ -79,6 +79,7 @@ class DeliveryItemsController < ApplicationController
 
   def bulk_add_notes
     delivery = Delivery.find(params[:delivery_id])
+    delivery_plan = delivery.delivery_plan
     authorize delivery, :update? if respond_to?(:authorize)
 
     DeliveryItems::NotesUpdater.new(
@@ -92,7 +93,11 @@ class DeliveryItemsController < ApplicationController
       "Nota agregada a todos los productos de la entrega." :
       "Nota agregada al producto."
 
-    redirect_back fallback_location: delivery_plan_path(delivery.delivery_plan), notice: notice
+    if delivery_plan != nil
+      redirect_back fallback_location: delivery_plan_path(delivery.delivery_plan), notice: notice
+    else
+      redirect_back fallback_location: delivery_path(delivery), notice: notice
+    end
   rescue ActiveRecord::RecordNotFound
     redirect_back fallback_location: delivery_plans_path,
                   alert: "Entrega o producto no encontrado."

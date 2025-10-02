@@ -56,8 +56,7 @@ module Deliveries
     def find_or_create_address(client)
       if delivery_params[:delivery_address_id].present?
         DeliveryAddress.find(delivery_params[:delivery_address_id]).tap do |addr|
-          # Si hay datos nuevos, se actualiza
-          if params[:delivery_address].present?
+          if params[:delivery_address].present? && address_params.values.any?(&:present?)
             addr.update!(address_params)
           end
         end
@@ -160,7 +159,7 @@ module Deliveries
       if existing_item
         existing_item.update!(
           quantity: oi_params[:quantity] || existing_item.quantity,
-          notes: [existing_item.notes, oi_params[:notes]].compact.reject(&:blank?).join("; ")
+          notes: [ existing_item.notes, oi_params[:notes] ].compact.reject(&:blank?).join("; ")
         )
         existing_item
       else
