@@ -32,12 +32,12 @@
           <% end %>
         <% end %>
         <% if policy(delivery).edit? && delivery.delivery_items.any? { |i| !%w[delivered cancelled rescheduled].include?(i.status) } %>
-          <%= form_with url: reschedule_all_delivery_path(delivery), method: :patch,
-            class: "d-flex align-items-center gap-2",
-            data: { turbo_confirm: "¿Reagendar toda la entrega para otra fecha?" } do |f| %>
-            <%= f.date_field :new_date, class: "form-control form-control-sm", style: "width: 150px;" %>
-            <%= f.button "Reagendar", class: "btn btn-warning btn-sm" %>
-          <% end %>
+          <!-- Botón que abre modal -->
+          <button class="btn btn-warning btn-sm"
+                  data-bs-toggle="modal"
+                  data-bs-target="#rescheduleModal-<%= delivery.id %>">
+            <i class="bi bi-calendar-plus"></i> Reagendar
+          </button>
         <% end %>
         <!-- Toggle de vista -->
         <% if params[:view] == "table" %>
@@ -75,5 +75,5 @@
     <% end %>
   </div>
 </div>
-
 <%= render "delivery_plans/show_partials/notes", delivery: delivery%>
+<%= render "deliveries/shared_partials/reschedule_modal", delivery: delivery %>

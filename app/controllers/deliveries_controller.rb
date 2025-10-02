@@ -80,8 +80,19 @@ class DeliveriesController < ApplicationController
 
   def reschedule_all
     authorize @delivery, :edit?
-    new_delivery = Deliveries::Rescheduler.new(delivery: @delivery, new_date: safe_date(params[:new_date]), current_user: current_user).call
-    redirect_to(session.delete(:deliveries_return_to) || deliveries_path, notice: "Entrega reagendada para el #{I18n.l new_delivery.delivery_date, format: :long}.")
+    reason = params[:reason] # ← captura desde el form
+
+    new_delivery = Deliveries::Rescheduler.new(
+      delivery: @delivery,
+      new_date: safe_date(params[:new_date]),
+      current_user: current_user,
+      reason: reason
+    ).call
+
+    redirect_to(
+      session.delete(:deliveries_return_to) || deliveries_path,
+      notice: "Entrega reagendada para el #{I18n.l new_delivery.delivery_date, format: :long}."
+    )
   rescue => e
     redirect_to(session[:deliveries_return_to] || deliveries_path, alert: "Error al reagendar: #{e.message}")
   end

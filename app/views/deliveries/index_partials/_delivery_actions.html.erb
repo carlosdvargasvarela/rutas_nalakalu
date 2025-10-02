@@ -31,39 +31,4 @@
     <% end %>
   </ul>
 </div>
-<!-- Modal para reagendar -->
-<div class="modal fade" id="rescheduleModal-<%= delivery.id %>" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="bi bi-calendar-plus"></i> Reagendar entrega #<%= delivery.order.number %>
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <%= form_with url: reschedule_all_delivery_path(delivery), method: :patch, local: true do |f| %>
-          <div class="mb-3">
-            <%= f.label :new_date, "Nueva fecha de entrega", class: "form-label" %>
-            <%= f.date_field :new_date, 
-                  class: "form-control", 
-                  required: true,
-                  min: Date.current,
-                  value: (delivery.delivery_date + 1.day) %>
-            <div class="form-text">
-              Fecha actual: <%= l delivery.delivery_date, format: :long %>
-            </div>
-          </div>
-          <div class="d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-              Cancelar
-            </button>
-            <%= f.submit "Reagendar entrega", 
-                  class: "btn btn-warning",
-                  data: { turbo_confirm: "¿Confirmar reagendamiento?" } %>
-          </div>
-        <% end %>
-      </div>
-    </div>
-  </div>
-</div>
+<%= render "deliveries/shared_partials/reschedule_modal", delivery: delivery %>
