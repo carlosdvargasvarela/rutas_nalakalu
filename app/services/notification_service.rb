@@ -44,12 +44,22 @@ class NotificationService
   end
 
   # ✅ MÉTODO MEJORADO PARA REAGENDAMIENTOS
-  def self.notify_delivery_rescheduled(delivery, rescheduled_by: nil, reason: nil)
+  def self.notify_delivery_rescheduled(delivery, old_date:, rescheduled_by: nil, reason: nil)
     seller = delivery.order.seller.user
+
+    formatted_old = I18n.l old_date, format: :long
+    formatted_new = I18n.l delivery.delivery_date, format: :long
+
+    # 👉 Mensaje claro
+    simple_message = "La entrega del pedido #{delivery.order.number} fue reagendada del #{formatted_old} al #{formatted_new}."
+
+    # Notificación interna (solo una vez!)
+    create_for_users([ seller ], delivery, simple_message, type: "reschedule_delivery")
 
     # Mensaje detallado para correos externos
     detailed_message = <<~MSG.strip
-      La entrega del pedido #{delivery.order.number} fue reprogramada para #{delivery.delivery_date.strftime('%d/%m/%Y')}.
+      La entrega del pedido #{delivery.order.number} fue reprogramada:
+      📅 Del #{formatted_old} al #{formatted_new}
 
       Cliente: #{delivery.order.client.name}
       Dirección: #{delivery.delivery_address.address}
@@ -58,11 +68,6 @@ class NotificationService
       #{"Reagendado por: #{rescheduled_by}" if rescheduled_by.present?}
     MSG
 
-    # Notificación interna al vendedor (ya se hace en Rescheduler para otros roles)
-    simple_message = "La entrega del pedido #{delivery.order.number} fue reprogramada para #{delivery.delivery_date.strftime('%d/%m/%Y')}"
-    create_for_users([ seller ], delivery, simple_message, type: "reschedule_delivery")
-
-    # ✅ Envío de correos a cuentas externas
     if RESCHEDULE_NOTIFICATION_EMAILS.any?
       RESCHEDULE_NOTIFICATION_EMAILS.each do |email|
         NotificationMailer.safe_notify_external(

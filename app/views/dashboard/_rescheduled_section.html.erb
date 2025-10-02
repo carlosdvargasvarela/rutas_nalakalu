@@ -1,0 +1,88 @@
+<div class="card shadow-sm border-0 rounded-3 mt-5">
+  <div class="card-header bg-light d-flex align-items-center justify-content-between">
+    <h5 class="mb-0 fw-semibold">
+      <i class="bi bi-arrow-repeat me-2 text-info"></i>
+      <%= title %>
+    </h5>
+    <span class="badge bg-info text-dark px-3 py-2">
+      <%= deliveries.total_count %> entregas
+    </span>
+  </div>
+  <div class="card-body">
+    <!-- Filtros -->
+    <%= search_form_for q, url: dashboard_index_path, method: :get, class: "row g-3 mb-3" do |f| %>
+      <div class="col-md-3">
+        <%= f.label :order_number_cont, "Número de Pedido", class: "form-label small" %>
+        <%= f.search_field :order_number_cont, class: "form-control form-control-sm", placeholder: "Ej: P12345" %>
+      </div>
+      <div class="col-md-3">
+        <%= f.label :order_client_name_cont, "Cliente", class: "form-label small" %>
+        <%= f.search_field :order_client_name_cont, class: "form-control form-control-sm", placeholder: "Nombre cliente" %>
+      </div>
+      <% if current_user.production_manager? || current_user.admin? %>
+        <div class="col-md-3">
+          <%= f.label :order_seller_name_cont, "Vendedor", class: "form-label small" %>
+          <%= f.search_field :order_seller_name_cont, class: "form-control form-control-sm", placeholder: "Nombre vendedor" %>
+        </div>
+      <% end %>
+      <div class="col-md-3">
+        <%= f.label :delivery_date_gteq, "Fecha desde", class: "form-label small" %>
+        <%= f.date_field :delivery_date_gteq, class: "form-control form-control-sm" %>
+      </div>
+      <div class="col-md-3">
+        <%= f.label :delivery_date_lteq, "Fecha hasta", class: "form-label small" %>
+        <%= f.date_field :delivery_date_lteq, class: "form-control form-control-sm" %>
+      </div>
+      <div class="col-12 text-end">
+        <%= f.submit "Filtrar", class: "btn btn-primary btn-sm rounded-pill me-2" %>
+        <%= link_to dashboard_index_path, class: "btn btn-outline-secondary btn-sm rounded-pill" do %>
+          <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+        <% end %>
+      </div>
+    <% end %>
+    <!-- Tabla -->
+    <div class="table-responsive">
+      <table class="table table-hover table-striped align-middle table-sm mb-0">
+        <thead class="table-light">
+          <tr>
+            <th><%= sort_link(q, :delivery_date, "Fecha Original") %></th>
+            <th><%= sort_link(q, :order_number, "Pedido") %></th>
+            <th><%= sort_link(q, :order_client_name, "Cliente") %></th>
+            <th><%= sort_link(q, :order_seller_name, "Vendedor") %></th>
+            <th>Motivo</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if deliveries.any? %>
+            <% deliveries.each do |delivery| %>
+              <tr>
+                <td><%= l delivery.delivery_date, format: :short %></td>
+                <td><%= link_to delivery.order.number, delivery_path(delivery), class: "text-decoration-none" %></td>
+                <td><%= delivery.order.client.name %></td>
+                <td><%= delivery.order.seller.name %></td>
+                <td><%= delivery.reschedule_reason.presence || "-" %></td>
+                <td class="text-end">
+                  <%= link_to delivery_path(delivery), class: "btn btn-outline-info btn-sm rounded-pill" do %>
+                    <i class="bi bi-eye"></i> Ver
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="7" class="text-center text-muted py-4">
+                <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                No se encontraron entregas reagendadas
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <!-- Paginación -->
+    <div class="d-flex justify-content-center mt-3">
+      <%= paginate deliveries, param_name: page_param %>
+    </div>
+  </div>
+</div>

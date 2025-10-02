@@ -54,6 +54,9 @@ class Delivery < ApplicationRecord
   scope :not_approved, -> { where(approved: false) }
   scope :active, -> { where(archived: false) }
   scope :archived, -> { where(archived: true) }
+  scope :rescheduled_this_week, -> {
+    where(status: :rescheduled, delivery_date: Date.current.beginning_of_week..Date.current.end_of_week)
+  }
 
   # Métodos de conveniencia
   def service_case?
@@ -192,11 +195,11 @@ class Delivery < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    %w[delivery_date status delivery_type contact_name contact_phone delivery_notes delivery_time_preference]
+    %w[delivery_date status delivery_type contact_name contact_phone delivery_notes delivery_time_preference reschedule_reason]
   end
 
   def self.ransackable_associations(auth_object = nil)
-    [ "order", "delivery_address", "delivery_items" ]
+    %w[order delivery_address delivery_items]
   end
 
   def status_humanize

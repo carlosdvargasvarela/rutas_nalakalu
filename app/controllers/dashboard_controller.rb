@@ -8,12 +8,29 @@ class DashboardController < ApplicationController
     @active_orders_count = current_user_orders.where(status: [ :pending, :in_production ]).count
     @upcoming_plans_count = upcoming_delivery_plans.count
     @unread_notifications_count = current_user.notifications.unread.count
-
-    # NUEVO: Pedidos/Entregas vencidas (delivery_date < hoy y status no en delivered, rescheduled, cancelled)
     @overdue_deliveries_count = current_user_deliveries.overdue.count
 
     # Notificaciones recientes
     @recent_notifications = current_user.notifications.recent.limit(5)
+
+    if current_user.seller?
+      # Solo notificaciones ligadas a sus pedidos
+      @reschedule_notifications = current_user.notifications
+        .joins("LEFT JOIN deliveries ON notifications.notifiable_id = deliveries.id AND notifications.notifiable_type = 'Delivery'")
+        .joins("LEFT JOIN orders ON deliveries.order_id = orders.id")
+        .where(notification_type: ["reschedule_delivery"])
+        .where("orders.seller_id = ?", current_user.seller.id)
+        .recent
+        .page(params[:page_reschedules])
+        .per(10)
+    else
+      # PM o Admin ven todas
+      @reschedule_notifications = current_user.notifications
+        .where(notification_type: ["reschedule_delivery"])
+        .recent
+        .page(params[:page_reschedules])
+        .per(10)
+    end
 
     # Tareas pendientes según rol
     @pending_tasks = build_pending_tasks
@@ -27,10 +44,34 @@ class DashboardController < ApplicationController
     @deliveries_per_driver = User.where(role: :driver).left_joins(delivery_plans: { delivery_plan_assignments: :delivery }).group("users.name").count("deliveries.id")
     @orders_per_week = Order.group_by_week(:created_at, last: 8, format: "%d/%m").count
 
+    # 🔥 Entregas reprogramadas con filtros y paginación
+    if current_user.seller?
+      @q_rescheduled = current_user_deliveries.rescheduled.ransack(params[:q])
+      @rescheduled_deliveries = @q_rescheduled.result(distinct: true)
+                                               .includes(order: [ :client, :seller ], delivery_address: :client)
+                                               .page(params[:page])
+                                               .per(10)
+    elsif current_user.production_manager? || current_user.admin?
+      # Tabla 1: Todas las entregas reagendadas
+      @q_all_rescheduled = Delivery.rescheduled.ransack(params[:q_all])
+      @rescheduled_deliveries = @q_all_rescheduled.result(distinct: true)
+                                                   .includes(order: [ :client, :seller ], delivery_address: :client)
+                                                   .page(params[:page_all])
+                                                   .per(10)
+
+      # Tabla 2: Reagendadas de esta semana
+      @q_rescheduled_week = Delivery.rescheduled_this_week.ransack(params[:q_week])
+      @rescheduled_this_week = @q_rescheduled_week.result(distinct: true)
+                                                   .includes(order: [ :client, :seller ], delivery_address: :client)
+                                                   .page(params[:page_week])
+                                                   .per(10)
+    end
+
+    # Pendientes de aprobación
     if current_user.admin? || current_user.production_manager?
-    @pending_approvals = Delivery.where(approved: false)
-                                 .where("delivery_date BETWEEN ? AND ?", Date.current.beginning_of_week, Date.current.end_of_week)
-                                 .order(:delivery_date)
+      @pending_approvals = Delivery.where(approved: false)
+                                   .where("delivery_date BETWEEN ? AND ?", Date.current.beginning_of_week, Date.current.end_of_week)
+                                   .order(:delivery_date)
     else
       @pending_approvals = []
     end
@@ -74,7 +115,6 @@ class DashboardController < ApplicationController
       week_start = Date.current.next_week
       week_end   = week_start.end_of_week
 
-      # Entregas por confirmar próxima semana
       next_week_deliveries = current_user_deliveries
         .where(delivery_date: Date.current.next_week..Date.current.next_week.end_of_week)
         .joins(:delivery_items)
@@ -97,7 +137,6 @@ class DashboardController < ApplicationController
       end
 
     when "production_manager"
-      # Pedidos atrasados
       overdue_orders = Order.where(status: :in_production)
                            .where("updated_at < ?", 7.days.ago).count
 
@@ -113,7 +152,6 @@ class DashboardController < ApplicationController
       end
 
     when "logistics"
-      # Planes sin asignar
       unassigned_plans = DeliveryPlan.where(driver: nil, status: "draft").count
 
       if unassigned_plans > 0
@@ -132,8 +170,6 @@ class DashboardController < ApplicationController
   end
 
   def build_chart_data
-    # Datos básicos para el gráfico
-    # Puedes expandir esto según tus necesidades
     {
       completed_this_week: 17,
       scheduled_this_week: 20,

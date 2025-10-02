@@ -10,7 +10,7 @@
       <p class="text-muted mb-1">
         Rol: <span class="badge bg-primary rounded-pill"><%= current_user.display_role %></span>
       </p>
-      <p class="fst-italic text-secondary">“Transformando espacios, entregando calidad.”</p>
+      <p class="fst-italic text-secondary">"Transformando espacios, entregando calidad."</p>
     </div>
     <div class="col-md-4 text-md-end mt-3 mt-md-0">
       <div class="btn-toolbar justify-content-md-end gap-2">
@@ -76,7 +76,40 @@
       </div>
     </div>
   <% end %>
+  <!-- 🔥 Entregas reagendadas con filtros y paginación -->
+  <% if current_user.seller? %>
+    <% if @rescheduled_deliveries.any? || params[:q].present? %>
+      <%= render "dashboard/rescheduled_section", 
+                 deliveries: @rescheduled_deliveries, 
+                 q: @q_rescheduled, 
+                 title: "Tus entregas reagendadas",
+                 param_prefix: "q",
+                 page_param: "page" %>
+    <% end %>
+  <% elsif current_user.production_manager? || current_user.admin? %>
+    <% if @rescheduled_deliveries.any? || params[:q_all].present? %>
+      <%= render "dashboard/rescheduled_section", 
+                 deliveries: @rescheduled_deliveries, 
+                 q: @q_all_rescheduled, 
+                 title: "Todas las entregas reagendadas",
+                 param_prefix: "q_all",
+                 page_param: "page_all" %>
+    <% end %>
+    <% if @rescheduled_this_week.any? || params[:q_week].present? %>
+      <%= render "dashboard/rescheduled_section", 
+                 deliveries: @rescheduled_this_week, 
+                 q: @q_rescheduled_week, 
+                 title: "Reagendadas de esta semana",
+                 param_prefix: "q_week",
+                 page_param: "page_week" %>
+    <% end %>
+  <% end %>
   <!-- Notificaciones y tareas -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <%= render "dashboard/reschedule_notifications", reschedule_notifications: @reschedule_notifications %>
+    </div>
+  </div>
   <div class="row mt-5 g-4">
     <div class="col-lg-6"><%= render "dashboard/recent_notifications", notifications: @recent_notifications %></div>
     <div class="col-lg-6"><%= render "dashboard/pending_tasks", tasks: @pending_tasks %></div>

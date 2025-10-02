@@ -73,19 +73,9 @@ module Deliveries
     end
 
     def notify_users(old_date, old_status)
-      formatted_old = I18n.l old_date, format: :long
-      formatted_new = I18n.l new_delivery.delivery_date, format: :long
-
-      # Mensaje para notificaciones internas (usuarios del sistema)
-      internal_message = "La entrega del pedido #{delivery.order.number} con fecha original #{formatted_old} fue reagendada para #{formatted_new}."
-
-      # Notificación interna a roles clave
-      users = User.where(role: %i[admin seller production_manager])
-      NotificationService.create_for_users(users, new_delivery, internal_message, type: "reschedule_delivery")
-
-      # Notificación externa (correos configurados en ENV)
       NotificationService.notify_delivery_rescheduled(
         new_delivery,
+        old_date: old_date,
         rescheduled_by: current_user.name,
         reason: reason
       )
