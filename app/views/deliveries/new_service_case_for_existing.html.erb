@@ -1,9 +1,13 @@
 <div class="card shadow-sm border-0">
-  <div class="card-header bg-warning bg-opacity-10 border-bottom-0">
+  <div class="card-header bg-warning bg-opacity-10 border-bottom-0 d-flex align-items-center justify-content-between">
     <h5 class="mb-0 text-warning">
       <i class="bi bi-tools me-2"></i>
       Nuevo Caso de Servicio
     </h5>
+    <span class="text-muted small">
+      <i class="bi bi-info-circle me-1"></i>
+      Al guardar, no se perderán los datos si hay errores
+    </span>
   </div>
   <div class="card-body">
     <%= simple_form_for @service_case,
@@ -13,51 +17,102 @@
             data: {
               controller: "delivery-form",
               "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
-              "delivery-form-orders-url-value": orders_for_client_deliveries_path
+              "delivery-form-orders-url-value": orders_for_client_deliveries_path,
+              bs_toggle: "tooltip"
             }
           } do |f| %>
       <!-- Dirección -->
-      <%= render "deliveries/upsert_partials/address_fields", f: f, addresses: @addresses, delivery: @service_case %>
-      <!-- Productos (usa el mismo partial de deliveries/new) -->
-      <%= render "deliveries/upsert_partials/order_items_fields", f: f %>
+      <div class="mb-4">
+        <h6 class="text-secondary mb-3">
+          <i class="bi bi-geo-alt me-2"></i>Dirección de servicio
+        </h6>
+        <%= render "deliveries/upsert_partials/address_fields", f: f, addresses: @addresses, delivery: @service_case %>
+      </div>
+      <!-- Productos -->
+      <div class="mb-4">
+        <h6 class="text-secondary mb-3 d-flex align-items-center">
+          <i class="bi bi-box-seam me-2"></i>Productos
+          <span class="ms-2 text-muted small">
+            Puedes agregar o editar productos para este caso
+          </span>
+        </h6>
+        <%= render "deliveries/upsert_partials/order_items_fields", f: f %>
+      </div>
       <!-- Datos del servicio -->
-      <div class="row mb-4">
-        <div class="col-12">
-          <h5 class="text-secondary mb-3">
-            <i class="bi bi-calendar-event me-2"></i>Datos del servicio
-          </h5>
-        </div>
-        <div class="col-md-6">
-          <%= f.input :delivery_type,
-                collection: [
-                  ["Recogida de producto", "pickup"],
-                  ["Devolución de producto", "return_delivery"],
-                  ["Reparación en sitio", "onsite_repair"]
-                ],
-                label: "Tipo de servicio",
-                prompt: "Selecciona tipo de servicio",
-                input_html: { class: "form-select" },
-                label_html: { class: "form-label" } %>
-        </div>
-        <div class="col-md-6">
-          <%= f.label :delivery_date, "Fecha de servicio", class: "form-label" %>
-          <%= f.date_field :delivery_date, class: "form-control", required: true %>
+      <div class="mb-4">
+        <h6 class="text-secondary mb-3">
+          <i class="bi bi-calendar-event me-2"></i>Datos del servicio
+        </h6>
+        <div class="row g-3 align-items-end">
+          <div class="col-md-6">
+            <%= f.input :delivery_type,
+                  collection: [
+                    ["Recogida y entrega posterior", "pickup_with_return"],
+                    ["Solo recogida", "only_pickup"],
+                    ["Devolución de producto", "return_delivery"],
+                    ["Reparación en sitio", "onsite_repair"]
+                  ],
+                  label: "Tipo de servicio",
+                  prompt: "Selecciona tipo de servicio",
+                  input_html: {
+                    class: "form-select",
+                    data: { action: "change->service-type#toggleNotice" }
+                  },
+                  label_html: { class: "form-label" } %>
+            <!-- Aviso dinámico según tipo -->
+            <div data-controller="service-type">
+              <div data-service-type-target="notice" class="form-text mt-2">
+                <% selected_type = @service_case.delivery_type.presence || params.dig(:delivery, :delivery_type) %>
+                <% case selected_type %>
+                <% when "pickup_with_return" %>
+                  <i class="bi bi-arrow-return-right me-1 text-warning"></i>
+                  Se creará automáticamente una entrega de <strong>Devolución</strong> 15 días después, con los mismos productos.
+                <% when "only_pickup" %>
+                  <i class="bi bi-truck me-1 text-secondary"></i>
+                  Solo se registrará la <strong>Recogida</strong>.
+                <% when "return_delivery" %>
+                  <i class="bi bi-arrow-counterclockwise me-1 text-secondary"></i>
+                  Registrar una <strong>Devolución</strong> al cliente.
+                <% when "onsite_repair" %>
+                  <i class="bi bi-wrench me-1 text-secondary"></i>
+                  Se atenderá una <strong>Reparación en sitio</strong>.
+                <% else %>
+                  <i class="bi bi-question-circle me-1 text-muted"></i>
+                  Selecciona el tipo para ver detalles.
+                <% end %>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <%= f.label :delivery_date, "Fecha de servicio", class: "form-label" %>
+            <%= f.date_field :delivery_date, class: "form-control", required: true %>
+            <div class="form-text">
+              <i class="bi bi-calendar2-week me-1"></i>
+              Para “Recogida y entrega posterior”, la devolución se programará automáticamente <strong>+15 días</strong>.
+            </div>
+          </div>
         </div>
       </div>
-      <!-- switch de copiar -->
+      <!-- Copiar productos del padre -->
       <div class="form-check form-switch mb-4">
-        <%= check_box_tag :copy_items, "1", false,
+        <%= check_box_tag :copy_items, "1", (params[:copy_items] == "1"),
               class: "form-check-input", id: "copy_items" %>
         <%= label_tag :copy_items, "Copiar productos de la entrega original", class: "form-check-label" %>
+        <div class="form-text">
+          <i class="bi bi-clipboard-check me-1"></i>
+          Si activas esta opción, se tomarán los productos de la entrega original.
+        </div>
       </div>
       <!-- Acciones -->
       <div class="d-flex justify-content-end gap-2">
         <%= link_to delivery_path(@delivery), class: "btn btn-light border" do %>
-          <i class="bi bi-x-circle me-1"></i> Cancelar
+          <i class="bi bi-x-circle me-1"></i>
+          Cancelar
         <% end %>
-        <%= f.button :submit, "Crear caso de servicio", class: "btn btn-warning" do %>
+        <button type="submit" class="btn btn-warning">
           <i class="bi bi-check-circle me-1"></i>
-        <% end %>
+          Crear caso de servicio
+        </button>
       </div>
     <% end %>
   </div>

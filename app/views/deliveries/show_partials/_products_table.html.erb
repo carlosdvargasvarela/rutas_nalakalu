@@ -19,6 +19,7 @@
                    item: item, 
                    delivery: delivery, 
                    future_deliveries: future_deliveries %>
+        <%= render "delivery_items/reschedule_modal", item: item, future_deliveries: future_deliveries %>
       <% end %>
     </tbody>
   </table>

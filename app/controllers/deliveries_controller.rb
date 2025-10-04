@@ -121,7 +121,7 @@ class DeliveriesController < ApplicationController
 
   def new_service_case
     @delivery = Delivery.new(
-      delivery_type: :pickup, # Valor por defecto
+      delivery_type: :pickup_with_return, # Valor por defecto
       status: :scheduled,
       delivery_date: Date.current
     )
@@ -153,7 +153,7 @@ class DeliveriesController < ApplicationController
       delivery_address: @delivery.delivery_address,
       contact_name: @delivery.contact_name,
       contact_phone: @delivery.contact_phone,
-      delivery_type: :pickup,
+      delivery_type: :pickup_with_return,
       delivery_date: Date.today,
       status: :scheduled
     )
@@ -176,14 +176,24 @@ class DeliveriesController < ApplicationController
     parent_delivery = Delivery.find(params[:id])
     authorize parent_delivery, :edit?
 
-    @service_case = Deliveries::ServiceCaseForExistingCreator.new(
+    service = Deliveries::ServiceCaseForExistingCreator.new(
       parent_delivery: parent_delivery,
       params: params,
       current_user: current_user
-    ).call
+    )
+    main = service.call
+    created = service.created_deliveries
 
-    redirect_to delivery_path(@service_case),
-      notice: "Se creó un caso de servicio (#{@service_case.display_type}) para el #{I18n.l @service_case.delivery_date, format: :long}."
+    if created.size == 1
+      redirect_to delivery_path(main),
+        notice: "Se creó un caso de servicio (#{main.display_type}) para el #{I18n.l main.delivery_date, format: :long}."
+    else
+      pickup, ret = created
+      redirect_to delivery_path(main),
+        notice: "Se crearon 2 entregas de caso de servicio: " \
+                "Recogida (#{I18n.l pickup.delivery_date, format: :long}) y " \
+                "Devolución (#{I18n.l ret.delivery_date, format: :long})."
+    end
   rescue => e
     handle_service_case_existing_error(e, parent_delivery)
   end
@@ -371,24 +381,76 @@ class DeliveriesController < ApplicationController
   end
 
   def handle_service_case_existing_error(e, parent_delivery)
-    @delivery = parent_delivery # 👈 CLAVE: setear @delivery para que la vista pueda usarlo
+    Rails.logger.error("Error ServiceCaseExisting: #{e.message}")
+    @delivery = parent_delivery # Debe ser SIEMPRE un Delivery
+
+    # Reconstruir @service_case (si ya venía de la service, conservarla)
     @service_case ||= Delivery.new(
       order: parent_delivery.order,
-      delivery_address: parent_delivery.delivery_address,
-      delivery_type: params.dig(:delivery, :delivery_type) || :pickup,
-      delivery_date: params.dig(:delivery, :delivery_date)
+      delivery_address: parent_delivery.delivery_address
     )
+
+    # Asignar atributos simples desde params si existen, respetando tipos
+    if params[:delivery].present?
+      permitted = params.require(:delivery).permit(
+        :delivery_date, :delivery_type, :delivery_address_id,
+        delivery_items_attributes: [
+          :id, :order_item_id, :quantity_delivered, :_destroy,
+          { order_item_attributes: [ :id, :product, :quantity, :notes ] }
+        ]
+      )
+      @service_case.assign_attributes(permitted)
+
+      # Normaliza tipos si vienen como string
+      if @service_case.delivery_type.is_a?(String)
+        # Si usás enum en Delivery:
+        @service_case.delivery_type = @service_case.delivery_type
+      end
+      if (dd = params.dig(:delivery, :delivery_date)).present?
+        @service_case.delivery_date = Date.parse(dd) rescue @service_case.delivery_date
+      end
+    else
+      # Defaults si no vinieron params
+      @service_case.delivery_type ||= :pickup_with_return
+      @service_case.delivery_date ||= Date.current
+    end
+
+    # Asegurar delivery_address si vino un id en params
+    if params.dig(:delivery, :delivery_address_id).present?
+      @service_case.delivery_address = DeliveryAddress.find_by(id: params[:delivery][:delivery_address_id]) || parent_delivery.delivery_address
+    else
+      @service_case.delivery_address ||= parent_delivery.delivery_address
+    end
+
+    # Listado de direcciones para el select (esto sí es Array)
     @addresses = parent_delivery.order.client.delivery_addresses.to_a
 
-    # Reconstruir delivery_items si están vacíos
-    if @service_case.delivery_items.empty?
-      parent_delivery.order.order_items.each do |oi|
-        @service_case.delivery_items.build(
-          order_item: oi,
-          quantity_delivered: oi.quantity,
-          service_case: true,
-          status: :pending
-        )
+    # Reconstruir items:
+    if @service_case.delivery_items.blank?
+      # Si vinieron delivery_items_attributes, construirlos desde ahí
+      if params.dig(:delivery, :delivery_items_attributes).present?
+        params[:delivery][:delivery_items_attributes].each_value do |di_attrs|
+          next if di_attrs.is_a?(String) # evita claves no hash tipo "NEW_RECORD" vacías
+          oi_id = di_attrs[:order_item_id].presence
+          oi = oi_id.present? ? OrderItem.find_by(id: oi_id) : nil
+
+          @service_case.delivery_items.build(
+            order_item: oi,
+            quantity_delivered: (di_attrs[:quantity_delivered].presence || 1).to_i,
+            service_case: true,
+            status: :pending
+          )
+        end
+      else
+        # Si no vinieron params de items, precargar los del pedido original
+        parent_delivery.order.order_items.each do |oi|
+          @service_case.delivery_items.build(
+            order_item: oi,
+            quantity_delivered: oi.quantity,
+            service_case: true,
+            status: :pending
+          )
+        end
       end
     end
 

@@ -22,6 +22,7 @@ module DeliveryItems
       else
         raise ArgumentError, "Estado no válido: #{new_status}"
       end
+      update_delivery_status(delivery_item.delivery)
 
       delivery_item
     rescue => e
@@ -37,6 +38,10 @@ module DeliveryItems
       if delivery_item.rescheduled?
         raise StandardError, "No se puede modificar un producto reagendado."
       end
+    end
+
+    def update_delivery_status(delivery)
+      delivery.update_status_based_on_items
     end
   end
 end

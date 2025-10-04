@@ -17,6 +17,7 @@ module DeliveryItems
       else
         raise StandardError, "Debes seleccionar una opción de reagendado."
       end
+      update_delivery_status(delivery_item.delivery)
 
       delivery_item
     rescue => e
@@ -54,6 +55,10 @@ module DeliveryItems
       unless target_date.wday == Date.today.wday
         raise StandardError, "Los vendedores solo pueden reagendar para #{Date::DAYNAMES[Date.today.wday].downcase}s"
       end
+    end
+
+    def update_delivery_status(delivery)
+      delivery.update_status_based_on_items
     end
   end
 end

@@ -1,31 +1,44 @@
 # app/services/deliveries/service_case_creator.rb
 module Deliveries
   class ServiceCaseCreator
+    include Deliveries::ServiceCasePrefix
+
     def initialize(params:, current_user:)
       @params = params
       @current_user = current_user
     end
 
+    # Devuelve la(s) entrega(s) creada(s).
+    # Si es pickup_with_return -> devuelve [pickup_delivery, return_delivery]
+    # Si no, devuelve [single_delivery]
     def call
       ActiveRecord::Base.transaction do
         client  = find_or_create_client
         address = find_or_create_address(client)
         order   = find_or_create_order(client)
 
-        processed_items = process_service_items(order)
+        base_date = safe_date(delivery_params[:delivery_date]) || Date.current
+        dtype     = (delivery_params[:delivery_type].presence || :pickup).to_s
 
-        @delivery = Delivery.new(
-          delivery_params.except(:delivery_items_attributes).merge(
-            order: order,
-            delivery_address: address,
-            status: :scheduled,
-            delivery_type: params[:delivery][:delivery_type] || :pickup
-          )
-        )
-        @delivery.delivery_items = processed_items
-        @delivery.save!
+        case dtype
+        when "pickup_with_return"
+          pickup_delivery  = build_service_delivery(order, address, base_date, "pickup_with_return")
+          pickup_delivery.delivery_items = process_service_items(order, "pickup_with_return")
+          pickup_delivery.save!
 
-        @delivery
+          return_date      = base_date + 15.days
+          return_delivery  = build_service_delivery(order, address, return_date, "return_delivery")
+          # Los mismos productos pero con prefijo de devolución
+          return_delivery.delivery_items = clone_items_with_type(pickup_delivery, "return_delivery")
+          return_delivery.save!
+
+          [ pickup_delivery, return_delivery ]
+        else
+          single_delivery = build_service_delivery(order, address, base_date, dtype)
+          single_delivery.delivery_items = process_service_items(order, dtype)
+          single_delivery.save!
+          [ single_delivery ]
+        end
       end
     rescue ActiveRecord::RecordInvalid => e
       Rails.logger.error("❌ Error en Deliveries::ServiceCaseCreator: #{e.message}")
@@ -93,28 +106,36 @@ module Deliveries
       end
     end
 
-    def process_service_items(order)
+    def build_service_delivery(order, address, date, delivery_type)
+      Delivery.new(
+        order: order,
+        delivery_address: address,
+        contact_name: delivery_params[:contact_name],
+        contact_phone: delivery_params[:contact_phone],
+        delivery_notes: delivery_params[:delivery_notes],
+        delivery_time_preference: delivery_params[:delivery_time_preference],
+        delivery_date: date,
+        status: :scheduled,
+        delivery_type: delivery_type
+      )
+    end
+
+    def process_service_items(order, delivery_type)
       return [] unless delivery_params[:delivery_items_attributes]
 
       delivery_params[:delivery_items_attributes].values.map do |item_params|
         next if item_params[:_destroy] == "1"
-        next if item_params.dig(:order_item_attributes, :product).blank?
+        next if item_params.dig(:order_item_attributes, :product).blank? && item_params[:order_item_id].blank?
 
         order_item = if item_params[:order_item_id].present?
-          OrderItem.find(item_params[:order_item_id])
+          original = OrderItem.find(item_params[:order_item_id])
+          duplicate_order_item_with_prefix(original, delivery_type)
         elsif item_params.dig(:order_item_attributes, :id).present?
-          OrderItem.find(item_params.dig(:order_item_attributes, :id))
+          original = OrderItem.find(item_params.dig(:order_item_attributes, :id))
+          duplicate_order_item_with_prefix(original, delivery_type)
         else
-          # ✅ FIX: Ahora sí pasamos quantity y notes al crear el OrderItem
           oi_attrs = item_params[:order_item_attributes]
-          existing = order.order_items.find_by(product: oi_attrs[:product])
-
-          existing || order.order_items.create!(
-            product: oi_attrs[:product],
-            quantity: oi_attrs[:quantity].presence || 1,
-            notes: oi_attrs[:notes],
-            status: :in_production
-          )
+          build_order_item_with_prefix(order, oi_attrs, delivery_type)
         end
 
         DeliveryItem.new(
@@ -125,6 +146,24 @@ module Deliveries
           status: :pending
         )
       end.compact
+    end
+
+    # Clona los items de una entrega a otra cambiando el tipo (para prefijos correctos)
+    def clone_items_with_type(source_delivery, target_delivery_type)
+      source_delivery.delivery_items.map do |di|
+        dup_oi = duplicate_order_item_with_prefix(di.order_item, target_delivery_type)
+        DeliveryItem.new(
+          order_item: dup_oi,
+          quantity_delivered: di.quantity_delivered,
+          notes: di.notes,
+          service_case: true,
+          status: :pending
+        )
+      end
+    end
+
+    def safe_date(str)
+      str.present? ? Date.parse(str) : nil
     end
   end
 end

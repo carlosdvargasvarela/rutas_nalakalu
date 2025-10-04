@@ -77,3 +77,21 @@
 </div>
 <%= render "delivery_plans/show_partials/notes", delivery: delivery%>
 <%= render "deliveries/shared_partials/reschedule_modal", delivery: delivery %>
+
+
+<script>
+  document.addEventListener("turbo:load", () => {
+    document.querySelectorAll("input[data-toggle-fields]").forEach((input) => {
+      input.addEventListener("change", (e) => {
+        const id = e.target.dataset.toggleFields;
+        const isNew = e.target.value === "true";
+        const newFields = document.getElementById(`new-date-fields-${id}`);
+        const existingFields = document.getElementById(`existing-delivery-fields-${id}`);
+
+        if (!newFields || !existingFields) return;
+        newFields.classList.toggle("d-none", !isNew);
+        existingFields.classList.toggle("d-none", isNew);
+      });
+    });
+  });
+</script>
