@@ -281,15 +281,40 @@ class DeliveriesController < ApplicationController
   def handle_create_error(e)
     Rails.logger.error "Error crear entrega: #{e.message}"
     @delivery ||= Delivery.new
+    if params[:delivery].present?
+      permitted = params.require(:delivery).permit(
+        :delivery_date, :delivery_address_id, :order_id,
+        :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
+        delivery_items_attributes: [
+          :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
+          order_item_attributes: [ :id, :product, :quantity, :notes ]
+        ]
+      )
+      @delivery.assign_attributes(permitted)
+    end
+
     @client = find_or_initialize_client_from_params
-    @order = find_or_initialize_order_from_params(@client)
+    @order  = find_or_initialize_order_from_params(@client)
     @addresses = @client.delivery_addresses.to_a
     @clients = Client.all.order(:name)
+
     flash.now[:alert] = "Error al crear la entrega: #{e.message}"
     render :new, status: :unprocessable_entity
   end
 
   def handle_update_error(e)
+    if params[:delivery].present?
+      permitted = params.require(:delivery).permit(
+        :delivery_date, :delivery_address_id, :order_id,
+        :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
+        delivery_items_attributes: [
+          :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
+          order_item_attributes: [ :id, :product, :quantity, :notes ]
+        ]
+      )
+      @delivery.assign_attributes(permitted)
+    end
+
     @order  = @delivery.order
     @client = @order.client
     @addresses = @client.delivery_addresses.order(:description)
@@ -297,18 +322,50 @@ class DeliveriesController < ApplicationController
     render :edit, status: :unprocessable_entity
   end
 
-  def handle_internal_error(e)
-    @delivery ||= Delivery.new(delivery_type: :internal_delivery)
-    @delivery.delivery_items.build.build_order_item if @delivery.delivery_items.empty?
-    flash.now[:alert] = "Error al crear el mandado interno: #{e.message}"
-    render :new_internal_delivery, status: :unprocessable_entity
-  end
-
   def handle_service_case_error(e)
-    @delivery ||= Delivery.new(delivery_type: params.dig(:delivery, :delivery_type) || :pickup)
-    @clients = Client.all.order(:name)
-    @addresses = @delivery.order&.client&.delivery_addresses || []
-    @order = @delivery.order
+    # Reconstruir @delivery con todos los params para re-renderizar el form sin perder datos
+    @delivery ||= Delivery.new
+    # Asegura tipo y estado por defecto si no venían
+    @delivery.delivery_type ||= (params.dig(:delivery, :delivery_type) || :pickup)
+    @delivery.status ||= :scheduled
+
+    # Asignar atributos simples de delivery
+    if params[:delivery].present?
+      permitted = params.require(:delivery).permit(
+        :delivery_date, :delivery_address_id, :order_id,
+        :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
+        delivery_items_attributes: [
+          :id, :order_item_id, :quantity_delivered, :status, :notes, :_destroy,
+          order_item_attributes: [ :id, :product, :quantity, :notes ]
+        ]
+      )
+      @delivery.assign_attributes(permitted)
+    end
+
+    # Reconstruir cliente
+    if params[:client_id].present?
+      @client = Client.find_by(id: params[:client_id])
+    elsif params[:client].present?
+      @client = Client.new(params.require(:client).permit(:name, :phone, :email))
+    else
+      # Si no hay nada, intenta desde la orden seleccionada
+      @client = @delivery.order&.client || Client.new
+    end
+
+    # Reconstruir orden
+    if @delivery.order_id.present?
+      @order = Order.find_by(id: @delivery.order_id)
+    elsif params[:order].present?
+      @order = (@client&.orders || Order).build(params.require(:order).permit(:number, :seller_id)) rescue Order.new(params.require(:order).permit(:number, :seller_id))
+    else
+      @order = @delivery.order || Order.new
+    end
+
+    # Listas para selects
+    @clients  = Client.all.order(:name)
+    @addresses = @client.present? ? @client.delivery_addresses.to_a : []
+    @order ||= @delivery.order
+
     flash.now[:alert] = "Error al crear el caso de servicio: #{e.message}"
     render :new_service_case, status: :unprocessable_entity
   end

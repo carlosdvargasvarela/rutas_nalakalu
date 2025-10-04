@@ -40,6 +40,7 @@ module Deliveries
       params.require(:delivery).permit(
         :delivery_date,
         :delivery_address_id,
+        :order_id,
         :contact_name,
         :contact_phone,
         :delivery_notes,
@@ -55,7 +56,7 @@ module Deliveries
     def find_or_create_client
       if params[:client_id].present?
         Client.find(params[:client_id])
-      elsif params[:client].present?
+      elsif params[:client].present? && (params[:client][:email].present? || params[:client][:phone].present?)
         existing = Client.find_by(email: params[:client][:email]) if params[:client][:email].present?
         existing ||= Client.find_by(phone: params[:client][:phone]) if params[:client][:phone].present?
         existing || Client.create!(params.require(:client).permit(:name, :phone, :email))
@@ -65,9 +66,9 @@ module Deliveries
     end
 
     def find_or_create_address(client)
-      if params[:delivery]&.[](:delivery_address_id).present?
-        DeliveryAddress.find(params[:delivery][:delivery_address_id])
-      elsif params[:delivery_address].present?
+      if delivery_params[:delivery_address_id].present?
+        DeliveryAddress.find(delivery_params[:delivery_address_id])
+      elsif params[:delivery_address].present? && params[:delivery_address][:address].present?
         existing = client.delivery_addresses.find_by(address: params[:delivery_address][:address])
         existing || client.delivery_addresses.create!(
           params.require(:delivery_address).permit(:address, :description, :latitude, :longitude, :plus_code)
@@ -78,8 +79,8 @@ module Deliveries
     end
 
     def find_or_create_order(client)
-      if params[:delivery]&.[](:order_id).present?
-        Order.find(params[:delivery][:order_id])
+      if delivery_params[:order_id].present?
+        Order.find(delivery_params[:order_id])
       elsif params[:order]&.[](:number).present?
         existing = client.orders.find_by(number: params[:order][:number])
         existing || client.orders.create!(
@@ -93,16 +94,26 @@ module Deliveries
     end
 
     def process_service_items(order)
-      return [] unless params[:delivery].dig(:delivery_items_attributes)
+      return [] unless delivery_params[:delivery_items_attributes]
 
-      params[:delivery][:delivery_items_attributes].values.map do |item_params|
+      delivery_params[:delivery_items_attributes].values.map do |item_params|
         next if item_params[:_destroy] == "1"
+        next if item_params.dig(:order_item_attributes, :product).blank?
 
         order_item = if item_params[:order_item_id].present?
           OrderItem.find(item_params[:order_item_id])
+        elsif item_params.dig(:order_item_attributes, :id).present?
+          OrderItem.find(item_params.dig(:order_item_attributes, :id))
         else
-          order.order_items.find_or_create_by!(
-            product: item_params.dig(:order_item_attributes, :product)
+          # ✅ FIX: Ahora sí pasamos quantity y notes al crear el OrderItem
+          oi_attrs = item_params[:order_item_attributes]
+          existing = order.order_items.find_by(product: oi_attrs[:product])
+
+          existing || order.order_items.create!(
+            product: oi_attrs[:product],
+            quantity: oi_attrs[:quantity].presence || 1,
+            notes: oi_attrs[:notes],
+            status: :in_production
           )
         end
 
