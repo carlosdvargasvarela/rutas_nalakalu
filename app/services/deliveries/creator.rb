@@ -108,12 +108,26 @@ module Deliveries
         order_item = if item_params[:order_item_id].present?
           OrderItem.find(item_params[:order_item_id])
         else
-          order.order_items.create!(
-            product: item_params.dig(:order_item_attributes, :product),
-            quantity: item_params.dig(:order_item_attributes, :quantity).presence || 1,
-            notes: item_params.dig(:order_item_attributes, :notes),
-            status: :in_production
-          )
+          # Extraer y normalizar el nombre del producto
+          product_name = item_params.dig(:order_item_attributes, :product).to_s.strip
+          quantity = item_params.dig(:order_item_attributes, :quantity).presence || 1
+          notes = item_params.dig(:order_item_attributes, :notes)
+
+          # Buscar order_item existente por producto en el mismo pedido
+          existing_order_item = order.order_items.find_by(product: product_name)
+
+          if existing_order_item
+            # Reutilizar el OrderItem existente
+            existing_order_item
+          else
+            # Crear nuevo OrderItem solo si no existe
+            order.order_items.create!(
+              product: product_name,
+              quantity: quantity,
+              notes: notes,
+              status: :in_production
+            )
+          end
         end
 
         DeliveryItem.new(
