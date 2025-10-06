@@ -8,7 +8,18 @@ class DashboardController < ApplicationController
     @active_orders_count = current_user_orders.where(status: [ :pending, :in_production ]).count
     @upcoming_plans_count = upcoming_delivery_plans.count
     @unread_notifications_count = current_user.notifications.unread.count
-    @overdue_deliveries_count = current_user_deliveries.overdue.count
+    @overdue_unplanned_deliveries =
+      current_user_deliveries
+        .overdue_unplanned
+        .includes(order: [:client, :seller], delivery_address: :client)
+        .order(delivery_date: :asc)
+        .page(params[:page_overdue])
+        .per(10)
+
+    @overdue_deliveries_count =
+      current_user_deliveries
+        .overdue_unplanned
+        .count
 
     # Notificaciones recientes
     @recent_notifications = current_user.notifications.recent.limit(5)

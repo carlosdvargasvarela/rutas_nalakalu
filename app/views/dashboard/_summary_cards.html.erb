@@ -63,10 +63,22 @@
         </div>
         <h6 class="text-uppercase text-secondary small fw-semibold">Entregas vencidas</h6>
         <p class="display-6 fw-bold text-danger my-2"><%= @overdue_deliveries_count || 0 %></p>
-        <%= link_to "Ver vencidas", deliveries_path(q: { delivery_date_lt: Date.current.to_s,
-          status_not_eq_all: [Delivery.statuses[:delivered], Delivery.statuses[:rescheduled], Delivery.statuses[:cancelled]],
-          order_seller_seller_code_eq: (current_user.seller.seller_code if current_user.seller?) }.compact),
-          class: "btn btn-sm btn-danger rounded-pill" %>
+        <%= link_to "Ver vencidas",
+              deliveries_path(
+                q: {
+                  delivery_date_lt: Date.current.to_s,
+                  status_not_eq_all: [
+                    Delivery.statuses[:delivered],
+                    Delivery.statuses[:rescheduled],
+                    Delivery.statuses[:cancelled],
+                    Delivery.statuses[:archived],
+                    Delivery.statuses[:failed]
+                  ],
+                  order_seller_seller_code_eq: (current_user.seller.seller_code if current_user.seller?)
+                }.compact,
+                no_plan: "1"
+              ),
+              class: "btn btn-sm btn-danger rounded-pill" %>
       </div>
     </div>
   </div>

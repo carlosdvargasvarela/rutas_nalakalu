@@ -6,9 +6,16 @@ class DeliveriesController < ApplicationController
   # GET /deliveries
   def index
     session[:deliveries_return_to] = request.fullpath
+
     base_scope = params[:show_rescheduled] == "1" ? Delivery.all : Delivery.where.not(status: :rescheduled)
+
+    if params[:no_plan].present?
+      base_scope = base_scope.where.not(id: DeliveryPlanAssignment.select(:delivery_id))
+      base_scope = base_scope.where.not(status: :rescheduled)
+    end
+
     @q = base_scope.ransack(params[:q])
-    deliveries_scope = @q.result.includes(order: [ :client, :seller ], delivery_address: :client)
+    deliveries_scope = @q.result.includes(order: [:client, :seller], delivery_address: :client)
 
     @deliveries = deliveries_scope.order(delivery_date: :asc).page(params[:page])
     @all_deliveries = deliveries_scope.includes(delivery_items: { order_item: :order }).order(delivery_date: :asc)
