@@ -70,3 +70,33 @@
     </div>
   </div>
 </div>
+<!-- Plan de Entrega -->
+<% if delivery.delivery_plan_assignments.any? %>
+  <% dpa = delivery.delivery_plan_assignments.includes(:delivery_plan).order(:stop_order).first %>
+  <% plan = dpa.delivery_plan %>
+  <div class="col-md-4 mb-3">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-light">
+        <i class="bi bi-diagram-3 me-1"></i> Plan de Entrega
+      </div>
+      <div class="card-body">
+        <p>
+          <strong><i class="bi bi-map me-1"></i>Plan:</strong>
+          <%= link_to plan.full_name, delivery_plan_path(plan), class: "text-decoration-none fw-semibold" %>
+        </p>
+        <p>
+          <strong><i class="bi bi-person-circle me-1"></i>Conductor:</strong>
+          <%= plan.driver&.name.presence || content_tag(:span, "Sin asignar", class: "text-muted") %>
+        </p>
+        <p>
+          <strong><i class="bi bi-truck me-1"></i>Camión:</strong>
+          <%= plan.truck.presence || content_tag(:span, "Sin asignar", class: "text-muted") %>
+        </p>
+        <p>
+          <strong><i class="bi bi-signpost me-1"></i>Parada:</strong>
+          #<%= dpa.stop_order || "-" %>
+        </p>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -127,6 +127,10 @@ class DeliveryPlan < ApplicationRecord
     deliveries.all?(&:confirmed?) || deliveries.all?(&:in_plan?)
   end
 
+  def truck_label
+    truck.present? ? truck.to_s.tr("_", " ") : nil
+  end
+
   private
 
   def notify_driver_assignment
