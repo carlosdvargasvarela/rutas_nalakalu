@@ -67,13 +67,7 @@
               deliveries_path(
                 q: {
                   delivery_date_lt: Date.current.to_s,
-                  status_not_eq_all: [
-                    Delivery.statuses[:delivered],
-                    Delivery.statuses[:rescheduled],
-                    Delivery.statuses[:cancelled],
-                    Delivery.statuses[:archived],
-                    Delivery.statuses[:failed]
-                  ],
+                  status_not_in: %w[delivered rescheduled cancelled archived failed],
                   order_seller_seller_code_eq: (current_user.seller.seller_code if current_user.seller?)
                 }.compact,
                 no_plan: "1"

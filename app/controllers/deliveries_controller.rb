@@ -11,11 +11,18 @@ class DeliveriesController < ApplicationController
 
     if params[:no_plan].present?
       base_scope = base_scope.where.not(id: DeliveryPlanAssignment.select(:delivery_id))
-      base_scope = base_scope.where.not(status: :rescheduled)
     end
 
+    if (dq = params.dig(:q, :delivery_date_lt)).present?
+      base_scope = base_scope.where("delivery_date < ?", dq.to_date) rescue base_scope
+    end
+
+    # Excluir siempre estos estados cuando buscamos vencidas
+    excluded_statuses = %i[delivered rescheduled cancelled archived failed]
+    base_scope = base_scope.where.not(status: excluded_statuses) if params[:no_plan].present?
+
     @q = base_scope.ransack(params[:q])
-    deliveries_scope = @q.result.includes(order: [:client, :seller], delivery_address: :client)
+    deliveries_scope = @q.result.includes(order: [ :client, :seller ], delivery_address: :client)
 
     @deliveries = deliveries_scope.order(delivery_date: :asc).page(params[:page])
     @all_deliveries = deliveries_scope.includes(delivery_items: { order_item: :order }).order(delivery_date: :asc)
