@@ -5,6 +5,8 @@ class OrderItemNote < ApplicationRecord
 
   validates :body, presence: true, length: { maximum: 1000 }
 
+  scope :open, -> { where.not(closed: true) }
+
   def self.ransackable_attributes(auth_object = nil)
     [ "body", "closed", "created_at", "id", "order_item_id", "updated_at", "user_id" ]
   end

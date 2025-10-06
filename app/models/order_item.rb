@@ -39,6 +39,10 @@ class OrderItem < ApplicationRecord
     quantity - delivered_quantity
   end
 
+  def notes_open?
+    order_item_notes.open.exists?
+  end
+
   def display_status
     case status
     when "in_production" then "En producción"
