@@ -1,0 +1,102 @@
+<!-- app/views/dashboard/_unplanned_deliveries_this_week.html.erb -->
+<div class="card shadow-sm border-0 rounded-3 mt-5">
+  <div class="card-header bg-light d-flex align-items-center justify-content-between">
+    <h5 class="mb-0 fw-semibold">
+      <i class="bi bi-list-ul me-2 text-primary"></i>
+      Entregas de esta semana sin plan
+    </h5>
+    <span class="badge bg-primary text-white px-3 py-2">
+      <%= deliveries.respond_to?(:total_count) ? deliveries.total_count : deliveries.size %> entregas
+    </span>
+  </div>
+  <% if deliveries.any? %>
+    <div class="list-group list-group-flush">
+      <% deliveries.each do |delivery| %>
+        <div class="list-group-item">
+          <div class="d-flex align-items-start justify-content-between gap-3">
+            <div class="d-flex align-items-start gap-3 flex-grow-1">
+              <div class="text-center" style="min-width: 110px;">
+                <div class="fw-bold"><%= l delivery.delivery_date, format: :short %></div>
+                <%# Color según tipo %>
+                <% type_color =
+                     if delivery.normal? then 'success'
+                     elsif delivery.internal_delivery? then 'warning'
+                     elsif delivery.only_pickup? then 'info'
+                     else 'secondary'
+                     end %>
+                <div class="mt-1">
+                  <span class="badge bg-<%= type_color %>">
+                    <%= delivery.display_type %>
+                  </span>
+                </div>
+                <%# Badge de estado %>
+                <% status_color = case delivery.status
+                     when 'scheduled' then 'secondary'
+                     when 'ready_to_deliver' then 'success'
+                     when 'in_plan' then 'primary'
+                     when 'in_route' then 'info'
+                     when 'delivered' then 'success'
+                     when 'rescheduled' then 'warning'
+                     when 'cancelled' then 'danger'
+                     when 'failed' then 'danger'
+                     else 'secondary'
+                     end %>
+                <div class="mt-1">
+                  <span class="badge bg-<%= status_color %> bg-opacity-75">
+                    <%= delivery.display_status %>
+                  </span>
+                </div>
+              </div>
+              <div class="flex-grow-1">
+                <div class="fw-semibold">
+                  Pedido <%= link_to delivery.order.number, delivery_path(delivery), class: "text-decoration-none" %>
+                  — <%= delivery.order.client.name %>
+                </div>
+                <div class="text-muted small">
+                  <i class="bi bi-geo-alt me-1"></i>
+                  <%= truncate(delivery.delivery_address.address.to_s, length: 80) %>
+                </div>
+                <div class="text-muted small">
+                  <i class="bi bi-person-badge me-1"></i>
+                  Vendedor: <%= delivery.order.seller.name %>
+                </div>
+                <% if delivery.delivery_time_preference.present? %>
+                  <div class="text-muted small">
+                    <i class="bi bi-clock me-1"></i>
+                    Preferencia: <%= delivery.delivery_time_preference %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+            <div class="text-end">
+              <div class="btn-group">
+                <%= link_to delivery_path(delivery),
+                            class: "btn btn-outline-primary btn-sm rounded-pill" do %>
+                  <i class="bi bi-eye"></i> Ver
+                <% end %>
+                <% if current_user.admin? || current_user.production_manager? || current_user.logistics? %>
+                  <%= link_to delivery_plans_path(q: { week_eq: Date.current.cweek, year_eq: Date.current.cwyear }),
+                              class: "btn btn-outline-success btn-sm rounded-pill",
+                              title: "Ir a planes de esta semana" do %>
+                    <i class="bi bi-diagram-3"></i> Planes
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    <%# Paginación opcional si activas kaminari en el controlador %>
+    <% if deliveries.respond_to?(:current_page) %>
+      <div class="card-footer d-flex justify-content-center">
+        <%= paginate deliveries, param_name: "page_unplanned" %>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="p-4 text-center text-muted">
+      <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+      No hay entregas sin plan para esta semana
+    </div>
+  <% end %>
+</div>

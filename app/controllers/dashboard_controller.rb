@@ -18,7 +18,7 @@ class DashboardController < ApplicationController
       @reschedule_notifications = current_user.notifications
         .joins("LEFT JOIN deliveries ON notifications.notifiable_id = deliveries.id AND notifications.notifiable_type = 'Delivery'")
         .joins("LEFT JOIN orders ON deliveries.order_id = orders.id")
-        .where(notification_type: ["reschedule_delivery"])
+        .where(notification_type: [ "reschedule_delivery" ])
         .where("orders.seller_id = ?", current_user.seller.id)
         .recent
         .page(params[:page_reschedules])
@@ -26,7 +26,7 @@ class DashboardController < ApplicationController
     else
       # PM o Admin ven todas
       @reschedule_notifications = current_user.notifications
-        .where(notification_type: ["reschedule_delivery"])
+        .where(notification_type: [ "reschedule_delivery" ])
         .recent
         .page(params[:page_reschedules])
         .per(10)
@@ -43,6 +43,17 @@ class DashboardController < ApplicationController
     @orders_per_seller = Seller.joins(:orders).where(orders: { status: [ :pending, :in_production ] }).group("sellers.name").count
     @deliveries_per_driver = User.where(role: :driver).left_joins(delivery_plans: { delivery_plan_assignments: :delivery }).group("users.name").count("deliveries.id")
     @orders_per_week = Order.group_by_week(:created_at, last: 8, format: "%d/%m").count
+
+    # Entregas de esta semana sin plan
+    @unplanned_deliveries_this_week =
+      current_user_deliveries
+        .where(delivery_date: Date.current.beginning_of_week..Date.current.end_of_week)
+        .available_for_plan
+        .includes(order: [ :client, :seller ], delivery_address: :client)
+        .order(:delivery_date)
+
+    # Opcional: paginación si lo requieres
+    # @unplanned_deliveries_this_week = @unplanned_deliveries_this_week.page(params[:page_unplanned]).per(10)
 
     # 🔥 Entregas reprogramadas con filtros y paginación
     if current_user.seller?

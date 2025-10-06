@@ -31,6 +31,7 @@
   <div class="row g-4">
     <%= render "dashboard/summary_cards" %>
   </div>
+    <%= render "dashboard/unplanned_deliveries_this_week", deliveries: @unplanned_deliveries_this_week %>
   <!-- Pendientes de aprobación -->
   <% if @pending_approvals.any? %>
     <div class="card shadow-sm border-0 rounded-3 mt-5">
