@@ -206,8 +206,7 @@ Rails.application.routes.draw do
           patch :start     # inicia la parada (en_route)
           patch :complete  # marca entregada
           patch :note      # agrega nota del chofer
-          # patch :reschedule
-          # patch :cancel
+          patch :mark_failed # marca entrega como fracasada
         end
       end
     end

@@ -18,7 +18,8 @@ class Delivery < ApplicationRecord
     delivered: 4,
     rescheduled: 5,
     cancelled: 6,
-    archived: 7
+    archived: 7,
+    failed: 8
   }
 
   validates :delivery_date, presence: true
@@ -47,8 +48,8 @@ class Delivery < ApplicationRecord
                                             Delivery.statuses[:rescheduled],
                                             Delivery.statuses[:cancelled] ])}
   scope :eligible_for_plan, -> {
-          where.not(status: [ :delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived ])
-        }
+    where.not(status: [:delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived, :failed])
+  }
   scope :not_assigned_to_plan, -> { where.not(id: DeliveryPlanAssignment.select(:delivery_id)) }
   scope :available_for_plan, -> { eligible_for_plan.not_assigned_to_plan.approved }
   scope :approved, -> { where(approved: true) }
@@ -74,6 +75,7 @@ class Delivery < ApplicationRecord
     when "rescheduled"      then "Reprogramada"
     when "cancelled"        then "Cancelada"
     when "archived"         then "Archivada"
+    when "failed"           then "Entrega fracasada"
     else status.to_s.humanize
     end
   end
@@ -92,11 +94,9 @@ class Delivery < ApplicationRecord
 
   # Actualiza el estado de la entrega basado en los items
   def update_status_based_on_items
-    # Solo proteger si todavía está asignado a un plan
     statuses = delivery_items.pluck(:status)
-    return if ((in_plan? || in_route?) && !((statuses.any? { |s| s == "cancelled" }) || (statuses.any? { |s| s == "rescheduled" })) || (statuses.all? { |s| s == "delivered" })) && delivery_plans.exists?
+    return if ((in_plan? || in_route?) && !((statuses.any? { |s| s == "cancelled" }) || (statuses.any? { |s| s == "rescheduled" }) || (statuses.any? { |s| s == "failed" })) || (statuses.all? { |s| s == "delivered" })) && delivery_plans.exists?
     return if archived?
-
     return if statuses.empty?
 
     if statuses.all? { |s| s == "delivered" }
@@ -105,7 +105,9 @@ class Delivery < ApplicationRecord
       update_column(:status, Delivery.statuses[:cancelled])
     elsif statuses.all? { |s| s == "rescheduled" }
       update_column(:status, Delivery.statuses[:rescheduled])
-    elsif statuses.all? { |s| [ "rescheduled", "confirmed", "delivered" ].include?(s) }
+    elsif statuses.all? { |s| s == "failed" }
+      update_column(:status, Delivery.statuses[:failed])  # ← NUEVO
+    elsif statuses.all? { |s| ["rescheduled", "confirmed", "delivered"].include?(s) }
       if delivery_plans.exists?
         update_column(:status, Delivery.statuses[:in_plan])
       else
@@ -113,13 +115,18 @@ class Delivery < ApplicationRecord
       end
     elsif statuses.any? { |s| s == "in_route" }
       update_column(:status, Delivery.statuses[:in_route])
-    elsif statuses.all? { |s| [ "pending", "confirmed" ].include?(s) }
+    elsif statuses.all? { |s| ["pending", "confirmed"].include?(s) }
       update_column(:status, Delivery.statuses[:scheduled])
     end
   end
 
   def active_items_for_plan
     delivery_items.eligible_for_plan
+  end
+
+
+  def active_items_for_plan_for(user)
+    delivery_items.merge(DeliveryItem.eligible_for_plan_for(user))
   end
 
   # Scope para entregas de una semana específica

@@ -131,7 +131,7 @@ class DeliveryPlansController < ApplicationController
           delivery = assignment.delivery
           address = delivery.delivery_address
 
-          delivery.active_items_for_plan.map do |item|
+          delivery.active_items_for_plan_for(current_user).map do |item|
             address_text = [ address.address, address.description ].compact.join(" - ")
             map_link_text = ""
 

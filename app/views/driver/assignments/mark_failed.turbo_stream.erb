@@ -1,0 +1,20 @@
+<%# app/views/driver/assignments/mark_failed.turbo_stream.erb %>
+<%= turbo_stream.replace "assignment_#{@assignment.id}",
+    partial: "driver/delivery_plans/assignment",
+    locals: { assignment: @assignment } %>
+
+<%# Si usas contador de progreso en el header %>
+<%= turbo_stream.replace "driver_progress_counter" do %>
+  <span class="small text-muted">
+    <%= render "driver/delivery_plans/progress_counter", plan: @plan %>
+  </span>
+<% end %>
+
+<%# Flash inline opcional %>
+<%= turbo_stream.append "flash" do %>
+  <div class="alert alert-warning alert-dismissible fade show mt-2" role="alert">
+    Entrega marcada como fracasada. Nueva entrega creada para
+    <strong><%= I18n.l(@new_delivery.delivery_date, format: :long) %></strong>.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+<% end %>

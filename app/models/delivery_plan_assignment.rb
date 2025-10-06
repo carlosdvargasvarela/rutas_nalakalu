@@ -33,6 +33,15 @@ class DeliveryPlanAssignment < ApplicationRecord
     update!(driver_notes: [ driver_notes, note ].compact_blank.join("\n"))
   end
 
+  def mark_as_failed!(reason: nil)
+    return if completed?
+
+    DeliveryFailureService.new(delivery, reason: reason).call.tap do
+      # El assignment actual no se completa; lo marcamos como cancelled porque la parada fracasó
+      update!(status: :cancelled, completed_at: Time.current)
+    end
+  end
+
   private
 
   def change_deliveries_statuses

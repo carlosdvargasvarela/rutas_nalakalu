@@ -92,7 +92,7 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
                   else default_style
                   end
 
-      if delivery.active_items_for_plan.empty?
+      if delivery.active_items_for_plan_for(current_user).empty?
         # Fila sin productos
         sheet.add_row [
           delivery_plan.week || "N/A",
@@ -116,7 +116,7 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
 
       else
         # Una fila por cada producto
-        delivery.active_items_for_plan.each do |delivery_item|
+        delivery.active_items_for_plan_for(current_user).each do |delivery_item|
           # Combinar notas
           all_notes = []
           all_notes << "PRODUCCIÓN: #{delivery_item.order_item.notes}" if delivery_item.order_item&.notes.present?
@@ -155,7 +155,7 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
   # Filtros automáticos
   if @delivery_plans.any?
     total_rows = 1 + @delivery_plans.sum do |plan|
-      plan.delivery_plan_assignments.sum { |a| [a.delivery.active_items_for_plan.count, 1].max }
+      plan.delivery_plan_assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
     end
     sheet.auto_filter = "A1:Q#{total_rows}" if total_rows > 1
   end

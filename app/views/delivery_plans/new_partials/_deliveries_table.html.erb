@@ -35,7 +35,7 @@
               <td><%= delivery.delivery_time_preference || "Sin preferencia" %></td>
               <td><%= l delivery.delivery_date, format: :short %></td>
               <td>
-                <% delivery.active_items_for_plan.each do |item| %>
+                <% delivery.active_items_for_plan_for(current_user).each do |item| %>
                   <span class="badge bg-light text-dark"><%= item.order_item.product %> (<%= item.quantity_delivered %>)</span>
                 <% end %>
               </td>

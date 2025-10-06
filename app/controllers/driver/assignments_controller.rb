@@ -31,27 +31,32 @@ module Driver
       end
     end
 
-    def reschedule
+    def mark_failed
       authorize [ :driver, @plan ], :assignment_action?
-      date = params.require(:delivery).permit(:delivery_date)[:delivery_date]
-      reason = params[:reason].presence || "Reprogramado por chofer"
-      @assignment.delivery.delivery_items.where.not(status: [ :delivered, :cancelled ]).find_each do |di|
-        di.reschedule!(new_date: Date.parse(date))
-      end
-      @assignment.update!(status: :cancelled)
-      respond_to do |format|
-        format.turbo_stream
-        format.html { redirect_to driver_delivery_plan_path(@plan), notice: "Parada reagendada." }
-      end
-    end
 
-    def cancel
-      authorize [ :driver, @plan ], :assignment_action?
-      @assignment.update!(status: :cancelled)
-      @assignment.delivery.update!(status: :cancelled)
+      reason = params[:reason].presence || "Entrega fracasada reportada por chofer"
+      new_delivery = @assignment.mark_as_failed!(reason: reason)
+
       respond_to do |format|
-        format.turbo_stream
-        format.html { redirect_to driver_delivery_plan_path(@plan), notice: "Parada cancelada." }
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.replace("assignment_#{@assignment.id}",
+              partial: "driver/delivery_plans/assignment",
+              locals: { assignment: @assignment }),
+            turbo_stream.replace("driver_progress_counter") do
+              tag.span(class: "small text-muted") do
+                render "driver/delivery_plans/progress_counter", plan: @plan
+              end
+            end,
+            turbo_stream.append("flash") do
+              tag.div(class: "alert alert-warning alert-dismissible fade show mt-2", role: "alert") do
+                concat "Entrega marcada como fracasada. Nueva entrega creada para #{new_delivery.delivery_date.strftime('%d/%m/%Y')}."
+                concat tag.button(type: "button", class: "btn-close", data: { bs_dismiss: "alert" })
+              end
+            end
+          ]
+        end
+        format.html { redirect_to driver_delivery_plan_path(@plan), notice: "Entrega marcada como fracasada. Nueva entrega creada para #{new_delivery.delivery_date.strftime('%d/%m/%Y')}." }
       end
     end
 

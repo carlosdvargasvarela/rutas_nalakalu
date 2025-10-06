@@ -4,8 +4,8 @@
     <i class="bi bi-truck text-primary me-2"></i>
     Ruta del <%= @plan.first_delivery_date&.strftime("%d/%m/%Y") %>
   </h2>
-  <div class="small text-muted">
-    Completadas: <%= @plan.delivery_plan_assignments.completed.count %>/<%= @plan.delivery_plan_assignments.count %>
+  <div id="driver_progress_counter" class="small text-muted">
+    Completadas: <%= @completed_count %>/<%= @assignments.size %>
   </div>
 </div>
 <div class="row g-2">
@@ -13,3 +13,4 @@
     <%= render "assignment", assignment: assignment %>
   <% end %>
 </div>
+<div id="driver_scroll_anchor"></div>

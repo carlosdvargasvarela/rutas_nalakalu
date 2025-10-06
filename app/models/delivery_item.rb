@@ -15,13 +15,14 @@ class DeliveryItem < ApplicationRecord
   # ============================================================================
 
   enum status: {
-    pending: 0,      # Aún no confirmado para entrega
-    confirmed: 1,    # Confirmado para entregar
+    pending: 0,
+    confirmed: 1,
     in_plan: 2,
     in_route: 3,
     delivered: 4,
     rescheduled: 5,
     cancelled: 6,
+    failed: 7,
     other: 99
   }
 
@@ -31,6 +32,7 @@ class DeliveryItem < ApplicationRecord
 
   scope :service_cases, -> { where(service_case: true) }
   scope :eligible_for_plan, -> { where.not(status: [ :delivered, :cancelled, :rescheduled ]) }
+  scope :eligible_for_plan_for_others, -> { where.not(status: [ :rescheduled ]) }
 
   # ============================================================================
   # VALIDACIONES
@@ -64,8 +66,14 @@ class DeliveryItem < ApplicationRecord
     when "delivered"   then "Entregado"
     when "rescheduled" then "Reprogramado"
     when "cancelled"   then "Cancelado"
+    when "failed"      then "Entrega fracasada"  # ← NUEVO
     else status.to_s.humanize
     end
+  end
+
+  def self.eligible_for_plan_for(user)
+    return eligible_for_plan if user&.production_manager?
+    eligible_for_plan_for_others
   end
 
   # Actualiza el estado del order_item basado en los delivery_items

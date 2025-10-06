@@ -91,6 +91,20 @@ class DeliveryPlan < ApplicationRecord
     update!(status: :sent_to_logistics)
   end
 
+  def mark_as_failed!(reason: nil)
+    return if completed?
+
+    transaction do
+      # Usar el servicio para marcar como fracasada y clonar
+      new_delivery = DeliveryFailureService.new(delivery, reason: reason).call
+
+      # Marcar el assignment como cancelled (ya que no se completó)
+      update!(status: :cancelled, completed_at: Time.current)
+
+      new_delivery
+    end
+  end
+
   # Estadísticas del plan
   def statistics
     {

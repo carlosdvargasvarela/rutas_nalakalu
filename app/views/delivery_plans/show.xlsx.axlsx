@@ -59,7 +59,7 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
   @assignments.each do |assignment|
     delivery = assignment.delivery
 
-    if delivery.active_items_for_plan.empty?
+    if delivery.active_items_for_plan_for(current_user).empty?
       # Estilo según estado
       row_style = case delivery.status
                   when "scheduled"        then scheduled_style
@@ -86,7 +86,7 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
       ], style: row_style
 
     else
-      delivery.active_items_for_plan.each do |delivery_item|
+      delivery.active_items_for_plan_for(current_user).each do |delivery_item|
         # Estilo según estado
         row_style = case delivery.status
                     when "scheduled"        then scheduled_style
@@ -131,7 +131,7 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
     first_date = @assignments.first.delivery.delivery_date.strftime("%d/%m/%Y")
 
     if @assignments.all? { |a| a.delivery.delivery_date.strftime("%d/%m/%Y") == first_date }
-      total_rows = @assignments.sum { |a| [a.delivery.active_items_for_plan.count, 1].max }
+      total_rows = @assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
       if total_rows > 1
         sheet.merge_cells("A2:A#{total_rows + 1}")
       end
@@ -140,7 +140,7 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
 
   # Filtros automáticos
   if @assignments.any?
-    total_rows = 1 + @assignments.sum { |a| [a.delivery.active_items_for_plan.count, 1].max }
+    total_rows = 1 + @assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
     sheet.auto_filter = "A1:N#{total_rows}"
   end
 

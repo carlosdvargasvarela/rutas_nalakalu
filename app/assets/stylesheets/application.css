@@ -1,0 +1,4 @@
+.ring-highlight {
+  outline: 3px solid #0d6efd;
+  transition: outline 1.5s ease;
+}

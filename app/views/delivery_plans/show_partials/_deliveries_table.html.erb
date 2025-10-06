@@ -68,7 +68,7 @@
                 <tr class="collapse" id="productosEntrega<%= delivery.id %>">
                   <td colspan="10" class="bg-light">
                     <ul class="mb-0 ps-3 small">
-                      <% delivery.active_items_for_plan.each do |item| %>
+                      <% delivery.active_items_for_plan_for(current_user).each do |item| %>
                         <li>
                           <strong><%= item.order_item.product %></strong>
                           <span class="badge bg-secondary ms-1"><%= item.quantity_delivered %></span>
