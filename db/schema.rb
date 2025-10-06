@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_10_02_152600) do
+ActiveRecord::Schema[7.2].define(version: 2025_10_06_055506) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -190,34 +190,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_02_152600) do
     t.index ["seller_id"], name: "index_orders_on_seller_id"
   end
 
-  create_table "qbwc_jobs", force: :cascade do |t|
-    t.string "name"
-    t.string "company", limit: 1000
-    t.string "worker_class", limit: 100
-    t.boolean "enabled", default: false, null: false
-    t.text "request_index"
-    t.text "requests"
-    t.boolean "requests_provided_when_job_added", default: false, null: false
-    t.text "data"
-    t.datetime "created_at", precision: nil, null: false
-    t.datetime "updated_at", precision: nil, null: false
-    t.index ["company"], name: "index_qbwc_jobs_on_company"
-    t.index ["name"], name: "index_qbwc_jobs_on_name", unique: true
-  end
-
-  create_table "qbwc_sessions", force: :cascade do |t|
-    t.string "ticket"
-    t.string "user"
-    t.string "company", limit: 1000
-    t.integer "progress", default: 0, null: false
-    t.string "current_job"
-    t.string "iterator_id"
-    t.string "error", limit: 1000
-    t.text "pending_jobs", limit: 1000, null: false
-    t.datetime "created_at", precision: nil, null: false
-    t.datetime "updated_at", precision: nil, null: false
-  end
-
   create_table "sellers", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "name"
@@ -247,7 +219,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_02_152600) do
     t.string "unlock_token"
     t.datetime "locked_at"
     t.boolean "force_password_change", default: true, null: false
-    t.boolean "send_notifications", default: true, null: false
+    t.boolean "send_notifications", default: false, null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["unlock_token"], name: "index_users_on_unlock_token", unique: true

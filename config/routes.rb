@@ -151,7 +151,7 @@ Rails.application.routes.draw do
   # NOTIFICACIONES
   # =============================================================================
   # Sistema de notificaciones para usuarios
-  resources :notifications, only: [:index] do
+  resources :notifications, only: [ :index ] do
   member do
       patch :mark_as_read
     end
@@ -190,6 +190,25 @@ Rails.application.routes.draw do
         post :send_reset_password
         patch :unlock
         patch :toggle_notifications
+      end
+    end
+  end
+  # =============================================================================
+  # MODO CHOFER (Driver)
+  # =============================================================================
+  namespace :driver do
+    resources :delivery_plans, only: [ :show ] do
+      member do
+        patch :start_route
+      end
+      resources :assignments, only: [] do
+        member do
+          patch :start     # inicia la parada (en_route)
+          patch :complete  # marca entregada
+          patch :note      # agrega nota del chofer
+          # patch :reschedule
+          # patch :cancel
+        end
       end
     end
   end
