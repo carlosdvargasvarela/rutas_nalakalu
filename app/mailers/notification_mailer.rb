@@ -59,7 +59,20 @@ class NotificationMailer < ApplicationMailer
       else
         "🔄 Pedido reagendado"
       end
-    else "Notificación del Sistema"
+    when "current_week_delivery"
+      if notifiable.is_a?(Delivery) && notifiable.order.present?
+        "📦 Nueva entrega (semana actual) – Pedido ##{notifiable.order.number}"
+      else
+        "📦 Nueva entrega (semana actual)"
+      end
+    when "current_week_reschedule"
+      if notifiable.is_a?(Delivery) && notifiable.order.present?
+        "🔄 Reagenda (semana actual) – Pedido ##{notifiable.order.number}"
+      else
+        "🔄 Reagenda (semana actual)"
+      end
+    else
+      "Notificación del Sistema"
     end
   end
 

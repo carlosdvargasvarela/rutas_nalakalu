@@ -24,6 +24,14 @@ module Deliveries
 
       notify_users(old_date, old_status)
 
+      # 🔔 Extra: correo a plan@ y notificación interna si cae en semana ISO actual
+      NotificationService.notify_current_week_delivery_rescheduled(
+        new_delivery,
+        old_date: old_date,
+        rescheduled_by: current_user.name,
+        reason: reason
+      )
+
       new_delivery
     rescue => e
       Rails.logger.error("❌ Error en Deliveries::Rescheduler: #{e.message}")

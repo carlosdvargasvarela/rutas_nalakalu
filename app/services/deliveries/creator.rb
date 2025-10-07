@@ -32,6 +32,9 @@ module Deliveries
         @delivery.delivery_items = processed_items
         @delivery.save!
 
+        # 🔔 Notificar si es semana ISO actual (y no es mandado interno)
+        NotificationService.notify_current_week_delivery_created(@delivery, created_by: current_user.name)
+
         @delivery
       end
     rescue ActiveRecord::RecordInvalid => e

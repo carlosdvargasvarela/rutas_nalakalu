@@ -2,6 +2,7 @@
 class NotificationService
   # Configuración de correos externos para reagendamientos
   RESCHEDULE_NOTIFICATION_EMAILS = ENV.fetch("RESCHEDULE_NOTIFICATION_EMAILS", "").split(",").map(&:strip)
+  PLAN_EMAIL = ENV.fetch("PLAN_EMAIL", "plan@nalakalu.com")
 
   def self.create_for_users(users, notifiable, message, type: "generic", send_email: true)
     users = Array(users)
@@ -54,7 +55,7 @@ class NotificationService
     simple_message = "La entrega del pedido #{delivery.order.number} fue reagendada del #{formatted_old} al #{formatted_new}."
 
     # Notificación interna (solo una vez!)
-    create_for_users([ seller ], delivery, simple_message, type: "reschedule_delivery")
+    create_for_users([ seller ], delivery, simple_message, type: "reschedule_delivery", send_email: false)
 
     # Mensaje detallado para correos externos
     detailed_message = <<~MSG.strip
@@ -87,4 +88,114 @@ class NotificationService
       create_for_users([ delivery_plan.driver ], delivery_plan, message)
     end
   end
+
+  # ✅ NUEVO: Entrega creada en semana ISO actual
+  def self.notify_current_week_delivery_created(delivery, created_by: nil)
+    return unless delivery_in_current_iso_week?(delivery)
+    # No correo para mandados internos
+    send_email_to_plan = !delivery.internal_delivery?
+
+    message = current_week_created_message(delivery, created_by: created_by)
+
+    # Notificación interna: admins, logística y seller
+    users = []
+    users += User.where(role: %i[admin logistics]).to_a
+    users << delivery.order.seller&.user
+    create_for_users(users.compact.uniq, delivery, message, type: "current_week_delivery", send_email: false)
+
+    # Correo externo a plan@
+    if send_email_to_plan
+      NotificationMailer.safe_notify_external(
+        email: PLAN_EMAIL,
+        message: message,
+        type: "current_week_delivery",
+        notifiable_id: delivery.id,
+        notifiable_type: "Delivery"
+      )
+    end
+  end
+
+  # ✅ NUEVO: Entrega reagendada a semana ISO actual
+  def self.notify_current_week_delivery_rescheduled(delivery, old_date:, rescheduled_by: nil, reason: nil)
+    return unless delivery_in_current_iso_week?(delivery)
+    # No correo para mandados internos
+    send_email_to_plan = !delivery.internal_delivery?
+
+    message = current_week_rescheduled_message(delivery, old_date: old_date, rescheduled_by: rescheduled_by, reason: reason)
+
+    # Notificación interna: admins, logística y seller
+    users = []
+    users += User.where(role: %i[admin logistics]).to_a
+    users << delivery.order.seller&.user
+    create_for_users(users.compact.uniq, delivery, message, type: "current_week_reschedule", send_email: false)
+
+    # Correo externo a plan@
+    if send_email_to_plan
+      NotificationMailer.safe_notify_external(
+        email: PLAN_EMAIL,
+        message: message,
+        type: "current_week_reschedule",
+        notifiable_id: delivery.id,
+        notifiable_type: "Delivery"
+      )
+    end
+  end
+
+  # -----------------------
+  # Helpers privados
+  # -----------------------
+  def self.delivery_in_current_iso_week?(delivery)
+    # Reutiliza tu lógica ISO ya existente
+    delivery.needs_approval?
+  end
+  private_class_method :delivery_in_current_iso_week?
+
+  def self.current_week_created_message(delivery, created_by: nil)
+    fecha = I18n.l(delivery.delivery_date, format: :long)
+    productos = delivery.delivery_items.includes(order_item: :order).map do |di|
+      prod = di.order_item&.product || "-"
+      qty  = di.quantity_delivered || 1
+      "- #{prod} x #{qty}"
+    end.join("\n")
+
+    [
+      "Nueva entrega programada en la semana actual (ISO):",
+      "📅 Fecha: #{fecha}",
+      "📦 Pedido: #{delivery.order.number}",
+      "👤 Cliente: #{delivery.order.client.name}",
+      "📍 Dirección: #{delivery.delivery_address.address}#{delivery.delivery_address.description.present? ? " (#{delivery.delivery_address.description})" : ""}",
+      "🏷️ Tipo: #{delivery.display_type}",
+      "👨‍💼 Vendedor: #{delivery.order.seller.name} (#{delivery.order.seller.seller_code})",
+      (created_by.present? ? "✍️ Creada por: #{created_by}" : nil),
+      "Productos:",
+      productos
+    ].compact.join("\n")
+  end
+  private_class_method :current_week_created_message
+
+  def self.current_week_rescheduled_message(delivery, old_date:, rescheduled_by: nil, reason: nil)
+    old_f = I18n.l(old_date, format: :long)
+    new_f = I18n.l(delivery.delivery_date, format: :long)
+    productos = delivery.delivery_items.includes(order_item: :order).map do |di|
+      prod = di.order_item&.product || "-"
+      qty  = di.quantity_delivered || 1
+      "- #{prod} x #{qty}"
+    end.join("\n")
+
+    [
+      "Entrega reagendada en la semana actual (ISO):",
+      "📦 Pedido: #{delivery.order.number}",
+      "📅 Del: #{old_f}",
+      "📅 Al:  #{new_f}",
+      "👤 Cliente: #{delivery.order.client.name}",
+      "📍 Dirección: #{delivery.delivery_address.address}#{delivery.delivery_address.description.present? ? " (#{delivery.delivery_address.description})" : ""}",
+      "🏷️ Tipo: #{delivery.display_type}",
+      "👨‍💼 Vendedor: #{delivery.order.seller.name} (#{delivery.order.seller.seller_code})",
+      (reason.present? ? "📝 Motivo: #{reason}" : nil),
+      (rescheduled_by.present? ? "🔁 Reagendado por: #{rescheduled_by}" : nil),
+      "Productos:",
+      productos
+    ].compact.join("\n")
+  end
+  private_class_method :current_week_rescheduled_message
 end
