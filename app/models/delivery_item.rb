@@ -45,7 +45,7 @@ class DeliveryItem < ApplicationRecord
   # CALLBACKS
   # ============================================================================
 
-  before_update :prevent_edit_if_rescheduled
+  # before_update :prevent_edit_if_rescheduled
   # after_update :notify_confirmation, if: :saved_change_to_status?
   after_update :notify_reschedule, if: :saved_change_to_delivery_id?
   after_update :notify_all_confirmed, if: :saved_change_to_status?
