@@ -1,3 +1,4 @@
+# app/jobs/delivery_import_prepare_job.rb
 class DeliveryImportPrepareJob
   include Sidekiq::Job
 
@@ -7,14 +8,11 @@ class DeliveryImportPrepareJob
 
     file = nil
     begin
-      # Validación defensiva: verificar que el archivo existe
       if import.file.blank? || import.file.blob.blank?
         raise "El archivo no se adjuntó correctamente al import ##{import.id}"
       end
 
-      # Crear archivo temporal con extensión real
       original_ext = import.file.blob.filename.extension&.downcase
-
       if original_ext.blank?
         raise "No se pudo detectar la extensión del archivo"
       end
@@ -24,25 +22,21 @@ class DeliveryImportPrepareJob
       file.write(import.file.download)
       file.flush
 
-      # Detectar extensión con ActiveStorage
       ext = original_ext.to_sym
-
       valid_exts = %i[xlsx xls ods]
       unless valid_exts.include?(ext)
         raise "Formato de archivo no soportado: #{ext.inspect}. Formatos válidos: #{valid_exts.join(', ')}"
       end
 
-      # Abrir hoja con Roo, forzando extensión
       spreadsheet = Roo::Spreadsheet.open(file.path, extension: ext)
       service = RouteExcelImportService.new(nil)
 
-      # Validar contenido
       if spreadsheet.last_row.nil? || spreadsheet.last_row < 2
         raise "El archivo está vacío o no tiene datos válidos"
       end
 
-      rows_processed = 0
-
+      # ✅ PASO 1: Extraer todas las filas en memoria
+      raw_rows = []
       (2..spreadsheet.last_row).each do |row_num|
         data = {
           delivery_date: spreadsheet.cell(row_num, "A"),
@@ -58,14 +52,40 @@ class DeliveryImportPrepareJob
           time_preference: spreadsheet.cell(row_num, "K")&.to_s&.strip
         }
 
-        # Saltar filas vacías
         next if data.values.compact.empty?
+        raw_rows << data
+      end
 
-        errors = service.validate_row(data)
+      # ✅ PASO 2: Agrupar por (order_number, product, delivery_date, place)
+      # y sumar cantidades + combinar notas
+      grouped = raw_rows.group_by do |row|
+        [
+          row[:order_number],
+          row[:product],
+          row[:delivery_date],
+          row[:place]
+        ]
+      end
+
+      rows_processed = 0
+
+      grouped.each do |key, rows|
+        # Tomar el primer registro como base
+        merged_data = rows.first.dup
+
+        # Sumar cantidades
+        merged_data[:quantity] = rows.sum { |r| r[:quantity] }
+
+        # Combinar notas (sin duplicados)
+        all_notes = rows.map { |r| r[:notes] }.compact.reject(&:blank?).uniq
+        merged_data[:notes] = all_notes.join("; ") if all_notes.any?
+
+        # Validar la fila consolidada
+        errors = service.validate_row(merged_data)
 
         DeliveryImportRow.create!(
           delivery_import: import,
-          data: data,
+          data: merged_data,
           row_errors: errors
         )
 
@@ -88,7 +108,6 @@ class DeliveryImportPrepareJob
         import_errors: "Error procesando archivo: #{e.message}"
       )
     ensure
-      # Limpiar archivo temporal
       if file
         file.close
         file.unlink

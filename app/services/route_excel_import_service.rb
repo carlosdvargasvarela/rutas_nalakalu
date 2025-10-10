@@ -41,83 +41,62 @@ class RouteExcelImportService
 
   # Procesa una fila (hash de datos), creando o actualizando registros según sea necesario
   def process_row(data)
-    # Buscar o crear cliente
     client = Client.find_or_create_by!(name: data[:client_name])
-
-    # Buscar o crear dirección de entrega
     address = client.delivery_addresses.find_or_create_by!(address: data[:place])
-
-    # Buscar vendedor por seller_code
     seller = Seller.find_by(seller_code: data[:seller_code])
     raise "Vendedor con código #{data[:seller_code]} no encontrado" unless seller
 
-    # Buscar o crear pedido
     order = Order.find_or_create_by!(number: data[:order_number]) do |o|
       o.client = client
       o.seller = seller
       o.status = :in_production
     end
 
-    # Si el pedido existe pero el vendedor es diferente, actualizarlo
     order.update!(seller: seller) if order.seller != seller
 
-    # ✅ OrderItem (blindaje: sin acumular)
+    # ✅ OrderItem: ahora podemos usar find_or_initialize_by sin miedo
     order_item = order.order_items.find_or_initialize_by(product: data[:product])
-    if order_item.new_record?
-      order_item.assign_attributes(
-        quantity: data[:quantity],
-        notes: data[:notes],
-        status: :in_production
-      )
-      order_item.save!
-    else
-      combined_notes = if data[:notes].present? && data[:notes] != order_item.notes
-        [ order_item.notes, data[:notes] ].compact.reject(&:blank?).uniq.join("; ")
-      else
-        order_item.notes || data[:notes]
-      end
 
-      order_item.update!(
-        quantity: data[:quantity],
-        notes: combined_notes
-      )
+    # Combinar notas si ya existía
+    combined_notes = if order_item.persisted? && data[:notes].present? && data[:notes] != order_item.notes
+      [ order_item.notes, data[:notes] ].compact.reject(&:blank?).uniq.join("; ")
+    else
+      data[:notes] || order_item.notes
     end
 
-    # ✅ Delivery (blindaje: evitar duplicados con la misma orden, fecha y dirección)
-    # aquí nos aseguramos de que no se creen dos deliveries "idénticos"
+    order_item.assign_attributes(
+      quantity: data[:quantity],  # ← Ya viene sumada del job
+      notes: combined_notes,
+      status: :in_production
+    )
+    order_item.save!
+
+    # ✅ Delivery
     delivery = order.deliveries
-                    .joins(:delivery_address)
                     .where(delivery_date: data[:delivery_date], delivery_address_id: address.id)
                     .first_or_initialize
 
     if delivery.new_record?
       delivery.assign_attributes(
         delivery_address: address,
-        contact_name: (parse_contact(data[:contact]).first),
-        contact_phone: (parse_contact(data[:contact]).last),
+        contact_name: parse_contact(data[:contact]).first,
+        contact_phone: parse_contact(data[:contact]).last,
         delivery_time_preference: data[:time_preference],
         status: :scheduled
       )
       delivery.save!
     end
 
-    # ✅ DeliveryItem (blindaje: sin acumular)
+    # ✅ DeliveryItem
     service_case = data[:team].to_s.downcase.include?("c.s") || data[:team].to_s.downcase.include?("cs")
 
     delivery_item = delivery.delivery_items.find_or_initialize_by(order_item: order_item)
-    if delivery_item.new_record?
-      delivery_item.assign_attributes(
-        quantity_delivered: data[:quantity],
-        status: :pending,
-        service_case: service_case
-      )
-      delivery_item.save!
-    else
-      delivery_item.update!(
-        quantity_delivered: data[:quantity],
-        service_case: service_case
-      )
-    end
+    delivery_item.assign_attributes(
+      quantity_delivered: data[:quantity],  # ← Ya viene sumada
+      status: :pending,
+      service_case: service_case
+    )
+    delivery_item.save!
   end
 
   # Extrae los datos de una fila del Excel (para importación masiva)

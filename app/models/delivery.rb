@@ -98,32 +98,26 @@ class Delivery < ApplicationRecord
     end
   end
 
-  # Actualiza el estado de la entrega basado en los items
   def update_status_based_on_items
-    statuses = delivery_items.pluck(:status)
-    return if ((in_plan? || in_route?) && !((statuses.any? { |s| s == "cancelled" }) || (statuses.any? { |s| s == "rescheduled" }) || (statuses.any? { |s| s == "failed" })) || (statuses.all? { |s| s == "delivered" })) && delivery_plans.exists?
+    statuses = delivery_items.pluck(:status).map(&:to_s)
+
+    # Casos donde NO debemos actualizar
     return if archived?
     return if statuses.empty?
 
-    if statuses.all? { |s| s == "delivered" }
-      update_column(:status, Delivery.statuses[:delivered])
-    elsif statuses.all? { |s| s == "cancelled" }
-      update_column(:status, Delivery.statuses[:cancelled])
-    elsif statuses.all? { |s| s == "rescheduled" }
-      update_column(:status, Delivery.statuses[:rescheduled])
-    elsif statuses.all? { |s| s == "failed" }
-      update_column(:status, Delivery.statuses[:failed])  # ← NUEVO
-    elsif statuses.all? { |s| [ "rescheduled", "confirmed", "delivered" ].include?(s) }
-      if delivery_plans.exists?
-        update_column(:status, Delivery.statuses[:in_plan])
-      else
-        update_column(:status, Delivery.statuses[:ready_to_deliver])
-      end
-    elsif statuses.any? { |s| s == "in_route" }
-      update_column(:status, Delivery.statuses[:in_route])
-    elsif statuses.all? { |s| [ "pending", "confirmed" ].include?(s) }
-      update_column(:status, Delivery.statuses[:scheduled])
+    # Si está en plan/ruta y todos los items están OK (no cancelados/reprogramados/fallidos),
+    # solo actualizar si TODOS están entregados
+    if (in_plan? || in_route?) && delivery_plans.exists?
+      has_problems = statuses.any? { |s| %w[cancelled rescheduled failed].include?(s) }
+      all_delivered = statuses.all? { |s| s == "delivered" }
+
+      # Solo actualizar si hay problemas O si todo está entregado
+      return unless has_problems || all_delivered
     end
+
+    # Actualización de estado según prioridad
+    new_status = calculate_delivery_status(statuses)
+    update_column(:status, Delivery.statuses[new_status]) if new_status
   end
 
   def active_items_for_plan
@@ -278,5 +272,34 @@ class Delivery < ApplicationRecord
 
   def set_default_approval
     self.approved = true if needs_approval?
+  end
+
+  def calculate_delivery_status(statuses)
+    # Prioridad 1: Estados terminales absolutos
+    return :delivered if statuses.all? { |s| s == "delivered" }
+    return :cancelled if statuses.all? { |s| s == "cancelled" }
+    return :rescheduled if statuses.all? { |s| s == "rescheduled" }
+    return :failed if statuses.all? { |s| s == "failed" }
+
+    # Prioridad 2: Estados mixtos con entrega parcial
+    if statuses.all? { |s| %w[rescheduled confirmed delivered].include?(s) }
+      return delivery_plans.exists? ? :in_plan : :ready_to_deliver
+    end
+
+    # Prioridad 3: En ruta (al menos un item en ruta)
+    return :in_route if statuses.any? { |s| s == "in_route" }
+
+    # Prioridad 4: Confirmados o pendientes
+    if statuses.all? { |s| %w[pending confirmed].include?(s) }
+      return :scheduled
+    end
+
+    # Prioridad 5: Si tiene items confirmados y está en plan
+    if statuses.any? { |s| s == "confirmed" } && delivery_plans.exists?
+      return :in_plan
+    end
+
+    # Default: mantener estado actual (no cambiar)
+    nil
   end
 end
