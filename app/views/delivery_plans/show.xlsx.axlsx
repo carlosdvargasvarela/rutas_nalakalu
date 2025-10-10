@@ -105,7 +105,7 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
           delivery.delivery_date.strftime("%d/%m/%Y"),
           delivery.order.number,
           delivery_item.order_item.product,
-          delivery_item.quantity_delivered,
+          delivery_item.quantity,
           delivery.order.seller.seller_code,
           delivery.order.client.name,
           [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),

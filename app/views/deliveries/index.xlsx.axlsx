@@ -12,7 +12,7 @@ wb.add_worksheet(name: "Entregas") do |sheet|
         delivery.delivery_date.strftime("%d/%m/%Y"),
         delivery.order.number,
         delivery_item.order_item.product,
-        delivery_item.order_item.quantity,
+        delivery_item.quantity,
         delivery.order.seller.seller_code,
         delivery.order.client.name,
         delivery.delivery_address.address,

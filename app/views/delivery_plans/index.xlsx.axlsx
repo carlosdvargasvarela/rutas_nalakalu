@@ -129,7 +129,7 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
             delivery.delivery_date&.strftime("%d/%m/%Y") || "Sin fecha",
             delivery.order.number,
             delivery_item.order_item&.product || "Producto sin nombre",
-            delivery_item.quantity_delivered || 0,
+            delivery_item.quantity,
             delivery.order.seller&.seller_code || "Sin vendedor",
             delivery.order.client&.name || "Sin cliente",
             [delivery.delivery_address&.address, delivery.delivery_address&.description].compact.join(" - "),

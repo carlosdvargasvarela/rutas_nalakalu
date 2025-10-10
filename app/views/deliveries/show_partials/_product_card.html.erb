@@ -10,7 +10,7 @@
         <% end %>
       </h5>
       <p class="mb-2">
-        <span class="badge bg-dark fs-6"><%= item.quantity_delivered %></span>
+        <span class="badge bg-dark fs-6"><%= item.quantity %></span>
         <span class="badge bg-<%= delivery_item_status_color(item.status) %> fs-6">
           <%= item.display_status %>
         </span>

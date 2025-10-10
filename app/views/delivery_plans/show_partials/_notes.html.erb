@@ -15,7 +15,7 @@
                 <%= label_tag :target, "Aplicar nota a:", class: "form-label" %>
                 <%= select_tag :target,
                       options_for_select([["📌 General (todos los productos)", "all"]] +
-                      delivery.delivery_items.map { |i| ["#{i.order_item.product} (#{i.quantity_delivered})", i.id] }),
+                      delivery.delivery_items.map { |i| ["#{i.order_item.product} (#{i.quantity})", i.id] }),
                       class: "form-select" %>
               </div>
               <div class="mb-3">

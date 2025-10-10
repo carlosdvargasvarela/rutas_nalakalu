@@ -62,7 +62,7 @@
                       <% delivery.active_items_for_plan_for(current_user).each do |item| %>
                         <li>
                           <strong><%= item.order_item.product %></strong>
-                          <span class="badge bg-secondary ms-1"><%= item.quantity_delivered %></span>
+                          <span class="badge bg-secondary ms-1"><%= item.quantity %></span>
                           <% if item.notes.present? %>
                             <br>
                             <span class="text-primary"><i class="bi bi-pin-angle-fill"></i> <em><%= item.notes %></em></span>

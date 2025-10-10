@@ -155,6 +155,10 @@ class DeliveryItem < ApplicationRecord
     # end
   end
 
+  def quantity
+    quantity_delivered || 0
+  end
+
   # ============================================================================
   # MÉTODOS PRIVADOS
   # ============================================================================
