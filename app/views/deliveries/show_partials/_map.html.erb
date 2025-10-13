@@ -7,9 +7,15 @@
       <% if delivery.delivery_address.latitude.present? && delivery.delivery_address.longitude.present? %>
         <div id="delivery-map"
              data-controller="delivery-map"
-             style="height: 300px; border:1px solid #ddd; border-radius: 8px;"
-             data-lat="<%= delivery.delivery_address.latitude %>"
-             data-lng="<%= delivery.delivery_address.longitude %>">
+             data-delivery-map-api-key-value="<%= Rails.application.credentials.dig(:google_maps, :api_key) %>"
+             data-delivery-map-points-value="<%= [{
+               lat: delivery.delivery_address.latitude,
+               lng: delivery.delivery_address.longitude,
+               client: delivery.order&.client&.name,
+               address: delivery.delivery_address.address,
+               order_number: delivery.order&.number
+             }].to_json %>"
+             style="height: 300px; border:1px solid #ddd; border-radius: 8px;">
         </div>
       <% else %>
         <div class="alert alert-info">
