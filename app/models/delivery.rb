@@ -10,6 +10,10 @@ class Delivery < ApplicationRecord
 
   accepts_nested_attributes_for :delivery_items, allow_destroy: true
 
+  # ============================================================================
+  # ENUMS
+  # ============================================================================
+
   enum status: {
     scheduled: 0,
     ready_to_deliver: 1,
@@ -22,13 +26,6 @@ class Delivery < ApplicationRecord
     failed: 8
   }
 
-  validates :delivery_date, presence: true
-
-  # 🔒 Validación: si la entrega es de semana actual -> debe ser aprobada
-  before_create :set_default_approval
-  after_save :update_status_based_on_items
-
-  # Nuevos tipos de delivery
   enum delivery_type: {
     normal: 0,
     pickup_with_return: 1,
@@ -38,37 +35,73 @@ class Delivery < ApplicationRecord
     only_pickup: 5
   }
 
-  # Scopes útiles
-  scope :service_cases, -> { where(delivery_type: [ :pickup, :return_delivery, :onsite_repair ]) }
+  # ============================================================================
+  # CONSTANTES
+  # ============================================================================
+
+  SERVICE_CASE_TYPES = %w[pickup_with_return return_delivery onsite_repair only_pickup].freeze
+
+  # ============================================================================
+  # VALIDACIONES
+  # ============================================================================
+
+  validates :delivery_date, presence: true
+
+  # ============================================================================
+  # SCOPES
+  # ============================================================================
+
+  scope :service_cases, -> { where(delivery_type: SERVICE_CASE_TYPES) }
   scope :normal_deliveries, -> { where(delivery_type: :normal) }
   scope :pending, -> { where(status: [ :scheduled, :ready_to_deliver, :in_route ]) }
   scope :overdue, -> {
-                      where("delivery_date < ?", Date.current)
-                        .where.not(status: [ Delivery.statuses[:delivered],
-                                            Delivery.statuses[:rescheduled],
-                                            Delivery.statuses[:cancelled] ])}
+    where("delivery_date < ?", Date.current)
+      .where.not(status: [ statuses[:delivered], statuses[:rescheduled], statuses[:cancelled] ])
+  }
   scope :eligible_for_plan, -> {
     where.not(status: [ :delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived, :failed ])
   }
   scope :not_assigned_to_plan, -> { where.not(id: DeliveryPlanAssignment.select(:delivery_id)) }
-  scope :available_for_plan, -> { eligible_for_plan.not_assigned_to_plan.approved }
-  scope :approved, -> { where(approved: true) }
-  scope :not_approved, -> { where(approved: false) }
-  scope :active, -> { where(archived: false) }
-  scope :archived, -> { where(archived: true) }
+  scope :available_for_plan, -> { eligible_for_plan.not_assigned_to_plan }
   scope :rescheduled_this_week, -> {
     where(status: :rescheduled, delivery_date: Date.current.beginning_of_week..Date.current.end_of_week)
   }
-
   scope :overdue_unplanned, -> {
     where("delivery_date < ?", Date.current)
       .eligible_for_plan
       .not_assigned_to_plan
   }
+  scope :for_week, ->(date) {
+    week = date.cweek
+    year = date.cwyear
+    where("EXTRACT(week FROM delivery_date) = ? AND EXTRACT(year FROM delivery_date) = ?", week, year)
+  }
+  scope :with_service_cases, -> {
+    joins(:delivery_items).where(delivery_items: { service_case: true }).distinct
+  }
 
-  # Métodos de conveniencia
+  # ============================================================================
+  # RANSACK
+  # ============================================================================
+
+  ransacker :status, formatter: proc { |v| statuses[v] } do |parent|
+    parent.table[:status]
+  end
+
+  def self.ransackable_attributes(auth_object = nil)
+    %w[delivery_date status delivery_type contact_name contact_phone delivery_notes delivery_time_preference reschedule_reason]
+  end
+
+  def self.ransackable_associations(auth_object = nil)
+    %w[order delivery_address delivery_items]
+  end
+
+  # ============================================================================
+  # MÉTODOS PÚBLICOS
+  # ============================================================================
+
   def service_case?
-    pickup? || return_delivery? || onsite_repair?
+    delivery_type.in?(SERVICE_CASE_TYPES)
   end
 
   def display_status
@@ -88,16 +121,18 @@ class Delivery < ApplicationRecord
 
   def display_type
     case delivery_type
-    when "normal"          then "Entrega normal"
-    when "pickup_with_return"          then "Recogida de producto y posteriomente entrega al cliente"
-    when "return_delivery" then "Devolución de producto"
-    when "onsite_repair"   then "Reparación en sitio"
-    when "only_pickup"   then "Solo recogida de producto"
-    when "internal_delivery" then "Mandado Interno" # <-- Texto para la vista
+    when "normal"               then "Entrega normal"
+    when "pickup_with_return"   then "Recogida de producto y posteriormente entrega al cliente"
+    when "return_delivery"      then "Devolución de producto"
+    when "onsite_repair"        then "Reparación en sitio"
+    when "only_pickup"          then "Solo recogida de producto"
+    when "internal_delivery"    then "Mandado Interno"
     else delivery_type.to_s.humanize
     end
   end
 
+  # Recalcula el estado de la entrega basándose en los estados de sus items
+  # Debe invocarse explícitamente desde servicios/controladores tras cambios masivos
   def update_status_based_on_items
     statuses = delivery_items.pluck(:status).map(&:to_s)
 
@@ -124,38 +159,18 @@ class Delivery < ApplicationRecord
     delivery_items.eligible_for_plan
   end
 
-
   def active_items_for_plan_for(user)
     delivery_items.merge(DeliveryItem.eligible_for_plan_for(user))
   end
 
-  # Scope para entregas de una semana específica
-  scope :for_week, ->(date) {
-    week = date.cweek
-    year = date.cwyear
-    where("EXTRACT(week FROM delivery_date) = ? AND EXTRACT(year FROM delivery_date) = ?", week, year)
-  }
-  # Scope para casos de servicio
-  scope :with_service_cases, -> {
-    joins(:delivery_items).where(delivery_items: { service_case: true }).distinct
-  }
-
-  # Scope para entregas normales
-  scope :normal_deliveries, -> {
-    joins(:delivery_items).where(delivery_items: { service_case: false }).distinct
-  }
-
-  # Verifica si tiene casos de servicio
   def has_service_cases?
     delivery_items.any?(&:service_case?)
   end
 
-  # Total de items en esta entrega
   def total_items
     delivery_items.sum(:quantity_delivered)
   end
 
-  # Marca la entrega como completada
   def mark_as_delivered!
     transaction do
       delivery_items.each(&:mark_as_delivered!)
@@ -167,10 +182,6 @@ class Delivery < ApplicationRecord
     order_items.all? { |oi| oi.status == "ready" }
   end
 
-  ransacker :status, formatter: proc { |v| statuses[v] } do |parent|
-    parent.table[:status]
-  end
-
   def delivery_plan
     delivery_plans.first
   end
@@ -178,21 +189,10 @@ class Delivery < ApplicationRecord
   def delivery_history
     order.deliveries
         .where(delivery_address_id: delivery_address_id)
-        .includes(delivery_items: :order_item) # <- cargar productos en bloque
+        .includes(delivery_items: :order_item)
         .order(:delivery_date)
   end
 
-  def needs_approval?
-    delivery_date.present? &&
-      delivery_date.cweek == Date.current.cweek &&
-      delivery_date.cwyear == Date.current.cwyear
-  end
-
-  def approve!
-    update!(approved: true)
-  end
-
-  # Información del cliente para logística
   def client_info
     {
       name: order.client.name,
@@ -203,14 +203,6 @@ class Delivery < ApplicationRecord
     }
   end
 
-  def self.ransackable_attributes(auth_object = nil)
-    %w[delivery_date status delivery_type contact_name contact_phone delivery_notes delivery_time_preference reschedule_reason]
-  end
-
-  def self.ransackable_associations(auth_object = nil)
-    %w[order delivery_address delivery_items]
-  end
-
   def status_humanize
     status.humanize
   end
@@ -219,48 +211,30 @@ class Delivery < ApplicationRecord
     delivery_type.humanize
   end
 
-  def self.to_csv
-      CSV.generate(headers: true) do |csv|
-        csv << [ "Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo" ]
-        all.includes(order: [ :client, :seller ], delivery_address: :client, delivery_items: { order_item: :order }).find_each do |delivery|
-          delivery.delivery_items.each do |delivery_item|
-            csv << [
-              delivery.delivery_date.strftime("%d/%m/%Y"),
-              delivery.order.number,
-              delivery_item.order_item.product,
-              delivery_item.order_item.quantity,
-              delivery.order.seller.seller_code,
-              delivery.order.client.name,
-              delivery.delivery_address.address,
-              delivery.status_humanize,
-              delivery.delivery_type_humanize
-            ]
-          end
-        end
-      end
-  end
-
-  def status_i18n(status, type)
+  def status_i18n(status_value, type)
     case type
     when :delivery
-      Delivery.statuses.key(status).humanize # Convierte el valor numérico a string y lo humaniza
+      Delivery.statuses.key(status_value).humanize
     when :order
-      Order.statuses.key(status).humanize
+      Order.statuses.key(status_value).humanize
     else
-      status.to_s.humanize
+      status_value.to_s.humanize
     end
   end
 
   def notify_all_confirmed
     return unless delivery_items.all? { |di| di.status == "confirmed" }
 
-      users = User.where(role: [ :logistics, :admin ]).to_a
-      users << delivery_plan.driver if delivery_plan&.driver
+    users = User.where(role: [ :logistics, :admin ]).to_a
+    users << delivery_plan.driver if delivery_plan&.driver
 
-      message = "Todos los productos del pedido #{order.number} para la entrega del #{delivery_date.strftime('%d/%m/%Y')} fueron confirmados por el vendedor."
-      NotificationService.create_for_users(users.compact.uniq, self, message)
+    message = "Todos los productos del pedido #{order.number} para la entrega del #{delivery_date.strftime('%d/%m/%Y')} fueron confirmados por el vendedor."
+    NotificationService.create_for_users(users.compact.uniq, self, message)
   end
 
+  # ============================================================================
+  # MÉTODOS DE CLASE
+  # ============================================================================
 
   def self.status_options_for_select
     statuses.keys.map do |s|
@@ -268,11 +242,32 @@ class Delivery < ApplicationRecord
     end
   end
 
-   private
-
-  def set_default_approval
-    self.approved = true if needs_approval?
+  def self.to_csv(scope = all)
+    CSV.generate(headers: true) do |csv|
+      csv << [ "Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo" ]
+      scope.includes(order: [ :client, :seller ], delivery_address: :client, delivery_items: { order_item: :order }).find_each do |delivery|
+        delivery.delivery_items.each do |delivery_item|
+          csv << [
+            delivery.delivery_date.strftime("%d/%m/%Y"),
+            delivery.order.number,
+            delivery_item.order_item.product,
+            delivery_item.order_item.quantity,
+            delivery.order.seller.seller_code,
+            delivery.order.client.name,
+            delivery.delivery_address.address,
+            delivery.status_humanize,
+            delivery.delivery_type_humanize
+          ]
+        end
+      end
+    end
   end
+
+  # ============================================================================
+  # MÉTODOS PRIVADOS
+  # ============================================================================
+
+  private
 
   def calculate_delivery_status(statuses)
     # Prioridad 1: Estados terminales absolutos
@@ -281,23 +276,19 @@ class Delivery < ApplicationRecord
     return :rescheduled if statuses.all? { |s| s == "rescheduled" }
     return :failed if statuses.all? { |s| s == "failed" }
 
-    # Prioridad 2: Estados mixtos con entrega parcial
+    # Prioridad 2: En ruta (al menos un item en ruta)
+    return :in_route if statuses.any? { |s| s == "in_route" }
+
+    # Prioridad 3: Si tiene items confirmados y está en plan
+    return :in_plan if statuses.any? { |s| s == "confirmed" } && delivery_plans.exists?
+
+    # Prioridad 4: Estados mixtos con entrega parcial
     if statuses.all? { |s| %w[rescheduled confirmed delivered].include?(s) }
       return delivery_plans.exists? ? :in_plan : :ready_to_deliver
     end
 
-    # Prioridad 3: En ruta (al menos un item en ruta)
-    return :in_route if statuses.any? { |s| s == "in_route" }
-
-    # Prioridad 4: Confirmados o pendientes
-    if statuses.all? { |s| %w[pending confirmed].include?(s) }
-      return :scheduled
-    end
-
-    # Prioridad 5: Si tiene items confirmados y está en plan
-    if statuses.any? { |s| s == "confirmed" } && delivery_plans.exists?
-      return :in_plan
-    end
+    # Prioridad 5: Confirmados o pendientes
+    return :scheduled if statuses.all? { |s| %w[pending confirmed].include?(s) }
 
     # Default: mantener estado actual (no cambiar)
     nil

@@ -146,7 +146,6 @@ class NotificationService
   # -----------------------
   def self.delivery_in_current_iso_week?(delivery)
     # Reutiliza tu lógica ISO ya existente
-    delivery.needs_approval?
   end
   private_class_method :delivery_in_current_iso_week?
 

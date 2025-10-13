@@ -5,13 +5,8 @@
     <span class="ms-2 badge bg-<%= delivery_status_color(delivery.status) %>">
       <%= delivery.display_status %>
     </span>
-    <% if delivery.approved? %>
-      <span class="badge bg-success"><i class="bi bi-shield-check"></i> Aprobada</span>
-    <% elsif delivery.needs_approval? %>
-      <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Pendiente</span>
-    <% end %>
   </h1>
-  <% if policy(delivery).edit? && (!delivery.needs_approval? || delivery.approved?) %>
+  <% if policy(delivery).edit? %>
     <%= link_to edit_delivery_path(delivery), class: "btn btn-sm btn-outline-secondary", title: "Editar" do %>
       <i class="bi bi-pencil-square"></i> Editar
     <% end %>

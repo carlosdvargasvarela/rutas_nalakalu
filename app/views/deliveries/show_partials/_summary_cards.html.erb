@@ -16,10 +16,6 @@
         </span>
         <% if delivery.approved? %>
           <span class="badge bg-success"><i class="bi bi-shield-check me-1"></i> Aprobada</span>
-        <% elsif delivery.needs_approval? %>
-          <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Pendiente</span>
-        <% else %>
-          <span class="badge bg-secondary"><i class="bi bi-slash-circle me-1"></i> No requiere</span>
         <% end %>
       </p>
       <p>

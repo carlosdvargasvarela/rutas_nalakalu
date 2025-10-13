@@ -4,59 +4,53 @@
     <span>
       <i class="bi bi-box-seam me-1"></i> Productos en esta entrega
     </span>
-    <% if !delivery.needs_approval? || delivery.approved? %>
-      <div class="d-flex gap-2 flex-wrap">
-        <% if delivery.delivery_items.any? %>
-          <button class="btn btn-sm btn-outline-primary"
+    <div class="d-flex gap-2 flex-wrap">
+      <% if delivery.delivery_items.any? %>
+        <button class="btn btn-sm btn-outline-primary"
                                 data-bs-toggle="modal"
                                 data-bs-target="#notaEntregaModal<%= delivery.id %>">
-            <i class="bi bi-sticky"></i> Agregar nota
-          </button>
-        <% end %>
-        <% unless delivery.delivered? || delivery.cancelled? %>
-          <%= button_to mark_as_delivered_delivery_path(delivery),
+          <i class="bi bi-sticky"></i> Agregar nota
+        </button>
+      <% end %>
+      <% unless delivery.delivered? || delivery.cancelled? %>
+        <%= button_to mark_as_delivered_delivery_path(delivery),
             method: :patch, class: "btn btn-success btn-sm",
             data: { turbo_confirm: "¿Está seguro de marcar toda la entrega como completada?" } do %>
-            <i class="bi bi-check-circle-fill"></i> Marcar todos como entregados
-          <% end %>
+          <i class="bi bi-check-circle-fill"></i> Marcar todos como entregados
         <% end %>
-        <%= link_to new_service_case_for_existing_delivery_path(delivery),
+      <% end %>
+      <%= link_to new_service_case_for_existing_delivery_path(delivery),
           class: "btn btn-sm btn-warning" do %>
-          <i class="bi bi-tools"></i> Caso servicio
-        <% end %>
-        <% if policy(delivery).edit? && delivery.delivery_items.any? { |item| item.pending? || item.confirmed? } && !delivery.delivery_items.all?(&:confirmed?) %>
-          <%= button_to confirm_all_items_delivery_path(delivery),
+        <i class="bi bi-tools"></i> Caso servicio
+      <% end %>
+      <% if policy(delivery).edit? && delivery.delivery_items.any? { |item| item.pending? || item.confirmed? } && !delivery.delivery_items.all?(&:confirmed?) %>
+        <%= button_to confirm_all_items_delivery_path(delivery),
             method: :patch, class: "btn btn-primary btn-sm",
             data: { turbo_confirm: "¿Confirmar todos los productos?" } do %>
-            <i class="bi bi-check-circle"></i> Confirmar todos
-          <% end %>
+          <i class="bi bi-check-circle"></i> Confirmar todos
         <% end %>
-        <% if policy(delivery).edit? && delivery.delivery_items.any? { |i| !%w[delivered cancelled rescheduled].include?(i.status) } %>
-          <!-- Botón que abre modal -->
-          <button class="btn btn-warning btn-sm"
+      <% end %>
+      <% if policy(delivery).edit? && delivery.delivery_items.any? { |i| !%w[delivered cancelled rescheduled].include?(i.status) } %>
+        <!-- Botón que abre modal -->
+        <button class="btn btn-warning btn-sm"
                   data-bs-toggle="modal"
                   data-bs-target="#rescheduleModal-<%= delivery.id %>">
-            <i class="bi bi-calendar-plus"></i> Reagendar
-          </button>
-        <% end %>
-        <!-- Toggle de vista -->
-        <% if params[:view] == "table" %>
-          <%= link_to delivery_path(delivery, view: "cards"),
+          <i class="bi bi-calendar-plus"></i> Reagendar
+        </button>
+      <% end %>
+      <!-- Toggle de vista -->
+      <% if params[:view] == "table" %>
+        <%= link_to delivery_path(delivery, view: "cards"),
                       class: "btn btn-outline-secondary btn-sm" do %>
-            <i class="bi bi-grid-3x3-gap"></i> Vista Cards
-          <% end %>
-        <% else %>
-          <%= link_to delivery_path(delivery, view: "table"),
-                      class: "btn btn-outline-secondary btn-sm" do %>
-            <i class="bi bi-table"></i> Vista Tabla
-          <% end %>
+          <i class="bi bi-grid-3x3-gap"></i> Vista Cards
         <% end %>
-      </div>
-    <% else %>
-      <div class="text-muted">
-        <i class="bi bi-lock me-1"></i> Acciones bloqueadas
-      </div>
-    <% end %>
+      <% else %>
+        <%= link_to delivery_path(delivery, view: "table"),
+                      class: "btn btn-outline-secondary btn-sm" do %>
+          <i class="bi bi-table"></i> Vista Tabla
+        <% end %>
+      <% end %>
+    </div>
   </div>
   <!-- Body con listado -->
   <div class="card-body">
@@ -77,8 +71,6 @@
 </div>
 <%= render "delivery_plans/show_partials/notes", delivery: delivery%>
 <%= render "deliveries/shared_partials/reschedule_modal", delivery: delivery %>
-
-
 <script>
   document.addEventListener("turbo:load", () => {
     document.querySelectorAll("input[data-toggle-fields]").forEach((input) => {

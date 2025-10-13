@@ -32,9 +32,7 @@
         </div>
       <% end %>
       <div class="mt-auto d-flex flex-wrap gap-2">
-        <% if delivery.needs_approval? && !delivery.approved? %>
-          <span class="text-muted"><i class="bi bi-lock"></i> Bloqueado</span>
-        <% elsif item.rescheduled? %>
+        <% if item.rescheduled? %>
           <span class="text-warning"><i class="bi bi-calendar-x"></i> Reagendado</span>
         <% elsif item.delivered? %>
           <span class="text-success"><i class="bi bi-check2-circle"></i> Entregado</span>

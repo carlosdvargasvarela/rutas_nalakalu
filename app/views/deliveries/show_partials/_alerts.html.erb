@@ -1,4 +1,4 @@
-<% if policy(delivery).approve? && delivery.needs_approval? && !delivery.approved? %>
+<% if policy(delivery).approve? && !delivery.approved? %>
   <div class="alert alert-warning d-flex justify-content-between align-items-center shadow-sm">
     <span>
       <i class="bi bi-exclamation-triangle me-2"></i>
@@ -10,11 +10,5 @@
         data: { turbo_confirm: "¿Marcar esta entrega como aprobada para la semana actual?" } do %>
       <i class="bi bi-check-circle"></i> Aprobar Entrega
     <% end %>
-  </div>
-<% end %>
-<% if delivery.needs_approval? && !delivery.approved? %>
-  <div class="alert alert-info shadow-sm">
-    <i class="bi bi-info-circle me-2"></i>
-    <strong>Entrega bloqueada:</strong> No se pueden realizar acciones hasta que sea aprobada.
   </div>
 <% end %>
