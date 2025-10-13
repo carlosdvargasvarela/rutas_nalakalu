@@ -2,7 +2,7 @@
 class Admin::UsersController < ApplicationController
   before_action :authenticate_user!
   before_action :require_admin!
-  before_action :set_user, only: [ :send_reset_password, :unlock, :toggle_notifications ]
+  before_action :set_user, only: [ :edit, :update, :send_reset_password, :unlock, :toggle_notifications ]
 
   def index
     @users = User.order(:name)
@@ -10,6 +10,7 @@ class Admin::UsersController < ApplicationController
 
   def new
     @user = User.new
+    # Si quieres preconstruir un miembro cuando el rol se seleccione por JS, lo hacemos en la vista con Stimulus.
   end
 
   def create
@@ -20,8 +21,7 @@ class Admin::UsersController < ApplicationController
     User.transaction do
       if @user.save!
         if @user.seller? && user_params[:seller_code].present?
-          seller = Seller.new(user: @user, name: @user.name, seller_code: user_params[:seller_code])
-          seller.save
+          Seller.create!(user: @user, name: @user.name, seller_code: user_params[:seller_code])
         end
         @user.send_reset_password_instructions
       end
@@ -29,8 +29,32 @@ class Admin::UsersController < ApplicationController
 
     redirect_to admin_users_path, notice: "Usuario creado y correo enviado para establecer contraseña."
   rescue ActiveRecord::RecordInvalid => e
-    # Si algo falla, captura el error y renderiza el formulario con errores
     render :new, status: :unprocessable_entity
+  end
+
+  def edit
+    # UX: si es driver y no tiene crew, construir una fila vacía
+    @user.crew_members.build if @user.driver? && @user.crew_members.empty?
+  end
+
+  def update
+    attrs = user_params
+    # No forzar cambio de contraseña si vienen en blanco
+    if attrs[:password].blank? && attrs[:password_confirmation].blank?
+      attrs = attrs.except(:password, :password_confirmation)
+    end
+
+    if @user.update(attrs)
+      if @user.seller? && @user.seller.blank? && user_params[:seller_code].present?
+        Seller.find_or_create_by!(user: @user) do |s|
+          s.name = @user.name
+          s.seller_code = user_params[:seller_code]
+        end
+      end
+      redirect_to admin_users_path, notice: "Usuario actualizado."
+    else
+      render :edit, status: :unprocessable_entity
+    end
   end
 
   def send_reset_password
@@ -55,8 +79,13 @@ class Admin::UsersController < ApplicationController
     @user = User.find(params[:id])
   end
 
+  # Permitir crew_members_attributes
   def user_params
-    params.require(:user).permit(:name, :email, :role, :seller_code, :send_notifications)
+    params.require(:user).permit(
+      :name, :email, :role, :seller_code, :send_notifications,
+      :password, :password_confirmation, # por si editas credenciales
+      crew_members_attributes: [ :id, :name, :id_number, :_destroy ]
+    )
   end
 
   def require_admin!

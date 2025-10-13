@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_10_06_055506) do
+ActiveRecord::Schema[7.2].define(version: 2025_10_13_163609) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -47,6 +47,15 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_06_055506) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "crew_members", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "name"
+    t.string "id_number"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_crew_members_on_user_id"
+  end
+
   create_table "deliveries", force: :cascade do |t|
     t.integer "order_id", null: false
     t.integer "delivery_address_id", null: false
@@ -62,8 +71,11 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_06_055506) do
     t.integer "delivery_type", default: 0
     t.boolean "approved", default: true, null: false
     t.text "reschedule_reason"
+    t.boolean "archived", default: false, null: false
     t.index ["approved"], name: "index_deliveries_on_approved"
+    t.index ["archived"], name: "index_deliveries_on_archived"
     t.index ["delivery_address_id"], name: "index_deliveries_on_delivery_address_id"
+    t.index ["delivery_date"], name: "index_deliveries_on_delivery_date"
     t.index ["delivery_type"], name: "index_deliveries_on_delivery_type"
     t.index ["order_id", "delivery_date", "delivery_address_id", "status"], name: "index_deliveries_on_order_date_address_archived_unique", unique: true
     t.index ["order_id"], name: "index_deliveries_on_order_id"
@@ -137,7 +149,31 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_06_055506) do
     t.datetime "updated_at", null: false
     t.integer "driver_id"
     t.integer "truck"
+    t.decimal "current_lat", precision: 10, scale: 6
+    t.decimal "current_lng", precision: 10, scale: 6
+    t.datetime "last_seen_at"
+    t.decimal "current_speed", precision: 5, scale: 2
+    t.decimal "current_heading", precision: 5, scale: 2
+    t.decimal "current_accuracy", precision: 6, scale: 2
     t.index ["driver_id"], name: "index_delivery_plans_on_driver_id"
+    t.index ["last_seen_at"], name: "index_delivery_plans_on_last_seen_at"
+  end
+
+  create_table "driver_locations", force: :cascade do |t|
+    t.integer "delivery_plan_id", null: false
+    t.integer "user_id", null: false
+    t.decimal "lat", precision: 10, scale: 6, null: false
+    t.decimal "lng", precision: 10, scale: 6, null: false
+    t.decimal "speed", precision: 5, scale: 2
+    t.decimal "heading", precision: 5, scale: 2
+    t.decimal "accuracy", precision: 6, scale: 2
+    t.datetime "captured_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["captured_at"], name: "index_driver_locations_on_captured_at"
+    t.index ["delivery_plan_id", "captured_at"], name: "index_driver_locations_on_delivery_plan_id_and_captured_at"
+    t.index ["delivery_plan_id"], name: "index_driver_locations_on_delivery_plan_id"
+    t.index ["user_id"], name: "index_driver_locations_on_user_id"
   end
 
   create_table "notifications", force: :cascade do |t|
@@ -237,6 +273,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_06_055506) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "crew_members", "users"
   add_foreign_key "deliveries", "delivery_addresses"
   add_foreign_key "deliveries", "orders"
   add_foreign_key "delivery_addresses", "clients"
@@ -247,6 +284,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_06_055506) do
   add_foreign_key "delivery_plan_assignments", "deliveries", on_delete: :restrict
   add_foreign_key "delivery_plan_assignments", "delivery_plans", on_delete: :cascade
   add_foreign_key "delivery_plans", "users", column: "driver_id"
+  add_foreign_key "driver_locations", "delivery_plans"
+  add_foreign_key "driver_locations", "users"
   add_foreign_key "notifications", "users"
   add_foreign_key "order_item_notes", "order_items"
   add_foreign_key "order_item_notes", "users"

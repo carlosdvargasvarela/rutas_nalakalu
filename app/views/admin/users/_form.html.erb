@@ -1,0 +1,72 @@
+<%# app/views/admin/users/_form.html.erb %>
+<%= simple_form_for([:admin, @user]) do |f| %>
+  <div class="row">
+    <div class="col-md-6">
+      <%= f.input :name %>
+      <%= f.input :email %>
+      <%= f.input :role, collection: User.roles.keys.map { |r| [r.humanize, r] }, include_blank: false %>
+      <%= f.input :send_notifications, as: :boolean, label: "Recibir notificaciones" %>
+      <%# En edit: permitir cambio de contraseña; en new puedes mantener visible (tu controller le pone una por defecto igualmente) %>
+      <%= f.input :password, hint: (@user.persisted? ? "Déjalo en blanco para no cambiarla" : "Opcional, se enviará correo de acceso"), required: false %>
+      <%= f.input :password_confirmation, required: false %>
+      <%# Código de vendedor: visible si es seller o si el registro es nuevo (por si se selecciona seller en vivo) %>
+      <% if @user.seller? || @user.new_record? || @user.role == "seller" %>
+        <%= f.input :seller_code, label: "Código de vendedor", input_html: { value: @user.seller&.seller_code } %>
+      <% end %>
+    </div>
+  </div>
+  <%# Tripulación solo visible para rol driver (toggle live con Stimulus) %>
+  <div id="driver-crew-section" data-controller="show-hide" data-show-hide-role-value="driver">
+    <h4 class="mt-3">
+      <i class="bi bi-people-fill me-1"></i>
+      Tripulación del camión
+    </h4>
+    <div data-controller="nested-form">
+      <div id="crew-members-list">
+        <%= f.simple_fields_for :crew_members do |cmf| %>
+          <div class="card mb-2 p-3" data-nested-form-target="item">
+            <div class="row">
+              <div class="col-md-5"><%= cmf.input :name, label: "Nombre" %></div>
+              <div class="col-md-5"><%= cmf.input :id_number, label: "Cédula" %></div>
+              <div class="col-md-2 d-flex align-items-end justify-content-end">
+                <% if cmf.object.persisted? %>
+                  <%= cmf.input :_destroy, as: :boolean, label: "Eliminar" %>
+                <% else %>
+                  <button class="btn btn-outline-danger" data-action="click->nested-form#remove" type="button" title="Quitar">
+                    <i class="bi bi-x-circle"></i>
+                  </button>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <%= link_to "#", class: "btn btn-outline-primary", data: { action: "click->nested-form#add" } do %>
+        <i class="bi bi-person-plus me-1"></i>
+        Agregar persona
+      <% end %>
+      <template data-nested-form-target="template">
+        <div class="card mb-2 p-3" data-nested-form-target="item">
+          <div class="row">
+            <div class="col-md-5">
+              <input type="text" name="user[crew_members_attributes][NEW_RECORD][name]" class="form-control" placeholder="Nombre" />
+            </div>
+            <div class="col-md-5">
+              <input type="text" name="user[crew_members_attributes][NEW_RECORD][id_number]" class="form-control" placeholder="Cédula" />
+            </div>
+            <div class="col-md-2 d-flex align-items-end justify-content-end">
+              <button class="btn btn-outline-danger" data-action="click->nested-form#remove" type="button" title="Quitar">
+                <i class="bi bi-x-circle"></i>
+              </button>
+              <input type="hidden" name="user[crew_members_attributes][NEW_RECORD][_destroy]" value="false" />
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+  <div class="mt-3 d-flex gap-2">
+    <%= f.button :submit, class: "btn btn-primary" %>
+    <%= link_to "Cancelar", admin_users_path, class: "btn btn-secondary" %>
+  </div>
+<% end %>

@@ -1,0 +1,40 @@
+<%# app/views/admin/users/_quick_actions.html.erb %>
+<% locked = user.access_locked? %>
+<% notif_on = user.send_notifications? %>
+<div class="d-flex flex-wrap gap-2 mb-3">
+  <%# Estado (bloqueado / activo) %>
+  <span class="badge <%= locked ? 'bg-danger' : 'bg-success' %>">
+    <% icon_state_class = locked ? 'bi-lock-fill' : 'bi-unlock-fill' %>
+    <i class="bi <%= icon_state_class %> me-1"></i>
+    <%= locked ? "Bloqueado" : "Activo" %>
+  </span>
+  <%# Reenviar acceso %>
+  <%= button_to send_reset_password_admin_user_path(user),
+      method: :post,
+      class: "btn btn-sm btn-outline-primary",
+      form: { data: { turbo_confirm: "Reenviar correo de acceso a #{user.email}?" } } do %>
+    <i class="bi bi-envelope-arrow-up me-1"></i>
+    Reenviar acceso
+  <% end %>
+  <%# Desbloquear (solo si está bloqueado) %>
+  <% if locked %>
+    <%= button_to unlock_admin_user_path(user),
+        method: :patch,
+        class: "btn btn-sm btn-outline-warning",
+        form: { data: { turbo_confirm: "¿Desbloquear a #{user.name}?" } } do %>
+      <i class="bi bi-unlock me-1"></i>
+      Desbloquear
+    <% end %>
+  <% end %>
+  <%# Toggle notificaciones %>
+  <% notif_btn_class = notif_on ? 'btn-outline-primary' : 'btn-outline-secondary' %>
+  <% notif_icon_class = notif_on ? 'bi-bell-fill' : 'bi-bell-slash' %>
+  <% notif_label = notif_on ? 'Notificaciones: On' : 'Notificaciones: Off' %>
+  <%= button_to toggle_notifications_admin_user_path(user),
+      method: :patch,
+      class: "btn btn-sm #{notif_btn_class}",
+      form: { data: { turbo_confirm: "¿Cambiar notificaciones para #{user.name}?" } } do %>
+    <i class="bi <%= notif_icon_class %> me-1"></i>
+    <%= notif_label %>
+  <% end %>
+</div>

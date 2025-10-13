@@ -30,6 +30,7 @@ class User < ApplicationRecord
   has_many :deliveries, through: :delivery_plan_assignments
   has_many :delivery_imports, dependent: :destroy
   has_many :order_item_notes, dependent: :nullify
+  has_many :crew_members, dependent: :destroy
 
   # Metodos
 
@@ -78,6 +79,13 @@ class User < ApplicationRecord
     role == "admin"
   end
 
+  accepts_nested_attributes_for :crew_members, allow_destroy: true, reject_if: proc { |attrs|
+    attrs.values_at("name", "id_number").all?(&:blank?)
+  }
+
+  # Si quieres asegurar que solo drivers tengan tripulación, puedes validar:
+  validate :crew_only_for_drivers
+
   private
 
   def set_default_role
@@ -95,5 +103,11 @@ class User < ApplicationRecord
 
   def self.ransackable_associations(_ = nil)
     [ "orders", "user", "versions" ]
+  end
+
+  def crew_only_for_drivers
+    if crew_members.loaded? && crew_members.any? && role != "driver"
+      errors.add(:base, "Solo los conductores pueden tener tripulación")
+    end
   end
 end

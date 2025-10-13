@@ -1,0 +1,83 @@
+<%# app/views/delivery_plans/show_partials/_crew.html.erb %>
+<% driver = delivery_plan.driver %>
+
+<div class="card mb-4 shadow-sm">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-people-fill me-2 text-primary fs-5"></i>
+      <h5 class="mb-0">Tripulación del camión</h5>
+    </div>
+
+    <% if delivery_plan.truck.present? %>
+      <span class="badge bg-secondary">
+        <i class="bi bi-truck me-1"></i>
+        <%= delivery_plan.truck_label || delivery_plan.truck %>
+      </span>
+    <% end %>
+  </div>
+
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-12 col-md-6">
+        <div class="border rounded p-3 h-100">
+          <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-person-badge me-2 text-dark"></i>
+            <strong>Conductor</strong>
+          </div>
+          <% if driver.present? %>
+            <div class="d-flex align-items-center">
+              <i class="bi bi-person-circle me-2 text-muted"></i>
+              <span><%= driver.name %> (<%= driver.email %>)</span>
+            </div>
+          <% else %>
+            <span class="text-muted">Sin conductor asignado</span>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <div class="border rounded p-3 h-100">
+          <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-people me-2 text-dark"></i>
+            <strong>Tripulación</strong>
+          </div>
+
+          <% if driver.present? && driver.crew_members.any? %>
+            <ul class="list-group list-group-flush">
+              <% driver.crew_members.each do |cm| %>
+                <li class="list-group-item px-0 d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-person me-2 text-muted"></i>
+                    <span><%= cm.name %></span>
+                  </div>
+                  <span class="badge bg-light text-dark" data-bs-toggle="tooltip" title="Cédula">
+                    <i class="bi bi-card-text me-1"></i><%= cm.id_number %>
+                  </span>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <span class="text-muted">Sin tripulación registrada</span>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Resumen plano debajo, útil para copiar rápido o ver en móviles %>
+    <% if driver.present? %>
+      <hr class="my-3">
+      <div class="small text-muted">
+        <strong>Resumen:</strong>
+        <%= driver.crew_members.any? ? driver.crew_members.map { |cm| "#{cm.name} (#{cm.id_number})" }.join(" • ") : "Sin tripulación" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%# Inicializa tooltips de Bootstrap (si no tienes inicialización global) %>
+<script>
+  document.addEventListener("turbo:load", () => {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el))
+  })
+</script>

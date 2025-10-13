@@ -1,0 +1,20 @@
+<div class="row justify-content-center">
+  <div class="col-md-7 col-lg-6">
+    <div class="card shadow-sm border-0 mt-4">
+      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
+          <i class="bi bi-pencil-square me-2"></i>
+          Editar usuario
+        </h4>
+        <span class="badge bg-light text-dark">
+          <i class="bi bi-person-badge-fill me-1"></i>
+          <%= @user.display_role %>
+        </span>
+      </div>
+      <div class="card-body">
+        <%= render "admin/users/quick_actions", user: @user %>
+        <%= render "form" %>
+      </div>
+    </div>
+  </div>
+</div>
