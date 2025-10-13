@@ -221,6 +221,7 @@ class DeliveriesController < ApplicationController
 
   def mark_as_delivered
     @delivery.mark_as_delivered!
+    @delivery.update_status_based_on_items
     redirect_to @delivery, notice: "Entrega marcada como completada."
   end
 
@@ -232,9 +233,9 @@ class DeliveriesController < ApplicationController
 
   def archive
     if @delivery.update(status: :archived)
-      redirect_to @delivery, notice: "🚚 La entrega fue archivada correctamente."
+      redirect_to @delivery, notice: "La entrega fue archivada correctamente."
     else
-      redirect_to @delivery, alert: "⚠️ No se pudo archivar la entrega."
+      redirect_to @delivery, alert: "No se pudo archivar la entrega."
     end
   end
 

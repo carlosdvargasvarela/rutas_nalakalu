@@ -62,7 +62,6 @@ module DeliveryItems
 
     def reschedule_to_new_delivery
       new_date = parse_new_date
-      validate_seller_day_restriction!(new_date)
 
       # Buscar o crear entrega destino con la misma combinación (reutiliza rescheduled)
       @target_delivery = find_or_create_target_delivery(new_date)
@@ -80,7 +79,6 @@ module DeliveryItems
 
       # Validar que pertenece al mismo pedido y dirección
       validate_target_delivery_compatibility!
-      validate_seller_day_restriction!(target_delivery.delivery_date)
 
       # Mover el item al destino
       move_item_to_target
@@ -182,14 +180,6 @@ module DeliveryItems
       unless target_delivery.order_id == original_delivery.order_id &&
              target_delivery.delivery_address_id == original_delivery.delivery_address_id
         raise StandardError, "La entrega destino debe pertenecer al mismo pedido y dirección."
-      end
-    end
-
-    def validate_seller_day_restriction!(target_date)
-      return unless current_user.role == "seller"
-
-      unless target_date.wday == Date.today.wday
-        raise StandardError, "Los vendedores solo pueden reagendar para #{Date::DAYNAMES[Date.today.wday].downcase}s"
       end
     end
 

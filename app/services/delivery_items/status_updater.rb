@@ -13,12 +13,10 @@ module DeliveryItems
       case new_status
       when :confirmed
         delivery_item.update!(status: :confirmed)
-        delivery_item.update_delivery_status
       when :delivered
         delivery_item.mark_as_delivered!
       when :cancelled
         delivery_item.update!(status: :cancelled)
-        delivery_item.update_delivery_status
       else
         raise ArgumentError, "Estado no válido: #{new_status}"
       end

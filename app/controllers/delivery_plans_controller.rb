@@ -82,6 +82,8 @@ class DeliveryPlansController < ApplicationController
     if @delivery_plan.save
       delivery_ids.each do |delivery_id|
         DeliveryPlanAssignment.create!(delivery_plan: @delivery_plan, delivery_id: delivery_id)
+        delivery = Delivery.find(delivery_id)
+        delivery.update_status_based_on_items
       end
       redirect_to edit_delivery_plan_path(@delivery_plan), notice: "Plan de ruta creado exitosamente. Ahora puedes ajustar el orden o asignar conductor."
     else

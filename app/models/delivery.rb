@@ -173,8 +173,16 @@ class Delivery < ApplicationRecord
 
   def mark_as_delivered!
     transaction do
-      delivery_items.each(&:mark_as_delivered!)
-      update!(status: :delivered)
+      # Solo marcar como entregados los no terminales
+      delivery_items.where(status: [ :pending, :confirmed, :in_plan, :in_route ]).find_each(&:mark_as_delivered!)
+
+      # Recalcular el estado con la lógica nueva (no forzar a delivered siempre)
+      update_status_based_on_items
+
+      # Si tras el recálculo todos los items quedaron delivered, aseguramos el estado
+      if delivery_items.where.not(status: :delivered).none?
+        update_column(:status, Delivery.statuses[:delivered])
+      end
     end
   end
 
@@ -268,29 +276,43 @@ class Delivery < ApplicationRecord
   # ============================================================================
 
   private
-
   def calculate_delivery_status(statuses)
-    # Prioridad 1: Estados terminales absolutos
-    return :delivered if statuses.all? { |s| s == "delivered" }
-    return :cancelled if statuses.all? { |s| s == "cancelled" }
+    statuses = statuses.map(&:to_s)
+
+    terminal     = %w[delivered cancelled rescheduled failed]
+    non_terminal = %w[pending confirmed in_plan in_route]
+
+    # 1) Uniformidad terminal
+    return :delivered   if statuses.all? { |s| s == "delivered" }
+    return :cancelled   if statuses.all? { |s| s == "cancelled" }
     return :rescheduled if statuses.all? { |s| s == "rescheduled" }
-    return :failed if statuses.all? { |s| s == "failed" }
+    return :failed      if statuses.all? { |s| s == "failed" }
 
-    # Prioridad 2: En ruta (al menos un item en ruta)
-    return :in_route if statuses.any? { |s| s == "in_route" }
+    # 2) Caso mixto: separar terminales vs no terminales
+    non_terminal_statuses = statuses.select { |s| non_terminal.include?(s) }
+    terminal_statuses     = statuses.select { |s| terminal.include?(s) }
 
-    # Prioridad 3: Si tiene items confirmados y está en plan
-    return :in_plan if statuses.any? { |s| s == "confirmed" } && delivery_plans.exists?
+    # 2.a) Si NO hay no terminales (todos son terminales pero mixtos):
+    # Regla especial: si hay al menos un delivered entre los terminales, la entrega debe ser delivered.
+    if non_terminal_statuses.empty?
+      return :delivered if terminal_statuses.any? { |s| s == "delivered" }
+      # Si no hay delivered, no cambiar (porque no son uniformes para cancelled/rescheduled/failed)
+      return nil
+    end
 
-    # Prioridad 4: Estados mixtos con entrega parcial
-    if statuses.all? { |s| %w[rescheduled confirmed delivered].include?(s) }
+    # 2.b) Sí hay no terminales → decidir SOLO con no terminales
+    # Prioridad: in_route si alguno
+    return :in_route if non_terminal_statuses.any? { |s| s == "in_route" }
+
+    # Todos los no terminales confirmed → confirmado para entregar
+    if non_terminal_statuses.all? { |s| s == "confirmed" }
       return delivery_plans.exists? ? :in_plan : :ready_to_deliver
     end
 
-    # Prioridad 5: Confirmados o pendientes
-    return :scheduled if statuses.all? { |s| %w[pending confirmed].include?(s) }
+    # Todos los no terminales pending → scheduled
+    return :scheduled if non_terminal_statuses.all? { |s| s == "pending" }
 
-    # Default: mantener estado actual (no cambiar)
+    # Cualquier otra mezcla de no terminales → no cambiar
     nil
   end
 end
