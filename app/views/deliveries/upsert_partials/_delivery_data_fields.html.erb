@@ -4,7 +4,7 @@
   </div>
   <div class="card-body">
     <div class="row g-3">
-      <% unless current_user.seller? && !delivery.new_record? %>
+      <% unless (current_user.seller? || current_user.production_manager?) && !delivery.new_record? %>
         <div class="col-md-4">
           <%= f.label :delivery_date, "Fecha de servicio", class: "form-label" %>
           <%= f.date_field :delivery_date, class: "form-control", required: true %>
