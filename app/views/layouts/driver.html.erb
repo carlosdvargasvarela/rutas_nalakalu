@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="NaLakalu">
+    <meta name="theme-color" content="#0d6efd">
+    <title><%= content_for?(:title) ? yield(:title) + " - NaLakalu" : "NaLakalu Rutas" %></title>
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <link rel="manifest" href="<%= pwa_manifest_path %>">
+    <link rel="apple-touch-icon" href="<%= asset_path 'icons/icon-192.png' %>">
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
+  </head>
+  <body class="bg-light">
+    <!-- Barra de estado offline -->
+    <div id="offline-banner" class="d-none position-fixed top-0 start-0 end-0 bg-warning text-dark py-2 px-3 text-center" style="z-index: 9999;">
+      <i class="bi bi-wifi-off me-2"></i>
+      <strong>Sin conexión</strong> - Las acciones se sincronizarán automáticamente
+    </div>
+    <!-- Barra de estado sincronizando -->
+    <div id="syncing-banner" class="d-none position-fixed top-0 start-0 end-0 bg-info text-white py-2 px-3 text-center" style="z-index: 9999;">
+      <div class="spinner-border spinner-border-sm me-2" role="status">
+        <span class="visually-hidden">Sincronizando...</span>
+      </div>
+      <strong>Sincronizando acciones...</strong>
+    </div>
+    <!-- Header -->
+    <nav class="navbar navbar-dark bg-primary shadow-sm">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+          <i class="bi bi-truck me-2"></i>
+          NaLakalu Rutas
+        </a>
+        <div class="d-flex align-items-center">
+          <span class="text-white me-3">
+            <i class="bi bi-person-circle me-1"></i>
+            <%= current_user.email %>
+          </span>
+          <%= button_to destroy_user_session_path, method: :delete, class: "btn btn-outline-light btn-sm" do %>
+            <i class="bi bi-box-arrow-right"></i>
+          <% end %>
+        </div>
+      </div>
+    </nav>
+    <!-- Flash messages -->
+    <div id="flash" class="container mt-2">
+      <% if notice %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <%= notice %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <% end %>
+      <% if alert %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <%= alert %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <% end %>
+    </div>
+    <!-- Main content -->
+    <main class="container py-3" style="padding-top: 60px;">
+      <%= yield %>
+    </main>
+    <!-- Script para PWA -->
+    <script>
+      // Registrar Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('<%= pwa_service_worker_path %>')
+            .then(registration => {
+              console.log('SW registrado:', registration);
+
+              // Verificar actualizaciones cada 60 segundos
+              setInterval(() => {
+                registration.update();
+              }, 60000);
+            })
+            .catch(error => {
+              console.error('Error registrando SW:', error);
+            });
+        });
+
+        // Escuchar mensajes del Service Worker
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'ACTION_SYNCED') {
+            showSyncSuccess();
+            // Recargar la página para reflejar cambios
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          }
+        });
+      }
+
+      // Detectar cambios en conectividad
+      const offlineBanner = document.getElementById('offline-banner');
+      const syncingBanner = document.getElementById('syncing-banner');
+
+      function updateOnlineStatus() {
+        if (navigator.onLine) {
+          offlineBanner.classList.add('d-none');
+          // Intentar sincronizar acciones pendientes
+          trySync();
+        } else {
+          offlineBanner.classList.remove('d-none');
+          syncingBanner.classList.add('d-none');
+        }
+      }
+
+      async function trySync() {
+        if ('serviceWorker' in navigator && 'sync' in ServiceWorkerRegistration.prototype) {
+          const registration = await navigator.serviceWorker.ready;
+          try {
+            syncingBanner.classList.remove('d-none');
+            await registration.sync.register('sync-actions');
+          } catch (error) {
+            console.error('Error registrando sync:', error);
+            // Fallback: enviar mensaje al SW para procesar inmediatamente
+            navigator.serviceWorker.controller?.postMessage({ type: 'PROCESS_PENDING' });
+          } finally {
+            setTimeout(() => {
+              syncingBanner.classList.add('d-none');
+            }, 2000);
+          }
+        }
+      }
+
+      function showSyncSuccess() {
+        const flashContainer = document.getElementById('flash');
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success alert-dismissible fade show';
+        alert.innerHTML = `
+          <i class="bi bi-check-circle me-2"></i>
+          Acciones sincronizadas correctamente
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        flashContainer.appendChild(alert);
+
+        setTimeout(() => {
+          alert.remove();
+        }, 5000);
+      }
+
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+
+      // Verificar estado inicial
+      updateOnlineStatus();
+
+      // Prompt para instalar PWA
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+
+        // Mostrar botón de instalación (opcional)
+        const installButton = document.getElementById('install-button');
+        if (installButton) {
+          installButton.classList.remove('d-none');
+          installButton.addEventListener('click', async () => {
+            if (deferredPrompt) {
+              deferredPrompt.prompt();
+              const { outcome } = await deferredPrompt.userChoice;
+              console.log(`User response: ${outcome}`);
+              deferredPrompt = null;
+              installButton.classList.add('d-none');
+            }
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

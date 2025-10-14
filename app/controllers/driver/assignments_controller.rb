@@ -1,5 +1,6 @@
 module Driver
   class AssignmentsController < ApplicationController
+    layout "driver"
     before_action :authenticate_user!
     before_action :set_resources
     after_action :verify_authorized

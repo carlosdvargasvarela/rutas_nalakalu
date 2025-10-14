@@ -1,5 +1,6 @@
 module Driver
   class DeliveryPlansController < ApplicationController
+    layout "driver"
     before_action :authenticate_user!
     before_action :set_plan
     after_action :verify_authorized
