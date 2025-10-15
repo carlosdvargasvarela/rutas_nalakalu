@@ -100,6 +100,10 @@ class DeliveryItem < ApplicationRecord
     quantity_delivered || 0
   end
 
+  def product
+    order_item.product
+  end
+
   # ============================================================================
   # VALIDACIONES PERSONALIZADAS
   # ============================================================================

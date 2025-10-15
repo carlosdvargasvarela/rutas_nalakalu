@@ -1,0 +1,97 @@
+<%# Calcula fechas y progreso con fallbacks seguros %>
+<%
+  if plan.year.present? && plan.week.present?
+    begin
+      start_date = Date.commercial(plan.year.to_i, plan.week.to_i, 1)
+      end_date   = Date.commercial(plan.year.to_i, plan.week.to_i, 5)
+    rescue ArgumentError
+      start_date = nil
+      end_date   = nil
+    end
+  end
+
+  delivered_count = plan.deliveries.where(status: :delivered).count
+  total_count     = plan.deliveries.count
+  progress_pct    = total_count > 0 ? (delivered_count.to_f / total_count * 100).round : 0
+%>
+
+<tr>
+  <td>
+    <% if plan.year.present? && plan.week.present? %>
+      <span class="badge bg-primary fs-6">
+        <i class="bi bi-calendar-week me-1"></i>
+        <%= plan.week %> / <%= plan.year %>
+      </span>
+    <% else %>
+      <span class="badge bg-secondary">
+        <i class="bi bi-question-circle me-1"></i>Sin definir
+      </span>
+    <% end %>
+  </td>
+  <td>
+    <% if plan.deliveries.any? %>
+      <% first_date = plan.deliveries.minimum(:delivery_date) %>
+      <% last_date  = plan.deliveries.maximum(:delivery_date) %>
+      <% if first_date == last_date %>
+        <span class="fw-bold"><%= l first_date, format: :short %></span>
+      <% else %>
+        <div class="d-flex flex-column">
+          <span class="fw-bold"><%= l first_date, format: :short %></span>
+          <small class="text-muted">al <%= l last_date, format: :short %></small>
+        </div>
+      <% end %>
+    <% else %>
+      <span class="text-muted fst-italic">Sin entregas</span>
+    <% end %>
+  </td>
+  <td>
+    <% if start_date && end_date %>
+      <div class="d-flex flex-column">
+        <span class="fw-bold"><%= l start_date, format: :short %></span>
+        <small class="text-muted">al <%= l end_date, format: :short %></small>
+      </div>
+    <% else %>
+      <span class="text-muted fst-italic">No definido</span>
+    <% end %>
+  </td>
+  <td>
+    <% status_label = plan.status.present? ? plan.display_status : "Sin estado" %>
+    <span class="badge bg-<%= delivery_plan_status_color(plan.status || "pending") %> fs-6">
+      <i class="bi bi-circle-fill small me-1"></i>
+      <%= status_label %>
+    </span>
+  </td>
+  <td>
+    <div class="d-flex align-items-center">
+      <i class="bi bi-person-circle text-primary me-2"></i>
+      <span><%= plan.driver&.name || "Sin asignar" %></span>
+    </div>
+  </td>
+  <td>
+    <% if plan.truck.present? %>
+      <span class="badge bg-dark"><i class="bi bi-truck-front me-1"></i><%= plan.truck %></span>
+    <% else %>
+      <span class="text-muted">—</span>
+    <% end %>
+  </td>
+  <td>
+    <span class="badge bg-info text-dark fs-6">
+      <i class="bi bi-box-seam me-1"></i><%= total_count %> entregas
+    </span>
+  </td>
+  <td>
+    <div class="d-flex align-items-center gap-2">
+      <div class="progress" style="width: 60px; height: 8px;">
+        <div class="progress-bar bg-success" style="width: <%= progress_pct %>%"></div>
+      </div>
+      <small class="text-muted"><%= delivered_count %>/<%= total_count %></small>
+    </div>
+  </td>
+  <td class="text-center">
+    <div class="btn-group">
+      <%= link_to driver_delivery_plan_path(plan), class: "btn btn-sm btn-primary", title: "Ver ruta" do %>
+        <i class="bi bi-truck"></i>
+      <% end %>
+    </div>
+  </td>
+</tr>

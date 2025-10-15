@@ -1,0 +1,141 @@
+<div class="container-fluid py-3">
+  <!-- Encabezado -->
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h2 class="mb-1 text-dark fw-bold fs-4">
+        <i class="bi bi-truck text-primary me-2"></i>Mis Planes de Entrega
+      </h2>
+      <small class="text-muted">Rutas semanales asignadas</small>
+    </div>
+    <div class="d-flex gap-2">
+      <%# Export solo lectura, útil para logística pero mantenemos acceso por si el driver lo requiere %>
+      <%= link_to delivery_plans_path(format: :xlsx), class: "btn btn-outline-success btn-sm d-flex align-items-center gap-2" do %>
+        <i class="bi bi-file-earmark-spreadsheet"></i> Excel
+      <% end %>
+      <%= link_to delivery_plans_path(format: :pdf), class: "btn btn-outline-danger btn-sm d-flex align-items-center gap-2" do %>
+        <i class="bi bi-filetype-pdf"></i> PDF
+      <% end %>
+    </div>
+  </div>
+  <% if @delivery_plans.any? %>
+    <div class="alert alert-primary d-flex justify-content-between align-items-center mb-3">
+      <div class="d-flex align-items-center gap-3">
+        <span>
+          <i class="bi bi-info-circle me-1"></i>
+          <strong><%= @delivery_plans.to_a.size %></strong> planes encontrados
+        </span>
+        <span class="badge bg-white text-primary">
+          <i class="bi bi-box-seam me-1"></i>
+          <%= @delivery_plans.sum { |plan| plan.deliveries.size } %> entregas
+        </span>
+      </div>
+      <div class="d-flex gap-2">
+        <% @delivery_plans.group_by(&:status).each do |status, plans| %>
+          <% label = status.present? ? status.to_s.humanize : "Sin estado" %>
+          <span class="badge bg-<%= delivery_plan_status_color(status || "pending") %>">
+            <%= label %>: <%= plans.size %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+  <!-- Filtros (sencillos para driver) -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-header bg-light fw-bold">
+      <i class="bi bi-funnel me-2"></i> Filtros
+    </div>
+    <div class="card-body">
+      <%= search_form_for @q, url: driver_delivery_plans_path, method: :get, html: { class: "row g-3 align-items-end" } do |f| %>
+        <div class="col-6 col-md-3">
+          <%= f.label :first_delivery_date_gteq, "Desde", class: "form-label fw-bold" %>
+          <%= f.date_field :first_delivery_date_gteq, class: "form-control" %>
+        </div>
+        <div class="col-6 col-md-3">
+          <%= f.label :first_delivery_date_lteq, "Hasta", class: "form-label fw-bold" %>
+          <%= f.date_field :first_delivery_date_lteq, class: "form-control" %>
+        </div>
+        <div class="col-6 col-md-3">
+          <%= f.label :status_eq, "Estado", class: "form-label fw-bold" %>
+          <%= f.select :status_eq, 
+                options_for_select(DeliveryPlan.statuses.keys.map { |s| [s.humanize, s] }, params.dig(:q, :status_eq)), 
+                { include_blank: "Todos" }, 
+                { class: "form-select" } %>
+        </div>
+        <div class="col-6 col-md-3">
+          <%= f.label :truck_eq, "Camión", class: "form-label fw-bold" %>
+          <%= f.select :truck_eq, 
+                options_for_select(DeliveryPlan.distinct.pluck(:truck).compact.map { |t| [t, t] }, params.dig(:q, :truck_eq)), 
+                { include_blank: "Todos" }, 
+                { class: "form-select" } %>
+        </div>
+        <div class="col-12 d-flex gap-2">
+          <%= f.submit "Buscar", class: "btn btn-primary btn-sm flex-fill" %>
+          <%= link_to "Limpiar", driver_delivery_plans_path, class: "btn btn-outline-secondary btn-sm flex-fill" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  <!-- Tabla (solo lectura) en desktop -->
+  <div class="card shadow-sm d-none d-md-block">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Semana</th>
+              <th>Fechas</th>
+              <th>Período</th>
+              <th>Estado</th>
+              <th>Conductor</th>
+              <th>Camión</th>
+              <th>Entregas</th>
+              <th>Progreso</th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @delivery_plans.each do |plan| %>
+              <%= render "driver/delivery_plans/row", plan: plan %>
+            <% end %>
+            <% if @delivery_plans.empty? %>
+              <tr>
+                <td colspan="9" class="text-center text-muted py-5">
+                  <div class="d-flex flex-column align-items-center">
+                    <i class="bi bi-calendar-x fs-1 text-muted mb-3"></i>
+                    <h5 class="text-muted">No hay planes de entrega</h5>
+                    <p class="text-muted mb-0">No se encontraron planes con los filtros aplicados.</p>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- Cards en móvil -->
+  <div class="d-block d-md-none">
+    <div class="row g-3">
+      <% @delivery_plans.each do |plan| %>
+        <div class="col-12">
+          <%= render "driver/delivery_plans/card", plan: plan %>
+        </div>
+      <% end %>
+      <% if @delivery_plans.empty? %>
+        <div class="col-12 text-center py-5">
+          <div class="d-flex flex-column align-items-center">
+            <i class="bi bi-calendar-x fs-1 text-muted mb-3"></i>
+            <h5 class="text-muted">No hay planes de entrega</h5>
+            <p class="text-muted mb-0">No se encontraron planes con los filtros.</p>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  <!-- Paginación -->
+  <% if respond_to?(:paginate) && @delivery_plans.respond_to?(:current_page) %>
+    <div class="d-flex justify-content-center mt-3">
+      <%= paginate @delivery_plans %>
+    </div>
+  <% end %>
+</div>

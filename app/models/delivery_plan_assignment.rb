@@ -69,6 +69,16 @@ class DeliveryPlanAssignment < ApplicationRecord
     end
   end
 
+  def display_status
+    case status
+    when "pending"   then "Pendiente"
+    when "en_route"  then "En ruta"
+    when "completed" then "Completado"
+    when "cancelled" then "Cancelado"
+    else status.to_s.humanize
+    end
+  end
+
   # ============================================================================
   # MÉTODOS PRIVADOS
   # ============================================================================

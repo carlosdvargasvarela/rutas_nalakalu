@@ -3,6 +3,9 @@ class DashboardController < ApplicationController
   before_action :authenticate_user!
 
   def index
+    if current_user&.role.to_s == "driver"
+      redirect_to driver_delivery_plans_path and return
+    end
     # Cards resumen
     @pending_deliveries_count = current_user_deliveries.where(status: [ :scheduled, :ready_to_deliver ]).count
     @active_orders_count = current_user_orders.where(status: [ :pending, :in_production ]).count
@@ -11,7 +14,7 @@ class DashboardController < ApplicationController
     @overdue_unplanned_deliveries =
       current_user_deliveries
         .overdue_unplanned
-        .includes(order: [:client, :seller], delivery_address: :client)
+        .includes(order: [ :client, :seller ], delivery_address: :client)
         .order(delivery_date: :asc)
         .page(params[:page_overdue])
         .per(10)

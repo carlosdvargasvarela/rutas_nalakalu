@@ -1,33 +1,145 @@
+# frozen_string_literal: true
+
 module Driver
   class DeliveryPlansController < ApplicationController
     layout "driver"
     before_action :authenticate_user!
-    before_action :set_plan
+    before_action :set_delivery_plan, only: [ :show, :update_position ]
     after_action :verify_authorized
 
-    def show
-      authorize [ :driver, @plan ]
-      @assignments = @plan.delivery_plan_assignments
-                          .includes(delivery: [ :delivery_items, { order: [ :client, :seller ] }, { delivery_address: :client } ])
-                          .order(:stop_order)
-      @completed_count = @assignments.completed.count
+    def index
+      # Autorizar primero el scope
+      authorize [ :driver, DeliveryPlan ]
+
+      base_scope = policy_scope([ :driver, DeliveryPlan ])
+                    .where(driver_id: current_user.id)
+                    .includes(:deliveries, :driver)
+
+      @q = base_scope.ransack(params[:q])
+      @delivery_plans = @q.result
+                          .order(year: :desc, week: :desc)
+                          .page(params[:page])
     end
 
-    def start_route
-      authorize [ :driver, @plan ], :start_route?
-      first_pending = @plan.delivery_plan_assignments.order(:stop_order).pending.first
-      if first_pending
-        first_pending.start!
-        redirect_to driver_delivery_plan_path(@plan), notice: "Ruta iniciada. Primera parada en estado En ruta."
-      else
-        redirect_to driver_delivery_plan_path(@plan), alert: "No hay paradas pendientes."
+    def show
+      authorize [ :driver, @delivery_plan ]
+
+      @assignments = @delivery_plan.delivery_plan_assignments
+                                   .includes(delivery: [ :order, :delivery_address, :delivery_items ])
+                                   .order(:stop_order)
+    end
+
+    def update_position
+      authorize [ :driver, @delivery_plan ]
+
+      position_params = params.require(:position).permit(
+        :lat, :lng, :speed, :heading, :accuracy, :at
+      )
+
+      @delivery_plan.update!(
+        current_lat: position_params[:lat],
+        current_lng: position_params[:lng],
+        current_speed: position_params[:speed],
+        current_heading: position_params[:heading],
+        current_accuracy: position_params[:accuracy],
+        last_seen_at: position_params[:at] || Time.current
+      )
+
+      respond_to do |format|
+        format.json do
+          render json: {
+            ok: true,
+            last_seen_at: @delivery_plan.last_seen_at.iso8601
+          }
+        end
       end
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { ok: false, error: e.message }, status: :unprocessable_entity
     end
 
     private
 
-    def set_plan
-      @plan = DeliveryPlan.find(params[:id])
+    def set_delivery_plan
+      @delivery_plan = DeliveryPlan.find(params[:id])
+    end
+
+    def plan_summary_json(plan)
+      {
+        id: plan.id,
+        week: plan.week,
+        year: plan.year,
+        truck: plan.truck,
+        driver: plan.driver&.name,
+        status: plan.status,
+        last_seen_at: plan.last_seen_at&.iso8601
+      }
+    end
+
+    def plan_detail_json(plan, assignments)
+      {
+        plan: {
+          id: plan.id,
+          week: plan.week,
+          year: plan.year,
+          truck: plan.truck,
+          driver_id: plan.driver_id,
+          driver_name: plan.driver&.name,
+          status: plan.status,
+          last_seen_at: plan.last_seen_at&.iso8601,
+          current_lat: plan.current_lat,
+          current_lng: plan.current_lng,
+          current_speed: plan.current_speed,
+          current_heading: plan.current_heading,
+          current_accuracy: plan.current_accuracy
+        },
+        assignments: assignments.map { |a| assignment_json(a) },
+        progress: {
+          completed: assignments.count(&:completed?),
+          total: assignments.count
+        }
+      }
+    end
+
+    def assignment_json(assignment)
+      delivery = assignment.delivery
+      address = delivery.delivery_address
+
+      {
+        id: assignment.id,
+        delivery_id: delivery.id,
+        stop_order: assignment.stop_order,
+        status: assignment.status,
+        started_at: assignment.started_at&.iso8601,
+        completed_at: assignment.completed_at&.iso8601,
+        driver_notes: assignment.driver_notes,
+        delivery: {
+          id: delivery.id,
+          status: delivery.status,
+          delivery_date: delivery.delivery_date&.iso8601,
+          contact_name: delivery.contact_name,
+          contact_phone: delivery.contact_phone,
+          delivery_notes: delivery.delivery_notes,
+          delivery_time_preference: delivery.delivery_time_preference,
+          order_number: delivery.order&.number,
+          client_name: delivery.order&.client&.name,
+          address: address ? {
+            text: address.address,
+            description: address.description,
+            lat: address.latitude,
+            lng: address.longitude,
+            plus_code: address.plus_code
+          } : nil,
+          items: delivery.delivery_items.map { |item|
+            {
+              id: item.id,
+              product: item.order_item&.product,
+              quantity: item.quantity,
+              notes: item.notes,
+              order_item_notes: item.order_item&.notes
+            }
+          }
+        }
+      }
     end
   end
 end

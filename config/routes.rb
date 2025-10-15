@@ -28,7 +28,6 @@ Rails.application.routes.draw do
   # Rutas PWA
   get "/manifest.json", to: "pwa#manifest", as: :pwa_manifest
   get "/service-worker.js", to: "pwa#service_worker", as: :pwa_service_worker
-  get "/offline", to: "pwa#offline", as: :pwa_offline
 
   # =============================================================================
   # AUTENTICACIÓN DE USUARIOS
@@ -199,18 +198,20 @@ Rails.application.routes.draw do
   # MODO CHOFER (Driver)
   # =============================================================================
   namespace :driver do
-    resources :delivery_plans, only: [ :show ] do
+    resources :delivery_plans, only: [ :index, :show ] do
       member do
-        patch :start_route
+        patch :update_position
       end
       resources :assignments, only: [] do
         member do
-          patch :start     # inicia la parada (en_route)
-          patch :complete  # marca entregada
-          patch :note      # agrega nota del chofer
-          patch :mark_failed # marca entrega como fracasada
+          patch :start
+          patch :complete
+          patch :mark_failed
+          patch :note
         end
       end
     end
   end
+
+  get "/offline", to: "pages#offline"
 end

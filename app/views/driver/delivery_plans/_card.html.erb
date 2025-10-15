@@ -1,0 +1,91 @@
+<%
+  if plan.year.present? && plan.week.present?
+    begin
+      start_date = Date.commercial(plan.year.to_i, plan.week.to_i, 1)
+      end_date   = Date.commercial(plan.year.to_i, plan.week.to_i, 5)
+    rescue ArgumentError
+      start_date = nil
+      end_date   = nil
+    end
+  end
+
+  delivered_count = plan.deliveries.where(status: :delivered).count
+  total_count     = plan.deliveries.count
+  progress_pct    = total_count > 0 ? (delivered_count.to_f / total_count * 100).round : 0
+%>
+
+<div class="card shadow-sm">
+  <div class="card-body p-3">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+      <div>
+        <h6 class="fw-bold mb-1">
+          <% if plan.year.present? && plan.week.present? %>
+            <span class="badge bg-primary">
+              <i class="bi bi-calendar-week me-1"></i>
+              Semana <%= plan.week %> / <%= plan.year %>
+            </span>
+          <% else %>
+            <span class="badge bg-secondary">
+              <i class="bi bi-question-circle me-1"></i>
+              Sin definir
+            </span>
+          <% end %>
+        </h6>
+        <small class="text-muted d-block">
+          <% if start_date && end_date %>
+            <%= l start_date, format: :short %> – <%= l end_date, format: :short %>
+          <% else %>
+            Período no definido
+          <% end %>
+        </small>
+        <small class="text-muted d-block">
+          <% if plan.deliveries.any? %>
+            <% first_date = plan.deliveries.minimum(:delivery_date) %>
+            <% last_date  = plan.deliveries.maximum(:delivery_date) %>
+            <% if first_date == last_date %>
+              Entrega: <%= l first_date, format: :short %>
+            <% else %>
+              Entregas: <%= l first_date, format: :short %> – <%= l last_date, format: :short %>
+            <% end %>
+          <% else %>
+            Sin entregas programadas
+          <% end %>
+        </small>
+      </div>
+      <span class="badge bg-<%= delivery_plan_status_color(plan.status || "pending") %>">
+        <%= plan.display_status.presence || "Sin estado" %>
+      </span>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-person-circle text-primary me-2"></i>
+        <span><%= plan.driver&.name || "Sin asignar" %></span>
+      </div>
+      <div class="d-flex align-items-center">
+        <i class="bi bi-truck-front text-dark me-2"></i>
+        <span><%= plan.truck || "Sin asignar" %></span>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-box-seam text-info me-2"></i>
+        <span><%= total_count %> entregas</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <div class="progress" style="width: 80px; height: 8px;">
+          <div class="progress-bar bg-success" style="width: <%= progress_pct %>%"></div>
+        </div>
+        <small class="text-muted"><%= delivered_count %>/<%= total_count %></small>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <%= link_to driver_delivery_plan_path(plan), class: "btn btn-sm btn-primary flex-fill" do %>
+        <i class="bi bi-truck me-1"></i>Ver ruta
+      <% end %>
+      <%# Sin editar/eliminar en vista de driver %>
+    </div>
+  </div>
+</div>

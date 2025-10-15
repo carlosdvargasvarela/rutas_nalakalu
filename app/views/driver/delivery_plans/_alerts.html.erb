@@ -1,0 +1,10 @@
+<div class="alert <%= @delivery_plan.all_deliveries_confirmed? ? 'alert-success' : 'alert-warning' %> d-flex align-items-center mb-3">
+  <i class="bi <%= @delivery_plan.all_deliveries_confirmed? ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill' %> me-2 fs-5"></i>
+  <div>
+    <% if @delivery_plan.all_deliveries_confirmed? %>
+      ✅ Todas las entregas confirmadas
+    <% else %>
+      ⚠️ Hay entregas pendientes de confirmar
+    <% end %>
+  </div>
+</div>

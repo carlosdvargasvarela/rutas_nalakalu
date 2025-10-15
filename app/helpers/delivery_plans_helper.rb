@@ -13,4 +13,43 @@ module DeliveryPlansHelper
   rescue ArgumentError
     "-"
   end
+
+  def assignment_status_badge_class(status)
+    case status.to_s
+    when "delivered"
+      "success"
+    when "pending"
+      "warning"
+    when "cancelled"
+      "danger"
+    else
+      "secondary"
+    end
+  end
+
+  def delivery_status_color(status)
+    case status.to_s
+    when "confirmed", "delivered"
+      "success"
+    when "pending"
+      "warning"
+    when "cancelled"
+      "danger"
+    else
+      "secondary"
+    end
+  end
+
+  def delivery_plan_status_color(status)
+    case status.to_s
+    when "completed"
+      "success"
+    when "in_progress"
+      "primary"
+    when "pending"
+      "warning"
+    else
+      "secondary"
+    end
+  end
 end

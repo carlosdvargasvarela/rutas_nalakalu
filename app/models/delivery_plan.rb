@@ -9,7 +9,7 @@ class DeliveryPlan < ApplicationRecord
   after_update :update_status_on_driver_change, if: :saved_change_to_driver_id?
   before_destroy :flush_assignments
 
-  enum status: { draft: 0, sent_to_logistics: 1, routes_created: 2 }
+  enum status: { draft: 0, sent_to_logistics: 1, routes_created: 2 }, _default: :draft
 
   enum truck: { PRI: 0, PRU: 1, GRU: 2, GRI: 3, GRIR: 4, PickUp_Ricardo: 5, PickUp_Ruben: 6, Recoje_Sala: 7 }
 
@@ -129,6 +129,14 @@ class DeliveryPlan < ApplicationRecord
 
   def truck_label
     truck.present? ? truck.to_s.tr("_", " ") : nil
+  end
+
+  def delivery_date
+    deliveries.first&.delivery_date
+  end
+
+  def assignments
+    delivery_plan_assignments.includes(:delivery)
   end
 
   private

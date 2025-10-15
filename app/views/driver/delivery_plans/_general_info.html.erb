@@ -1,0 +1,32 @@
+<div class="card shadow-sm">
+  <div class="card-header bg-light d-flex align-items-center">
+    <i class="bi bi-info-circle me-2"></i>
+    <strong>Información del Plan</strong>
+  </div>
+  <div class="card-body">
+    <div class="row g-2 small">
+      <div class="col-6">
+        <strong><i class="bi bi-calendar-week me-1"></i>Semana:</strong>
+        <span class="badge bg-primary"><%= week_range_label(@delivery_plan.year, @delivery_plan.week) %></span>
+      </div>
+      <div class="col-6">
+        <strong><i class="bi bi-calendar me-1"></i>Año:</strong>
+        <span class="badge bg-secondary"><%= @delivery_plan.year %></span>
+      </div>
+      <div class="col-6">
+        <strong><i class="bi bi-truck-front me-1"></i>Camión:</strong>
+        <% if @delivery_plan.truck.present? %>
+          <span class="badge bg-dark"><%= @delivery_plan.truck_label || @delivery_plan.truck %></span>
+        <% else %>
+          <span class="text-muted">No asignado</span>
+        <% end %>
+      </div>
+      <div class="col-6">
+        <strong><i class="bi bi-flag me-1"></i>Estado:</strong>
+        <span class="badge bg-<%= delivery_plan_status_color(@delivery_plan.status) %>">
+          <%= @delivery_plan.display_status %>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
