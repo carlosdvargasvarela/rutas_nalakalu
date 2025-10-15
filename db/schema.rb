@@ -159,23 +159,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_13_163609) do
     t.index ["last_seen_at"], name: "index_delivery_plans_on_last_seen_at"
   end
 
-  create_table "driver_locations", force: :cascade do |t|
-    t.integer "delivery_plan_id", null: false
-    t.integer "user_id", null: false
-    t.decimal "lat", precision: 10, scale: 6, null: false
-    t.decimal "lng", precision: 10, scale: 6, null: false
-    t.decimal "speed", precision: 5, scale: 2
-    t.decimal "heading", precision: 5, scale: 2
-    t.decimal "accuracy", precision: 6, scale: 2
-    t.datetime "captured_at", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["captured_at"], name: "index_driver_locations_on_captured_at"
-    t.index ["delivery_plan_id", "captured_at"], name: "index_driver_locations_on_delivery_plan_id_and_captured_at"
-    t.index ["delivery_plan_id"], name: "index_driver_locations_on_delivery_plan_id"
-    t.index ["user_id"], name: "index_driver_locations_on_user_id"
-  end
-
   create_table "notifications", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "notifiable_type", null: false
@@ -284,8 +267,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_13_163609) do
   add_foreign_key "delivery_plan_assignments", "deliveries", on_delete: :restrict
   add_foreign_key "delivery_plan_assignments", "delivery_plans", on_delete: :cascade
   add_foreign_key "delivery_plans", "users", column: "driver_id"
-  add_foreign_key "driver_locations", "delivery_plans"
-  add_foreign_key "driver_locations", "users"
   add_foreign_key "notifications", "users"
   add_foreign_key "order_item_notes", "order_items"
   add_foreign_key "order_item_notes", "users"

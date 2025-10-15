@@ -7,10 +7,10 @@
     <%= csp_meta_tag %>
     <!-- CSS compilado -->
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="/manifest.json">
     <!-- JavaScript con Importmap -->
     <%= javascript_importmap_tags %>
-    <!-- Chartkick -->
-    <%= javascript_include_tag "chartkick", "Chart.bundle" %>
     <!-- Google Maps -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=<%= ENV['GOOGLE_MAPS_API_KEY'] %>&libraries=places"></script>
   </head>
