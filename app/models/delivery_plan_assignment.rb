@@ -93,8 +93,15 @@ class DeliveryPlanAssignment < ApplicationRecord
   def add_driver_note!(note)
     timestamp = Time.current.strftime("%Y-%m-%d %H:%M")
     new_note = "[#{timestamp}] #{note}"
-    current = driver_notes.presence || ""
-    updated = current.blank? ? new_note : "#{current}\n#{new_note}"
+
+    current = self.driver_notes.to_s.strip
+    updated =
+      if current.blank?
+        new_note
+      else
+        "#{current}\n#{new_note}"
+      end
+
     update!(driver_notes: updated)
   end
 

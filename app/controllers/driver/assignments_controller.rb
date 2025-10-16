@@ -8,33 +8,37 @@ module Driver
     before_action :set_assignment
     after_action :verify_authorized
 
+    # Forzamos JSON para respuestas consistentes en el frontend
+    before_action :ensure_json_request
+
+    # PATCH /driver/delivery_plans/:delivery_plan_id/assignments/:id/start.json
     def start
       authorize [ :driver, @assignment ]
-
       handle_optimistic_lock do
         @assignment.start!
         render_success("Entrega iniciada")
       end
     end
 
+    # PATCH /driver/delivery_plans/:delivery_plan_id/assignments/:id/complete.json
     def complete
       authorize [ :driver, @assignment ]
-
       handle_optimistic_lock do
         @assignment.complete!
         render_success("Entrega completada")
       end
     end
 
+    # PATCH /driver/delivery_plans/:delivery_plan_id/assignments/:id/mark_failed.json
     def mark_failed
       authorize [ :driver, @assignment ]
-
       handle_optimistic_lock do
         @assignment.mark_as_failed!(reason: params[:reason])
         render_success("Entrega marcada como fallida")
       end
     end
 
+    # PATCH /driver/delivery_plans/:delivery_plan_id/assignments/:id/note.json
     def note
       authorize [ :driver, @assignment ]
 
@@ -45,6 +49,7 @@ module Driver
       end
 
       handle_optimistic_lock do
+        # Tu modelo ya define add_driver_note!(note)
         @assignment.add_driver_note!(note_text)
         render_success("Nota agregada")
       end
@@ -52,8 +57,11 @@ module Driver
 
     private
 
+    def ensure_json_request
+      request.format = :json
+    end
+
     def set_delivery_plan
-      # FIX: usar :delivery_plan_id (venía como :plan_id)
       @delivery_plan = DeliveryPlan.find(params[:delivery_plan_id])
     end
 
@@ -63,10 +71,12 @@ module Driver
 
     def handle_optimistic_lock
       yield
+    rescue Pundit::NotAuthorizedError
+      render json: { ok: false, error: "No autorizado" }, status: :forbidden
     rescue ActiveRecord::StaleObjectError
       render json: {
         ok: false,
-        error: "El recurso fue modificado por otro usuario. Recargando datos...",
+        error: "El recurso fue modificado por otro proceso. Recargando...",
         assignment: assignment_json(@assignment.reload)
       }, status: :conflict
     rescue ActiveRecord::RecordInvalid => e
@@ -84,7 +94,7 @@ module Driver
 
     def assignment_json(assignment)
       delivery = assignment.delivery
-      address = delivery.delivery_address
+      addr = delivery.delivery_address
 
       {
         id: assignment.id,
@@ -105,12 +115,12 @@ module Driver
           delivery_time_preference: delivery.delivery_time_preference,
           order_number: delivery.order&.number,
           client_name: delivery.order&.client&.name,
-          address: address ? {
-            text: address.address,
-            description: address.description,
-            lat: address.latitude,
-            lng: address.longitude,
-            plus_code: address.plus_code
+          address: addr ? {
+            text: addr.address,
+            description: addr.description,
+            lat: addr.latitude,
+            lng: addr.longitude,
+            plus_code: addr.plus_code
           } : nil
         }
       }
@@ -126,5 +136,4 @@ module Driver
       }
     end
   end
-
 end

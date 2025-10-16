@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-    static targets = ["statusBadge", "actions", "startBtn", "completeBtn", "failBtn", "noteTextarea"]
+    static targets = ["statusBadge", "actions", "noteTextarea", "notesPreview"]
     static values = {
         planId: Number,
         assignmentId: Number,
@@ -34,6 +34,17 @@ export default class extends Controller {
         await this._mutate("mark_failed", "Marcando como fallida...", { reason })
     }
 
+    openNoteModal(event) {
+        event?.preventDefault()
+        const modalEl = document.getElementById(`notaModal${this.assignmentIdValue}`)
+        if (!modalEl) {
+            console.error("No se encontró el modal de nota para assignment", this.assignmentIdValue)
+            return
+        }
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl)
+        modal.show()
+    }
+
     async saveNote(event) {
         event?.preventDefault()
         const text = this.noteTextareaTarget?.value?.trim() || ""
@@ -42,7 +53,14 @@ export default class extends Controller {
             return
         }
         await this._mutate("note", "Guardando nota...", { note: { text } })
+
+        // Limpia textarea y cierra modal explícitamente
         if (this.noteTextareaTarget) this.noteTextareaTarget.value = ""
+        const modalEl = document.getElementById(`notaModal${this.assignmentIdValue}`)
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl)
+            modal?.hide()
+        }
     }
 
     async _mutate(action, loadingMsg, body = {}) {
@@ -58,12 +76,7 @@ export default class extends Controller {
                 body: JSON.stringify(body)
             })
 
-            if (response.status === 202) {
-                this._showToast("Acción encolada para sincronizar", "info")
-                this._markPending()
-                return
-            }
-
+            // Si tienes offline-queue, aquí podrías marcar encolado con 202
             const data = await response.json().catch(() => ({}))
 
             if (response.ok) {
@@ -77,7 +90,7 @@ export default class extends Controller {
                 this._showToast(data.error || "Error al procesar la acción", "danger")
             }
         } catch (error) {
-            this._showToast("Sin conexión. Acción encolada.", "info")
+            this._showToast("Sin conexión. Acción encolada si está habilitada.", "info")
             this._markPending()
         }
     }
@@ -95,23 +108,28 @@ export default class extends Controller {
         // 2) Acciones (botones)
         if (this.hasActionsTarget) {
             this.actionsTarget.innerHTML = this._actionsHtmlForStatus(assignment.status)
-            // Re-enlazar eventos a los nuevos botones
-            this._bindActionButtons()
         }
 
-        // 3) lock_version
+        // 3) Preview de notas (todas las líneas como lista)
+        if (this.hasNotesPreviewTarget) {
+            const notes = (assignment.driver_notes || "").toString().trim()
+            if (notes.length > 0) {
+                const items = notes.split("\n").map(n => `<li>${this._escapeHtml(n)}</li>`).join("")
+                this.notesPreviewTarget.innerHTML = `<ul class="mb-0 ps-3">${items}</ul>`
+                this.notesPreviewTarget.classList.remove("d-none")
+            } else {
+                this.notesPreviewTarget.innerHTML = ""
+                this.notesPreviewTarget.classList.add("d-none")
+            }
+        }
+
+        // 4) lock_version
         if (typeof assignment.lock_version === "number") {
             this.lockVersionValue = assignment.lock_version
         }
     }
 
     _actionsHtmlForStatus(status) {
-        // Usamos Bootstrap 5 + Bootstrap Icons
-        // Mostramos:
-        // - pending: Iniciar + Fallida + Nota
-        // - en_route: Completar + Fallida + Nota
-        // - completed: alerta de completado + Nota
-        // - cancelled: alerta de cancelado + Nota
         const noteBtn = `
           <button type="button" 
                   class="btn btn-outline-primary btn-sm"
@@ -159,21 +177,7 @@ export default class extends Controller {
               ${noteBtn}
             `
         }
-        // fallback
         return noteBtn
-    }
-
-    _bindActionButtons() {
-        // Nada que hacer: Stimulus ata eventos por data-action automáticamente
-        // Esta función queda por si necesitas hooks adicionales en el futuro
-    }
-
-    openNoteModal() {
-        // Abrir el modal existente del partial
-        const modalEl = this.element.querySelector('[id^="notaModal"]')
-        if (!modalEl) return
-        const modal = bootstrap.Modal.getOrCreateInstance(modalEl)
-        modal.show()
     }
 
     _markPending() {
@@ -212,6 +216,12 @@ export default class extends Controller {
         return colors[status] || "secondary"
     }
 
+    _escapeHtml(str) {
+        return str.replace(/[&<>"']/g, m => (
+            { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]
+        ))
+    }
+
     _defaultHeaders() {
         const token = document.querySelector('meta[name="csrf-token"]')?.content
         return {
@@ -222,7 +232,6 @@ export default class extends Controller {
     }
 
     _showToast(message, type = "info") {
-        const event = new CustomEvent("toast:show", { detail: { message, type } })
-        document.dispatchEvent(event)
+        document.dispatchEvent(new CustomEvent("toast:show", { detail: { message, type } }))
     }
 }

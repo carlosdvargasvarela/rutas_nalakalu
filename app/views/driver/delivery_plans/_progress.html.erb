@@ -1,35 +1,30 @@
-<% completed = assignments.count(&:completed?) %>
-<% en_route = assignments.count(&:en_route?) %>
-<% pending = assignments.count(&:pending?) %>
-<% total = assignments.count %>
-<% percentage = total > 0 ? (completed.to_f / total * 100).round : 0 %>
-<div class="mb-3">
-  <div class="d-flex justify-content-between align-items-center mb-1">
-    <span class="small fw-semibold">Progreso de entregas</span>
-    <span class="small text-muted"><%= completed %> de <%= total %></span>
-  </div>
-  <div class="progress" style="height: 10px;">
-    <div 
-      class="progress-bar bg-success" 
-      role="progressbar" 
-      style="width: <%= percentage %>%"
-      aria-valuenow="<%= percentage %>" 
-      aria-valuemin="0" 
-      aria-valuemax="100">
+<%# app/views/driver/delivery_plans/_progress.html.erb %>
+<% total        = assignments.size %>
+<% completed    = assignments.count(&:completed?) %>
+<% en_route     = assignments.count(&:en_route?) %>
+<% pending      = assignments.count(&:pending?) %>
+<% percentage   = total.zero? ? 0 : ((completed.to_f / total) * 100).round %>
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <h5 class="card-title mb-3">
+      <i class="bi bi-activity me-2"></i>
+      Progreso de la ruta
+    </h5>
+    <div class="progress mb-2" role="progressbar" aria-label="Progreso de entregas"
+         aria-valuemin="0" aria-valuemax="100"
+    >
+      <div class="progress-bar <%= percentage == 100 ? 'bg-success' : (percentage >= 50 ? 'bg-info' : 'bg-primary') %>"
+           data-driver-plan-target="progressBar"
+           style="width: <%= percentage %>%"
+           aria-valuenow="<%= percentage %>">
+        <%= percentage %>%
+      </div>
     </div>
-  </div>
-</div>
-<div class="d-flex gap-3 small">
-  <div>
-    <i class="bi bi-check-circle-fill text-success me-1"></i>
-    <span class="fw-semibold" data-progress="completed"><%= completed %></span> Completadas
-  </div>
-  <div>
-    <i class="bi bi-hourglass-split text-warning me-1"></i>
-    <span class="fw-semibold" data-progress="en_route"><%= en_route %></span> En ruta
-  </div>
-  <div>
-    <i class="bi bi-circle text-secondary me-1"></i>
-    <span class="fw-semibold" data-progress="pending"><%= pending %></span> Pendientes
+    <div class="small text-muted">
+      Completadas: <span data-driver-plan-target="completedCount"><%= completed %></span> /
+      En ruta: <span data-driver-plan-target="enRouteCount"><%= en_route %></span> /
+      Pendientes: <span data-driver-plan-target="pendingCount"><%= pending %></span>
+      (Total: <span data-driver-plan-target="totalCount"><%= total %></span>)
+    </div>
   </div>
 </div>

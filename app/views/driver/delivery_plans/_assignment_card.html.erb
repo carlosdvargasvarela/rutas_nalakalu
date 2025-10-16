@@ -15,7 +15,52 @@
         <%= assignment.display_status %>
       </span>
     </div>
-    <!-- ... resto igual ... -->
+    <div class="mb-2">
+      <strong><i class="bi bi-person me-1"></i>Cliente:</strong>
+      <%= delivery.order.client.name %>
+    </div>
+    <% if delivery.delivery_address.present? %>
+      <div class="mb-2">
+        <strong><i class="bi bi-geo-alt me-1"></i>Dirección:</strong>
+        <%= delivery.delivery_address.address %>
+        <% if delivery.delivery_address.description.present? %>
+          <br>
+          <small class="text-muted"><%= delivery.delivery_address.description %></small>
+        <% end %>
+      </div>
+    <% end %>
+    <% if delivery.contact_name.present? || delivery.contact_phone.present? %>
+      <div class="mb-2">
+        <strong><i class="bi bi-telephone me-1"></i>Contacto:</strong>
+        <%= delivery.contact_name %>
+        <% if delivery.contact_phone.present? %>
+          <a href="tel:<%= delivery.contact_phone %>" class="btn btn-sm btn-outline-success ms-2">
+            <i class="bi bi-telephone-fill"></i> <%= delivery.contact_phone %>
+          </a>
+        <% end %>
+      </div>
+    <% end %>
+    <% if delivery.delivery_notes.present? %>
+      <div class="mb-2">
+        <strong><i class="bi bi-info-circle me-1"></i>Notas:</strong>
+        <div class="alert alert-info py-1 px-2 mb-0 small">
+          <%= simple_format(delivery.delivery_notes) %>
+        </div>
+      </div>
+    <% end %>
+    <div class="mb-2">
+      <strong><i class="bi bi-journal-text me-1"></i>Notas del chofer:</strong>
+      <div class="alert alert-secondary py-1 px-2 mb-0 small <%= assignment.driver_notes.present? ? '' : 'd-none' %>" 
+       data-driver-assignment-target="notesPreview">
+        <% if assignment.driver_notes.present? %>
+          <ul class="mb-0 ps-3">
+            <% assignment.driver_notes.to_s.split("\n").each do |line| %>
+              <li><%= line %></li>
+            <% end %>
+          </ul>
+        <% end %>
+      </div>
+    </div>
     <div class="d-grid gap-2 mt-3" data-driver-assignment-target="actions">
       <% if assignment.pending? %>
         <button type="button" class="btn btn-success" data-action="click->driver-assignment#start">
@@ -49,32 +94,31 @@
       </button>
     </div>
   </div>
-</div>
-<!-- Modal para agregar nota -->
-<div class="modal fade" id="notaModal<%= assignment.id %>" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="bi bi-sticky me-2"></i>
-          Nota para pedido <%= delivery.order.number %>
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <textarea class="form-control" 
-                  rows="4" 
-                  placeholder="Escribe aquí cualquier observación sobre la entrega..."
-                  data-driver-assignment-target="noteTextarea"></textarea>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" 
-                class="btn btn-primary"
-                data-action="click->driver-assignment#saveNote"
-          data-bs-dismiss="modal">
-          <i class="bi bi-save me-1"></i>Guardar nota
-        </button>
+  <!-- ⚠️ IMPORTANTE: Modal DENTRO del scope del controller -->
+  <div class="modal fade" id="notaModal<%= assignment.id %>" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-sticky me-2"></i>
+            Nota para pedido <%= delivery.order.number %>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <textarea class="form-control" 
+                    rows="4" 
+                    placeholder="Escribe aquí cualquier observación sobre la entrega..."
+                    data-driver-assignment-target="noteTextarea"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" 
+                  class="btn btn-primary"
+                  data-action="click->driver-assignment#saveNote">
+            <i class="bi bi-save me-1"></i>Guardar nota
+          </button>
+        </div>
       </div>
     </div>
   </div>
