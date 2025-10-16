@@ -4,11 +4,10 @@ module Driver
   class DeliveryPlansController < ApplicationController
     layout "driver"
     before_action :authenticate_user!
-    before_action :set_delivery_plan, only: [ :show, :update_position ]
+    before_action :set_delivery_plan, only: [ :show, :update_position, :start, :finish, :abort ]
     after_action :verify_authorized
 
     def index
-      # Autorizar primero el scope
       authorize [ :driver, DeliveryPlan ]
 
       base_scope = policy_scope([ :driver, DeliveryPlan ])
@@ -19,6 +18,16 @@ module Driver
       @delivery_plans = @q.result
                           .order(year: :desc, week: :desc)
                           .page(params[:page])
+
+      respond_to do |format|
+        format.html
+        format.json do
+          render json: {
+            ok: true,
+            plans: @delivery_plans.map { |plan| plan_summary_json(plan) }
+          }
+        end
+      end
     end
 
     def show
@@ -27,6 +36,16 @@ module Driver
       @assignments = @delivery_plan.delivery_plan_assignments
                                    .includes(delivery: [ :order, :delivery_address, :delivery_items ])
                                    .order(:stop_order)
+
+      respond_to do |format|
+        format.html
+        format.json do
+          render json: {
+            ok: true,
+            data: plan_detail_json(@delivery_plan, @assignments)
+          }
+        end
+      end
     end
 
     def update_position
@@ -45,14 +64,34 @@ module Driver
         last_seen_at: position_params[:at] || Time.current
       )
 
-      respond_to do |format|
-        format.json do
-          render json: {
-            ok: true,
-            last_seen_at: @delivery_plan.last_seen_at.iso8601
-          }
-        end
-      end
+      render json: {
+        ok: true,
+        last_seen_at: @delivery_plan.last_seen_at.iso8601
+      }
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { ok: false, error: e.message }, status: :unprocessable_entity
+    end
+
+    def start
+      authorize [ :driver, @delivery_plan ]
+      @delivery_plan.start!
+      render json: { ok: true, status: @delivery_plan.status, message: "Plan iniciado" }
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { ok: false, error: e.message }, status: :unprocessable_entity
+    end
+
+    def finish
+      authorize [ :driver, @delivery_plan ]
+      @delivery_plan.finish!
+      render json: { ok: true, status: @delivery_plan.status, message: "Plan finalizado" }
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { ok: false, error: e.message }, status: :unprocessable_entity
+    end
+
+    def abort
+      authorize [ :driver, @delivery_plan ]
+      @delivery_plan.abort!
+      render json: { ok: true, status: @delivery_plan.status, message: "Plan abortado" }
     rescue ActiveRecord::RecordInvalid => e
       render json: { ok: false, error: e.message }, status: :unprocessable_entity
     end
@@ -71,7 +110,8 @@ module Driver
         truck: plan.truck,
         driver: plan.driver&.name,
         status: plan.status,
-        last_seen_at: plan.last_seen_at&.iso8601
+        last_seen_at: plan.last_seen_at&.iso8601,
+        deliveries_count: plan.deliveries.count
       }
     end
 
@@ -90,11 +130,14 @@ module Driver
           current_lng: plan.current_lng,
           current_speed: plan.current_speed,
           current_heading: plan.current_heading,
-          current_accuracy: plan.current_accuracy
+          current_accuracy: plan.current_accuracy,
+          lock_version: plan.lock_version
         },
         assignments: assignments.map { |a| assignment_json(a) },
         progress: {
           completed: assignments.count(&:completed?),
+          en_route: assignments.count(&:en_route?),
+          pending: assignments.count(&:pending?),
           total: assignments.count
         }
       }
@@ -112,6 +155,7 @@ module Driver
         started_at: assignment.started_at&.iso8601,
         completed_at: assignment.completed_at&.iso8601,
         driver_notes: assignment.driver_notes,
+        lock_version: assignment.lock_version,
         delivery: {
           id: delivery.id,
           status: delivery.status,

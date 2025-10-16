@@ -1,4 +1,8 @@
-<div class="container-fluid py-3" data-controller="offline-queue driver-tracker">
+<div class="container-fluid py-3" 
+     data-controller="offline-queue driver-tracker driver-plan"
+     data-driver-plan-id-value="<%= @delivery_plan.id %>"
+     data-driver-plan-status-value="<%= @delivery_plan.status %>"
+     data-driver-tracker-delivery-plan-id-value="<%= @delivery_plan.id %>">
   <%= render "driver/delivery_plans/alerts", delivery_plan: @delivery_plan %>
   <%= render "driver/delivery_plans/header", delivery_plan: @delivery_plan %>
   <div class="row g-3 mb-3">
@@ -9,7 +13,42 @@
       <%= render "driver/delivery_plans/crew", delivery_plan: @delivery_plan %>
     </div>
   </div>
-  <%= render "driver/delivery_plans/progress", delivery_plan: @delivery_plan, assignments: @delivery_plan.assignments  %>
+  <!-- Controles del plan -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <div class="d-grid gap-2">
+        <% if @delivery_plan.status_routes_created? %>
+          <button type="button" 
+                  class="btn btn-success btn-lg"
+                  data-action="click->driver-plan#startPlan">
+            <i class="bi bi-play-circle-fill me-2"></i>Iniciar ruta
+          </button>
+        <% elsif @delivery_plan.status_in_progress? %>
+          <button type="button" 
+                  class="btn btn-primary btn-lg"
+                  data-action="click->driver-plan#finishPlan">
+            <i class="bi bi-check-circle-fill me-2"></i>Finalizar ruta
+          </button>
+          <button type="button" 
+                  class="btn btn-outline-danger"
+                  data-action="click->driver-plan#abortPlan">
+            <i class="bi bi-x-circle me-2"></i>Abortar ruta
+          </button>
+        <% elsif @delivery_plan.status_completed? %>
+          <div class="alert alert-success mb-0">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            Ruta completada
+          </div>
+        <% elsif @delivery_plan.status_aborted? %>
+          <div class="alert alert-danger mb-0">
+            <i class="bi bi-x-circle-fill me-2"></i>
+            Ruta abortada
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <%= render "driver/delivery_plans/progress", delivery_plan: @delivery_plan, assignments: @assignments %>
   <div class="mb-3">
     <h5 class="mb-3">
       <i class="bi bi-truck-flatbed me-2"></i>

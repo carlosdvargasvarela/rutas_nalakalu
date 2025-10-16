@@ -1,25 +1,42 @@
-# app/models/delivery_plan_assignment.rb
+# frozen_string_literal: true
+
 class DeliveryPlanAssignment < ApplicationRecord
+  # Versionado y auditoría
   has_paper_trail
+
+  # Asociaciones
   belongs_to :delivery_plan
   belongs_to :delivery
 
+  # Callbacks
   after_create :change_deliveries_statuses
   after_destroy :revert_statuses
 
+  # Validaciones
   validates :stop_order, numericality: { only_integer: true, allow_nil: true }
 
+  # Ordenamiento
   acts_as_list scope: :delivery_plan, column: :stop_order
 
-  enum status: { pending: 0, en_route: 1, completed: 2, cancelled: 3 }, _default: :pending
+  # Enums
+  enum status: {
+    pending: 0,
+    en_route: 1,
+    completed: 2,
+    cancelled: 3
+  }, _default: :pending
+
+  # Scopes
+  scope :ordered, -> { order(:stop_order) }
 
   # ============================================================================
   # MÉTODOS PÚBLICOS
   # ============================================================================
 
   # Inicia la parada: marca el assignment y la entrega como "en ruta"
+  # IDEMPOTENTE: retorna true si ya está en_route o completed
   def start!
-    return if en_route? || completed?
+    return true if en_route? || completed?
 
     transaction do
       update!(status: :en_route, started_at: Time.current)
@@ -36,26 +53,27 @@ class DeliveryPlanAssignment < ApplicationRecord
       # Recalcular estado del delivery explícitamente
       delivery.update_status_based_on_items
     end
+
+    true
   end
 
   # Completa la parada: marca todos los items como entregados
+  # IDEMPOTENTE: retorna true si ya está completed
   def complete!
-    return if completed?
+    return true if completed?
 
     transaction do
       delivery.mark_as_delivered!
       update!(status: :completed, completed_at: Time.current)
     end
-  end
 
-  # Agrega una nota del chofer
-  def add_driver_note!(note)
-    update!(driver_notes: [ driver_notes, note ].compact_blank.join("\n"))
+    true
   end
 
   # Marca la parada como fallida y ejecuta el servicio de fallo
+  # IDEMPOTENTE: retorna true si ya está cancelled o completed
   def mark_as_failed!(reason: nil)
-    return if completed?
+    return true if completed? || cancelled?
 
     transaction do
       # El servicio maneja el cambio de estados de delivery e items
@@ -67,8 +85,20 @@ class DeliveryPlanAssignment < ApplicationRecord
       # Recalcular estado del delivery tras el fallo
       delivery.reload.update_status_based_on_items
     end
+
+    true
   end
 
+  # Agrega una nota del chofer con timestamp
+  def add_driver_note!(note)
+    timestamp = Time.current.strftime("%Y-%m-%d %H:%M")
+    new_note = "[#{timestamp}] #{note}"
+    current = driver_notes.presence || ""
+    updated = current.blank? ? new_note : "#{current}\n#{new_note}"
+    update!(driver_notes: updated)
+  end
+
+  # Etiqueta legible del estado
   def display_status
     case status
     when "pending"   then "Pendiente"

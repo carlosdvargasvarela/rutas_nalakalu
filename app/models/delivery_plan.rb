@@ -9,11 +9,20 @@ class DeliveryPlan < ApplicationRecord
   after_update :update_status_on_driver_change, if: :saved_change_to_driver_id?
   before_destroy :flush_assignments
 
-  enum status: { draft: 0, sent_to_logistics: 1, routes_created: 2 }, _default: :draft
+  enum :status, {
+    draft: "draft",
+    sent_to_logistics: "sent_to_logistics",
+    routes_created: "routes_created",
+    in_progress: "in_progress",
+    completed: "completed",
+    aborted: "aborted"
+  }, default: :draft, prefix: true
 
   enum truck: { PRI: 0, PRU: 1, GRU: 2, GRI: 3, GRIR: 4, PickUp_Ricardo: 5, PickUp_Ruben: 6, Recoje_Sala: 7 }
 
-  validates :week, :year, presence: true
+  validates :year, presence: true, numericality: { only_integer: true, greater_than: 2000 }
+  validates :week, presence: true, numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: 54 }
+  validates :status, presence: true
 
   # Scope para estadisticas rapidas para el dashboard
   scope :upcoming, -> {
@@ -25,6 +34,9 @@ class DeliveryPlan < ApplicationRecord
       .group("delivery_plans.id")
       .order(Arel.sql("MIN(deliveries.delivery_date) DESC"))
   }
+
+  scope :for_driver, ->(driver_id) { where(driver_id: driver_id) }
+  scope :active, -> { where(status: [ :routes_created, :in_progress ]) }
 
   def stats
     {
@@ -43,6 +55,12 @@ class DeliveryPlan < ApplicationRecord
       "Enviado a logística"
     when "routes_created"
       "Rutas creada"
+    when "in_progress"
+      "En progreso"
+    when "completed"
+      "Completado"
+    when "aborted"
+      "Abortado"
     else
       "Desconocido"
     end
@@ -129,6 +147,23 @@ class DeliveryPlan < ApplicationRecord
 
   def truck_label
     truck.present? ? truck.to_s.tr("_", " ") : nil
+  end
+
+  def start!
+    return if status_in_progress? || status_completed?
+    update!(status: :in_progress)
+  end
+
+  def finish!
+    return if status_completed?
+    # Solo completar si todos los assignments están completed o cancelled
+    all_done = delivery_plan_assignments.all? { |a| a.completed? || a.cancelled? }
+    update!(status: :completed) if all_done
+  end
+
+  def abort!
+    return if status_aborted? || status_completed?
+    update!(status: :aborted)
   end
 
   def delivery_date

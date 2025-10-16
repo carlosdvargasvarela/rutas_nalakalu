@@ -1,28 +1,35 @@
-# app/policies/driver/delivery_plan_policy.rb
+# frozen_string_literal: true
+
 module Driver
   class DeliveryPlanPolicy < ApplicationPolicy
-    class Scope < Scope
-      def resolve
-        if user.admin?
-          scope.all
-        elsif user.driver?
-          scope.where(driver_id: user.id)
-        else
-          scope.none
-        end
-      end
-    end
-
     def index?
-      user.driver? || user.admin?
+      user.present?
     end
 
     def show?
-      user.admin? || (user.driver? && record.driver_id == user.id)
+      user.present? && record.driver_id == user.id
     end
 
     def update_position?
       show?
+    end
+
+    def start?
+      show? && record.status_routes_created?
+    end
+
+    def finish?
+      show? && record.status_in_progress?
+    end
+
+    def abort?
+      show? && (record.status_routes_created? || record.status_in_progress?)
+    end
+
+    class Scope < ApplicationPolicy::Scope
+      def resolve
+        scope.where(driver_id: user.id)
+      end
     end
   end
 end

@@ -1,27 +1,62 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Envía updates periódicos de geolocalización al endpoint update_position (JSON),
-// encolándose si no hay conexión gracias al SW.
 export default class extends Controller {
     static values = {
         deliveryPlanId: Number,
-        intervalMs: { type: Number, default: 30000 }, // cada 30s
-        minDistance: { type: Number, default: 50 }    // 50m
+        intervalMs: { type: Number, default: 30000 },
+        minDistance: { type: Number, default: 50 }
     }
 
     connect() {
         this._lastPos = null
         this._timer = null
-        this._start()
+
+        // Validación: asegurar que tengamos plan id
+        if (!this.hasDeliveryPlanIdValue) {
+            console.error("driver-tracker: falta deliveryPlanIdValue en data-driver-tracker-delivery-plan-id-value")
+            return
+        }
+
+        // Solo iniciar si el plan está in_progress
+        const planStatus = this._getPlanStatus()
+        if (planStatus === "in_progress") {
+            this._start()
+        }
+
+        // Escuchar cambios de estado del plan
+        this._onPlanStatusChangedBound = this._onPlanStatusChanged.bind(this)
+        document.addEventListener("driver:plan:status-changed", this._onPlanStatusChangedBound)
     }
 
     disconnect() {
         this._stop()
+        if (this._onPlanStatusChangedBound) {
+            document.removeEventListener("driver:plan:status-changed", this._onPlanStatusChangedBound)
+        }
+    }
+
+    _onPlanStatusChanged(event) {
+        const { status } = event.detail
+        if (status === "in_progress") {
+            this._start()
+        } else {
+            this._stop()
+        }
+    }
+
+    _getPlanStatus() {
+        const planEl = document.querySelector('[data-controller~="driver-plan"]')
+        // En Stimulus v3 los values quedan como data-driver-plan-status-value
+        return planEl?.dataset.driverPlanStatusValue || planEl?.dataset.status || ""
     }
 
     _start() {
         if (!("geolocation" in navigator)) return
-        this._tick() // primer intento inmediato
+        if (this._timer) return // Ya está corriendo
+
+        // Primer tick inmediato
+        this._tick()
+        // Luego por intervalo
         this._timer = setInterval(() => this._tick(), this.intervalMsValue)
     }
 
@@ -32,38 +67,41 @@ export default class extends Controller {
 
     async _tick() {
         try {
-            const pos = await this._getPosition({ enableHighAccuracy: true, timeout: 10000, maximumAge: 0 })
+            const pos = await this._getPosition({
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            })
+
             if (!this._shouldSend(pos)) return
 
             const payload = {
                 position: {
                     lat: pos.coords.latitude,
                     lng: pos.coords.longitude,
-                    speed: pos.coords.speed || null,
-                    heading: pos.coords.heading || null,
-                    accuracy: pos.coords.accuracy || null,
+                    speed: pos.coords.speed ?? null,
+                    heading: pos.coords.heading ?? null,
+                    accuracy: pos.coords.accuracy ?? null,
                     at: new Date(pos.timestamp).toISOString()
                 }
             }
 
             const url = `/driver/delivery_plans/${this.deliveryPlanIdValue}/update_position.json`
             const headers = this._defaultHeaders()
-            headers["X-Request-Id"] = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`
+
             const res = await fetch(url, {
                 method: "PATCH",
                 headers,
                 body: JSON.stringify(payload)
             })
 
-            if (res.status === 202) {
-                // encolado por SW
-                // opcional: mostrar indicador sutil
-            } else if (res.ok) {
-                // OK
+            // Si el SW encola, podría devolver 202
+            if (res.ok || res.status === 202) {
+                this._lastPos = pos
             }
-            this._lastPos = pos
         } catch (e) {
-            // offline → el SW encolará si está configurado para mutaciones
+            // Offline o error de geolocalización: el SW puede encolar
+            // Silencioso para no molestar al chofer
         }
     }
 
@@ -84,13 +122,13 @@ export default class extends Controller {
 
     _haversine(lat1, lon1, lat2, lon2) {
         const toRad = (v) => (v * Math.PI) / 180
-        const R = 6371000 // m
+        const R = 6371000 // metros
         const dLat = toRad(lat2 - lat1)
         const dLon = toRad(lon2 - lon1)
         const a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.sin(dLat / 2) ** 2 +
             Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2)
+            Math.sin(dLon / 2) ** 2
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
         return R * c
     }

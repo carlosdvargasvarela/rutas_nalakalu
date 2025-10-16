@@ -201,7 +201,11 @@ Rails.application.routes.draw do
     resources :delivery_plans, only: [ :index, :show ] do
       member do
         patch :update_position
+        patch :start
+        patch :finish
+        patch :abort
       end
+
       resources :assignments, only: [] do
         member do
           patch :start

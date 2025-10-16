@@ -1,12 +1,14 @@
 <% completed = assignments.count(&:completed?) %>
+<% en_route = assignments.count(&:en_route?) %>
+<% pending = assignments.count(&:pending?) %>
 <% total = assignments.count %>
 <% percentage = total > 0 ? (completed.to_f / total * 100).round : 0 %>
-<div class="mb-2">
+<div class="mb-3">
   <div class="d-flex justify-content-between align-items-center mb-1">
     <span class="small fw-semibold">Progreso de entregas</span>
     <span class="small text-muted"><%= completed %> de <%= total %></span>
   </div>
-  <div class="progress" style="height: 8px;">
+  <div class="progress" style="height: 10px;">
     <div 
       class="progress-bar bg-success" 
       role="progressbar" 
@@ -20,14 +22,14 @@
 <div class="d-flex gap-3 small">
   <div>
     <i class="bi bi-check-circle-fill text-success me-1"></i>
-    <span class="fw-semibold"><%= assignments.count(&:completed?) %></span> Completadas
+    <span class="fw-semibold" data-progress="completed"><%= completed %></span> Completadas
   </div>
   <div>
     <i class="bi bi-hourglass-split text-warning me-1"></i>
-    <span class="fw-semibold"><%= assignments.count(&:en_route?) %></span> En ruta
+    <span class="fw-semibold" data-progress="en_route"><%= en_route %></span> En ruta
   </div>
   <div>
     <i class="bi bi-circle text-secondary me-1"></i>
-    <span class="fw-semibold"><%= assignments.count(&:pending?) %></span> Pendientes
+    <span class="fw-semibold" data-progress="pending"><%= pending %></span> Pendientes
   </div>
 </div>

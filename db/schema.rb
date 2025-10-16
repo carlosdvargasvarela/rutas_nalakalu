@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_10_15_194919) do
+ActiveRecord::Schema[7.2].define(version: 2025_10_15_224007) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -136,6 +136,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_15_194919) do
     t.datetime "started_at"
     t.datetime "completed_at"
     t.text "driver_notes"
+    t.integer "lock_version", default: 0, null: false
     t.index ["delivery_id"], name: "index_delivery_plan_assignments_on_delivery_id"
     t.index ["delivery_plan_id"], name: "index_delivery_plan_assignments_on_delivery_plan_id"
     t.index ["status"], name: "index_delivery_plan_assignments_on_status"
@@ -155,6 +156,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_15_194919) do
     t.decimal "current_speed", precision: 5, scale: 2
     t.decimal "current_heading", precision: 5, scale: 2
     t.decimal "current_accuracy", precision: 6, scale: 2
+    t.integer "lock_version", default: 0, null: false
     t.index ["driver_id"], name: "index_delivery_plans_on_driver_id"
     t.index ["last_seen_at"], name: "index_delivery_plans_on_last_seen_at"
   end
