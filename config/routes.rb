@@ -124,13 +124,12 @@ Rails.application.routes.draw do
   # PLANES DE ENTREGA (DELIVERY PLANS)
   # =============================================================================
   # Planificación semanal de rutas de entrega
-  resources :delivery_plans, only: [ :index, :show, :new, :create, :edit, :update ] do
+  resources :delivery_plans, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
     member do
-      patch :add_delivery_to_plan # Agregar entrega al plan
-      patch :send_to_logistics    # Enviar plan a logística
-      patch :update_order         # Actualizar orden en el plan
+      patch :add_delivery_to_plan
+      patch :send_to_logistics
+      patch :update_order
     end
-    # Asignaciones de entregas a planes (para eliminar)
     resources :delivery_plan_assignments, only: [ :destroy ]
   end
 
@@ -200,18 +199,18 @@ Rails.application.routes.draw do
   namespace :driver do
     resources :delivery_plans, only: [ :index, :show ] do
       member do
-        patch :update_position
         patch :start
         patch :finish
         patch :abort
+        patch :update_position
+        patch :update_position_batch
       end
 
-      resources :assignments, only: [] do
+      resources :assignments, only: [ :show, :update ], controller: "assignments" do
         member do
           patch :start
           patch :complete
-          patch :mark_failed
-          patch :note
+          patch :mark_as_failed
         end
       end
     end

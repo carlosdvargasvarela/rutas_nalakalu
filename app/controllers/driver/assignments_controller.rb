@@ -130,7 +130,7 @@ module Driver
       assignments = @delivery_plan.delivery_plan_assignments
       {
         completed: assignments.count(&:completed?),
-        en_route: assignments.count(&:en_route?),
+        in_route: assignments.count(&:in_route?),
         pending: assignments.count(&:pending?),
         total: assignments.count
       }

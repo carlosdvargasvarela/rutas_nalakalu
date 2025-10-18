@@ -12,6 +12,16 @@ class DeliveryPlanPolicy < ApplicationPolicy
     show?
   end
 
+  # CORRECCIÓN: el método debe terminar en ?
+  def destroy?
+    # Permite a admin o logística/production manager borrar
+    return false unless admin_or_manager_or_logistic?
+
+    # Regla de negocio opcional: solo borrable si está en borrador o enviado a logística
+    # (Ajusta según tus necesidades; el modelo además tiene ensure_deletable)
+    record.status_draft? || record.status_sent_to_logistics? || record.status == nil
+  end
+
   # Solo roles especiales pueden administrar
   def create?
     admin_or_manager_or_logistic?

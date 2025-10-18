@@ -7,11 +7,11 @@ module Driver
     end
 
     def complete?
-      belongs_to_driver? && record.en_route?
+      belongs_to_driver? && record.in_route?
     end
 
     def mark_failed?
-      belongs_to_driver? && (record.pending? || record.en_route?)
+      belongs_to_driver? && (record.pending? || record.in_route?)
     end
 
     def note?

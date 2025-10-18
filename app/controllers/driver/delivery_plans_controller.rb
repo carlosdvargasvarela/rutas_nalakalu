@@ -1,99 +1,178 @@
-# frozen_string_literal: true
-
+# app/controllers/driver/delivery_plans_controller.rb
 module Driver
   class DeliveryPlansController < ApplicationController
-    layout "driver"
     before_action :authenticate_user!
-    before_action :set_delivery_plan, only: [ :show, :update_position, :start, :finish, :abort ]
+    # Incluye aquí SOLO acciones que existen abajo en este mismo controller
+    before_action :set_delivery_plan, only: [ :show, :start, :finish, :abort, :update_position, :update_position_batch ]
+
     after_action :verify_authorized
 
     def index
-      authorize [ :driver, DeliveryPlan ]
+      authorize DeliveryPlan, policy_class: Driver::DeliveryPlanPolicy
 
-      base_scope = policy_scope([ :driver, DeliveryPlan ])
-                    .where(driver_id: current_user.id)
-                    .includes(:deliveries, :driver)
+      base_scope = policy_scope(DeliveryPlan, policy_scope_class: Driver::DeliveryPlanPolicy::Scope)
+                    .includes(:driver)
+                    .order(created_at: :desc)
 
       @q = base_scope.ransack(params[:q])
+      @q.status_in = %w[routes_created in_progress] if params[:q].blank?
       @delivery_plans = @q.result
-                          .order(year: :desc, week: :desc)
-                          .page(params[:page])
 
       respond_to do |format|
         format.html
-        format.json do
-          render json: {
-            ok: true,
-            plans: @delivery_plans.map { |plan| plan_summary_json(plan) }
-          }
-        end
+        format.json { render json: @delivery_plans }
       end
     end
 
     def show
-      authorize [ :driver, @delivery_plan ]
+      authorize @delivery_plan, policy_class: Driver::DeliveryPlanPolicy
 
       @assignments = @delivery_plan.delivery_plan_assignments
-                                   .includes(delivery: [ :order, :delivery_address, :delivery_items ])
-                                   .order(:stop_order)
+                                   .includes(delivery: [ :delivery_items ])
+                                   .ordered
 
       respond_to do |format|
         format.html
         format.json do
           render json: {
-            ok: true,
-            data: plan_detail_json(@delivery_plan, @assignments)
+            id: @delivery_plan.id,
+            status: @delivery_plan.status,
+            progress: @delivery_plan.progress,
+            assignments: @assignments.map { |a|
+              {
+                id: a.id,
+                status: a.status,
+                stop_order: a.stop_order,
+                delivery: {
+                  id: a.delivery.id,
+                  address: a.delivery.customer.address
+                }
+              }
+            }
           }
         end
       end
     end
 
-    def update_position
-      authorize [ :driver, @delivery_plan ]
-
-      position_params = params.require(:position).permit(
-        :lat, :lng, :speed, :heading, :accuracy, :at
-      )
-
-      @delivery_plan.update!(
-        current_lat: position_params[:lat],
-        current_lng: position_params[:lng],
-        current_speed: position_params[:speed],
-        current_heading: position_params[:heading],
-        current_accuracy: position_params[:accuracy],
-        last_seen_at: position_params[:at] || Time.current
-      )
-
-      render json: {
-        ok: true,
-        last_seen_at: @delivery_plan.last_seen_at.iso8601
-      }
-    rescue ActiveRecord::RecordInvalid => e
-      render json: { ok: false, error: e.message }, status: :unprocessable_entity
-    end
-
     def start
-      authorize [ :driver, @delivery_plan ]
-      @delivery_plan.start!
-      render json: { ok: true, status: @delivery_plan.status, message: "Plan iniciado" }
-    rescue ActiveRecord::RecordInvalid => e
-      render json: { ok: false, error: e.message }, status: :unprocessable_entity
+      authorize @delivery_plan, policy_class: Driver::DeliveryPlanPolicy
+      if @delivery_plan.start!
+        respond_to do |format|
+          format.html { redirect_to driver_delivery_plan_path(@delivery_plan), notice: "Plan iniciado" }
+          format.json { render json: { ok: true, status: @delivery_plan.status }, status: :ok }
+        end
+      else
+        respond_to do |format|
+          format.html { redirect_to driver_delivery_plan_path(@delivery_plan), alert: "No se pudo iniciar el plan" }
+          format.json { render json: { ok: false, error: "No se pudo iniciar" }, status: :unprocessable_entity }
+        end
+      end
+    rescue ActiveRecord::StaleObjectError
+      respond_to do |format|
+        format.html { redirect_to driver_delivery_plan_path(@delivery_plan), alert: "El plan fue modificado, recarga la página" }
+        format.json { render json: { ok: false, error: "Plan was modified, please reload" }, status: :conflict }
+      end
     end
 
     def finish
-      authorize [ :driver, @delivery_plan ]
-      @delivery_plan.finish!
-      render json: { ok: true, status: @delivery_plan.status, message: "Plan finalizado" }
-    rescue ActiveRecord::RecordInvalid => e
-      render json: { ok: false, error: e.message }, status: :unprocessable_entity
+      authorize @delivery_plan, policy_class: Driver::DeliveryPlanPolicy
+      if @delivery_plan.finish!
+        respond_to do |format|
+          format.html { redirect_to driver_delivery_plans_path, notice: "Plan completado" }
+          format.json { render json: { ok: true, status: @delivery_plan.status }, status: :ok }
+        end
+      else
+        respond_to do |format|
+          format.html { redirect_to driver_delivery_plan_path(@delivery_plan), alert: "No se pudo completar el plan" }
+          format.json { render json: { ok: false, error: "No se pudo completar" }, status: :unprocessable_entity }
+        end
+      end
+    rescue ActiveRecord::StaleObjectError
+      respond_to do |format|
+        format.html { redirect_to driver_delivery_plan_path(@delivery_plan), alert: "El plan fue modificado, recarga la página" }
+        format.json { render json: { ok: false, error: "Plan was modified, please reload" }, status: :conflict }
+      end
     end
 
     def abort
-      authorize [ :driver, @delivery_plan ]
-      @delivery_plan.abort!
-      render json: { ok: true, status: @delivery_plan.status, message: "Plan abortado" }
+      authorize @delivery_plan, policy_class: Driver::DeliveryPlanPolicy
+      if @delivery_plan.abort!
+        respond_to do |format|
+          format.html { redirect_to driver_delivery_plans_path, notice: "Plan abortado" }
+          format.json { render json: { ok: true, status: @delivery_plan.status }, status: :ok }
+        end
+      else
+        respond_to do |format|
+          format.html { redirect_to driver_delivery_plan_path(@delivery_plan), alert: "No se pudo abortar el plan" }
+          format.json { render json: { ok: false, error: "No se pudo abortar" }, status: :unprocessable_entity }
+        end
+      end
+    rescue ActiveRecord::StaleObjectError
+      respond_to do |format|
+        format.html { redirect_to driver_delivery_plan_path(@delivery_plan), alert: "El plan fue modificado, recarga la página" }
+        format.json { render json: { ok: false, error: "Plan was modified, please reload" }, status: :conflict }
+      end
+    end
+
+    def update_position
+      authorize @delivery_plan, policy_class: Driver::DeliveryPlanPolicy
+
+      @delivery_plan.update!(
+        current_latitude: position_params[:latitude],
+        current_longitude: position_params[:longitude],
+        current_speed: position_params[:speed],
+        current_heading: position_params[:heading],
+        current_accuracy: position_params[:accuracy],
+        last_seen_at: position_params[:timestamp] || Time.current
+      )
+
+      render json: { ok: true }, status: :ok
     rescue ActiveRecord::RecordInvalid => e
       render json: { ok: false, error: e.message }, status: :unprocessable_entity
+    rescue ActiveRecord::StaleObjectError
+      render json: { ok: false, error: "Plan was modified, please reload" }, status: :conflict
+    end
+
+    def update_position_batch
+      authorize @delivery_plan, policy_class: Driver::DeliveryPlanPolicy
+
+      positions = position_batch_params[:positions] || []
+      if positions.empty?
+        render json: { ok: false, error: "No positions provided" }, status: :unprocessable_entity
+        return
+      end
+
+      valid_positions = positions.select do |pos|
+        pos[:lat].present? && pos[:lng].present? &&
+          pos[:lat].to_f.between?(-90, 90) &&
+          pos[:lng].to_f.between?(-180, 180)
+      end
+      if valid_positions.empty?
+        render json: { ok: false, error: "No valid positions" }, status: :unprocessable_entity
+        return
+      end
+
+      last_position = valid_positions.max_by { |p| p[:at]&.to_time || Time.current }
+      @delivery_plan.update!(
+        current_latitude: last_position[:lat],
+        current_longitude: last_position[:lng],
+        current_speed: last_position[:speed],
+        current_heading: last_position[:heading],
+        current_accuracy: last_position[:accuracy],
+        last_seen_at: last_position[:at]&.to_time || Time.current
+      )
+
+      DeliveryPlanLocation.create_from_batch(@delivery_plan, valid_positions)
+
+      render json: {
+        ok: true,
+        accepted: valid_positions.size,
+        rejected: positions.size - valid_positions.size
+      }, status: :ok
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { ok: false, error: e.message }, status: :unprocessable_entity
+    rescue ActiveRecord::StaleObjectError
+      render json: { ok: false, error: "Plan was modified, please reload" }, status: :conflict
     end
 
     private
@@ -102,88 +181,12 @@ module Driver
       @delivery_plan = DeliveryPlan.find(params[:id])
     end
 
-    def plan_summary_json(plan)
-      {
-        id: plan.id,
-        week: plan.week,
-        year: plan.year,
-        truck: plan.truck,
-        driver: plan.driver&.name,
-        status: plan.status,
-        last_seen_at: plan.last_seen_at&.iso8601,
-        deliveries_count: plan.deliveries.count
-      }
+    def position_params
+      params.permit(:latitude, :longitude, :speed, :heading, :accuracy, :timestamp)
     end
 
-    def plan_detail_json(plan, assignments)
-      {
-        plan: {
-          id: plan.id,
-          week: plan.week,
-          year: plan.year,
-          truck: plan.truck,
-          driver_id: plan.driver_id,
-          driver_name: plan.driver&.name,
-          status: plan.status,
-          last_seen_at: plan.last_seen_at&.iso8601,
-          current_lat: plan.current_lat,
-          current_lng: plan.current_lng,
-          current_speed: plan.current_speed,
-          current_heading: plan.current_heading,
-          current_accuracy: plan.current_accuracy,
-          lock_version: plan.lock_version
-        },
-        assignments: assignments.map { |a| assignment_json(a) },
-        progress: {
-          completed: assignments.count(&:completed?),
-          en_route: assignments.count(&:en_route?),
-          pending: assignments.count(&:pending?),
-          total: assignments.count
-        }
-      }
-    end
-
-    def assignment_json(assignment)
-      delivery = assignment.delivery
-      address = delivery.delivery_address
-
-      {
-        id: assignment.id,
-        delivery_id: delivery.id,
-        stop_order: assignment.stop_order,
-        status: assignment.status,
-        started_at: assignment.started_at&.iso8601,
-        completed_at: assignment.completed_at&.iso8601,
-        driver_notes: assignment.driver_notes,
-        lock_version: assignment.lock_version,
-        delivery: {
-          id: delivery.id,
-          status: delivery.status,
-          delivery_date: delivery.delivery_date&.iso8601,
-          contact_name: delivery.contact_name,
-          contact_phone: delivery.contact_phone,
-          delivery_notes: delivery.delivery_notes,
-          delivery_time_preference: delivery.delivery_time_preference,
-          order_number: delivery.order&.number,
-          client_name: delivery.order&.client&.name,
-          address: address ? {
-            text: address.address,
-            description: address.description,
-            lat: address.latitude,
-            lng: address.longitude,
-            plus_code: address.plus_code
-          } : nil,
-          items: delivery.delivery_items.map { |item|
-            {
-              id: item.id,
-              product: item.order_item&.product,
-              quantity: item.quantity,
-              notes: item.notes,
-              order_item_notes: item.order_item&.notes
-            }
-          }
-        }
-      }
+    def position_batch_params
+      params.permit(positions: [ :lat, :lng, :speed, :heading, :accuracy, :at ])
     end
   end
 end

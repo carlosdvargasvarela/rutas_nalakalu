@@ -8,11 +8,47 @@ export default class extends Controller {
         // Escuchar el evento de actualización de asignaciones
         this._onAssignmentUpdatedBound = this._onAssignmentUpdated.bind(this)
         document.addEventListener("driver:assignment:updated", this._onAssignmentUpdatedBound)
+
+        // Escuchar mensajes del SW
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.addEventListener('message', this.handleSWMessage.bind(this))
+        }
     }
 
     disconnect() {
         if (this._onAssignmentUpdatedBound) {
             document.removeEventListener("driver:assignment:updated", this._onAssignmentUpdatedBound)
+        }
+    }
+
+    handleSWMessage(event) {
+        const { type } = event.data
+
+        if (type === 'ACTION_SYNCED' || type === 'POSITIONS_FLUSHED') {
+            console.log('[Plan] Data synced, refreshing progress...')
+            // Opcional: refrescar progreso sin recargar
+            this.updateProgress()
+        } else if (type === 'ACTION_CONFLICT') {
+            console.warn('[Plan] Conflict detected')
+            alert('Hubo un conflicto. Por favor recarga la página.')
+        }
+    }
+
+    updateProgress() {
+        // Opcional: fetch del plan.json y actualizar barra de progreso
+        const planId = this.element.dataset.planId
+        if (planId) {
+            fetch(`/driver/delivery_plans/${planId}.json`)
+                .then(r => r.json())
+                .then(data => {
+                    // Actualizar progreso en la UI
+                    const progressBar = this.element.querySelector('[data-progress-bar]')
+                    if (progressBar && data.progress !== undefined) {
+                        progressBar.style.width = `${data.progress}%`
+                        progressBar.textContent = `${data.progress}%`
+                    }
+                })
+                .catch(err => console.error('[Plan] Failed to refresh progress:', err))
         }
     }
 
@@ -66,14 +102,14 @@ export default class extends Controller {
     }
 
     _updateProgressBar(progress) {
-        const { completed, en_route, pending, total } = progress
+        const { completed, in_route, pending, total } = progress
 
         // Actualizar los contadores si existen los targets
         if (this.hasCompletedCountTarget) {
             this.completedCountTarget.textContent = completed
         }
         if (this.hasEnRouteCountTarget) {
-            this.enRouteCountTarget.textContent = en_route
+            this.enRouteCountTarget.textContent = in_route
         }
         if (this.hasPendingCountTarget) {
             this.pendingCountTarget.textContent = pending

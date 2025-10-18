@@ -69,7 +69,7 @@
         <button type="button" class="btn btn-warning" data-action="click->driver-assignment#markFailed">
           <i class="bi bi-exclamation-triangle me-1"></i>Marcar como fallida
         </button>
-      <% elsif assignment.en_route? %>
+      <% elsif assignment.in_route? %>
         <button type="button" class="btn btn-primary" data-action="click->driver-assignment#complete">
           <i class="bi bi-check-circle me-1"></i>Completar entrega
         </button>

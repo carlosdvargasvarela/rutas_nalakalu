@@ -15,6 +15,26 @@ export default class extends Controller {
         if (!this.hasAssignmentIdValue) {
             console.error("driver-assignment: falta assignmentIdValue en data-driver-assignment-assignment-id-value")
         }
+
+        // Escuchar mensajes del SW
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.addEventListener('message', this.handleSWMessage.bind(this))
+        }
+    }
+
+    handleSWMessage(event) {
+        const { type, actionId, url, status } = event.data
+
+        if (type === 'ACTION_SYNCED') {
+            console.log('[Assignment] Action synced:', url)
+            // Opcional: refrescar la card específica sin recargar toda la página
+            this.refreshAssignment()
+        } else if (type === 'ACTION_CONFLICT') {
+            console.warn('[Assignment] Action conflict:', url, status)
+            alert('Hubo un conflicto al sincronizar. Por favor recarga la página.')
+            // Opcional: forzar recarga
+            window.location.reload()
+        }
     }
 
     async start(event) {
@@ -148,7 +168,7 @@ export default class extends Controller {
               ${noteBtn}
             `
         }
-        if (status === "en_route") {
+        if (status === "in_route") {
             return `
               <button type="button" class="btn btn-primary" data-action="click->driver-assignment#complete">
                 <i class="bi bi-check-circle me-1"></i>Completar entrega
@@ -199,7 +219,7 @@ export default class extends Controller {
     _translateStatus(status) {
         const translations = {
             pending: "Pendiente",
-            en_route: "En ruta",
+            in_route: "En ruta",
             completed: "Completado",
             cancelled: "Cancelado"
         }
@@ -209,7 +229,7 @@ export default class extends Controller {
     _statusColor(status) {
         const colors = {
             pending: "secondary",
-            en_route: "info",
+            in_route: "info",
             completed: "success",
             cancelled: "danger"
         }

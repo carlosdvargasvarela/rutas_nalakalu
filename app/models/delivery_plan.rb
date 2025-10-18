@@ -3,22 +3,51 @@ class DeliveryPlan < ApplicationRecord
   has_paper_trail
   has_many :delivery_plan_assignments, -> { order(:stop_order) }, dependent: :destroy
   has_many :deliveries, through: :delivery_plan_assignments
+  has_many :delivery_plan_locations, dependent: :destroy
   belongs_to :driver, class_name: "User", optional: true
+  before_destroy :ensure_deletable
 
   after_update :notify_driver_assignment, if: :saved_change_to_driver_id?
   after_update :update_status_on_driver_change, if: :saved_change_to_driver_id?
   before_destroy :flush_assignments
 
+  # 1) Enums con sintaxis posicional y prefix para evitar colisiones
   enum :status, {
-    draft: "draft",
-    sent_to_logistics: "sent_to_logistics",
-    routes_created: "routes_created",
-    in_progress: "in_progress",
-    completed: "completed",
-    aborted: "aborted"
+    draft: 0,
+    sent_to_logistics: 1,
+    routes_created: 2,
+    in_progress: 3,
+    completed: 4,
+    aborted: 5
   }, default: :draft, prefix: true
 
-  enum truck: { PRI: 0, PRU: 1, GRU: 2, GRI: 3, GRIR: 4, PickUp_Ricardo: 5, PickUp_Ruben: 6, Recoje_Sala: 7 }
+  enum :truck, {
+    PRI: 0,
+    PRU: 1,
+    GRU: 2,
+    GRI: 3,
+    GRIR: 4,
+    PickUp_Ricardo: 5,
+    PickUp_Ruben: 6,
+    Recoje_Sala: 7
+  }
+
+  # 2) Aliases de compatibilidad SIN prefijo (para no tocar vistas existentes)
+  #    Esto habilita draft?, sent_to_logistics?, routes_created?, etc.
+  def draft?            = status_draft?
+  def sent_to_logistics? = status_sent_to_logistics?
+  def routes_created?   = status_routes_created?
+  def in_progress?      = status_in_progress?
+  def completed?        = status_completed?
+  def aborted?          = status_aborted?
+
+  # 3) Aliases para setters de estado si en algún lugar se usan sin prefijo
+  def draft!            = status_draft!
+  def sent_to_logistics! = status_sent_to_logistics!
+  def routes_created!   = status_routes_created!
+  def in_progress!      = status_in_progress!
+  def completed!        = status_completed!
+  def aborted!          = status_aborted!
 
   validates :year, presence: true, numericality: { only_integer: true, greater_than: 2000 }
   validates :week, presence: true, numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: 54 }
@@ -109,17 +138,22 @@ class DeliveryPlan < ApplicationRecord
     update!(status: :sent_to_logistics)
   end
 
-  def mark_as_failed!(reason: nil)
-    return if completed?
+  def ensure_deletable
+    # Evitamos borrar planes que ya están en progreso, completados o abortados
+    if status_in_progress? || status_completed? || status_aborted?
+      errors.add(:base, "No se puede eliminar un plan en progreso, completado o abortado.")
+      throw(:abort)
+    end
+  end
 
+  # NUEVO: Fallar todas las asignaciones pendientes o en ruta del plan
+  def fail_all_pending_assignments!(reason:, failed_by:)
     transaction do
-      # Usar el servicio para marcar como fracasada y clonar
-      new_delivery = DeliveryFailureService.new(delivery, reason: reason).call
-
-      # Marcar el assignment como cancelled (ya que no se completó)
-      update!(status: :cancelled, completed_at: Time.current)
-
-      new_delivery
+      delivery_plan_assignments.where(status: [ :pending, :in_route ]).find_each do |assignment|
+        assignment.mark_as_failed!(reason: reason, failed_by: failed_by)
+      end
+      # Opcional: marcar el plan como abortado
+      abort! unless status_completed?
     end
   end
 
@@ -174,6 +208,15 @@ class DeliveryPlan < ApplicationRecord
     delivery_plan_assignments.includes(:delivery)
   end
 
+  # Progreso del plan (porcentaje de assignments completados)
+  def progress
+    total = delivery_plan_assignments.count
+    return 0 if total.zero?
+
+    completed = delivery_plan_assignments.where(status: :completed).count
+    ((completed.to_f / total) * 100).round
+  end
+
   private
 
   def notify_driver_assignment
@@ -183,7 +226,7 @@ class DeliveryPlan < ApplicationRecord
   def update_status_on_driver_change
     if driver_id.present?
       if all_deliveries_confirmed?
-        update_column(:status, DeliveryPlan.statuses[:sent_to_logistics]) if draft?
+        update_column(:status, DeliveryPlan.statuses[:sent_to_logistics]) if status_draft?
       else
         errors.add(:base, "No puedes asignar a logística mientras existan entregas sin confirmar")
       end
@@ -191,7 +234,7 @@ class DeliveryPlan < ApplicationRecord
       # si hay alguna entrega scheduled, siempre obligamos a draft
       self.status = :draft unless all_deliveries_confirmed?
     else
-      update_column(:status, DeliveryPlan.statuses[:draft]) if sent_to_logistics?
+      update_column(:status, DeliveryPlan.statuses[:draft]) if status_sent_to_logistics?
     end
   end
 

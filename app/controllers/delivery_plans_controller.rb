@@ -238,10 +238,23 @@ class DeliveryPlansController < ApplicationController
     end
   end
 
+  def destroy
+    @delivery_plan = DeliveryPlan.find(params[:id])
+    authorize @delivery_plan
+
+    if @delivery_plan.destroy
+      redirect_to delivery_plans_path, notice: "Plan de ruta eliminado correctamente."
+    else
+      # Si el before_destroy bloquea la eliminación, mostramos el error y redirigimos
+      alert_message = @delivery_plan.errors.full_messages.presence || ["No se pudo eliminar el plan de ruta."]
+      redirect_back fallback_location: delivery_plans_path, alert: alert_message.join(". ")
+    end
+  end
+
   def send_to_logistics
     @delivery_plan = DeliveryPlan.find(params[:id])
     authorize @delivery_plan
-    if @delivery_plan.driver.present? && @delivery_plan.all_deliveries_confirmed?
+    if @delivery_plan.driver.present?
       @delivery_plan.update!(status: :sent_to_logistics)
       redirect_to @delivery_plan, notice: "Plan enviado a logística."
     else

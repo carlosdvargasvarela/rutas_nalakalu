@@ -8,7 +8,6 @@
         <%= delivery_plan.display_status %>
       </span>
     </p>
-
     <% if delivery_plan.draft? %>
       <% if delivery_plan.driver.present? && delivery_plan.truck.present? %>
         <%= button_to "🚚 Enviar a logística", send_to_logistics_delivery_plan_path(delivery_plan),

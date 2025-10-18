@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_10_15_224007) do
+ActiveRecord::Schema[7.2].define(version: 2025_10_16_190004) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -142,6 +142,21 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_15_224007) do
     t.index ["status"], name: "index_delivery_plan_assignments_on_status"
   end
 
+  create_table "delivery_plan_locations", force: :cascade do |t|
+    t.integer "delivery_plan_id", null: false
+    t.decimal "latitude", precision: 10, scale: 7, null: false
+    t.decimal "longitude", precision: 10, scale: 7, null: false
+    t.float "speed"
+    t.float "heading"
+    t.float "accuracy"
+    t.datetime "captured_at", null: false
+    t.string "source", default: "live", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["delivery_plan_id", "captured_at"], name: "index_locations_on_plan_and_captured_at"
+    t.index ["delivery_plan_id"], name: "index_delivery_plan_locations_on_delivery_plan_id"
+  end
+
   create_table "delivery_plans", force: :cascade do |t|
     t.string "week"
     t.integer "year"
@@ -268,6 +283,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_15_224007) do
   add_foreign_key "delivery_items", "order_items"
   add_foreign_key "delivery_plan_assignments", "deliveries", on_delete: :restrict
   add_foreign_key "delivery_plan_assignments", "delivery_plans", on_delete: :cascade
+  add_foreign_key "delivery_plan_locations", "delivery_plans"
   add_foreign_key "delivery_plans", "users", column: "driver_id"
   add_foreign_key "notifications", "users"
   add_foreign_key "order_item_notes", "order_items"

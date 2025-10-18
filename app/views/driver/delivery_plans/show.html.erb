@@ -1,8 +1,18 @@
-<div class="container-fluid py-3" 
+<!-- app/views/driver/delivery_plans/show.html.erb -->
+<div class="container-fluid py-3"
      data-controller="offline-queue driver-tracker driver-plan"
      data-driver-plan-id-value="<%= @delivery_plan.id %>"
      data-driver-plan-status-value="<%= @delivery_plan.status %>"
-     data-driver-tracker-delivery-plan-id-value="<%= @delivery_plan.id %>">
+     data-driver-plan-start-url-value="<%= start_driver_delivery_plan_path(@delivery_plan) %>"
+     data-driver-plan-finish-url-value="<%= finish_driver_delivery_plan_path(@delivery_plan) %>"
+     data-driver-plan-abort-url-value="<%= abort_driver_delivery_plan_path(@delivery_plan) %>"
+     data-driver-tracker-plan-id-value="<%= @delivery_plan.id %>"
+     data-driver-tracker-update-url-value="<%= update_position_driver_delivery_plan_path(@delivery_plan) %>">
+  <!-- Indicador de sincronización (lo muestra/oculta el SW + Stimulus) -->
+  <div class="alert alert-info d-none mb-3" role="alert" data-sync-indicator>
+    <i class="bi bi-cloud-upload me-2"></i>
+    Sin conexión o con señal débil. Tus acciones se sincronizarán automáticamente.
+  </div>
   <%= render "driver/delivery_plans/alerts", delivery_plan: @delivery_plan %>
   <%= render "driver/delivery_plans/header", delivery_plan: @delivery_plan %>
   <div class="row g-3 mb-3">
@@ -18,22 +28,37 @@
     <div class="card-body">
       <div class="d-grid gap-2">
         <% if @delivery_plan.status_routes_created? %>
-          <button type="button" 
+          <button type="button"
                   class="btn btn-success btn-lg"
-                  data-action="click->driver-plan#startPlan">
+                  data-action="click->driver-plan#startPlan click->driver-tracker#startTracking">
             <i class="bi bi-play-circle-fill me-2"></i>Iniciar ruta
           </button>
         <% elsif @delivery_plan.status_in_progress? %>
-          <button type="button" 
-                  class="btn btn-primary btn-lg"
-                  data-action="click->driver-plan#finishPlan">
-            <i class="bi bi-check-circle-fill me-2"></i>Finalizar ruta
-          </button>
-          <button type="button" 
-                  class="btn btn-outline-danger"
-                  data-action="click->driver-plan#abortPlan">
-            <i class="bi bi-x-circle me-2"></i>Abortar ruta
-          </button>
+          <div class="d-grid gap-2">
+            <!-- Botones para controlar el tracking manualmente si el chofer lo desea -->
+            <div class="btn-group" role="group" aria-label="GPS Tracking">
+              <button type="button"
+                      class="btn btn-outline-success"
+                      data-action="click->driver-tracker#startTracking">
+                <i class="bi bi-geo-alt me-1"></i>Iniciar seguimiento
+              </button>
+              <button type="button"
+                      class="btn btn-outline-secondary"
+                      data-action="click->driver-tracker#stopTracking">
+                <i class="bi bi-stop-circle me-1"></i>Detener seguimiento
+              </button>
+            </div>
+            <button type="button"
+                    class="btn btn-primary btn-lg"
+                    data-action="click->driver-plan#finishPlan click->driver-tracker#stopTracking">
+              <i class="bi bi-check-circle-fill me-2"></i>Finalizar ruta
+            </button>
+            <button type="button"
+                    class="btn btn-outline-danger"
+                    data-action="click->driver-plan#abortPlan click->driver-tracker#stopTracking">
+              <i class="bi bi-x-circle me-2"></i>Abortar ruta
+            </button>
+          </div>
         <% elsif @delivery_plan.status_completed? %>
           <div class="alert alert-success mb-0">
             <i class="bi bi-check-circle-fill me-2"></i>
@@ -58,8 +83,8 @@
       <div class="row g-3">
         <% @assignments.each do |assignment| %>
           <div class="col-12">
-            <%= render "driver/delivery_plans/assignment_card", 
-                       assignment: assignment, 
+            <%= render "driver/delivery_plans/assignment_card",
+                       assignment: assignment,
                        delivery_plan: @delivery_plan %>
           </div>
         <% end %>

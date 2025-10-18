@@ -1,3 +1,4 @@
+# app/models/delivery_plan_assignment.rb
 # frozen_string_literal: true
 
 class DeliveryPlanAssignment < ApplicationRecord
@@ -18,10 +19,10 @@ class DeliveryPlanAssignment < ApplicationRecord
   # Ordenamiento
   acts_as_list scope: :delivery_plan, column: :stop_order
 
-  # Enums
+  # Enums - CORREGIDO: cambiar 'n_route' por 'in_route'
   enum status: {
     pending: 0,
-    en_route: 1,
+    in_route: 1,      # <- CAMBIO AQUÍ
     completed: 2,
     cancelled: 3
   }, _default: :pending
@@ -34,12 +35,12 @@ class DeliveryPlanAssignment < ApplicationRecord
   # ============================================================================
 
   # Inicia la parada: marca el assignment y la entrega como "en ruta"
-  # IDEMPOTENTE: retorna true si ya está en_route o completed
+  # IDEMPOTENTE: retorna true si ya está in_route o completed
   def start!
-    return true if en_route? || completed?
+    return true if in_route? || completed?
 
     transaction do
-      update!(status: :en_route, started_at: Time.current)
+      update!(status: :in_route, started_at: Time.current)
 
       # Cambiar delivery a in_route si está en plan o listo
       if delivery.in_plan? || delivery.ready_to_deliver?
@@ -72,12 +73,12 @@ class DeliveryPlanAssignment < ApplicationRecord
 
   # Marca la parada como fallida y ejecuta el servicio de fallo
   # IDEMPOTENTE: retorna true si ya está cancelled o completed
-  def mark_as_failed!(reason: nil)
+  def mark_as_failed!(reason: nil, failed_by: nil)
     return true if completed? || cancelled?
 
     transaction do
       # El servicio maneja el cambio de estados de delivery e items
-      DeliveryFailureService.new(delivery, reason: reason).call
+      DeliveryFailureService.new(delivery, reason: reason, failed_by: failed_by).call
 
       # Marcamos el assignment como cancelado porque la parada fracasó
       update!(status: :cancelled, completed_at: Time.current)
@@ -109,7 +110,7 @@ class DeliveryPlanAssignment < ApplicationRecord
   def display_status
     case status
     when "pending"   then "Pendiente"
-    when "en_route"  then "En ruta"
+    when "in_route"  then "En ruta"
     when "completed" then "Completado"
     when "cancelled" then "Cancelado"
     else status.to_s.humanize
