@@ -6,10 +6,11 @@
         <th>Fecha</th>
         <th>Cliente</th>
         <th>Dirección</th>
+        <th>Hora</th>
         <th>Contacto</th>
         <th>Vendedor</th>
-        <th style="width:20%;">Productos</th>
         <th>Estado</th>
+        <th>Plan</th>
         <th>Servicio</th>
         <th class="text-center">Acciones</th>
       </tr>
@@ -21,25 +22,74 @@
             <i class="bi bi-hash"></i>
             <%= link_to delivery.order.number, order_path(delivery.order),
                   class: "text-decoration-none" %>
-          </td>
-          <td><i class="bi bi-calendar-event me-1"></i> <%= l delivery.delivery_date, format: :short %></td>
-          <td><i class="bi bi-person me-1"></i> <%= delivery.order.client.name %></td>
-          <td><i class="bi bi-geo-alt me-1"></i> <%= delivery.delivery_address.address %></td>
-          <td><i class="bi bi-person-lines-fill me-1"></i> <%= delivery.contact_name %></td>
-          <td><%= delivery.order.seller.name %>
-            <small class="text-muted">(<%= delivery.order.seller.seller_code %>)</small>
+            <% if delivery.delivery_notes.present? %>
+              <span class="badge bg-info text-dark ms-1" 
+                    data-bs-toggle="tooltip" 
+                    data-bs-placement="top" 
+                    title="<%= delivery.delivery_notes %>">
+                <i class="bi bi-sticky"></i>
+              </span>
+            <% end %>
+            <% if delivery.delivery_items.any? { |di| di.notes.present? || di.order_item.notes.present? } %>
+              <span class="badge bg-warning text-dark ms-1">
+                <i class="bi bi-sticky"></i> Nota
+              </span>
+            <% end %>
           </td>
           <td>
-            <ul class="list-unstyled mb-0 small">
-              <% delivery.delivery_items.each do |item| %>
-                <li><span class="badge bg-secondary"><%= item.quantity %></span> <%= item.order_item.product %></li>
-              <% end %>
-            </ul>
+            <i class="bi bi-calendar-event me-1"></i>
+            <%= l delivery.delivery_date, format: :short %>
+          </td>
+          <td>
+            <i class="bi bi-person me-1"></i>
+            <%= delivery.order.client.name %>
+          </td>
+          <td>
+            <i class="bi bi-geo-alt me-1"></i>
+            <% if delivery.delivery_address.latitude.present? && delivery.delivery_address.longitude.present? %>
+              <%= link_to [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),
+                    "https://waze.com/ul?ll=#{delivery.delivery_address.latitude},#{delivery.delivery_address.longitude}&navigate=yes",
+                    target: "_blank", rel: "noopener", class: "text-decoration-none" %>
+            <% else %>
+              <%= link_to [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),
+                    "https://waze.com/ul?q=#{ERB::Util.url_encode(delivery.delivery_address.address)}&navigate=yes",
+                    target: "_blank", rel: "noopener", class: "text-decoration-none" %>
+            <% end %>
+          </td>
+          <td>
+            <i class="bi bi-clock me-1"></i>
+            <span class="<%= delivery.delivery_time_preference.present? ? 'fw-bold' : 'text-muted' %>">
+              <%= delivery.delivery_time_preference.presence || "Sin preferencia" %>
+            </span>
+          </td>
+          <td>
+            <i class="bi bi-person-lines-fill me-1"></i>
+            <%= delivery.contact_name %>
+            <% if delivery.contact_phone.present? %>
+              <br>
+              <i class="bi bi-telephone me-1"></i>
+              <%= link_to delivery.contact_phone, "tel:#{delivery.contact_phone}", class: "text-decoration-none small" %>
+            <% end %>
+          </td>
+          <td>
+            <%= delivery.order.seller.name %>
+            <small class="text-muted d-block">(<%= delivery.order.seller.seller_code %>)</small>
           </td>
           <td>
             <span class="badge bg-<%= delivery_status_color(delivery.status) %>">
               <%= delivery.display_status %>
             </span>
+          </td>
+          <td>
+            <% if delivery.delivery_plan.present? %>
+              <%= link_to delivery_plan_path(delivery.delivery_plan), 
+                    class: "badge bg-info text-decoration-none", 
+                    title: "Ver plan de entrega" do %>
+                <i class="bi bi-truck"></i> Plan
+              <% end %>
+            <% else %>
+              <span class="badge bg-light text-muted">Sin plan</span>
+            <% end %>
           </td>
           <td>
             <% if delivery.has_service_cases? %>
@@ -49,13 +99,60 @@
             <% end %>
           </td>
           <td class="text-center">
-            <% if policy(delivery).show? %>
-              <%= link_to delivery_path(delivery), class: "btn btn-sm btn-outline-primary", title: "Ver detalles" do %>
-                <i class="bi bi-eye"></i>
+            <div class="d-flex gap-1 justify-content-center">
+              <% if policy(delivery).show? %>
+                <%= link_to delivery_path(delivery), class: "btn btn-sm btn-outline-primary", title: "Ver detalles" do %>
+                  <i class="bi bi-eye"></i>
+                <% end %>
               <% end %>
-            <% end %>
+              <% if delivery.delivery_items.any? %>
+                <button class="btn btn-sm btn-outline-info"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#productosEntrega<%= delivery.id %>"
+                        title="Ver productos">
+                  <i class="bi bi-box-seam"></i>
+                </button>
+              <% end %>
+            </div>
           </td>
         </tr>
+        <!-- Fila colapsable con productos -->
+        <% if delivery.delivery_items.any? %>
+          <tr class="collapse" id="productosEntrega<%= delivery.id %>">
+            <td colspan="11" class="bg-light">
+              <div class="p-2">
+                <strong class="d-block mb-2">
+                  <i class="bi bi-box-seam me-1"></i> Productos de la entrega:
+                </strong>
+                <ul class="mb-0 ps-3 small">
+                  <% delivery.delivery_items.each do |item| %>
+                    <li class="mb-2">
+                      <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                          <strong><%= item.order_item.product %></strong>
+                          <span class="badge bg-secondary ms-1"><%= item.quantity %></span>
+                          <span class="badge bg-<%= delivery_status_color(item.status) %> ms-1">
+                            <%= item.display_status %>
+                          </span>
+                        </div>
+                      </div>
+                      <% if item.notes.present? %>
+                        <div class="mt-1 text-primary">
+                          <i class="bi bi-pin-angle-fill"></i> <em><%= item.notes %></em>
+                        </div>
+                      <% end %>
+                      <% if item.order_item.notes.present? %>
+                        <div class="mt-1 text-muted">
+                          <i class="bi bi-info-circle"></i> <%= item.order_item.notes %>
+                        </div>
+                      <% end %>
+                    </li>
+                  <% end %>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        <% end %>
       <% end %>
     </tbody>
   </table>

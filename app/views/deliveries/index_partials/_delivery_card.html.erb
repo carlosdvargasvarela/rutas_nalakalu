@@ -18,20 +18,53 @@
         <% if delivery.has_service_cases? %>
           <span class="badge bg-warning text-dark ms-1">Caso servicio</span>
         <% end %>
+        <% if delivery.delivery_plan.present? %>
+          <span class="badge bg-info text-dark ms-1">
+            <i class="bi bi-truck"></i> En plan
+          </span>
+        <% end %>
       </div>
       <!-- Cliente + direccion -->
       <p class="mb-1 small">
         <i class="bi bi-person"></i> <%= delivery.order.client.name %><br>
         <i class="bi bi-geo-alt"></i>
-        <%= link_to delivery.delivery_address.address,
-              "https://maps.google.com/?q=#{delivery.delivery_address.latitude},#{delivery.delivery_address.longitude}",
-              target: "_blank", class: "text-decoration-none text-muted small" %>
+        <% if delivery.delivery_address.latitude.present? && delivery.delivery_address.longitude.present? %>
+          <%= link_to [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),
+                "https://waze.com/ul?ll=#{delivery.delivery_address.latitude},#{delivery.delivery_address.longitude}&navigate=yes",
+                target: "_blank", rel: "noopener", class: "text-decoration-none text-muted small" %>
+        <% else %>
+          <%= link_to [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),
+                "https://waze.com/ul?q=#{ERB::Util.url_encode(delivery.delivery_address.address)}&navigate=yes",
+                target: "_blank", rel: "noopener", class: "text-decoration-none text-muted small" %>
+        <% end %>
+      </p>
+      <!-- Preferencia de horario -->
+      <p class="mb-1 small">
+        <i class="bi bi-clock"></i>
+        <span class="text-muted">
+          <%= delivery.delivery_time_preference.presence || "Sin preferencia de horario" %>
+        </span>
+      </p>
+      <!-- Contacto -->
+      <p class="mb-2 small">
+        <i class="bi bi-telephone"></i>
+        <%= delivery.contact_name %>
+        <% if delivery.contact_phone.present? %>
+          - <%= link_to delivery.contact_phone, "tel:#{delivery.contact_phone}", class: "text-decoration-none" %>
+        <% end %>
       </p>
       <!-- Vendedor -->
       <span class="small text-muted mb-2 d-block">
         <i class="bi bi-person-badge"></i> <%= delivery.order.seller.name %>
         (<%= delivery.order.seller.seller_code %>)
       </span>
+      <!-- Notas de Entrega -->
+      <% if delivery.delivery_notes.present? %>
+        <div class="alert alert-info py-2 px-2 mb-2 small">
+          <strong><i class="bi bi-sticky"></i> Notas:</strong>
+          <div class="mt-1"><%= delivery.delivery_notes %></div>
+        </div>
+      <% end %>
       <!-- Productos del pedido con acordeón -->
       <div class="accordion accordion-flush mb-3" id="accordion-<%= delivery.id %>">
         <div class="accordion-item">
@@ -49,14 +82,28 @@
             <div class="accordion-body small">
               <ul class="list-unstyled mb-0">
                 <% delivery.delivery_items.each do |item| %>
-                  <li class="d-flex justify-content-between align-items-center border-bottom py-1">
-                    <span>
-                      <span class="badge bg-secondary"><%= item.quantity %></span>
-                      <%= item.order_item.product %>
-                    </span>
-                    <span class="badge bg-<%= delivery_status_color(item.status) %>">
-                      <%= item.display_status %>
-                    </span>
+                  <li class="border-bottom py-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <span>
+                        <span class="badge bg-secondary"><%= item.quantity %></span>
+                        <strong><%= item.order_item.product %></strong>
+                      </span>
+                      <span class="badge bg-<%= delivery_status_color(item.status) %>">
+                        <%= item.display_status %>
+                      </span>
+                    </div>
+                    <!-- Notas del item de entrega -->
+                    <% if item.notes.present? %>
+                      <div class="mt-1 text-primary">
+                        <i class="bi bi-pin-angle-fill"></i> <em><%= item.notes %></em>
+                      </div>
+                    <% end %>
+                    <!-- Notas del item del pedido -->
+                    <% if item.order_item.notes.present? %>
+                      <div class="mt-1 text-muted">
+                        <i class="bi bi-info-circle"></i> <%= item.order_item.notes %>
+                      </div>
+                    <% end %>
                   </li>
                 <% end %>
               </ul>
