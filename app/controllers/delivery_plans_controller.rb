@@ -99,7 +99,7 @@ class DeliveryPlansController < ApplicationController
     @assignments = @delivery_plan.delivery_plan_assignments.includes(
       delivery: [
         :delivery_items,
-        order: [ :client, :seller ],
+        order: [:client, :seller],
         delivery_address: :client
       ]
     ).order(:stop_order)
@@ -107,52 +107,41 @@ class DeliveryPlansController < ApplicationController
     # Calcular rango de fechas desde las entregas
     delivery_dates = @deliveries.pluck(:delivery_date)
     @from_date = delivery_dates.min
-    @to_date = delivery_dates.max
+    @to_date   = delivery_dates.max
 
     respond_to do |format|
       format.html
-      format.xlsx {
-        response.headers["Content-Disposition"] = "attachment; filename=Hoja_Ruta_#{@from_date&.strftime('%d_%m_%Y')}_#{@delivery_plan.truck.presence || 'Sin_Camion'}.xlsx"
-      }
+      format.xlsx do
+        response.headers["Content-Disposition"] =
+          "attachment; filename=Hoja_Ruta_#{@from_date&.strftime('%d_%m_%Y')}_#{@delivery_plan.truck.presence || 'Sin_Camion'}.xlsx"
+      end
       format.pdf do
         pdf_title = "Hoja_Ruta_#{@from_date&.strftime('%d_%m_%Y')}_#{@delivery_plan.truck.presence || 'Sin_Camion'}"
-
-        pdf = Prawn::Document.new(page_size: "A2", page_layout: :landscape) # Hoja A3 landscape
-
+        pdf = Prawn::Document.new(page_size: "A2", page_layout: :landscape)
         pdf.text pdf_title, size: 16, style: :bold, align: :center
         pdf.move_down 20
-
         headers = [
-          "# Parada", "Pedido",
-          "Producto", "Cantidad", "Cliente", "Vendedor",
-          "Dirección",
-          "Hora", "Fecha", "Contacto", "Teléfono", "Notas", "Estado"
+          "# Parada", "Pedido", "Producto", "Cantidad", "Cliente", "Vendedor",
+          "Dirección", "Hora", "Fecha", "Contacto", "Teléfono", "Notas", "Estado"
         ]
-
         rows = @assignments.flat_map do |assignment|
           delivery = assignment.delivery
-          address = delivery.delivery_address
-
+          address  = delivery.delivery_address
           delivery.active_items_for_plan_for(current_user).map do |item|
-            address_text = [ address.address, address.description ].compact.join(" - ")
-            map_link_text = ""
-
-            if address.latitude.present? && address.longitude.present?
-              map_link_text = " (Waze: https://waze.com/ul?ll=#{address.latitude},#{address.longitude}&navigate=yes)"
-            elsif address.address.present?
-              map_link_text = " (Waze: https://waze.com/ul?q=#{ERB::Util.url_encode(address.address)}&navigate=yes)"
-            end
-
-            # Combinamos la dirección y el link de Maps
-            full_address_cell = "#{address_text}#{map_link_text}"
-
-            # 🔹 Combinar notas en listado
-            all_notes = []
-            all_notes << "PRODUCCIÓN: #{item.order_item.notes}" if item.order_item.notes.present?
-            all_notes << "LOGÍSTICA: #{item.notes}" if item.notes.present?
-            all_notes << "VENDEDOR: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
-            notes_text = all_notes.join("\n")
-
+            address_text = [address.address, address.description].compact.join(" - ")
+            map_link =
+              if address.latitude.present? && address.longitude.present?
+                " (Waze: https://waze.com/ul?ll=#{address.latitude},#{address.longitude}&navigate=yes)"
+              elsif address.address.present?
+                " (Waze: https://waze.com/ul?q=#{ERB::Util.url_encode(address.address)}&navigate=yes)"
+              else
+                ""
+              end
+            full_address = "#{address_text}#{map_link}"
+            notes = []
+            notes << "PRODUCCIÓN: #{item.order_item.notes}" if item.order_item.notes.present?
+            notes << "LOGÍSTICA: #{item.notes}" if item.notes.present?
+            notes << "VENDEDOR: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
             [
               assignment.stop_order,
               delivery.order.number,
@@ -160,28 +149,54 @@ class DeliveryPlansController < ApplicationController
               item.quantity_delivered,
               delivery.order.client.name,
               delivery.order.seller.seller_code,
-              full_address_cell,
+              full_address,
               delivery.delivery_time_preference.presence || "Sin preferencia",
               I18n.l(delivery.delivery_date, format: :long),
               delivery.contact_name,
               delivery.contact_phone.presence || "-",
-              notes_text,
+              notes.join("\n"),
               item.display_status
             ]
           end
         end
-
-        pdf.table([ headers ] + rows,
-                  header: true,
-                  row_colors: [ "F0F0F0", "FFFFFF" ],
+        pdf.table([headers] + rows, header: true,
+                  row_colors: %w[F0F0F0 FFFFFF],
                   position: :center,
-                  cell_style: { inline_format: true } # <-- ¡Importante para que los links sean clickeables!
-                )
-
+                  cell_style: { inline_format: true })
         send_data pdf.render,
                   filename: "#{pdf_title}.pdf",
                   type: "application/pdf",
                   disposition: "attachment"
+      end
+
+      format.json do
+        render json: {
+          id: @delivery_plan.id,
+          truck: @delivery_plan.truck,
+          status: @delivery_plan.status,
+          current_lat: @delivery_plan.current_lat,
+          current_lng: @delivery_plan.current_lng,
+          last_seen_at: @delivery_plan.last_seen_at,
+          assignments: @assignments.map do |a|
+            addr = a.delivery.delivery_address
+            {
+              id: a.id,
+              stop_order: a.stop_order,
+              status: a.status,
+              delivery: {
+                id: a.delivery.id,
+                contact_name: a.delivery.contact_name,
+                contact_phone: a.delivery.contact_phone,
+                delivery_notes: a.delivery.delivery_notes,
+                latitude: addr&.latitude,
+                longitude: addr&.longitude,
+                address: addr&.address,
+                description: addr&.description,
+                plus_code: addr&.plus_code
+              }
+            }
+          end
+        }
       end
     end
   end
@@ -255,7 +270,7 @@ class DeliveryPlansController < ApplicationController
     @delivery_plan = DeliveryPlan.find(params[:id])
     authorize @delivery_plan
     if @delivery_plan.driver.present?
-      @delivery_plan.update!(status: :sent_to_logistics)
+      @delivery_plan.update!(status: :routes_created)
       redirect_to @delivery_plan, notice: "Plan enviado a logística."
     else
       redirect_to edit_delivery_plan_path(@delivery_plan), alert: "Debes asignar un conductor y confirmar todas las entregas antes de enviar a logística."

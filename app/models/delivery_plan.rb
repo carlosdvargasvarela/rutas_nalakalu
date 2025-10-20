@@ -83,7 +83,7 @@ class DeliveryPlan < ApplicationRecord
     when "sent_to_logistics"
       "Enviado a logística"
     when "routes_created"
-      "Rutas creada"
+      "Ruta creada"
     when "in_progress"
       "En progreso"
     when "completed"

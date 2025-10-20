@@ -197,7 +197,7 @@ Rails.application.routes.draw do
   # MODO CHOFER (Driver)
   # =============================================================================
   namespace :driver do
-    resources :delivery_plans, only: [ :index, :show ] do
+    resources :delivery_plans, only: [:index, :show] do
       member do
         patch :start
         patch :finish
@@ -206,11 +206,11 @@ Rails.application.routes.draw do
         patch :update_position_batch
       end
 
-      resources :assignments, only: [ :show, :update ], controller: "assignments" do
+      resources :assignments, only: [:show, :update], controller: "assignments" do
         member do
           patch :start
           patch :complete
-          patch :mark_as_failed
+          patch :mark_failed   # ✅ renombrado (antes :mark_as_failed)
         end
       end
     end

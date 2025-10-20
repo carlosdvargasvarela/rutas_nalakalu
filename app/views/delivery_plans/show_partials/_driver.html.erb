@@ -1,0 +1,31 @@
+<!-- app/views/delivery_plans/show_partials/_driver.html.erb -->
+<div class="card mb-3">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="bi bi-map"></i> Seguimiento en Tiempo Real</h5>
+  </div>
+  <div class="card-body p-0">
+    <div id="admin-route-map"
+         style="height: 500px; width: 100%;"
+         data-controller="admin-driver-map"
+         data-admin-driver-map-delivery-plan-id-value="<%= @delivery_plan.id %>"
+         data-admin-driver-map-current-lat-value="<%= @delivery_plan.current_lat %>"
+         data-admin-driver-map-current-lng-value="<%= @delivery_plan.current_lng %>"
+         data-admin-driver-map-assignments-value='<%= @assignments.map { |a|
+           {
+             id: a.id,
+             stop_order: a.stop_order,
+             status: a.status,
+             delivery: {
+               id: a.delivery.id,
+               latitude: a.delivery.latitude,
+               longitude: a.delivery.longitude,
+               customer: {
+                 name: a.delivery.delivery_address.client.name,
+                 address: a.delivery.address
+               }
+             }
+           }
+         }.to_json.html_safe %>'>
+    </div>
+  </div>
+</div>

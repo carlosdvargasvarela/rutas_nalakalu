@@ -32,10 +32,20 @@ module Driver
     # PATCH /driver/delivery_plans/:delivery_plan_id/assignments/:id/mark_failed.json
     def mark_failed
       authorize [ :driver, @assignment ]
-      handle_optimistic_lock do
-        @assignment.mark_as_failed!(reason: params[:reason])
-        render_success("Entrega marcada como fallida")
-      end
+
+      reason = params[:reason].presence || params.dig(:assignment, :reason).presence || "No especificado"
+      @assignment.mark_as_failed!(reason: reason, failed_by: current_user)
+
+      render json: {
+        ok: true,
+        message: "Entrega marcada como fallida",
+        assignment: assignment_json(@assignment),
+        progress: progress_json
+      }, status: :ok
+    rescue Pundit::NotAuthorizedError
+      render json: { ok: false, error: "No autorizado" }, status: :forbidden
+    rescue StandardError => e
+      render json: { ok: false, error: e.message }, status: :unprocessable_entity
     end
 
     # PATCH /driver/delivery_plans/:delivery_plan_id/assignments/:id/note.json

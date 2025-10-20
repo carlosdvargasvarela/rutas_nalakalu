@@ -10,6 +10,17 @@ class Delivery < ApplicationRecord
 
   accepts_nested_attributes_for :delivery_items, allow_destroy: true
 
+  # Delegar coordenadas directamente al delivery_address
+  delegate :latitude, :longitude, :address, :plus_code, to: :delivery_address, allow_nil: true
+
+  # Si quieres también el nombre del cliente:
+  delegate :client, to: :delivery_address, allow_nil: true
+
+  # Ejemplo de helper útil para Google Maps/JSON APIs
+  def location
+    { lat: latitude.to_f, lng: longitude.to_f }
+  end
+
   # ============================================================================
   # ENUMS
   # ============================================================================

@@ -3,203 +3,219 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
     static values = {
-        planId: Number,
-        updateUrl: String,
-        intervalMs: { type: Number, default: 30000 },
-        minDistance: { type: Number, default: 50 }
+        deliveryPlanId: Number,
+        planStatus: String, // 👈 NUEVO: recibir el estado del plan
+        updateInterval: { type: Number, default: 30000 },
+        batchSize: { type: Number, default: 10 }
     }
 
     connect() {
-        console.log('[Tracker] Connected')
-        this.lastPosition = null
+        console.log("🚚 Driver Tracker conectado")
+        this.positionQueue = []
         this.watchId = null
-        this.fallbackIntervalId = null
-        this.isTracking = false
+        this.syncInterval = null
 
-        // Escuchar eventos del SW
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.addEventListener('message', this.handleSWMessage.bind(this))
-        }
-    }
-
-    disconnect() {
-        this.stopTracking()
-    }
-
-    startTracking() {
-        if (this.isTracking) return
-
-        console.log('[Tracker] Starting tracking...')
-        this.isTracking = true
-
-        if (!navigator.geolocation) {
-            console.error('[Tracker] Geolocation not supported')
+        // 🔒 No iniciar tracking si el plan ya está completado o abortado
+        if (this.planStatusValue === "completed" || this.planStatusValue === "aborted") {
+            console.log("⏹ Plan finalizado, no se inicia tracking")
+            this.updateStatus("tracking", "Tracking: OFF (Plan finalizado)", "secondary")
             return
         }
 
-        // Intentar watchPosition primero
-        try {
-            this.watchId = navigator.geolocation.watchPosition(
-                this.handlePosition.bind(this),
-                this.handleError.bind(this),
-                {
-                    enableHighAccuracy: true,
-                    maximumAge: 5000,
-                    timeout: 10000
-                }
-            )
-            console.log('[Tracker] Using watchPosition')
-        } catch (error) {
-            console.warn('[Tracker] watchPosition failed, using polling fallback:', error)
-            this.startPolling()
+        if (this.hasDeliveryPlanIdValue) {
+            this.startTracking()
         }
+
+        // 🔁 Escuchar evento global cuando se complete el plan
+        document.addEventListener("delivery_plan:completed", this.handlePlanCompleted.bind(this))
+    }
+
+    disconnect() {
+        console.log("🛑 Driver Tracker desconectado")
+        document.removeEventListener("delivery_plan:completed", this.handlePlanCompleted.bind(this))
+        this.stopTracking()
+    }
+
+    handlePlanCompleted(event) {
+        if (event.detail?.planId === this.deliveryPlanIdValue) {
+            console.log("✅ Plan completado, deteniendo tracking")
+            this.stopTracking()
+        }
+    }
+
+    startTracking() {
+        if (!navigator.geolocation) {
+            console.error("❌ Geolocalización no disponible")
+            this.showError("Tu dispositivo no soporta GPS")
+            return
+        }
+
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+
+        this.watchId = navigator.geolocation.watchPosition(
+            (position) => this.handlePosition(position),
+            (error) => this.handleError(error),
+            options
+        )
+
+        this.syncInterval = setInterval(() => {
+            this.syncPositions()
+        }, this.updateIntervalValue)
+
+        this.updateStatus("tracking", "Tracking: ON", "success")
+        console.log("✅ Tracking iniciado")
     }
 
     stopTracking() {
-        console.log('[Tracker] Stopping tracking...')
-        this.isTracking = false
-
-        if (this.watchId !== null) {
+        if (this.watchId) {
             navigator.geolocation.clearWatch(this.watchId)
             this.watchId = null
         }
 
-        if (this.fallbackIntervalId !== null) {
-            clearInterval(this.fallbackIntervalId)
-            this.fallbackIntervalId = null
+        if (this.syncInterval) {
+            clearInterval(this.syncInterval)
+            this.syncInterval = null
         }
-    }
 
-    startPolling() {
-        this.fallbackIntervalId = setInterval(() => {
-            navigator.geolocation.getCurrentPosition(
-                this.handlePosition.bind(this),
-                this.handleError.bind(this),
-                {
-                    enableHighAccuracy: true,
-                    maximumAge: 5000,
-                    timeout: 10000
-                }
-            )
-        }, this.intervalMsValue)
+        // Enviar posiciones pendientes antes de detener
+        if (this.positionQueue.length > 0) {
+            this.syncPositions()
+        }
+
+        this.updateStatus("tracking", "Tracking: OFF", "secondary")
+        console.log("🛑 Tracking detenido")
     }
 
     handlePosition(position) {
-        const { latitude, longitude, speed, heading, accuracy } = position.coords
-
-        // Filtrar por distancia mínima
-        if (this.lastPosition) {
-            const distance = this.calculateDistance(
-                this.lastPosition.latitude,
-                this.lastPosition.longitude,
-                latitude,
-                longitude
-            )
-
-            if (distance < this.minDistanceValue) {
-                console.log('[Tracker] Position change too small, skipping:', distance)
-                return
-            }
+        // 🔒 Verificar estado antes de procesar posición
+        if (this.planStatusValue === "completed" || this.planStatusValue === "aborted") {
+            console.log("⏹ Plan finalizado durante tracking, deteniendo...")
+            this.stopTracking()
+            return
         }
 
-        console.log('[Tracker] New position:', { latitude, longitude, speed, heading, accuracy })
+        const { latitude, longitude, accuracy, speed, heading } = position.coords
+        const timestamp = new Date(position.timestamp).toISOString()
 
-        this.lastPosition = { latitude, longitude, speed, heading, accuracy }
+        console.log(`📍 Nueva posición: ${latitude}, ${longitude} (±${accuracy}m)`)
 
-        // Enviar al servidor (el SW interceptará si offline)
-        this.sendPosition(latitude, longitude, speed, heading, accuracy)
+        this.positionQueue.push({
+            lat: latitude,
+            lng: longitude,
+            accuracy: accuracy,
+            speed: speed || 0,
+            heading: heading || 0,
+            at: timestamp
+        })
+
+        this.updateStatus("gps", "GPS Activo", "success")
+        this.updateLastPosition(latitude, longitude, timestamp)
+
+        if (this.positionQueue.length >= this.batchSizeValue) {
+            this.syncPositions()
+        }
     }
 
     handleError(error) {
-        console.error('[Tracker] Geolocation error:', error.message)
+        console.error("❌ Error GPS:", error.message)
 
-        // Si watchPosition falla, intentar polling
-        if (this.watchId !== null && this.fallbackIntervalId === null) {
-            console.log('[Tracker] Switching to polling fallback')
-            navigator.geolocation.clearWatch(this.watchId)
-            this.watchId = null
-            this.startPolling()
+        let message = "Error de GPS"
+        switch (error.code) {
+            case error.PERMISSION_DENIED:
+                message = "Permiso GPS denegado"
+                break
+            case error.POSITION_UNAVAILABLE:
+                message = "GPS no disponible"
+                break
+            case error.TIMEOUT:
+                message = "GPS timeout"
+                break
         }
+
+        this.updateStatus("gps", message, "danger")
+        this.showError(message)
     }
 
-    async sendPosition(latitude, longitude, speed, heading, accuracy) {
-        const url = this.updateUrlValue
-
-        const payload = {
-            latitude: latitude,
-            longitude: longitude,
-            speed: speed,
-            heading: heading,
-            accuracy: accuracy,
-            timestamp: new Date().toISOString()
+    async syncPositions() {
+        if (this.positionQueue.length === 0) {
+            console.log("⏭️ No hay posiciones para sincronizar")
+            return
         }
+
+        const positions = [...this.positionQueue]
+        this.positionQueue = []
+
+        console.log(`🔄 Sincronizando ${positions.length} posiciones...`)
 
         try {
-            const response = await fetch(url, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-Token': this.getCSRFToken()
-                },
-                body: JSON.stringify(payload)
-            })
+            const response = await fetch(
+                `/driver/delivery_plans/${this.deliveryPlanIdValue}/update_position_batch`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-Token": this.csrfToken
+                    },
+                    body: JSON.stringify({ positions })
+                }
+            )
 
-            const data = await response.json()
-
-            if (data.queued) {
-                console.log('[Tracker] Position queued for sync')
-                this.showQueuedIndicator()
-            } else if (response.ok) {
-                console.log('[Tracker] Position sent successfully')
+            if (response.ok) {
+                const data = await response.json()
+                console.log(`✅ Sincronizado: ${data.accepted} aceptadas, ${data.rejected} rechazadas`)
+                this.updateStatus("sync", "Sincronizado", "success")
+            } else if (response.status === 403) {
+                // Plan completado en el servidor
+                console.log("🔒 Plan completado, deteniendo tracking")
+                this.stopTracking()
             } else {
-                console.error('[Tracker] Failed to send position:', response.status)
+                console.error("❌ Error al sincronizar:", response.status)
+                this.positionQueue.unshift(...positions)
+                this.updateStatus("sync", "Error sync", "warning")
             }
         } catch (error) {
-            console.error('[Tracker] Network error sending position:', error)
+            console.error("❌ Error de red:", error)
+            this.positionQueue.unshift(...positions)
+            this.updateStatus("sync", "Sin conexión", "warning")
+            this.saveToIndexedDB(positions)
         }
     }
 
-    handleSWMessage(event) {
-        const { type, planId, count } = event.data
+    async saveToIndexedDB(positions) {
+        console.log("💾 Guardando en IndexedDB para sincronizar después")
+        // TODO: Implementar almacenamiento offline
+    }
 
-        if (type === 'POSITIONS_FLUSHED' && planId == this.planIdValue) {
-            console.log(`[Tracker] ${count} positions synced from queue`)
-            this.hideQueuedIndicator()
+    updateStatus(type, text, variant = "info") {
+        const element = document.getElementById(`${type}-status`)
+        if (element) {
+            element.textContent = text
+            element.className = `badge bg-${variant}`
         }
     }
 
-    showQueuedIndicator() {
-        // Opcional: mostrar badge o ícono de "sincronizando"
-        const indicator = document.querySelector('[data-sync-indicator]')
-        if (indicator) {
-            indicator.classList.remove('d-none')
+    updateLastPosition(lat, lng, timestamp) {
+        const element = document.getElementById("last-position-update")
+        if (element) {
+            const date = new Date(timestamp)
+            element.textContent = date.toLocaleTimeString()
         }
+
+        const latElement = document.getElementById("current-latitude")
+        const lngElement = document.getElementById("current-longitude")
+        if (latElement) latElement.textContent = lat.toFixed(6)
+        if (lngElement) lngElement.textContent = lng.toFixed(6)
     }
 
-    hideQueuedIndicator() {
-        const indicator = document.querySelector('[data-sync-indicator]')
-        if (indicator) {
-            indicator.classList.add('d-none')
-        }
+    showError(message) {
+        console.error(message)
     }
 
-    calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371e3 // Radio de la Tierra en metros
-        const φ1 = lat1 * Math.PI / 180
-        const φ2 = lat2 * Math.PI / 180
-        const Δφ = (lat2 - lat1) * Math.PI / 180
-        const Δλ = (lon2 - lon1) * Math.PI / 180
-
-        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-
-        return R * c // Distancia en metros
-    }
-
-    getCSRFToken() {
-        return document.querySelector('meta[name="csrf-token"]')?.content || ''
+    get csrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.content
     }
 }

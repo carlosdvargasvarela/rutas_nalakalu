@@ -6,15 +6,48 @@
      data-driver-plan-start-url-value="<%= start_driver_delivery_plan_path(@delivery_plan) %>"
      data-driver-plan-finish-url-value="<%= finish_driver_delivery_plan_path(@delivery_plan) %>"
      data-driver-plan-abort-url-value="<%= abort_driver_delivery_plan_path(@delivery_plan) %>"
-     data-driver-tracker-plan-id-value="<%= @delivery_plan.id %>"
-     data-driver-tracker-update-url-value="<%= update_position_driver_delivery_plan_path(@delivery_plan) %>">
-  <!-- Indicador de sincronización (lo muestra/oculta el SW + Stimulus) -->
+     data-driver-tracker-delivery-plan-id-value="<%= @delivery_plan.id %>"
+     data-driver-tracker-plan-status-value="<%= @delivery_plan.status %>"
+     data-driver-tracker-update-interval-value="30000">
+  <!-- Indicador de sincronización -->
   <div class="alert alert-info d-none mb-3" role="alert" data-sync-indicator>
     <i class="bi bi-cloud-upload me-2"></i>
     Sin conexión o con señal débil. Tus acciones se sincronizarán automáticamente.
   </div>
   <%= render "driver/delivery_plans/alerts", delivery_plan: @delivery_plan %>
   <%= render "driver/delivery_plans/header", delivery_plan: @delivery_plan %>
+  <!-- Estado del Tracking GPS -->
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="bi bi-broadcast"></i> Estado del Tracking
+      </h5>
+      <div>
+        <span class="badge bg-secondary" id="gps-status">GPS Inactivo</span>
+        <span class="badge bg-secondary" id="tracking-status">Tracking: OFF</span>
+        <span class="badge bg-secondary" id="sync-status">Sin sincronizar</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <p class="mb-1">
+            <strong>Última posición:</strong><br>
+            <small class="text-muted">
+              Lat: <span id="current-latitude">--</span><br>
+              Lng: <span id="current-longitude">--</span>
+            </small>
+          </p>
+        </div>
+        <div class="col-md-6">
+          <p class="mb-1">
+            <strong>Última actualización:</strong><br>
+            <small class="text-muted" id="last-position-update">--</small>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="row g-3 mb-3">
     <div class="col-12">
       <%= render "driver/delivery_plans/general_info", delivery_plan: @delivery_plan %>
@@ -30,32 +63,19 @@
         <% if @delivery_plan.status_routes_created? %>
           <button type="button"
                   class="btn btn-success btn-lg"
-                  data-action="click->driver-plan#startPlan click->driver-tracker#startTracking">
+                  data-action="click->driver-plan#startPlan">
             <i class="bi bi-play-circle-fill me-2"></i>Iniciar ruta
           </button>
         <% elsif @delivery_plan.status_in_progress? %>
           <div class="d-grid gap-2">
-            <!-- Botones para controlar el tracking manualmente si el chofer lo desea -->
-            <div class="btn-group" role="group" aria-label="GPS Tracking">
-              <button type="button"
-                      class="btn btn-outline-success"
-                      data-action="click->driver-tracker#startTracking">
-                <i class="bi bi-geo-alt me-1"></i>Iniciar seguimiento
-              </button>
-              <button type="button"
-                      class="btn btn-outline-secondary"
-                      data-action="click->driver-tracker#stopTracking">
-                <i class="bi bi-stop-circle me-1"></i>Detener seguimiento
-              </button>
-            </div>
             <button type="button"
                     class="btn btn-primary btn-lg"
-                    data-action="click->driver-plan#finishPlan click->driver-tracker#stopTracking">
+                    data-action="click->driver-plan#finishPlan">
               <i class="bi bi-check-circle-fill me-2"></i>Finalizar ruta
             </button>
             <button type="button"
                     class="btn btn-outline-danger"
-                    data-action="click->driver-plan#abortPlan click->driver-tracker#stopTracking">
+                    data-action="click->driver-plan#abortPlan">
               <i class="bi bi-x-circle me-2"></i>Abortar ruta
             </button>
           </div>
@@ -96,7 +116,7 @@
       </div>
     <% end %>
   </div>
-  <%= render "driver/delivery_plans/map", assignments: @assignments %>
+  <%= render "driver/delivery_plans/map", delivery_plan: @delivery_plan, assignments: @assignments %>
   <div class="d-grid gap-2 mt-4">
     <%= link_to driver_delivery_plans_path, class: "btn btn-secondary" do %>
       <i class="bi bi-arrow-left me-2"></i>Volver a mis rutas
