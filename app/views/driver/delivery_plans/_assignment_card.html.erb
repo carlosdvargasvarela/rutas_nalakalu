@@ -22,17 +22,32 @@
     <% if delivery.delivery_address.present? %>
       <div class="mb-2">
         <strong><i class="bi bi-geo-alt me-1"></i>Dirección:</strong>
-        <%= delivery.delivery_address.address %>
-        <% if delivery.delivery_address.description.present? %>
-          <br>
-          <small class="text-muted"><%= delivery.delivery_address.description %></small>
+        <% addr = [delivery.delivery_address.address, delivery.delivery_address.description.presence].compact.join(" - ") %>
+        <% if delivery.delivery_address.latitude.present? && delivery.delivery_address.longitude.present? %>
+          <%= link_to addr,
+                      "https://waze.com/ul?ll=#{delivery.delivery_address.latitude},#{delivery.delivery_address.longitude}&navigate=yes",
+                      target: "_blank", rel: "noopener", class: "text-decoration-none fw-bold text-primary" %>
+        <% else %>
+          <%= link_to addr,
+                      "https://waze.com/ul?q=#{ERB::Util.url_encode(delivery.delivery_address.address)}&navigate=yes",
+                      target: "_blank", rel: "noopener", class: "text-decoration-none fw-bold text-primary" %>
+        <% end %>
+      </div>
+    <% end %>
+    <% if delivery.delivery_date.present? || delivery.delivery_time_preference.present? %>
+      <div class="mb-2 small text-muted">
+        <% if delivery.delivery_date.present? %>
+          <i class="bi bi-calendar-event me-1"></i><%= l delivery.delivery_date, format: :short %>
+        <% end %>
+        <% if delivery.delivery_time_preference.present? %>
+          · <i class="bi bi-clock ms-1 me-1"></i><%= delivery.delivery_time_preference %>
         <% end %>
       </div>
     <% end %>
     <% if delivery.contact_name.present? || delivery.contact_phone.present? %>
       <div class="mb-2">
         <strong><i class="bi bi-telephone me-1"></i>Contacto:</strong>
-        <%= delivery.contact_name %>
+        <%= delivery.contact_name.presence || "Sin nombre" %>
         <% if delivery.contact_phone.present? %>
           <a href="tel:<%= delivery.contact_phone %>" class="btn btn-sm btn-outline-success ms-2">
             <i class="bi bi-telephone-fill"></i> <%= delivery.contact_phone %>
@@ -42,16 +57,43 @@
     <% end %>
     <% if delivery.delivery_notes.present? %>
       <div class="mb-2">
-        <strong><i class="bi bi-info-circle me-1"></i>Notas:</strong>
+        <strong><i class="bi bi-info-circle me-1"></i>Notas de entrega:</strong>
         <div class="alert alert-info py-1 px-2 mb-0 small">
           <%= simple_format(delivery.delivery_notes) %>
         </div>
       </div>
     <% end %>
+    <!-- Productos visibles (sin collapse) -->
+    <% items = (delivery.respond_to?(:active_items_for_plan_for) ? delivery.active_items_for_plan_for(current_user) : delivery.delivery_items) %>
+    <% if items.present? %>
+      <div class="mb-2">
+        <strong><i class="bi bi-box-seam me-1"></i>Productos:</strong>
+        <ul class="small ps-3 mb-0 mt-1">
+          <% items.each do |item| %>
+            <li class="mb-1">
+              <strong><%= item.order_item.product %></strong>
+              <span class="badge bg-secondary ms-1"><%= item.quantity %></span>
+              <% if item.notes.present? %>
+                <br>
+                <span class="text-primary"><i class="bi bi-pin-angle-fill"></i> <em><%= item.notes %></em></span>
+              <% end %>
+              <% if item.order_item.respond_to?(:notes) && item.order_item.notes.present? %>
+                <br>
+                <span class="text-muted"><i class="bi bi-info-circle"></i> <%= item.order_item.notes %></span>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% else %>
+      <div class="mb-2 small text-muted">
+        <i class="bi bi-box"></i> Sin productos asociados a esta entrega.
+      </div>
+    <% end %>
     <div class="mb-2">
       <strong><i class="bi bi-journal-text me-1"></i>Notas del chofer:</strong>
       <div class="alert alert-secondary py-1 px-2 mb-0 small <%= assignment.driver_notes.present? ? '' : 'd-none' %>" 
-       data-driver-assignment-target="notesPreview">
+           data-driver-assignment-target="notesPreview">
         <% if assignment.driver_notes.present? %>
           <ul class="mb-0 ps-3">
             <% assignment.driver_notes.to_s.split("\n").each do |line| %>
@@ -89,17 +131,19 @@
       <% end %>
       <button type="button" 
               class="btn btn-outline-primary btn-sm"
-              data-action="click->driver-assignment#openNoteModal">
+              data-action="click->driver-assignment#openNoteModal"
+        data-bs-target="#notaModal<%= assignment.id %>"
+        data-bs-toggle="modal">
         <i class="bi bi-sticky me-1"></i>Agregar nota
       </button>
     </div>
   </div>
-  <!-- ⚠️ IMPORTANTE: Modal DENTRO del scope del controller -->
-  <div class="modal fade" id="notaModal<%= assignment.id %>" tabindex="-1" aria-hidden="true">
+  <!-- Modal -->
+  <div class="modal fade" id="notaModal<%= assignment.id %>" tabindex="-1" aria-hidden="true" aria-labelledby="notaModalLabel<%= assignment.id %>">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">
+          <h5 id="notaModalLabel<%= assignment.id %>" class="modal-title">
             <i class="bi bi-sticky me-2"></i>
             Nota para pedido <%= delivery.order.number %>
           </h5>

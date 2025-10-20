@@ -135,7 +135,7 @@ class DeliveryPlan < ApplicationRecord
 
   # Enviar a logística
   def send_to_logistics!
-    update!(status: :sent_to_logistics)
+    update!(status: :routes_created)
   end
 
   def ensure_deletable
@@ -226,7 +226,7 @@ class DeliveryPlan < ApplicationRecord
   def update_status_on_driver_change
     if driver_id.present?
       if all_deliveries_confirmed?
-        update_column(:status, DeliveryPlan.statuses[:sent_to_logistics]) if status_draft?
+        update_column(:status, DeliveryPlan.statuses[:routes_created]) if status_draft?
       else
         errors.add(:base, "No puedes asignar a logística mientras existan entregas sin confirmar")
       end
