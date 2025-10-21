@@ -16,7 +16,7 @@ module Driver
     end
 
     def show?
-      user.driver? && record.driver_id == user.id
+      user.driver?
     end
 
     def start?
