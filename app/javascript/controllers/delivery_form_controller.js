@@ -9,9 +9,47 @@ export default class extends Controller {
         "newAddressInput", "newAddressClientId", "newAddressLat",
         "newAddressLng", "newAddressPlusCode", "newAddressDescription"
     ]
+
     static values = {
         addressesUrl: String,
         ordersUrl: String
+    }
+
+    connect() {
+        // Asegurar que todos los selects tengan la opción "Agregar nuevo ..."
+        if (this.hasAddressSelectTarget) {
+            this.ensureNewOption(this.addressSelectTarget, "Agregar nueva dirección…")
+        }
+        if (this.hasOrderSelectTarget) {
+            this.ensureNewOption(this.orderSelectTarget, "Agregar nuevo pedido…")
+        }
+    }
+
+    // Utilidad: inserta la opción "Agregar nuevo ..." al inicio si no existe ya
+    ensureNewOption(selectEl, label) {
+        if (!selectEl) return
+        const NEW_VALUE = "__new__"
+        const already = Array.from(selectEl.options).some(opt => opt.value === NEW_VALUE)
+        if (!already) {
+            const opt = document.createElement("option")
+            opt.value = NEW_VALUE
+            opt.textContent = label
+            // Insertar como primera opción
+            selectEl.insertBefore(opt, selectEl.firstChild)
+        }
+    }
+
+    // Utilidad: si el usuario elige "__new__", limpia el select y retorna true
+    handleNewSelection(selectEl, onNew) {
+        if (!selectEl) return false
+        if (selectEl.value === "__new__") {
+            // Ejecuta la acción asociada (mostrar formulario)
+            onNew?.()
+            // Limpia la selección visual
+            selectEl.value = ""
+            return true
+        }
+        return false
     }
 
     // CLIENTE
@@ -31,19 +69,40 @@ export default class extends Controller {
     }
 
     clientChanged(event) {
-        const clientId = event.target.value
+        const select = event.target
+
+        // Si elige "Agregar nuevo cliente…"
+        const handled = this.handleNewSelection(select, () => this.toggleNewClientFields())
+        if (handled) {
+            // Al agregar nuevo cliente, limpiamos dependencias
+            if (this.hasAddressSelectTarget) {
+                this.addressSelectTarget.innerHTML = '<option value="">Selecciona una dirección</option>'
+                this.ensureNewOption(this.addressSelectTarget, "Agregar nueva dirección…")
+            }
+            if (this.hasOrderSelectTarget) {
+                this.orderSelectTarget.innerHTML = '<option value="">Selecciona un pedido</option>'
+                this.ensureNewOption(this.orderSelectTarget, "Agregar nuevo pedido…")
+            }
+            return
+        }
+
+        const clientId = select.value
 
         // Si se selecciona un cliente, ocultar y limpiar el bloque de nuevo cliente
         if (clientId && this.hasNewClientFieldsTarget) {
             this.cancelNewClientFields()
         }
 
-        // Actualizar direcciones
+        // Actualizar direcciones y pedidos
         if (clientId) {
+            // Direcciones
             fetch(`${this.addressesUrlValue}?client_id=${clientId}`)
                 .then(response => response.json())
                 .then(addresses => {
+                    // Reiniciar opciones con placeholder y "Agregar nuevo …"
                     this.addressSelectTarget.innerHTML = '<option value="">Selecciona una dirección</option>'
+                    this.ensureNewOption(this.addressSelectTarget, "Agregar nueva dirección…")
+
                     addresses.forEach(address => {
                         this.addressSelectTarget.innerHTML += `<option value="${address.id}">${address.address}</option>`
                     })
@@ -53,11 +112,13 @@ export default class extends Controller {
                 })
                 .catch(error => console.error('Error cargando direcciones:', error))
 
-            // Actualizar pedidos
+            // Pedidos
             fetch(`${this.ordersUrlValue}?client_id=${clientId}`)
                 .then(response => response.json())
                 .then(orders => {
                     this.orderSelectTarget.innerHTML = '<option value="">Selecciona un pedido</option>'
+                    this.ensureNewOption(this.orderSelectTarget, "Agregar nuevo pedido…")
+
                     orders.forEach(order => {
                         this.orderSelectTarget.innerHTML += `<option value="${order.id}">${order.number}</option>`
                     })
@@ -66,7 +127,10 @@ export default class extends Controller {
         } else {
             // Limpiar selects si no hay cliente seleccionado
             this.addressSelectTarget.innerHTML = '<option value="">Selecciona una dirección</option>'
+            this.ensureNewOption(this.addressSelectTarget, "Agregar nueva dirección…")
+
             this.orderSelectTarget.innerHTML = '<option value="">Selecciona un pedido</option>'
+            this.ensureNewOption(this.orderSelectTarget, "Agregar nuevo pedido…")
         }
 
         const wizardController = this.application.getControllerForElementAndIdentifier(
@@ -81,7 +145,7 @@ export default class extends Controller {
     toggleNewAddressFields() {
         this.newAddressFieldsTarget.style.display = "block"
 
-        // 👇 Habilitar campos de nueva dirección
+        // Habilitar campos de nueva dirección
         this.toggleNewAddressFieldsEnabled(true)
 
         const addressController = this.application.getControllerForElementAndIdentifier(
@@ -99,7 +163,7 @@ export default class extends Controller {
     cancelNewAddressFields() {
         this.newAddressFieldsTarget.style.display = "none"
 
-        // 👇 Deshabilitar y limpiar campos
+        // Deshabilitar y limpiar campos
         this.toggleNewAddressFieldsEnabled(false)
 
         if (this.hasAddAddressButtonTarget) {
@@ -108,10 +172,16 @@ export default class extends Controller {
     }
 
     addressChanged(event) {
-        const addressId = event.target.value
+        const select = event.target
+
+        // Si elige "Agregar nueva dirección…"
+        const handled = this.handleNewSelection(select, () => this.toggleNewAddressFields())
+        if (handled) return
+
+        const addressId = select.value
         console.log("📦 Dirección seleccionada en combo:", addressId)
 
-        // 👇 Deshabilitar campos de nueva dirección si se selecciona una existente
+        // Deshabilitar campos de nueva dirección si se selecciona una existente
         this.toggleNewAddressFieldsEnabled(!addressId)
 
         // Buscar el controller de address-autocomplete y actualizar la dirección seleccionada
@@ -147,7 +217,6 @@ export default class extends Controller {
     }
 
     toggleNewAddressFieldsEnabled(enabled) {
-        // Solo proceder si tenemos todos los targets necesarios
         if (!this.hasNewAddressInputTarget) return
 
         const fields = [
@@ -161,9 +230,7 @@ export default class extends Controller {
         fields.forEach(field => {
             if (field) {
                 field.disabled = !enabled
-                if (!enabled) {
-                    field.value = ""
-                }
+                if (!enabled) field.value = ""
             }
         })
 
@@ -181,7 +248,6 @@ export default class extends Controller {
         )
 
         if (addressController) {
-            // Actualizar el array de direcciones disponibles
             addressController.addressesValue = addresses
         }
     }
@@ -203,7 +269,13 @@ export default class extends Controller {
     }
 
     orderChanged(event) {
-        const orderId = event.target.value
+        const select = event.target
+
+        // Si elige "Agregar nuevo pedido…"
+        const handled = this.handleNewSelection(select, () => this.toggleNewOrderFields())
+        if (handled) return
+
+        const orderId = select.value
         // Si se selecciona un pedido, ocultar el bloque de nuevo pedido
         if (orderId && this.hasNewOrderFieldsTarget) {
             this.cancelNewOrderFields()
