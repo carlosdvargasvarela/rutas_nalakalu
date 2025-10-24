@@ -389,7 +389,12 @@ class DeliveriesController < ApplicationController
     if @delivery.order_id.present?
       @order = Order.find_by(id: @delivery.order_id)
     elsif params[:order].present?
-      @order = (@client&.orders || Order).build(params.require(:order).permit(:number, :seller_id)) rescue Order.new(params.require(:order).permit(:number, :seller_id))
+      permitted_order = params.require(:order).permit(:number, :seller_id)
+      if @client
+        @order = @client.orders.build(permitted_order)
+      else
+        @order = Order.new(permitted_order)
+      end
     else
       @order = @delivery.order || Order.new
     end

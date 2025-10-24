@@ -23,8 +23,8 @@ module Deliveries
           pickup_delivery.delivery_items = process_service_items(order, "pickup_with_return")
           pickup_delivery.save!
 
-          return_date      = base_date + 15.days
-          return_delivery  = build_service_delivery(order, address, return_date, "return_delivery")
+          return_date     = base_date + 15.days
+          return_delivery = build_service_delivery(order, address, return_date, "return_delivery")
           return_delivery.delivery_items = clone_items_with_type(pickup_delivery, "return_delivery")
           return_delivery.save!
 
@@ -45,6 +45,7 @@ module Deliveries
 
     attr_reader :params, :current_user
 
+    # Strong params SOLO para la rama :delivery
     def delivery_params
       params.require(:delivery).permit(
         :delivery_date,
@@ -62,16 +63,18 @@ module Deliveries
       )
     end
 
-    def normalize_delivery_address_id(raw_id)
-      id = raw_id.to_s.strip
+    def normalize_id(raw)
+      id = raw.to_s.strip
       return nil if id.blank? || id == "__new__"
       id
     end
 
     def find_or_create_client
+      # client_id viene a nivel raíz (no dentro de :client), por eso no es parte de strong params
       if params[:client_id].present?
         Client.find(params[:client_id])
       elsif params[:client].present? && (params[:client][:email].present? || params[:client][:phone].present?)
+        existing = nil
         existing = Client.find_by(email: params[:client][:email]) if params[:client][:email].present?
         existing ||= Client.find_by(phone: params[:client][:phone]) if params[:client][:phone].present?
         existing || Client.create!(params.require(:client).permit(:name, :phone, :email))
@@ -82,10 +85,10 @@ module Deliveries
 
     def find_or_create_address(client)
       raw_id = delivery_params[:delivery_address_id]
-      normalized_id = normalize_delivery_address_id(raw_id)
+      address_id = normalize_id(raw_id)
 
-      if normalized_id.present?
-        return DeliveryAddress.find(normalized_id)
+      if address_id.present?
+        return DeliveryAddress.find(address_id)
       end
 
       if params[:delivery_address].present?
@@ -103,18 +106,30 @@ module Deliveries
     end
 
     def find_or_create_order(client)
-      if delivery_params[:order_id].present?
-        Order.find(delivery_params[:order_id])
-      elsif params[:order]&.[](:number).present?
-        existing = client.orders.find_by(number: params[:order][:number])
-        existing || client.orders.create!(
-          number: params[:order][:number],
-          seller_id: params[:seller_id] || current_user.seller&.id,
+      # 1) Si recibimos un ID válido de pedido, usar ese
+      order_id = normalize_id(delivery_params[:order_id])
+      if order_id.present?
+        return Order.find(order_id)
+      end
+
+      # 2) Si viene un número de pedido, buscar o crear dentro del cliente
+      order_number = params.dig(:order, :number).to_s.strip
+      if order_number.present?
+        existing = client.orders.find_by(number: order_number)
+        return existing if existing
+
+        seller_id = params[:seller_id].presence || current_user.seller&.id
+        raise ActiveRecord::RecordInvalid.new(Order.new), "Debe indicar un vendedor para crear el pedido." if seller_id.blank?
+
+        return client.orders.create!(
+          number: order_number,
+          seller_id: seller_id,
           status: :in_production
         )
-      else
-        raise ActiveRecord::RecordInvalid.new(Order.new), "Debe seleccionarse o crearse un pedido."
       end
+
+      # 3) Si no hay ni ID ni número, no podemos continuar
+      raise ActiveRecord::RecordInvalid.new(Order.new), "Debe seleccionarse o crearse un pedido."
     end
 
     def build_service_delivery(order, address, date, delivery_type)
@@ -132,32 +147,39 @@ module Deliveries
     end
 
     def process_service_items(order, delivery_type)
-      return [] unless delivery_params[:delivery_items_attributes]
+      attrs = delivery_params[:delivery_items_attributes]
+      return [] unless attrs.present?
 
-      delivery_params[:delivery_items_attributes].values.map do |item_params|
+      attrs.values.filter_map do |item_params|
         next if item_params[:_destroy] == "1"
-        next if item_params.dig(:order_item_attributes, :product).blank? && item_params[:order_item_id].blank?
 
-        order_item = if item_params[:order_item_id].present?
+        # Si viene order_item_id, duplicar con prefijo para el tipo de servicio
+        if item_params[:order_item_id].present?
           original = OrderItem.find(item_params[:order_item_id])
-          duplicate_order_item_with_prefix(original, delivery_type)
+          order_item = duplicate_order_item_with_prefix(original, delivery_type)
+
+        # Si viene order_item_attributes.id, también duplicar
         elsif item_params.dig(:order_item_attributes, :id).present?
           original = OrderItem.find(item_params.dig(:order_item_attributes, :id))
-          duplicate_order_item_with_prefix(original, delivery_type)
+          order_item = duplicate_order_item_with_prefix(original, delivery_type)
+
+        # Si viene un nuevo producto por atributos, crear uno asociado al order
         else
-          oi_attrs = item_params[:order_item_attributes]
-          next if oi_attrs.blank? || oi_attrs[:product].to_s.strip.blank?
-          build_order_item_with_prefix(order, oi_attrs, delivery_type)
+          oi_attrs = item_params[:order_item_attributes] || {}
+          product  = oi_attrs[:product].to_s.strip
+          next if product.blank?
+
+          order_item = build_order_item_with_prefix(order, oi_attrs, delivery_type)
         end
 
         DeliveryItem.new(
           order_item: order_item,
-          quantity_delivered: item_params[:quantity_delivered].presence || 1,
+          quantity_delivered: (item_params[:quantity_delivered].presence || 1).to_i,
           notes: item_params[:notes],
           service_case: true,
           status: :pending
         )
-      end.compact
+      end
     end
 
     def clone_items_with_type(source_delivery, target_delivery_type)
