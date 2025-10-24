@@ -1,5 +1,8 @@
+<!-- app/views/deliveries/index_partials/_delivery_card.html.erb -->
 <div class="col-md-6 col-lg-4 mb-3">
-  <div class="card h-100 shadow-sm border-<%= delivery_status_color(delivery.status) %>">
+  <%# Color de borde de la tarjeta según el estado de la entrega %>
+  <% card_border_color = delivery_status_color(delivery.status) %>
+  <div class="card h-100 shadow-sm border-<%= card_border_color %>">
     <div class="card-body d-flex flex-column">
       <!-- Order Number destacado -->
       <div class="d-flex justify-content-between align-items-center mb-2">
@@ -12,9 +15,7 @@
       </div>
       <!-- Estado principal -->
       <div class="mb-3">
-        <span class="badge bg-<%= delivery_status_color(delivery.status) %> px-3 py-2 fs-6">
-          <i class="bi bi-activity"></i> <%= delivery.display_status %>
-        </span>
+        <%= status_badge(delivery, with_icon: true, classes: "px-3 py-2 fs-6") %>
         <% if delivery.has_service_cases? %>
           <span class="badge bg-warning text-dark ms-1">Caso servicio</span>
         <% end %>
@@ -88,9 +89,7 @@
                         <span class="badge bg-secondary"><%= item.quantity %></span>
                         <strong><%= item.order_item.product %></strong>
                       </span>
-                      <span class="badge bg-<%= delivery_status_color(item.status) %>">
-                        <%= item.display_status %>
-                      </span>
+                      <span><%= status_badge(item) %></span>
                     </div>
                     <!-- Notas del item de entrega -->
                     <% if item.notes.present? %>
@@ -113,11 +112,9 @@
       </div>
       <!-- Footer acciones rápidas -->
       <div class="mt-auto d-flex justify-content-between gap-2">
-        <!-- Acción segura -->
         <%= link_to delivery_path(delivery), class: "btn btn-sm btn-outline-primary flex-fill" do %>
           <i class="bi bi-eye"></i> Ver
         <% end %>
-        <!-- 🔥 USAR EL PARTIAL -->
         <% if policy(delivery).edit? %>
           <%= render 'deliveries/index_partials/delivery_actions', delivery: delivery %>
         <% end %>

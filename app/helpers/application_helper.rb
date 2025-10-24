@@ -1,103 +1,183 @@
 # app/helpers/application_helper.rb
 module ApplicationHelper
-  # Colores para estados de Delivery
-  def delivery_status_color(status)
-    case status.to_s
-    when "scheduled"         then "primary"
-    when "in_route"          then "warning"
-    when "delivered"         then "success"
-    when "rescheduled"       then "info"
-    when "cancelled"         then "danger"
-    else "secondary"
-    end
+  # Variantes válidas de Bootstrap 5 para badges
+  BOOTSTRAP_BADGE_VARIANTS = %w[primary secondary success danger warning info light dark].freeze
+
+  def normalize_badge_color(color)
+    c = color.to_s.strip
+    return "secondary" if c.blank?
+    BOOTSTRAP_BADGE_VARIANTS.include?(c) ? c : "secondary"
   end
 
-  # Colores para estados de DeliveryItem
-  def delivery_item_status_color(status_key)
-    case status_key.to_s
-    when "pending"     then "warning"
-    when "confirmed"   then "primary"
-    when "in_route"    then "info"
-    when "delivered"   then "success"
-    when "rescheduled" then "warning"
-    when "cancelled"   then "danger"
-    else "info"
-    end
-  end
+  # Delivery: usa EXACTAMENTE tus enums
+  DELIVERY_STATUS_COLORS = {
+    "scheduled"         => "secondary",
+    "ready_to_deliver"  => "primary",
+    "in_plan"           => "primary",
+    "in_route"          => "warning",
+    "delivered"         => "success",
+    "rescheduled"       => "info",
+    "cancelled"         => "danger",
+    "archived"          => "light",
+    "failed"            => "danger",
 
-  # Colores para estados de Order (Pedido)
-  def order_status_color(status)
-    case status.to_s
-    when "in_production"     then "info"
-    when "ready_for_delivery"then "primary"
-    when "delivered"         then "success"
-    when "rescheduled"       then "secondary"
-    when "cancelled"         then "danger"
-    else "secondary"
-    end
-  end
+    # Aliases opcionales (por si algún sitio usa español)
+    "programada"        => "secondary",
+    "lista"             => "info",
+    "en_plan"           => "primary",
+    "en_ruta"           => "warning",
+    "entregada"         => "success",
+    "reprogramada"      => "dark",
+    "cancelada"         => "danger",
+    "archivada"         => "light",
+    "fallida"           => "danger"
+  }.freeze
 
-  # Colores para estados de OrderItem (Producto)
-  def order_item_status_color(status)
-    case status.to_s
-    when "in_production"     then "info"
-    when "ready"             then "primary"
-    when "delivered"         then "success"
-    when "cancelled"         then "danger"
-    when "missing"           then "warning"
-    else "secondary"
-    end
-  end
+  # DeliveryItem: estados típicos en tu app
+  DELIVERY_ITEM_STATUS_COLORS = {
+    "pending"     => "warning",
+    "confirmed"   => "primary",
+    "in_plan"     => "primary",
+    "in_route"    => "info",
+    "delivered"   => "success",
+    "rescheduled" => "dark",
+    "cancelled"   => "danger",
+    "failed"      => "danger"
+  }.freeze
 
-  # Colores para estados de plan de entregas
-  def delivery_plan_status_color(status)
-    case status.to_s
-    when "draft"             then "secondary"
-    when "sent_to_logistics" then "info"
-    when "routes_created"    then "primary"
-    else "secondary"
-    end
-  end
+  ORDER_STATUS_COLORS = {
+    "in_production"      => "secondary",
+    "ready_for_delivery" => "info",
+    "delivered"          => "success",
+    "rescheduled"        => "dark",
+    "cancelled"          => "danger"
+  }.freeze
 
-  # Formatea fechas al estilo dd/mm/yyyy
+  ORDER_ITEM_STATUS_COLORS = {
+    "in_production" => "secondary",
+    "ready"         => "info",
+    "delivered"     => "success",
+    "cancelled"     => "danger",
+    "missing"       => "warning"
+  }.freeze
+
+  DELIVERY_PLAN_STATUS_COLORS = {
+    "draft"             => "secondary",
+    "sent_to_logistics" => "info",
+    "routes_created"    => "primary"
+  }.freeze
+
+  STATUS_ICONS = {
+    # Delivery / DeliveryItem
+    "scheduled"         => "bi-clock",
+    "ready_to_deliver"  => "bi-check2-square",
+    "in_plan"           => "bi-map",
+    "in_route"          => "bi-truck",
+    "delivered"         => "bi-check-circle",
+    "rescheduled"       => "bi-arrow-repeat",
+    "cancelled"         => "bi-x-circle",
+    "archived"          => "bi-archive",
+    "failed"            => "bi-exclamation-octagon",
+
+    # Order / OrderItem
+    "in_production"     => "bi-gear",
+    "ready_for_delivery"=> "bi-box-seam",
+    "ready"             => "bi-check2-circle",
+    "missing"           => "bi-exclamation-triangle",
+
+    # DeliveryPlan
+    "draft"             => "bi-journal",
+    "sent_to_logistics" => "bi-send",
+    "routes_created"    => "bi-diagram-3"
+  }.freeze
+
+  # Métodos utilitarios de fecha/hora (ASEGURAR QUE EXISTAN)
   def format_date_dd_mm_yyyy(date)
-    date.strftime("%d/%m/%Y") if date.present?
+    return "" if date.blank?
+    date.strftime("%d/%m/%Y")
   end
 
-  # Formatea fechas y horas al estilo dd/mm/yyyy hh:mm
   def format_datetime_dd_mm_yyyy_hh_mm(datetime)
-    datetime.strftime("%d/%m/%Y %H:%M") if datetime.present?
+    return "" if datetime.blank?
+    datetime.strftime("%d/%m/%Y %H:%M")
   end
 
-  def status_badge(status, type = :delivery)
-    color = case type
-    when :delivery
-              {
-                "scheduled" => "secondary",
-                "ready_to_deliver" => "info",
-                "in_route" => "primary",
-                "delivered" => "success",
-                "rescheduled" => "warning",
-                "cancelled" => "danger"
-              }[status.to_s] || "secondary"
-    when :order
-              {
-                "pending" => "warning",
-                "in_production" => "info",
-                "ready_for_delivery" => "primary",
-                "delivered" => "success",
-                "rescheduled" => "warning",
-                "cancelled" => "danger"
-              }[status.to_s] || "secondary"
+  # Métodos de color por entidad
+  def delivery_status_color(status)        = normalize_badge_color(DELIVERY_STATUS_COLORS[status.to_s] || "secondary")
+  def delivery_item_status_color(status)   = normalize_badge_color(DELIVERY_ITEM_STATUS_COLORS[status.to_s] || "secondary")
+  def order_status_color(status)           = normalize_badge_color(ORDER_STATUS_COLORS[status.to_s] || "secondary")
+  def order_item_status_color(status)      = normalize_badge_color(ORDER_ITEM_STATUS_COLORS[status.to_s] || "secondary")
+  def delivery_plan_status_color(status)   = normalize_badge_color(DELIVERY_PLAN_STATUS_COLORS[status.to_s] || "secondary")
+
+  # Deducción automática de tipo según objeto AR o símbolo
+  def infer_status_type(record_or_type)
+    case record_or_type
+    when Delivery       then :delivery
+    when DeliveryItem   then :delivery_item
+    when Order          then :order
+    when OrderItem      then :order_item
+    when DeliveryPlan   then :delivery_plan
+    when Symbol, String then record_or_type.to_sym
     else
-              "secondary"
+      :delivery
+    end
+  end
+
+  # Obtiene el color según tipo y status string
+  def color_for_status_by_type(status_str, type_sym)
+    case type_sym
+    when :delivery      then delivery_status_color(status_str)
+    when :delivery_item then delivery_item_status_color(status_str)
+    when :order         then order_status_color(status_str)
+    when :order_item    then order_item_status_color(status_str)
+    when :delivery_plan then delivery_plan_status_color(status_str)
+    else "secondary"
+    end
+  end
+
+  # Determina si un color necesita texto oscuro para mejor contraste
+  def needs_text_dark?(color)
+    %w[light warning info].include?(color)
+  end
+
+  # Label del estado, priorizando display_status si existe
+  def label_for_status(status_or_record, type_sym, status_str)
+    if status_or_record.respond_to?(:display_status)
+      status_or_record.display_status
+    else
+      I18n.t(
+        "activerecord.attributes.#{type_sym}.statuses.#{status_str}",
+        default: status_str.humanize
+      )
+    end
+  end
+
+  # Badge genérico con auto-detección
+  def status_badge(status_or_record, type = nil, with_icon: false, classes: "")
+    if status_or_record.respond_to?(:status)
+      status_str = status_or_record.status.to_s
+      type_sym   = infer_status_type(status_or_record)
+    else
+      status_str = status_or_record.to_s
+      type_sym   = infer_status_type(type || :delivery)
     end
 
-    label = I18n.t(
-      "activerecord.attributes.#{type}.statuses.#{status}",
-      default: status.to_s.humanize
-    )
+    color = color_for_status_by_type(status_str, type_sym)
+    label = label_for_status(status_or_record, type_sym, status_str)
 
-    content_tag(:span, label, class: "badge bg-#{color}")
+    icon_html = if with_icon
+      icon_class = STATUS_ICONS[status_str]
+      icon_class.present? ? content_tag(:i, "", class: "bi #{icon_class} me-1", aria: { hidden: true }) : "".html_safe
+    else
+      "".html_safe
+    end
+
+    css_classes = [ "badge", "bg-#{color}" ]
+    css_classes << "text-dark" if needs_text_dark?(color)
+    css_classes << classes if classes.present?
+
+    content_tag(:span, class: css_classes.join(" "), title: label) do
+      icon_html + label
+    end
   end
 end
