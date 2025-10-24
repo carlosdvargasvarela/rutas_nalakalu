@@ -11,26 +11,15 @@ module ApplicationHelper
 
   # Delivery: usa EXACTAMENTE tus enums
   DELIVERY_STATUS_COLORS = {
-    "scheduled"         => "secondary",
+    "scheduled"         => "warning",
     "ready_to_deliver"  => "primary",
     "in_plan"           => "primary",
-    "in_route"          => "warning",
+    "in_route"          => "dark",
     "delivered"         => "success",
     "rescheduled"       => "info",
     "cancelled"         => "danger",
     "archived"          => "light",
-    "failed"            => "danger",
-
-    # Aliases opcionales (por si algún sitio usa español)
-    "programada"        => "secondary",
-    "lista"             => "info",
-    "en_plan"           => "primary",
-    "en_ruta"           => "warning",
-    "entregada"         => "success",
-    "reprogramada"      => "dark",
-    "cancelada"         => "danger",
-    "archivada"         => "light",
-    "fallida"           => "danger"
+    "failed"            => "danger"
   }.freeze
 
   # DeliveryItem: estados típicos en tu app
@@ -38,9 +27,9 @@ module ApplicationHelper
     "pending"     => "warning",
     "confirmed"   => "primary",
     "in_plan"     => "primary",
-    "in_route"    => "info",
+    "in_route"    => "dark",
     "delivered"   => "success",
-    "rescheduled" => "dark",
+    "rescheduled" => "info",
     "cancelled"   => "danger",
     "failed"      => "danger"
   }.freeze
