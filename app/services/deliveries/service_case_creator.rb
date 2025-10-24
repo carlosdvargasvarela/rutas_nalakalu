@@ -8,9 +8,6 @@ module Deliveries
       @current_user = current_user
     end
 
-    # Devuelve la(s) entrega(s) creada(s).
-    # Si es pickup_with_return -> devuelve [pickup_delivery, return_delivery]
-    # Si no, devuelve [single_delivery]
     def call
       ActiveRecord::Base.transaction do
         client  = find_or_create_client
@@ -28,7 +25,6 @@ module Deliveries
 
           return_date      = base_date + 15.days
           return_delivery  = build_service_delivery(order, address, return_date, "return_delivery")
-          # Los mismos productos pero con prefijo de devolución
           return_delivery.delivery_items = clone_items_with_type(pickup_delivery, "return_delivery")
           return_delivery.save!
 
@@ -66,6 +62,12 @@ module Deliveries
       )
     end
 
+    def normalize_delivery_address_id(raw_id)
+      id = raw_id.to_s.strip
+      return nil if id.blank? || id == "__new__"
+      id
+    end
+
     def find_or_create_client
       if params[:client_id].present?
         Client.find(params[:client_id])
@@ -79,16 +81,25 @@ module Deliveries
     end
 
     def find_or_create_address(client)
-      if delivery_params[:delivery_address_id].present?
-        DeliveryAddress.find(delivery_params[:delivery_address_id])
-      elsif params[:delivery_address].present? && params[:delivery_address][:address].present?
-        existing = client.delivery_addresses.find_by(address: params[:delivery_address][:address])
-        existing || client.delivery_addresses.create!(
-          params.require(:delivery_address).permit(:address, :description, :latitude, :longitude, :plus_code)
-        )
-      else
-        raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debe seleccionarse o crearse una dirección."
+      raw_id = delivery_params[:delivery_address_id]
+      normalized_id = normalize_delivery_address_id(raw_id)
+
+      if normalized_id.present?
+        return DeliveryAddress.find(normalized_id)
       end
+
+      if params[:delivery_address].present?
+        addr_attrs = params.require(:delivery_address).permit(:address, :description, :latitude, :longitude, :plus_code)
+        address_text = addr_attrs[:address].to_s.strip
+        raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debe seleccionarse o crearse una dirección." if address_text.blank?
+
+        existing = client.delivery_addresses.find_by(address: address_text)
+        return existing if existing
+
+        return client.delivery_addresses.create!(addr_attrs)
+      end
+
+      raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debe seleccionarse o crearse una dirección."
     end
 
     def find_or_create_order(client)
@@ -135,6 +146,7 @@ module Deliveries
           duplicate_order_item_with_prefix(original, delivery_type)
         else
           oi_attrs = item_params[:order_item_attributes]
+          next if oi_attrs.blank? || oi_attrs[:product].to_s.strip.blank?
           build_order_item_with_prefix(order, oi_attrs, delivery_type)
         end
 
@@ -148,7 +160,6 @@ module Deliveries
       end.compact
     end
 
-    # Clona los items de una entrega a otra cambiando el tipo (para prefijos correctos)
     def clone_items_with_type(source_delivery, target_delivery_type)
       source_delivery.delivery_items.map do |di|
         dup_oi = duplicate_order_item_with_prefix(di.order_item, target_delivery_type)

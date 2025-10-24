@@ -23,7 +23,7 @@ module Deliveries
         processed_items = process_delivery_items(order)
 
         @delivery = Delivery.new(
-          delivery_params.except(:delivery_items_attributes).merge(
+          delivery_params.except(:delivery_items_attributes, :delivery_address_id).merge(
             order: order,
             delivery_address: address,
             status: :ready_to_deliver
@@ -32,7 +32,6 @@ module Deliveries
         @delivery.delivery_items = processed_items
         @delivery.save!
 
-        # 🔔 Notificar si es semana ISO actual (y no es mandado interno)
         NotificationService.notify_current_week_delivery_created(@delivery, created_by: current_user.name)
 
         @delivery
@@ -62,6 +61,12 @@ module Deliveries
       )
     end
 
+    def normalize_delivery_address_id(raw_id)
+      id = raw_id.to_s.strip
+      return nil if id.blank? || id == "__new__"
+      id
+    end
+
     def find_or_create_client
       if params[:client_id].present?
         Client.find(params[:client_id])
@@ -75,16 +80,29 @@ module Deliveries
     end
 
     def find_or_create_address(client)
-      if params[:delivery]&.[](:delivery_address_id).present?
-        DeliveryAddress.find(params[:delivery][:delivery_address_id])
-      elsif params[:delivery_address].present?
-        existing = client.delivery_addresses.find_by(address: params[:delivery_address][:address])
-        existing || client.delivery_addresses.create!(
-          params.require(:delivery_address).permit(:address, :description, :latitude, :longitude, :plus_code)
-        )
-      else
-        raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debe seleccionarse o crearse una dirección."
+      raw_id = params.dig(:delivery, :delivery_address_id)
+      normalized_id = normalize_delivery_address_id(raw_id)
+
+      if normalized_id.present?
+        # Dirección existente seleccionada
+        return DeliveryAddress.find(normalized_id)
       end
+
+      # Intento de crear/usar bloque delivery_address
+      if params[:delivery_address].present?
+        addr_attrs = params.require(:delivery_address).permit(:address, :description, :latitude, :longitude, :plus_code)
+        address_text = addr_attrs[:address].to_s.strip
+
+        raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debe seleccionarse o crearse una dirección." if address_text.blank?
+
+        # Buscar por texto exacto dentro del cliente
+        existing = client.delivery_addresses.find_by(address: address_text)
+        return existing if existing
+
+        return client.delivery_addresses.create!(addr_attrs)
+      end
+
+      raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debe seleccionarse o crearse una dirección."
     end
 
     def find_or_create_order(client)
@@ -111,19 +129,16 @@ module Deliveries
         order_item = if item_params[:order_item_id].present?
           OrderItem.find(item_params[:order_item_id])
         else
-          # Extraer y normalizar el nombre del producto
           product_name = item_params.dig(:order_item_attributes, :product).to_s.strip
+          next if product_name.blank?
+
           quantity = item_params.dig(:order_item_attributes, :quantity).presence || 1
           notes = item_params.dig(:order_item_attributes, :notes)
 
-          # Buscar order_item existente por producto en el mismo pedido
           existing_order_item = order.order_items.find_by(product: product_name)
-
           if existing_order_item
-            # Reutilizar el OrderItem existente
             existing_order_item
           else
-            # Crear nuevo OrderItem solo si no existe
             order.order_items.create!(
               product: product_name,
               quantity: quantity,
