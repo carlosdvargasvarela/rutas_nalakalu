@@ -1,29 +1,39 @@
 <!-- app/views/dashboard/index.html.erb -->
 <div class="container-fluid py-4">
   <!-- Header -->
-  <div class="row align-items-center mb-5">
-    <div class="col-md-8">
-      <h2 class="fw-bold">
-        <i class="bi bi-truck me-2 text-primary"></i>
-        Bienvenido, <%= current_user.name %>
-      </h2>
-      <p class="text-muted mb-1">
-        Rol: <span class="badge bg-primary rounded-pill"><%= current_user.display_role %></span>
-      </p>
-      <p class="fst-italic text-secondary">"Transformando espacios, entregando calidad."</p>
-    </div>
-    <div class="col-md-4 text-md-end mt-3 mt-md-0">
-      <div class="btn-toolbar justify-content-md-end gap-2">
-        <% if current_user.seller? || current_user.admin? %>
-          <%= link_to "➕ Pedido", orders_path, class: "btn btn-primary btn-sm rounded-pill" %>
-        <% end %>
-        <% if current_user.logistics? || current_user.admin? %>
-          <%= link_to "🚚 Nueva entrega", new_delivery_path, class: "btn btn-success btn-sm rounded-pill" %>
-        <% end %>
-        <% if current_user.admin? || current_user.production_manager? %>
-          <%= link_to "📥 Importar Excel", new_delivery_import_path, class: "btn btn-secondary btn-sm rounded-pill" %>
-        <% end %>
-        <%= link_to "🔔 Notificaciones", notifications_path, class: "btn btn-info btn-sm rounded-pill" %>
+  <div class="dashboard-header">
+    <div class="row align-items-center position-relative">
+      <div class="col-md-8">
+        <h2 class="fw-bold mb-3">
+          <i class="bi bi-truck me-2"></i>
+          Bienvenido, <%= current_user.name %>
+        </h2>
+        <p class="text-white-50 mb-2">
+          Rol: <span class="badge bg-white text-dark rounded-pill px-3 py-2"><%= current_user.display_role %></span>
+        </p>
+        <p class="fst-italic text-white-50 mb-0">"Transformando espacios, entregando calidad."</p>
+      </div>
+      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <div class="btn-toolbar justify-content-md-end gap-2 flex-wrap">
+          <% if current_user.seller? || current_user.admin? %>
+            <%= link_to orders_path, class: "btn btn-light btn-sm rounded-3 dashboard-action-btn" do %>
+              <i class="bi bi-plus-circle me-1"></i> Pedido
+            <% end %>
+          <% end %>
+          <% if current_user.logistics? || current_user.admin? %>
+            <%= link_to new_delivery_path, class: "btn btn-light btn-sm rounded-3 dashboard-action-btn" do %>
+              <i class="bi bi-truck me-1"></i> Nueva entrega
+            <% end %>
+          <% end %>
+          <% if current_user.admin? || current_user.production_manager? %>
+            <%= link_to new_delivery_import_path, class: "btn btn-outline-light btn-sm rounded-3 dashboard-action-btn" do %>
+              <i class="bi bi-file-earmark-excel me-1"></i> Importar Excel
+            <% end %>
+          <% end %>
+          <%= link_to notifications_path, class: "btn btn-outline-light btn-sm rounded-3 dashboard-action-btn" do %>
+            <i class="bi bi-bell me-1"></i> Notificaciones
+          <% end %>
+        </div>
       </div>
     </div>
   </div>
@@ -34,12 +44,12 @@
     <%= render "dashboard/unplanned_deliveries_this_week", deliveries: @unplanned_deliveries_this_week %>
   <!-- Pendientes de aprobación -->
   <% if @pending_approvals.any? %>
-    <div class="card shadow-sm border-0 rounded-3 mt-5">
-      <div class="card-header bg-light d-flex align-items-center justify-content-between">
-        <h5 class="mb-0 fw-semibold">
-          <i class="bi bi-shield-exclamation me-2 text-warning"></i> Entregas por aprobar
+    <div class="card approval-card mt-5">
+      <div class="card-header text-white d-flex align-items-center justify-content-between py-3">
+        <h5 class="mb-0 fw-bold">
+          <i class="bi bi-shield-exclamation me-2"></i> Entregas por aprobar
         </h5>
-        <span class="badge bg-warning text-dark px-3 py-2">
+        <span class="badge bg-white text-dark px-3 py-2 rounded-3 fw-bold">
           <%= @pending_approvals.count %> pendientes
         </span>
       </div>
@@ -47,27 +57,27 @@
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
-              <th>ID</th>
-              <th>Fecha</th>
-              <th>Pedido</th>
-              <th>Cliente</th>
-              <th>Vendedor</th>
+              <th class="fw-bold">ID</th>
+              <th class="fw-bold">Fecha</th>
+              <th class="fw-bold">Pedido</th>
+              <th class="fw-bold">Cliente</th>
+              <th class="fw-bold">Vendedor</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             <% @pending_approvals.each do |delivery| %>
               <tr>
-                <td><%= link_to "##{delivery.id}", delivery_path(delivery), class: "fw-medium text-primary" %></td>
-                <td><%= l delivery.delivery_date, format: :short %></td>
-                <td><%= link_to delivery.order.number, order_path(delivery.order), class: "text-decoration-none" %></td>
-                <td><%= delivery.order.client.name %></td>
-                <td><%= delivery.order.seller.name %></td>
+                <td><%= link_to "##{delivery.id}", delivery_path(delivery), class: "fw-bold text-dark text-decoration-none" %></td>
+                <td class="fw-medium"><%= l delivery.delivery_date, format: :short %></td>
+                <td><%= link_to delivery.order.number, order_path(delivery.order), class: "text-dark text-decoration-none fw-medium" %></td>
+                <td class="text-muted"><%= delivery.order.client.name %></td>
+                <td class="text-muted"><%= delivery.order.seller.name %></td>
                 <td class="text-end">
                   <%= button_to approve_delivery_path(delivery), method: :patch,
-                        class: "btn btn-outline-success btn-sm rounded-pill",
+                        class: "btn btn-dark btn-sm rounded-3",
                         data: { turbo_confirm: "¿Aprobar la entrega ##{delivery.id}?" } do %>
-                    <i class="bi bi-check-circle"></i> Aprobar
+                    <i class="bi bi-check-circle me-1"></i> Aprobar
                   <% end %>
                 </td>
               </tr>
@@ -120,11 +130,11 @@
     <%= render "dashboard/stats" %>
   </div>
   <!-- Soporte -->
-  <div class="alert alert-info mt-5 rounded-3 d-flex align-items-center shadow-sm">
-    <i class="bi bi-question-circle-fill fs-4 me-2"></i>
+  <div class="alert alert-dark mt-5 rounded-4 d-flex align-items-center border-0">
+    <i class="bi bi-question-circle-fill fs-4 me-3"></i>
     <span>
       ¿Necesitas ayuda? 
-      <a href="mailto:cvargas@nalakalu.com" class="fw-semibold ms-1">Contacta al equipo de soporte</a>
+      <a href="mailto:cvargas@nalakalu.com" class="fw-semibold text-dark text-decoration-underline ms-1">Contacta al equipo de soporte</a>
     </span>
   </div>
 </div>

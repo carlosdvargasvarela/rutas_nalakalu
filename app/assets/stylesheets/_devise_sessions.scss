@@ -1,0 +1,104 @@
+// Devise Sessions - Futuristic Login Design
+
+// Variables
+$primary-gradient-start: #667eea;
+$primary-gradient-end: #764ba2;
+
+// Card Styling
+.devise-sessions-card {
+  backdrop-filter: blur(10px);
+  background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,249,250,0.98) 100%);
+  animation: fadeInUp 0.5s ease-out;
+}
+
+// Container with responsive margin
+.devise-sessions-container {
+  margin-top: 0;
+  
+  @media (min-width: 768px) {
+    margin-top: -5rem;
+  }
+  
+  @media (min-width: 992px) {
+    margin-top: -7rem;
+  }
+}
+
+// Header Styling
+.devise-sessions-header {
+  background: #000000;
+  
+  .header-wave-bg {
+    background: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1440 320%22><path fill=%22%23ffffff%22 d=%22M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z%22></path></svg>') no-repeat bottom;
+  }
+}
+
+// Icon Container
+.devise-sessions-icon-container {
+  width: 70px;
+  height: 70px;
+}
+
+// Icon with Gradient
+.devise-sessions-icon-gradient {
+  background: linear-gradient(135deg, $primary-gradient-start 0%, $primary-gradient-end 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+// Form Controls
+.devise-sessions-input {
+  transition: all 0.3s ease;
+  
+  &:focus {
+    border-color: $primary-gradient-start !important;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+    transform: translateY(-2px);
+  }
+}
+
+// Remember Me Checkbox
+.devise-sessions-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  
+  &:checked {
+    background-color: $primary-gradient-start !important;
+    border-color: $primary-gradient-start !important;
+  }
+}
+
+// Submit Button
+.devise-sessions-btn {
+  background: #000000 !important;
+  border: none;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+    background: #1a1a1a !important;
+  }
+}
+
+// Forgot Password Link
+.devise-sessions-link {
+  background: linear-gradient(135deg, $primary-gradient-start 0%, $primary-gradient-end 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+// Animation
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

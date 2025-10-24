@@ -75,3 +75,306 @@
         margin-top: 0.5rem;
     }
 }
+
+/* Animación de entrada escalonada para items */
+.delivery-item-animated {
+    animation: slideInFade 0.5s ease-out forwards;
+    opacity: 0;
+    border-left: 3px solid transparent;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.delivery-item-animated:nth-child(1) { animation-delay: 0.1s; }
+.delivery-item-animated:nth-child(2) { animation-delay: 0.15s; }
+.delivery-item-animated:nth-child(3) { animation-delay: 0.2s; }
+.delivery-item-animated:nth-child(4) { animation-delay: 0.25s; }
+.delivery-item-animated:nth-child(5) { animation-delay: 0.3s; }
+.delivery-item-animated:nth-child(n+6) { animation-delay: 0.35s; }
+
+@keyframes slideInFade {
+    from {
+        opacity: 0;
+        transform: translateX(-30px) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) translateY(0);
+    }
+}
+
+/* Hover effect en items con sombra profunda */
+.delivery-item-animated:hover {
+    background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%);
+    border-left-color: #0d6efd;
+    box-shadow: 0 8px 24px rgba(13, 110, 253, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateX(8px) translateY(-4px);
+}
+
+/* Card principal con sombra elegante */
+.unplanned-deliveries-card {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transition: all 0.4s ease;
+    overflow: hidden;
+}
+
+.unplanned-deliveries-card:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Badge contador en header con animación */
+.delivery-count-badge {
+    animation: pulse-subtle 2s ease-in-out infinite;
+    box-shadow: 0 3px 10px rgba(13, 110, 253, 0.3);
+}
+
+@keyframes pulse-subtle {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 3px 10px rgba(13, 110, 253, 0.3);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
+    }
+}
+
+/* Badge de fecha con sombra y efecto 3D */
+.delivery-date-badge {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.delivery-date-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.delivery-item-animated:hover .delivery-date-badge {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(255, 255, 255, 0.9);
+    transform: translateY(-4px) scale(1.05);
+}
+
+.delivery-item-animated:hover .delivery-date-badge::before {
+    opacity: 1;
+}
+
+/* Badges de tipo y estado con animaciones y sombras */
+.delivery-type-badge,
+.delivery-status-badge {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+.delivery-type-badge::after,
+.delivery-status-badge::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s ease, height 0.4s ease;
+}
+
+.delivery-type-badge:hover::after,
+.delivery-status-badge:hover::after {
+    width: 200%;
+    height: 200%;
+}
+
+.delivery-type-badge:hover,
+.delivery-status-badge:hover {
+    transform: scale(1.15) rotate(2deg);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Información de entrega con animación fluida */
+.delivery-info {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.delivery-item-animated:hover .delivery-info {
+    transform: translateX(8px);
+}
+
+/* Título con efecto de subrayado animado */
+.delivery-title {
+    position: relative;
+    display: inline-block;
+}
+
+.delivery-title::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background: linear-gradient(to right, #0d6efd, #0dcaf0);
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(13, 110, 253, 0.4);
+}
+
+.delivery-item-animated:hover .delivery-title::after {
+    width: 100%;
+}
+
+/* Botones de acción con efecto elevación */
+.delivery-btn-group .btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    position: relative;
+    overflow: hidden;
+}
+
+.delivery-btn-group .btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.5s ease, height 0.5s ease;
+}
+
+.delivery-btn-group .btn:hover::before {
+    width: 300%;
+    height: 300%;
+}
+
+.delivery-btn-group .btn:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.delivery-btn-group .btn:active {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Estado vacío con animación */
+.empty-state {
+    animation: fadeInScale 0.6s ease-in;
+}
+
+.empty-icon {
+    animation: bounce-soft 2s ease-in-out infinite;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes bounce-soft {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+/* Iconos con animación y brillo al hover */
+.delivery-item-animated i.bi {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0));
+}
+
+.delivery-item-animated:hover i.bi-geo-alt,
+.delivery-item-animated:hover i.bi-person-badge,
+.delivery-item-animated:hover i.bi-clock {
+    color: #0d6efd;
+    transform: scale(1.3) rotate(5deg);
+    filter: drop-shadow(0 3px 6px rgba(13, 110, 253, 0.4));
+}
+
+/* Paginación mejorada con sombra */
+.unplanned-deliveries-card .card-footer {
+    background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Efecto shimmer para el card header */
+.unplanned-deliveries-card .card-header {
+    position: relative;
+    overflow: hidden;
+}
+
+.unplanned-deliveries-card .card-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 70%
+    );
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .delivery-item-animated {
+        animation: fadeIn 0.3s ease-out forwards;
+    }
+    
+    .delivery-item-animated:hover {
+        transform: translateX(0) translateY(-2px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.12);
+    }
+    
+    .delivery-date-badge {
+        min-width: 90px !important;
+    }
+    
+    .delivery-btn-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .delivery-item-animated:hover .delivery-info {
+        transform: translateX(0);
+    }
+}

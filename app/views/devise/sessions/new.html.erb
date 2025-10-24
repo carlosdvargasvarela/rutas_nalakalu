@@ -1,29 +1,38 @@
 <!-- app/views/devise/sessions/new.html.erb -->
-<div class="row justify-content-center">
-  <div class="col-md-6 col-lg-5">
-    <div class="card shadow-sm border-0 mt-5">
-      <div class="card-header bg-primary text-white text-center">
-        <h4 class="mb-0">
-          <i class="bi bi-box-arrow-in-right me-2"></i>
-          Iniciar sesión
-        </h4>
+<div class="row justify-content-center align-items-center min-vh-100 py-3 py-md-0">
+  <div class="col-11 col-sm-10 col-md-8 col-lg-6 col-xl-5 col-xxl-4 devise-sessions-container">
+    <div class="card shadow-lg border-0 rounded-4 overflow-hidden devise-sessions-card">
+      <div class="card-header border-0 text-center py-3 position-relative devise-sessions-header">
+        <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10 header-wave-bg"></div>
+        <div class="position-relative">
+          <div class="mb-3">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-white shadow-sm devise-sessions-icon-container">
+              <i class="bi bi-shield-lock-fill fs-1 text-dark"></i>
+            </div>
+          </div>
+          <h3 class="mb-0 text-black fw-bold">Iniciar Sesión</h3>
+        </div>
       </div>
-      <div class="card-body">
+      <div class="card-body p-3 p-md-4">
         <%= simple_form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
           <div class="mb-3">
-            <%= f.input :email, required: true, autofocus: true, input_html: { class: "form-control" }, prepend: '<i class="bi bi-envelope-fill"></i>'.html_safe, label: "Correo electrónico" %>
+            <%= f.input :email, required: true, autofocus: true, input_html: { class: "form-control form-control-lg rounded-3 border-2 shadow-sm devise-sessions-input" }, prepend: '<i class="bi bi-envelope-fill text-primary"></i>'.html_safe, label: "Correo electrónico", label_html: { class: "fw-semibold text-dark mb-2" } %>
           </div>
           <div class="mb-3">
-            <%= f.input :password, required: true, input_html: { class: "form-control" }, prepend: '<i class="bi bi-lock-fill"></i>'.html_safe, label: "Contraseña" %>
+            <%= f.input :password, required: true, input_html: { class: "form-control form-control-lg rounded-3 border-2 shadow-sm devise-sessions-input" }, prepend: '<i class="bi bi-lock-fill text-primary"></i>'.html_safe, label: "Contraseña", label_html: { class: "fw-semibold text-dark mb-2" } %>
           </div>
           <% if devise_mapping.rememberable? %>
-            <div class="mb-3 form-check">
-              <%= f.input :remember_me, as: :boolean, label: "Recordarme", input_html: { class: "form-check-input" }, wrapper_html: { class: "form-check" } %>
+            <div class="mb-3">
+              <div class="form-check d-flex align-items-center">
+                <%= f.input :remember_me, as: :boolean, label: "Recordarme", input_html: { class: "form-check-input rounded-2 border-2 shadow-sm devise-sessions-checkbox" }, wrapper_html: { class: "form-check d-flex align-items-center mb-0" }, label_html: { class: "form-check-label ms-2 text-muted" } %>
+              </div>
             </div>
           <% end %>
-          <div class="d-flex justify-content-between align-items-center">
-            <%= link_to "¿Olvidaste tu contraseña?", new_password_path(resource_name), class: "small" %>
-            <%= f.button :submit, "Ingresar", class: "btn btn-primary" %>
+          <div class="d-grid gap-2 mb-3">
+            <%= f.button :submit, "Ingresar", class: "btn btn-lg btn-dark rounded-3 fw-semibold shadow-sm position-relative overflow-hidden devise-sessions-btn" %>
+          </div>
+          <div class="text-center">
+            <%= link_to "¿Olvidaste tu contraseña?", new_password_path(resource_name), class: "text-decoration-none fw-semibold small devise-sessions-link" %>
           </div>
         <% end %>
       </div>

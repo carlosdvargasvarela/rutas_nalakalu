@@ -1,21 +1,21 @@
 <!-- app/views/dashboard/_unplanned_deliveries_this_week.html.erb -->
-<div class="card shadow-sm border-0 rounded-3 mt-5">
+<div class="card unplanned-deliveries-card border-0 rounded-3 mt-5">
   <div class="card-header bg-light d-flex align-items-center justify-content-between">
     <h5 class="mb-0 fw-semibold">
       <i class="bi bi-list-ul me-2 text-primary"></i>
       Entregas de esta semana sin plan
     </h5>
-    <span class="badge bg-primary text-white px-3 py-2">
+    <span class="badge bg-primary text-white px-3 py-2 delivery-count-badge">
       <%= deliveries.respond_to?(:total_count) ? deliveries.total_count : deliveries.size %> entregas
     </span>
   </div>
   <% if deliveries.any? %>
     <div class="list-group list-group-flush">
       <% deliveries.each do |delivery| %>
-        <div class="list-group-item">
+        <div class="list-group-item delivery-item-animated">
           <div class="d-flex align-items-start justify-content-between gap-3">
             <div class="d-flex align-items-start gap-3 flex-grow-1">
-              <div class="text-center" style="min-width: 110px;">
+              <div class="delivery-date-badge text-center" style="min-width: 110px;">
                 <div class="fw-bold"><%= l delivery.delivery_date, format: :short %></div>
                 <%# Color según tipo %>
                 <% type_color =
@@ -25,7 +25,7 @@
                      else 'secondary'
                      end %>
                 <div class="mt-1">
-                  <span class="badge bg-<%= type_color %>">
+                  <span class="badge bg-<%= type_color %> delivery-type-badge">
                     <%= delivery.display_type %>
                   </span>
                 </div>
@@ -42,13 +42,13 @@
                      else 'secondary'
                      end %>
                 <div class="mt-1">
-                  <span class="badge bg-<%= status_color %> bg-opacity-75">
+                  <span class="badge bg-<%= status_color %> bg-opacity-75 delivery-status-badge">
                     <%= delivery.display_status %>
                   </span>
                 </div>
               </div>
-              <div class="flex-grow-1">
-                <div class="fw-semibold">
+              <div class="flex-grow-1 delivery-info">
+                <div class="fw-semibold delivery-title">
                   Pedido <%= link_to delivery.order.number, delivery_path(delivery), class: "text-decoration-none" %>
                   — <%= delivery.order.client.name %>
                 </div>
@@ -68,8 +68,8 @@
                 <% end %>
               </div>
             </div>
-            <div class="text-end">
-              <div class="btn-group">
+            <div class="text-end delivery-actions">
+              <div class="btn-group delivery-btn-group">
                 <%= link_to delivery_path(delivery),
                             class: "btn btn-outline-primary btn-sm rounded-pill" do %>
                   <i class="bi bi-eye"></i> Ver
@@ -94,8 +94,8 @@
       </div>
     <% end %>
   <% else %>
-    <div class="p-4 text-center text-muted">
-      <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+    <div class="p-4 text-center text-muted empty-state">
+      <i class="bi bi-inbox fs-3 d-block mb-2 empty-icon"></i>
       No hay entregas sin plan para esta semana
     </div>
   <% end %>
