@@ -217,4 +217,6 @@ Rails.application.routes.draw do
   end
 
   get "/offline", to: "pages#offline"
+
+  resources :audit_logs, only: [:index]
 end

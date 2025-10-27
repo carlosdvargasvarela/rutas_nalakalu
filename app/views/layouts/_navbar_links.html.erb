@@ -48,5 +48,12 @@
         </li>
       </ul>
     </li>
+    <% if policy(:audit_log).index? %>
+      <li class="nav-item">
+        <%= link_to audit_logs_path, class: 'nav-link' do %>
+          <i class="bi bi-clock-history me-1"></i> Log de cambios
+        <% end %>
+      </li>
+    <% end %>
   <% end %>
 </ul>

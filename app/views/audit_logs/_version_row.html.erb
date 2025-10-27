@@ -1,0 +1,72 @@
+<tr>
+  <td class="text-nowrap">
+    <%= format_datetime_cr(version.created_at) %>
+  </td>
+  <td>
+    <i class="bi bi-person-circle me-1"></i>
+    <%= user_name_for(version, users_by_id) %>
+  </td>
+  <td>
+    <% label = item_label(version) %>
+    <% record = safe_find_item(version) %>
+    <% if record.present? %>
+      <%# Enlace al recurso si existe ruta show conocida %>
+      <%# Ajustá rutas específicas si querés deep-links (ejemplo para algunos recursos): %>
+      <% path =
+          case version.item_type
+          when 'Order' then (respond_to?(:order_path) ? order_path(record) : nil)
+          when 'Delivery' then (respond_to?(:delivery_path) ? delivery_path(record) : nil)
+          when 'DeliveryPlan' then (respond_to?(:delivery_plan_path) ? delivery_plan_path(record) : nil)
+          when 'Client' then (respond_to?(:client_path) ? client_path(record) : nil)
+          when 'Seller' then (respond_to?(:seller_path) ? seller_path(record) : nil)
+          else nil
+          end %>
+      <% if path.present? %>
+        <a href="<%= path %>" class="text-decoration-none">
+          <i class="bi bi-link-45deg"></i> <%= label %>
+        </a>
+      <% else %>
+        <%= label %>
+      <% end %>
+    <% else %>
+      <span class="text-muted"><%= label %> (eliminado)</span>
+    <% end %>
+  </td>
+  <td>
+    <%= event_badge(version.event) %>
+  </td>
+  <td>
+    <% changes = summarize_changes(version, max_keys: 5) %>
+    <% if changes.blank? %>
+      <span class="text-muted">Sin detalles</span>
+    <% else %>
+      <ul class="list-unstyled mb-0">
+        <% changes.each do |attr, (before, after)| %>
+          <li class="text-wrap">
+            <code><%= attr %></code>:
+            <span class="text-muted"><%= before.inspect %></span>
+            <span class="mx-1"><%= change_arrow %></span>
+            <span><%= after.inspect %></span>
+          </li>
+        <% end %>
+      </ul>
+      <%# Botón expandir (opcional simple toggle con Bootstrap collapse) %>
+      <details class="mt-1">
+        <summary class="text-primary" style="cursor:pointer;">
+          Ver todos los cambios
+        </summary>
+        <% full_changes = summarize_changes(version, max_keys: 1000) %>
+        <ul class="list-unstyled mt-2">
+          <% full_changes.each do |attr, (before, after)| %>
+            <li class="text-wrap">
+              <code><%= attr %></code>:
+              <span class="text-muted"><%= before.inspect %></span>
+              <span class="mx-1"><%= change_arrow %></span>
+              <span><%= after.inspect %></span>
+            </li>
+          <% end %>
+        </ul>
+      </details>
+    <% end %>
+  </td>
+</tr>
