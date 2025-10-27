@@ -77,6 +77,7 @@ class DeliveriesController < ApplicationController
   def create
     authorize Delivery
     sanitize_delivery_address_param!
+    sanitize_order_id_param!
     @delivery = Deliveries::Creator.new(params: params, current_user: current_user).call
     redirect_to @delivery, notice: "Entrega creada correctamente."
   rescue => e
@@ -87,6 +88,7 @@ class DeliveriesController < ApplicationController
   def update
     authorize @delivery, :edit?
     sanitize_delivery_address_param!
+    sanitize_order_id_param!
     @delivery = Deliveries::Updater.new(delivery: @delivery, params: params, current_user: current_user).call
     redirect_to @delivery, notice: "Entrega actualizada correctamente."
   rescue => e
@@ -276,9 +278,14 @@ class DeliveriesController < ApplicationController
 
   def sanitize_delivery_address_param!
     raw = params.dig(:delivery, :delivery_address_id).to_s
-    if raw == "__new__"
-      params[:delivery][:delivery_address_id] = nil
-    end
+    params[:delivery][:delivery_address_id] = nil if raw == "__new__" || raw.blank?
+  rescue
+    # noop
+  end
+
+  def sanitize_order_id_param!
+    raw = params.dig(:delivery, :order_id).to_s
+    params[:delivery][:order_id] = nil if raw == "__new__" || raw.blank?
   rescue
     # noop
   end
@@ -298,8 +305,9 @@ class DeliveriesController < ApplicationController
   end
 
   def find_or_initialize_order_from_params(client)
-    if params[:order_id].present?
-      client.orders.find_by(id: params[:order_id]) || Order.new
+    raw_order_id = params.dig(:delivery, :order_id).to_s.strip
+    if raw_order_id.present? && raw_order_id != "__new__"
+      client.orders.find_by(id: raw_order_id) || Order.new
     elsif params[:order].present?
       client.orders.build(params.require(:order).permit(:number, :seller_id))
     else
@@ -316,13 +324,11 @@ class DeliveriesController < ApplicationController
         :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
         delivery_items_attributes: [
           :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
-          order_item_attributes: [ :id, :product, :quantity, :notes ]
+          { order_item_attributes: [ :id, :product, :quantity, :notes ] }
         ]
       )
-      # Evitar reasignar "__new__" al form
-      if permitted[:delivery_address_id].to_s == "__new__"
-        permitted[:delivery_address_id] = nil
-      end
+      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
+      permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
       @delivery.assign_attributes(permitted)
     end
 
@@ -342,12 +348,11 @@ class DeliveriesController < ApplicationController
         :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
         delivery_items_attributes: [
           :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
-          order_item_attributes: [ :id, :product, :quantity, :notes ]
+          { order_item_attributes: [ :id, :product, :quantity, :notes ] }
         ]
       )
-      if permitted[:delivery_address_id].to_s == "__new__"
-        permitted[:delivery_address_id] = nil
-      end
+      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
+      permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
       @delivery.assign_attributes(permitted)
     end
 
@@ -369,12 +374,11 @@ class DeliveriesController < ApplicationController
         :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
         delivery_items_attributes: [
           :id, :order_item_id, :quantity_delivered, :status, :notes, :_destroy,
-          order_item_attributes: [ :id, :product, :quantity, :notes ]
+          { order_item_attributes: [ :id, :product, :quantity, :notes ] }
         ]
       )
-      if permitted[:delivery_address_id].to_s == "__new__"
-        permitted[:delivery_address_id] = nil
-      end
+      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
+      permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
       @delivery.assign_attributes(permitted)
     end
 
@@ -386,15 +390,12 @@ class DeliveriesController < ApplicationController
       @client = @delivery.order&.client || Client.new
     end
 
-    if @delivery.order_id.present?
-      @order = Order.find_by(id: @delivery.order_id)
+    raw_order_id = @delivery.order_id.to_s.strip
+    if raw_order_id.present? && raw_order_id != "__new__"
+      @order = Order.find_by(id: raw_order_id)
     elsif params[:order].present?
       permitted_order = params.require(:order).permit(:number, :seller_id)
-      if @client
-        @order = @client.orders.build(permitted_order)
-      else
-        @order = Order.new(permitted_order)
-      end
+      @order = @client ? @client.orders.build(permitted_order) : Order.new(permitted_order)
     else
       @order = @delivery.order || Order.new
     end
@@ -424,9 +425,7 @@ class DeliveriesController < ApplicationController
           { order_item_attributes: [ :id, :product, :quantity, :notes ] }
         ]
       )
-      if permitted[:delivery_address_id].to_s == "__new__"
-        permitted[:delivery_address_id] = nil
-      end
+      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
       @service_case.assign_attributes(permitted)
 
       if @service_case.delivery_type.is_a?(String)
@@ -480,5 +479,12 @@ class DeliveriesController < ApplicationController
 
     flash.now[:alert] = "Error al generar caso de servicio: #{e.message}"
     render :new_service_case_for_existing, status: :unprocessable_entity
+  end
+
+  def handle_internal_error(e)
+    Rails.logger.error "Error crear mandado interno: #{e.message}"
+    @delivery ||= Delivery.new(delivery_type: :internal_delivery, status: :scheduled, delivery_date: Date.current)
+    flash.now[:alert] = "Error al crear el mandado interno: #{e.message}"
+    render :new_internal_delivery, status: :unprocessable_entity
   end
 end

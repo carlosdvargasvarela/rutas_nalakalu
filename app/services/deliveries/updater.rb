@@ -18,8 +18,7 @@ module Deliveries
         @delivery.delivery_address = @address
         update_delivery_items if delivery_params[:delivery_items_attributes].present?
 
-        # Actualizar atributos de la entrega (sin sobrescribir items/dirección)
-        @delivery.update!(delivery_params.except(:delivery_items_attributes, :delivery_address_id))
+        @delivery.update!(delivery_params.except(:delivery_items_attributes, :delivery_address_id, :order_id))
       end
 
       @delivery
@@ -36,26 +35,38 @@ module Deliveries
 
     def delivery_params
       params.require(:delivery).permit(
-        :delivery_date, :delivery_address_id, :contact_name, :contact_phone,
-        :delivery_notes, :delivery_type, :delivery_time_preference,
+        :delivery_date,
+        :delivery_address_id,
+        :order_id,
+        :contact_name,
+        :contact_phone,
+        :delivery_notes,
+        :delivery_type,
+        :delivery_time_preference,
         delivery_items_attributes: [
           :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
-          order_item_attributes: [ :id, :product, :quantity, :notes ]
+          { order_item_attributes: [ :id, :product, :quantity, :notes ] }
         ]
       )
     end
 
+    def normalize_id(raw)
+      s = raw.to_s.strip
+      return nil if s.blank? || s == "__new__"
+      s
+    end
+
     def find_or_resolve_order
-      if delivery_params[:order_id].present?
-        Order.find(delivery_params[:order_id])
-      else
-        delivery.order
-      end
+      order_id = normalize_id(delivery_params[:order_id])
+      return Order.find(order_id) if order_id.present?
+      delivery.order
     end
 
     def find_or_create_address(client)
-      if delivery_params[:delivery_address_id].present?
-        DeliveryAddress.find(delivery_params[:delivery_address_id]).tap do |addr|
+      addr_id = normalize_id(delivery_params[:delivery_address_id])
+
+      if addr_id.present?
+        DeliveryAddress.find(addr_id).tap do |addr|
           if params[:delivery_address].present? && address_params.values.any?(&:present?)
             addr.update!(address_params)
           end
@@ -137,7 +148,7 @@ module Deliveries
 
       DeliveryItem.new(
         order_item: order_item,
-        quantity_delivered: item_params[:quantity_delivered] || 1,
+        quantity_delivered: (item_params[:quantity_delivered].presence || 1).to_i,
         service_case: item_params[:service_case] == "1",
         status: :pending,
         notes: item_params[:notes]
@@ -165,7 +176,7 @@ module Deliveries
       else
         order.order_items.create!(
           product: oi_params[:product],
-          quantity: oi_params[:quantity].presence || 1,
+          quantity: (oi_params[:quantity].presence || 1).to_i,
           notes: oi_params[:notes],
           status: :in_production
         )
