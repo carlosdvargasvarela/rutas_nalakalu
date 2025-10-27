@@ -1,52 +1,73 @@
-<h1 class="mb-4 d-flex align-items-center">
-  <i class="bi bi-truck me-2 text-primary"></i>
-  <span>Listado de Entregas</span>
-</h1>
-<!-- Filtros -->
-<%= render "deliveries/index_partials/filters", q: @q %>
-<!-- Selector de Vista -->
-<div class="d-flex justify-content-between mb-3">
-  <div class="btn-group" role="group" aria-label="Selector de vista">
-    <%= link_to deliveries_path(request.query_parameters.merge(view: "table")),
-          class: "btn btn-sm #{params[:view] == 'table' || params[:view].blank? ? 'btn-primary' : 'btn-outline-secondary'}" do %>
-      <i class="bi bi-table"></i> Tabla
-    <% end %>
-    <%= link_to deliveries_path(request.query_parameters.merge(view: "cards")),
-          class: "btn btn-sm #{params[:view] == 'cards' ? 'btn-primary' : 'btn-outline-secondary'}" do %>
-      <i class="bi bi-grid-3x3-gap"></i> Cards
-    <% end %>
+<div class="container-fluid py-4">
+  <div class="dashboard-header">
+    <div class="row align-items-center position-relative">
+      <div class="col-md-6">
+        <h2 class="fw-bold mb-3">
+          <i class="bi bi-truck me-2"></i>
+          Listado de Entregas
+        </h2>
+        <p class="fst-italic text-white-50 mb-0">"Gestiona y visualiza todas las entregas"</p>
+      </div>
+      <div class="col-md-6 text-md-end mt-3 mt-md-0">
+        <div class="btn-toolbar justify-content-md-end gap-2 flex-wrap">
+          <% if policy(Delivery).new? %>
+            <%= link_to new_delivery_path, class: "btn btn-light btn-sm rounded-3 dashboard-action-btn" do %>
+              <i class="bi bi-plus-circle me-1"></i> Nueva entrega
+            <% end %>
+            <%= link_to new_internal_delivery_deliveries_path, class: "btn btn-light btn-sm rounded-3 dashboard-action-btn" do %>
+              <i class="bi bi-bag-plus me-1"></i> Mandado
+            <% end %>
+            <%= link_to new_service_case_deliveries_path, class: "btn btn-light btn-sm rounded-3 dashboard-action-btn" do %>
+              <i class="bi bi-tools me-1"></i> Caso servicio
+            <% end %>
+          <% end %>
+          <%= link_to deliveries_path(request.query_parameters.merge(format: :xlsx)),
+                    class: "btn btn-outline-light btn-sm rounded-3 dashboard-action-btn" do %>
+            <i class="bi bi-file-earmark-excel me-1"></i> Excel
+          <% end %>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
-<!-- Botones globales -->
-<div class="d-flex gap-2">
-  <% if policy(Delivery).new? %>
-    <%= link_to new_delivery_path, class: "btn btn-success btn-sm" do %>
-      <i class="bi bi-plus-circle me-1"></i> Nueva entrega
-    <% end %>
-    <%= link_to new_internal_delivery_deliveries_path, class: "btn btn-warning btn-sm" do %>
-      <i class="bi bi-bag-plus me-1"></i> Mandado
-    <% end %>
-    <%= link_to new_service_case_deliveries_path, class: "btn btn-info text-white btn-sm" do %>
-      <i class="bi bi-tools me-1"></i> Caso servicio
-    <% end %>
-  <% end %>
-  <div class="btn-group">
-    <%= link_to deliveries_path(request.query_parameters.merge(format: :xlsx)),
-                  class: "btn btn-outline-success btn-sm" do %>
-      <i class="bi bi-file-earmark-excel me-1"></i> Excel
-    <% end %>
+
+  <!-- Filtros -->
+  <%= render "deliveries/index_partials/filters", q: @q %>
+
+  <!-- Selector de Vista en card -->
+  <div class="card kpi-card mb-4">
+    <div class="card-body py-3">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-eye fs-5 text-dark"></i>
+          <span class="fw-semibold text-dark">Modo de visualización:</span>
+        </div>
+        <div class="btn-group" role="group" aria-label="Selector de vista">
+          <%= link_to deliveries_path(request.query_parameters.merge(view: "table")),
+                class: "btn btn-sm #{params[:view] == 'table' || params[:view].blank? ? 'btn-dark' : 'btn-outline-dark'} rounded-3 dashboard-action-btn" do %>
+            <i class="bi bi-table me-1"></i> Tabla
+          <% end %>
+          <%= link_to deliveries_path(request.query_parameters.merge(view: "cards")),
+                class: "btn btn-sm #{params[:view] == 'cards' ? 'btn-dark' : 'btn-outline-dark'} rounded-3 dashboard-action-btn" do %>
+            <i class="bi bi-grid-3x3-gap me-1"></i> Cards
+          <% end %>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
-</div>
-<% if @deliveries.any? %>
-  <% if params[:view] == "cards" %>
-    <%= render "deliveries/index_partials/cards", deliveries: @deliveries %>
+
+  <!-- Contenido -->
+  <% if @deliveries.any? %>
+    <% if params[:view] == "cards" %>
+      <%= render "deliveries/index_partials/cards", deliveries: @deliveries %>
+    <% else %>
+      <%= render "deliveries/index_partials/table", deliveries: @deliveries %>
+    <% end %>
+    
+    <!-- Paginación -->
+    <div class="d-flex justify-content-center mt-4">
+      <%= paginate @deliveries %>
+    </div>
   <% else %>
-    <%= render "deliveries/index_partials/table", deliveries: @deliveries %>
+    <%= render "deliveries/index_partials/no_results" %>
   <% end %>
-  <div class="d-flex justify-content-center mt-3">
-    <%= paginate @deliveries %>
-  </div>
-<% else %>
-  <%= render "deliveries/index_partials/no_results" %>
-<% end %>
+</div>

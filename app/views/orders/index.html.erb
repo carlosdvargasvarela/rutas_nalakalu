@@ -1,137 +1,170 @@
-<h1 class="mb-4 d-flex align-items-center">
-  <i class="bi bi-list-ul me-2 text-primary"></i>
-  <span>Listado de Pedidos</span>
-</h1>
-<div class="card shadow-sm mb-4">
-  <div class="card-body">
-    <%= search_form_for @q, url: orders_path, method: :get, html: { class: "row gy-2 gx-2 align-items-end" } do |f| %>
+<div class="container-fluid py-4">
+  <!-- Header estilo dashboard -->
+  <div class="dashboard-header">
+    <div class="row align-items-center position-relative">
+      <div class="col-md-6">
+        <h2 class="fw-bold mb-3">
+          <i class="bi bi-list-ul me-2"></i>
+          Listado de Pedidos
+        </h2>
+        <p class="fst-italic text-white-50 mb-0">"Gestiona todos los pedidos de manera eficiente"</p>
+      </div>
+      <div class="col-md-6 text-md-end mt-3 mt-md-0">
+        <div class="btn-toolbar justify-content-md-end gap-2 flex-wrap">
+          <% if policy(Delivery).new? %>
+            <%= link_to new_delivery_path, class: "btn btn-light btn-sm rounded-3 dashboard-action-btn" do %>
+              <i class="bi bi-plus-circle me-1"></i> Nueva entrega
+            <% end %>
+            <%= link_to new_internal_delivery_deliveries_path, class: "btn btn-light btn-sm rounded-3 dashboard-action-btn" do %>
+              <i class="bi bi-bag-plus me-1"></i> Nuevo mandado
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros en card -->
+  <div class="card kpi-card mb-4">
+    <div class="card-body">
+      <%= search_form_for @q, url: orders_path, method: :get, html: { class: "row gy-3 gx-3 align-items-end" } do |f| %>
       <!-- Cliente -->
       <div class="col-md-3">
+        <label class="form-label small fw-semibold text-dark">Cliente</label>
         <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-person"></i></span>
-          <%= f.search_field :client_name_cont, class: "form-control", placeholder: "Cliente" %>
+          <span class="input-group-text bg-light border-0"><i class="bi bi-person text-dark"></i></span>
+          <%= f.search_field :client_name_cont, class: "form-control border-0 bg-light", placeholder: "Buscar cliente..." %>
         </div>
       </div>
       <!-- Vendedor -->
       <div class="col-md-2">
+        <label class="form-label small fw-semibold text-dark">Vendedor</label>
         <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
-          <%= f.search_field :seller_seller_code_cont, class: "form-control", placeholder: "Vendedor" %>
+          <span class="input-group-text bg-light border-0"><i class="bi bi-person-badge text-dark"></i></span>
+          <%= f.search_field :seller_seller_code_cont, class: "form-control border-0 bg-light", placeholder: "Código..." %>
         </div>
       </div>
       <!-- Número de orden -->
       <div class="col-md-2">
+        <label class="form-label small fw-semibold text-dark">N° Orden</label>
         <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-hash"></i></span>
-          <%= f.search_field :number_cont, class: "form-control", placeholder: "N° Orden" %>
+          <span class="input-group-text bg-light border-0"><i class="bi bi-hash text-dark"></i></span>
+          <%= f.search_field :number_cont, class: "form-control border-0 bg-light", placeholder: "Número..." %>
         </div>
       </div>
       <!-- Fechas -->
       <div class="col-md-2">
-        <%= f.date_field :deliveries_delivery_date_gteq, class: "form-control", placeholder: "Desde" %>
+        <label class="form-label small fw-semibold text-dark">Desde</label>
+        <%= f.date_field :deliveries_delivery_date_gteq, class: "form-control border-0 bg-light", placeholder: "Desde" %>
       </div>
       <div class="col-md-2">
-        <%= f.date_field :deliveries_delivery_date_lteq, class: "form-control", placeholder: "Hasta" %>
+        <label class="form-label small fw-semibold text-dark">Hasta</label>
+        <%= f.date_field :deliveries_delivery_date_lteq, class: "form-control border-0 bg-light", placeholder: "Hasta" %>
       </div>
       <!-- Notas -->
-      <div class="col-md-3">
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold text-dark">Filtrar por notas</label>
         <%= f.select :notes_status_eq,
           options_for_select([
-            ['-- Filtrar por notas --', nil],
+            ['-- Todas --', nil],
             ['Con notas', 'with'],
             ['Con notas abiertas', 'open'],
             ['Con notas cerradas', 'closed']
           ], params.dig(:q, :notes_status_eq)),
-          {}, class: "form-select" %>
+          {}, class: "form-select border-0 bg-light" %>
       </div>
       <!-- Estado del pedido -->
-      <div class="col-md-3">
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold text-dark">Estado del pedido</label>
         <%= f.select :status_eq,
           options_for_select(Order.status_options_for_select, params.dig(:q, :status_eq)),
-          { include_blank: '-- Filtrar por estado de la orden --' }, class: "form-select" %>
+          { include_blank: '-- Todos --' }, class: "form-select border-0 bg-light" %>
       </div>
       <!-- Botones -->
-      <div class="col-md-2 text-end">
-        <%= f.submit "Buscar", class: "btn btn-primary w-100" %>
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold text-dark">&nbsp;</label>
+        <%= f.submit "Buscar", class: "btn btn-dark w-100 rounded-3 dashboard-action-btn" %>
       </div>
-      <div class="col-md-2 text-end">
-        <%= link_to "Quitar filtros", orders_path, class: "btn btn-outline-secondary w-100" %>
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold text-dark">&nbsp;</label>
+        <%= link_to "Quitar filtros", orders_path, class: "btn btn-outline-dark w-100 rounded-3 dashboard-action-btn" %>
       </div>
     <% end %>
+    </div>
   </div>
-</div>
-<div class="d-flex justify-content-end gap-2 mb-3">
-  <% if policy(Delivery).new? %>
-    <%= link_to new_delivery_path, class: "btn btn-success" do %>
-      <i class="bi bi-plus-circle me-1"></i> Nueva entrega
-    <% end %>
-    <%= link_to new_internal_delivery_deliveries_path, class: "btn btn-warning" do %>
-      <i class="bi bi-bag-plus me-1"></i> Nuevo mandado
-    <% end %>
+
+  <!-- Tabla de pedidos -->
+  <% if @orders.any? %>
+    <div class="card kpi-card">
+      <div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-dark sticky-top">
+            <tr>
+              <th scope="col" class="fw-bold"># Orden</th>
+              <th scope="col" class="fw-bold">Cliente</th>
+              <th scope="col" class="fw-bold">Vendedor</th>
+              <th scope="col" class="fw-bold" style="width: 25%;">Productos</th>
+              <th scope="col" class="fw-bold" style="width: 20%;">Entregas</th>
+              <th scope="col" class="fw-bold">Estado</th>
+              <th scope="col" class="text-center fw-bold">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @orders.each do |order| %>
+              <tr>
+                <td><span class="badge bg-dark fw-bold"><%= order.number %></span></td>
+                <td><i class="bi bi-person me-1 text-primary"></i><strong><%= order.client.name %></strong></td>
+                <td><%= order.seller.name %> <span class="badge bg-light text-dark"><%= order.seller.seller_code %></span></td>
+                <td>
+                  <% order.order_items.each do |item| %>
+                    <div class="d-flex align-items-center mb-2">
+                      <span class="badge bg-dark me-2 px-2"><%= item.quantity %></span>
+                      <strong class="text-dark"><%= item.product %></strong>
+                      <% if item.order_item_notes.any? %>
+                        <span class="badge bg-warning text-dark ms-2" title="<%= pluralize(item.order_item_notes.count, 'nota') %>">
+                          <i class="bi bi-chat-left-text"></i> <%= item.order_item_notes.count %>
+                        </span>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </td>
+                <td>
+                  <% order.deliveries.each do |delivery| %>
+                    <div class="mb-2">
+                      <i class="bi bi-calendar-event me-1 text-primary"></i> 
+                      <span class="fw-semibold"><%= format_date_dd_mm_yyyy(delivery.delivery_date) %></span>
+                      <span class="badge bg-<%= delivery_status_color(delivery.status) %> ms-1"><%= delivery.display_status %></span>
+                    </div>
+                  <% end %>
+                </td>
+                <td>
+                  <span class="badge bg-<%= order_status_color(order.status) %> px-3 py-2"><%= order.display_status %></span>
+                </td>
+                <td class="text-center">
+                  <div class="btn-group" role="group">
+                    <%= link_to order_path(order), class: "btn btn-sm btn-outline-dark dashboard-action-btn", title: "Ver detalles" do %>
+                      <i class="bi bi-eye"></i>
+                    <% end %>
+                    <%= button_to order_path(order), method: :delete, data: { confirm: "¿Seguro que deseas eliminar este pedido?" }, class: "btn btn-sm btn-outline-danger dashboard-action-btn" do %>
+                      <i class="bi bi-trash"></i>
+                    <% end %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="d-flex justify-content-center mt-4">
+      <%= paginate @orders %>
+    </div>
+  <% else %>
+    <div class="card kpi-card">
+      <div class="card-body text-center py-5">
+        <i class="bi bi-info-circle fs-1 text-muted mb-3"></i>
+        <p class="text-muted mb-0">No hay pedidos para mostrar.</p>
+      </div>
+    </div>
   <% end %>
 </div>
-<% if @orders.any? %>
-  <div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
-    <table class="table table-hover align-middle">
-      <thead class="table-light sticky-top">
-        <tr>
-          <th scope="col"># Orden</th>
-          <th scope="col">Cliente</th>
-          <th scope="col">Vendedor</th>
-          <th scope="col" style="width: 25%;">Productos</th>
-          <th scope="col" style="width: 20%;">Entregas</th>
-          <th scope="col">Estado</th>
-          <th scope="col" class="text-center">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @orders.each do |order| %>
-          <tr>
-            <td><span class="fw-bold"><%= order.number %></span></td>
-            <td><i class="bi bi-person me-1"></i><%= order.client.name %></td>
-            <td><%= order.seller.name %> <span class="text-muted small">(<%= order.seller.seller_code %>)</span></td>
-            <td>
-              <% order.order_items.each do |item| %>
-                <div class="d-flex align-items-center mb-1">
-                  <span class="badge bg-secondary me-2"><%= item.quantity %></span>
-                  <strong><%= item.product %></strong>
-                  <% if item.order_item_notes.any? %>
-                    <span class="badge bg-warning text-dark ms-2" title="<%= pluralize(item.order_item_notes.count, 'nota') %>">
-                      <i class="bi bi-chat-left-text"></i> <%= item.order_item_notes.count %>
-                    </span>
-                  <% end %>
-                </div>
-              <% end %>
-            </td>
-            <td>
-              <% order.deliveries.each do |delivery| %>
-                <div class="mb-1">
-                  <i class="bi bi-calendar-event me-1"></i> <%= format_date_dd_mm_yyyy(delivery.delivery_date) %>
-                  <span class="badge bg-<%= delivery_status_color(delivery.status) %>"><%= delivery.display_status %></span>
-                </div>
-              <% end %>
-            </td>
-            <td>
-              <span class="badge bg-<%= order_status_color(order.status) %>"><%= order.display_status %></span>
-            </td>
-            <td class="text-center">
-              <%= link_to order_path(order), class: "btn btn-sm btn-outline-primary", title: "Ver detalles" do %>
-                <i class="bi bi-eye"></i>
-              <% end %>
-              <%= button_to order_path(order), method: :delete, data: { confirm: "¿Seguro que deseas eliminar este pedido?" }, class: "btn btn-sm btn-outline-danger d-inline" do %>
-                <i class="bi bi-trash"></i>
-              <% end %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-  <div class="d-flex justify-content-center">
-    <%= paginate @orders %>
-  </div>
-<% else %>
-  <div class="alert alert-info d-flex align-items-center">
-    <i class="bi bi-info-circle me-2"></i> No hay pedidos para mostrar.
-  </div>
-<% end %>

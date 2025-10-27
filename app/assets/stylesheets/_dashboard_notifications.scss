@@ -1,0 +1,20 @@
+// app/assets/stylesheets/_dashboard_notifications.scss
+// Estilos para notificaciones en el dashboard
+
+.notification-item-mini {
+    transition: background-color 0.2s ease;
+}
+
+.notification-item-mini:hover {
+    background-color: #f8f9fa !important;
+}
+
+.notification-text {
+    line-height: 1.4;
+    font-size: 0.9rem;
+}
+
+.notification-type-icon {
+    width: 24px;
+    text-align: center;
+}

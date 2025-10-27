@@ -1,24 +1,13 @@
-/* app/assets/stylesheets/dashboard.css *//* app/assets/stylesheets/dashboard.css */
-
-/* Este archivo importa todos los módulos del dashboard */
+/* app/assets/stylesheets/dashboard.css */
 
 .dashboard-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
-@import 'animations';    transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-@import 'dashboard_core';}
-
-@import 'dashboard_notifications';
-
-@import 'dashboard_tasks';.dashboard-card:hover {
-
-@import 'dashboard_badges';    transform: translateY(-2px);
-
-@import 'dashboard_deliveries';    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
-
-@import 'dashboard_buttons';}
-
-@import 'dashboard_empty_state';
+.dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+}
 
 .dashboard-icon {
     width: 80px;
