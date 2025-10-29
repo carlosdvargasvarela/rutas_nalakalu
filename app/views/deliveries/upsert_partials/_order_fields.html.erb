@@ -1,49 +1,83 @@
 <% delivery = f.object %>
 <% delivery = f.object %>
-<div class="card shadow-sm mb-4">
-  <div class="card-header bg-light">
-    <i class="bi bi-receipt me-2 text-primary"></i><strong>Pedido</strong>
+<div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden">
+  <div class="card-header bg-gradient text-white py-3" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+    <div class="d-flex align-items-center">
+      <div class="bg-white bg-opacity-25 rounded-circle p-2 me-3">
+        <i class="bi bi-receipt-cutoff fs-5"></i>
+      </div>
+      <div>
+        <h5 class="mb-0 fw-bold">Pedido</h5>
+        <small class="opacity-75">Seleccione o cree un nuevo pedido</small>
+      </div>
+    </div>
   </div>
-  <div class="card-body">
-    <div class="row g-3">
-      <div class="col-md-8">
+  <div class="card-body p-4">
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <label class="form-label fw-semibold">
+          <i class="bi bi-receipt me-2 text-primary"></i>Seleccionar pedido
+        </label>
         <%= f.select :order_id,
           options_from_collection_for_select(
             @orders || [], :id, :number, delivery.order_id
           ),
           { prompt: "Selecciona un pedido" },
-          class: "form-select",
+          class: "form-select form-select-lg rounded-3",
           data: { 
             controller: "tom-select",
             "delivery-form-target": "orderSelect",
             action: "change->delivery-form#orderChanged"
           } %>
       </div>
-      <div class="col-md-4 d-flex align-items-end">
+      <div class="col-lg-4 d-flex align-items-end">
         <% unless delivery.persisted? %>
           <button type="button"
-                  class="btn btn-outline-primary btn-sm"
+                  class="btn btn-outline-primary btn-lg w-100 rounded-3"
                   data-action="click->delivery-form#toggleNewOrderFields"
             data-delivery-form-target="addOrderButton">
-            <i class="bi bi-plus-circle me-1"></i> Nuevo pedido
+            <i class="bi bi-plus-circle-fill me-2"></i>Nuevo pedido
           </button>
         <% end %>
       </div>
     </div>
-    <div data-delivery-form-target="newOrderFields" class="card card-body border-primary mt-3" style="display:none;">
-      <div class="row g-3">
-        <div class="col-md-6">
-          <%= text_field_tag "order[number]", nil, class:"form-control", placeholder:"Ej: PED-2025-001" %>
+    
+    <div data-delivery-form-target="newOrderFields" class="mt-4" style="display:none;">
+      <div class="card border-primary border-2 rounded-4 overflow-hidden">
+        <div class="card-header bg-primary bg-gradient text-white py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-receipt-cutoff me-2 fs-5"></i>
+              <span class="fw-bold">Datos del nuevo pedido</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-light rounded-circle"
+                    data-action="click->delivery-form#toggleNewOrderFields">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
         </div>
-        <div class="col-md-6">
-          <%= select_tag :seller_id,
-              options_from_collection_for_select(
-                Seller.all,
-                :id,
-                ->(s){ "#{s.name} (#{s.seller_code})" }
-              ),
-              prompt: "Selecciona vendedor",
-              class: "form-select" %>
+        <div class="card-body p-4 bg-light">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-hash me-2"></i>Número de pedido
+              </label>
+              <%= text_field_tag "order[number]", nil, class:"form-control form-control-lg rounded-3", placeholder:"Ej: PED-2025-001" %>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-person-badge me-2"></i>Vendedor
+              </label>
+              <%= select_tag :seller_id,
+                  options_from_collection_for_select(
+                    Seller.all,
+                    :id,
+                    ->(s){ "#{s.name} (#{s.seller_code})" }
+                  ),
+                  prompt: "Selecciona vendedor",
+                  class: "form-select form-select-lg rounded-3" %>
+            </div>
+          </div>
         </div>
       </div>
     </div>

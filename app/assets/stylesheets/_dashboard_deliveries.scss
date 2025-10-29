@@ -3,41 +3,34 @@
 
 /* Card principal con sombra elegante */
 .unplanned-deliveries-card {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    transition: all 0.4s ease;
+    @include box-shadow(0, 4px, 16px, rgba(0, 0, 0, 0.08));
+    @include cubic-transition(all, 0.4s);
     overflow: hidden;
-}
 
-.unplanned-deliveries-card:hover {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    &:hover {
+        @include box-shadow(0, 8px, 32px, rgba(0, 0, 0, 0.12));
+    }
 }
 
 /* Animación de entrada escalonada para items */
 .delivery-item-animated {
-    animation: slideInFade 0.5s ease-out forwards;
-    opacity: 0;
+    @include fade-in-animation(slideInFade);
     border-left: 3px solid transparent;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    @include cubic-transition(all, 0.4s);
+    @include staggered-animation-delay(5, 0.1s, 0.05s);
 }
-
-.delivery-item-animated:nth-child(1) { animation-delay: 0.1s; }
-.delivery-item-animated:nth-child(2) { animation-delay: 0.15s; }
-.delivery-item-animated:nth-child(3) { animation-delay: 0.2s; }
-.delivery-item-animated:nth-child(4) { animation-delay: 0.25s; }
-.delivery-item-animated:nth-child(5) { animation-delay: 0.3s; }
-.delivery-item-animated:nth-child(n+6) { animation-delay: 0.35s; }
 
 /* Hover effect en items con sombra profunda */
 .delivery-item-animated:hover {
-    background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%);
+    @include linear-gradient(to right, #f8f9fa, #ffffff);
     border-left-color: #0d6efd;
-    box-shadow: 0 8px 24px rgba(13, 110, 253, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
+    @include box-shadow-layered(0 8px 24px rgba(13, 110, 253, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08));
     transform: translateX(8px) translateY(-4px);
 }
 
 /* Información de entrega con animación fluida */
 .delivery-info {
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    @include cubic-transition(all, 0.4s);
 }
 
 .delivery-item-animated:hover .delivery-info {
@@ -46,67 +39,32 @@
 
 /* Título con efecto de subrayado animado */
 .delivery-title {
-    position: relative;
+    @include animated-border-bottom(3px, #0d6efd, #0dcaf0, 0.5s);
     display: inline-block;
-}
-
-.delivery-title::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 0;
-    height: 3px;
-    background: linear-gradient(to right, #0d6efd, #0dcaf0);
-    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 6px rgba(13, 110, 253, 0.4);
-}
-
-.delivery-item-animated:hover .delivery-title::after {
-    width: 100%;
 }
 
 /* Iconos con animación y brillo al hover */
 .delivery-item-animated i.bi {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    @include cubic-transition();
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0));
 }
 
 .delivery-item-animated:hover i.bi-geo-alt,
 .delivery-item-animated:hover i.bi-person-badge,
 .delivery-item-animated:hover i.bi-clock {
-    color: #0d6efd;
-    transform: scale(1.3) rotate(5deg);
-    filter: drop-shadow(0 3px 6px rgba(13, 110, 253, 0.4));
+    @include icon-hover-effect(1.3, 5deg, #0d6efd);
 }
 
 /* Paginación mejorada con sombra */
 .unplanned-deliveries-card .card-footer {
-    background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+    @include linear-gradient(to bottom, #ffffff, #f8f9fa);
     border-top: 1px solid rgba(0, 0, 0, 0.05);
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06);
+    @include box-shadow(0, -4px, 12px, rgba(0, 0, 0, 0.06));
 }
 
 /* Efecto shimmer para el card header */
 .unplanned-deliveries-card .card-header {
-    position: relative;
-    overflow: hidden;
-}
-
-.unplanned-deliveries-card .card-header::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(
-        45deg,
-        transparent 30%,
-        rgba(255, 255, 255, 0.3) 50%,
-        transparent 70%
-    );
-    animation: shimmer 3s infinite;
+    @include shimmer-effect(3s);
 }
 
 /* Responsive */
@@ -117,7 +75,7 @@
     
     .delivery-item-animated:hover {
         transform: translateX(0) translateY(-2px);
-        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.12);
+        @include box-shadow(0, 4px, 12px, rgba(13, 110, 253, 0.12));
     }
     
     .delivery-btn-group {
@@ -129,3 +87,4 @@
         transform: translateX(0);
     }
 }
+

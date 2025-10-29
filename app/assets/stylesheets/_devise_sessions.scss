@@ -1,5 +1,8 @@
 // Devise Sessions - Futuristic Login Design
 
+// Importar mixins
+@import 'mixins';
+
 // Variables
 $primary-gradient-start: #667eea;
 $primary-gradient-end: #764ba2;
@@ -7,7 +10,7 @@ $primary-gradient-end: #764ba2;
 // Card Styling
 .devise-sessions-card {
   backdrop-filter: blur(10px);
-  background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,249,250,0.98) 100%);
+  @include linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,249,250,0.98));
   animation: fadeInUp 0.5s ease-out;
 }
 
@@ -47,7 +50,7 @@ $primary-gradient-end: #764ba2;
 
 // Icon with Gradient
 .devise-sessions-icon-gradient {
-  background: linear-gradient(135deg, $primary-gradient-start 0%, $primary-gradient-end 100%);
+  @include linear-gradient(135deg, $primary-gradient-start, $primary-gradient-end);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -55,7 +58,7 @@ $primary-gradient-end: #764ba2;
 
 // Form Controls
 .devise-sessions-input {
-  transition: all 0.3s ease;
+  @include smooth-transition();
   
   &:focus {
     border-color: $primary-gradient-start !important;
@@ -80,18 +83,17 @@ $primary-gradient-end: #764ba2;
 .devise-sessions-btn {
   background: #000000 !important;
   border: none;
-  transition: all 0.3s ease;
+  @include button-states(-2px, 0);
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+    @include box-shadow(0, 8px, 20px, rgba(0, 0, 0, 0.4));
     background: #1a1a1a !important;
   }
 }
 
 // Forgot Password Link
 .devise-sessions-link {
-  background: linear-gradient(135deg, $primary-gradient-start 0%, $primary-gradient-end 100%);
+  @include linear-gradient(135deg, $primary-gradient-start, $primary-gradient-end);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

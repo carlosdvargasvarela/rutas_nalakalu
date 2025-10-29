@@ -3,36 +3,17 @@
 
 /* Botones de acción con efecto elevación */
 .delivery-btn-group .btn {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
-    position: relative;
-    overflow: hidden;
+    @include ripple-effect(rgba(255, 255, 255, 0.3));
+    @include hover-lift(-4px, 1.05, 0 6px 16px rgba(0, 0, 0, 0.2));
+    @include box-shadow(0, 3px, 8px, rgba(0, 0, 0, 0.12));
+    
+    &::before {
+        transition: width 0.5s ease, height 0.5s ease;
+    }
+
+    &:active {
+        transform: translateY(-1px) scale(1.02);
+        @include box-shadow(0, 2px, 6px, rgba(0, 0, 0, 0.15));
+    }
 }
 
-.delivery-btn-group .btn::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.5s ease, height 0.5s ease;
-}
-
-.delivery-btn-group .btn:hover::before {
-    width: 300%;
-    height: 300%;
-}
-
-.delivery-btn-group .btn:hover {
-    transform: translateY(-4px) scale(1.05);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-}
-
-.delivery-btn-group .btn:active {
-    transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}

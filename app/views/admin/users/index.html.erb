@@ -1,105 +1,108 @@
-<h2 class="mb-4">
-  <i class="bi bi-people-fill me-2 text-primary"></i>
-  Usuarios del sistema
-</h2>
-<div class="mb-3 d-flex justify-content-between align-items-center flex-wrap">
-  <%= link_to new_admin_user_path, class: "btn btn-primary" do %>
-    <i class="bi bi-person-plus-fill me-1"></i>
-    Nuevo usuario
-  <% end %>
-  <span class="text-muted ms-2">
-    <i class="bi bi-123 me-1"></i>
-    <%= pluralize(@users.count, "usuario") %> registrados
-  </span>
-</div>
-<div class="table-responsive shadow-sm rounded">
-  <table class="table table-hover align-middle mb-0">
-    <thead class="table-light">
-      <tr>
-        <th><i class="bi bi-person-fill me-1"></i>Nombre</th>
-        <th><i class="bi bi-envelope-fill me-1"></i>Correo</th>
-        <th><i class="bi bi-person-badge-fill me-1"></i>Rol</th>
-        <th><i class="bi bi-clock-history me-1"></i>Último acceso</th>
-        <th><i class="bi bi-shield-lock-fill me-1"></i>Estado</th>
-        <th><i class="bi bi-bell-fill me-1"></i>Notificaciones</th>
-        <th class="text-center"><i class="bi bi-gear-fill me-1"></i>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @users.each do |user| %>
-        <tr class="<%= 'table-danger' if user.access_locked? %>">
-          <td>
-            <i class="bi bi-person-circle me-1 text-secondary"></i>
-            <%= user.name %>
-          </td>
-          <td><%= user.email %></td>
-          <td>
-            <%# Badge de rol con color según tipo %>
-            <% role_color = case user.role
-              when "admin" then "danger"
-              when "production_manager" then "warning"
-              when "seller" then "info"
-              when "logistics" then "primary"
-              when "driver" then "secondary"
-              else "dark"
-            end %>
-            <span class="badge bg-<%= role_color %>">
-              <%= user.display_role %>
-            </span>
-          </td>
-          <td>
-            <% if user.last_sign_in_at.present? %>
-              <span class="text-success">
-                <%= l(user.last_sign_in_at, format: :short) %>
-              </span>
-            <% else %>
-              <span class="text-muted">Nunca</span>
-            <% end %>
-          </td>
-          <td>
-            <% if user.access_locked? %>
-              <span class="badge bg-danger">
-                <i class="bi bi-lock-fill me-1"></i>
-                Bloqueado
-              </span>
-            <% else %>
-              <span class="badge bg-success">
-                <i class="bi bi-unlock-fill me-1"></i>
-                Activo
-              </span>
-            <% end %>
-          </td>
-          <td>
-            <% if user.send_notifications? %>
-              <span class="badge bg-primary">
-                <i class="bi bi-bell-fill me-1"></i> On
-              </span>
-            <% else %>
-              <span class="badge bg-secondary">
-                <i class="bi bi-bell-slash me-1"></i> Off
-              </span>
-            <% end %>
-          </td>
-          <td class="text-center">
-            <div class="btn-group" role="group">
-              <%= link_to edit_admin_user_path(user),
-                  class: "btn btn-sm btn-outline-secondary",
-                  title: "Editar",
-                  data: { bs_toggle: "tooltip" } do %>
-                <i class="bi bi-pencil-square"></i>
-              <% end %>
+<!-- app/views/admin/users/index.html.erb -->
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="dashboard-header mb-4">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h2 class="fw-bold mb-1">
+          <i class="bi bi-people-fill me-2"></i>
+          Usuarios del Sistema
+        </h2>
+        <p class="text-white-50 mb-0">
+          Gestión de usuarios, roles y permisos.
+        </p>
+      </div>
+      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <%= link_to new_admin_user_path, class: "btn btn-light btn-sm rounded-3 dashboard-action-btn" do %>
+          <i class="bi bi-person-plus-fill me-1"></i>
+          Nuevo Usuario
+        <% end %>
+      </div>
+    </div>
+  </div>
 
-              <%= button_to toggle_notifications_admin_user_path(user),
-                  method: :patch,
-                  class: "btn btn-sm #{user.send_notifications? ? 'btn-outline-primary' : 'btn-outline-secondary'}",
-                  title: user.send_notifications? ? "Desactivar notificaciones" : "Activar notificaciones",
-                  data: { bs_toggle: "tooltip", turbo_confirm: "¿Cambiar notificaciones para #{user.name}?" } do %>
-                <i class="bi <%= user.send_notifications? ? 'bi-bell-fill' : 'bi-bell-slash' %>"></i>
-              <% end %>
-            </div>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+  <!-- Tabla de usuarios -->
+  <div class="card shadow-sm rounded-4">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+      <h5 class="mb-0 fw-bold">
+        <i class="bi bi-list-ul me-2"></i>
+        <%= pluralize(@users.count, "Usuario") %> Registrado<%= 's' if @users.count != 1 %>
+      </h5>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th class="fw-bold">Nombre</th>
+            <th class="fw-bold">Correo</th>
+            <th class="fw-bold">Rol</th>
+            <th class="fw-bold">Último acceso</th>
+            <th class="fw-bold">Estado</th>
+            <th class="fw-bold">Notificaciones</th>
+            <th class="text-center fw-bold">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @users.each do |user| %>
+            <tr class="<%= 'table-danger' if user.access_locked? %>">
+              <td>
+                <i class="bi bi-person-circle me-2 text-secondary"></i>
+                <%= user.name %>
+              </td>
+              <td><%= user.email %></td>
+              <td>
+                <% role_color = case user.role
+                  when "admin" then "danger"
+                  when "production_manager" then "warning text-dark"
+                  when "seller" then "info text-dark"
+                  when "logistics" then "primary"
+                  when "driver" then "secondary"
+                  else "dark"
+                end %>
+                <span class="badge bg-<%= role_color %> rounded-pill px-3 py-2"><%= user.display_role %></span>
+              </td>
+              <td>
+                <% if user.last_sign_in_at.present? %>
+                  <span class="text-muted"><%= l(user.last_sign_in_at, format: :short) %></span>
+                <% else %>
+                  <span class="text-muted fst-italic">Nunca</span>
+                <% end %>
+              </td>
+              <td>
+                <% if user.access_locked? %>
+                  <span class="badge bg-danger rounded-pill"><i class="bi bi-lock-fill me-1"></i> Bloqueado</span>
+                <% else %>
+                  <span class="badge bg-success rounded-pill"><i class="bi bi-unlock-fill me-1"></i> Activo</span>
+                <% end %>
+              </td>
+              <td>
+                <% if user.send_notifications? %>
+                  <span class="badge bg-primary rounded-pill">Activadas</span>
+                <% else %>
+                  <span class="badge bg-secondary rounded-pill">Desactivadas</span>
+                <% end %>
+              </td>
+              <td class="text-center">
+                <div class="btn-group" role="group">
+                  <%= link_to edit_admin_user_path(user),
+                      class: "btn btn-sm btn-outline-dark rounded-3 me-1",
+                      title: "Editar" do %>
+                    <i class="bi bi-pencil-square"></i>
+                  <% end %>
+
+                  <%= button_to toggle_notifications_admin_user_path(user),
+                      method: :patch,
+                      class: "btn btn-sm #{user.send_notifications? ? 'btn-outline-dark' : 'btn-outline-secondary'} rounded-3",
+                      title: user.send_notifications? ? "Desactivar notificaciones" : "Activar notificaciones",
+                      data: { turbo_confirm: "¿Cambiar estado de notificaciones para #{user.name}?" } do %>
+                    <i class="bi <%= user.send_notifications? ? 'bi-bell-fill' : 'bi-bell-slash' %>"></i>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>

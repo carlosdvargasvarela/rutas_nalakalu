@@ -1,101 +1,145 @@
 <%# app/views/deliveries/new_internal_delivery.html.erb %>
 <% if flash[:alert] %>
-  <div class="alert alert-danger d-flex align-items-center">
-    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-    <%= flash[:alert] %>
+  <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center border-0 shadow-sm mb-4" role="alert" style="border-left: 4px solid #dc3545 !important;">
+    <i class="bi bi-exclamation-triangle-fill me-3 fs-5"></i>
+    <div><%= flash[:alert] %></div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
 <% end %>
 <% if @delivery.errors.any? %>
-  <div class="alert alert-danger">
-    <strong>⚠️ Errores al crear el mandado interno:</strong>
-    <ul class="mb-0">
-      <% @delivery.errors.full_messages.each do |msg| %>
-        <li><%= msg %></li>
-      <% end %>
-    </ul>
+  <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert" style="border-left: 4px solid #dc3545 !important;">
+    <div class="d-flex align-items-start">
+      <i class="bi bi-exclamation-circle-fill me-3 fs-5 mt-1"></i>
+      <div class="flex-grow-1">
+        <strong class="d-block mb-2">⚠️ Errores al crear el mandado interno:</strong>
+        <ul class="mb-0 ps-3">
+          <% @delivery.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
 <% end %>
-<div class="d-flex align-items-center mb-4">
-  <i class="bi bi-box-seam fs-2 text-success me-2"></i>
-  <h1 class="h3 mb-0">Nuevo Mandado Interno</h1>
-</div>
-<div class="card shadow-sm border-0">
-  <div class="card-body">
-    <%= simple_form_for @delivery, url: create_internal_delivery_deliveries_path do |f| %>
-      <!-- 📅 DETALLES DE ENTREGA -->
-      <h5 class="text-muted mb-3">
-        <i class="bi bi-calendar-date me-2"></i> Detalles de la entrega
-      </h5>
-      <div class="row mb-4">
-        <div class="col-md-6">
-          <%= f.label :delivery_date, "Fecha de servicio", class: "form-label" %>
-          <%= f.date_field :delivery_date, class: "form-control", required: true %>
-        </div>
-        <div class="col-md-6">
-          <%= f.input :delivery_time_preference,
-              label: "Horario (opcional)",
-              input_html: { class: "form-control", placeholder: "Ej: 9:00 am o 'Mañana'" },
-              hint: "Indique un rango de horas si es necesario",
-              label_html: { class: "form-label fw-bold" } %>
-        </div>
+
+<div class="container-fluid px-0">
+  <div class="mb-4">
+    <div class="d-flex align-items-center mb-2">
+      <div class="bg-success bg-opacity-10 rounded-3 p-3 me-3">
+        <i class="bi bi-box-seam fs-2 text-success"></i>
       </div>
-      <!-- 👤 RESPONSABLE -->
-      <h5 class="text-muted mb-3">
-        <i class="bi bi-person-badge me-2"></i> Responsable
-      </h5>
-      <div class="row mb-4">
-        <div class="col-md-6">
-          <%= f.input :contact_name, label: "Nombre", 
-              input_html: { class: "form-control", placeholder: "Ej: Juan Pérez" },
-              label_html: { class: "form-label fw-bold" } %>
-        </div>
-        <div class="col-md-6">
-          <%= f.input :contact_phone, label: "Teléfono", 
-              input_html: { class: "form-control", placeholder: "8888-8888" },
-              label_html: { class: "form-label fw-bold" } %>
-        </div>
+      <div>
+        <h1 class="h2 mb-1 fw-bold">Nuevo Mandado Interno</h1>
+        <p class="text-muted mb-0 small">Complete la información del mandado interno</p>
       </div>
-      <!-- 📍 DIRECCIÓN -->
-      <h5 class="text-muted mb-3">
-        <i class="bi bi-geo-alt me-2"></i> Dirección del Mandado
-      </h5>
-      <div class="row mb-4">
-        <div class="col-md-8">
-          <%= label_tag "delivery_address[address]", "Dirección", class: "form-label fw-bold" %>
-          <%= text_field_tag "delivery_address[address]", nil,
-              placeholder: "Ej: Bodega Principal, Oficinas Centrales",
-              class: "form-control",
-              required: true %>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+    <div class="card-body p-4 p-lg-5">
+    <%= simple_form_for @delivery, url: create_internal_delivery_deliveries_path, defaults: { label_html: { class: 'fw-bold' } } do |f| %>
+      
+      <%# 📅 DETALLES DE ENTREGA %>
+      <fieldset class="mb-5">
+        <div class="d-flex align-items-center mb-4">
+          <div class="bg-primary bg-opacity-10 rounded-2 p-2 me-3">
+            <i class="bi bi-calendar-date fs-5 text-primary"></i>
+          </div>
+          <legend class="h5 mb-0 fw-semibold">Detalles de la entrega</legend>
         </div>
-        <div class="col-md-4">
-          <%= label_tag "delivery_address[description]", "Referencia (opcional)", class: "form-label fw-bold" %>
-          <%= text_field_tag "delivery_address[description]", nil,
-              placeholder: "Ej: Puerta trasera",
-              class: "form-control" %>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <%= f.input :delivery_date, as: :date, html5: true, label: "Fecha de servicio", required: true,
+                input_html: { class: 'form-control form-control-lg', style: 'border-radius: 8px;' } %>
+          </div>
+          <div class="col-md-6">
+            <%= f.input :delivery_time_preference,
+                label: "Horario (opcional)",
+                placeholder: "Ej: 9:00 am o 'Mañana'",
+                hint: "Indique un rango de horas si es necesario",
+                input_html: { class: 'form-control form-control-lg', style: 'border-radius: 8px;' } %>
+          </div>
         </div>
-      </div>
-      <!-- 📝 DETALLE DEL MANDADO -->
-      <h5 class="text-muted mb-3">
-        <i class="bi bi-pencil-square me-2"></i> Detalle del Mandado
-      </h5>
-      <div class="row mb-4">
-        <div class="col-12">
-          <%= f.simple_fields_for :delivery_items do |di| %>
-            <%= di.simple_fields_for :order_item do |oi| %>
-              <%= oi.input :product, as: :text, 
-                  label: "Descripción",
-                  input_html: { class: "form-control", rows: 3, placeholder: "Ej: Comprar tornillos en ferretería" },
-                  hint: "Especifique qué se debe realizar en este mandado",
-                  label_html: { class: "form-label fw-bold" } %>
-            <% end %>
+      </fieldset>
+
+      <%# 👤 RESPONSABLE %>
+      <fieldset class="mb-5">
+        <div class="d-flex align-items-center mb-4">
+          <div class="bg-info bg-opacity-10 rounded-2 p-2 me-3">
+            <i class="bi bi-person-badge fs-5 text-info"></i>
+          </div>
+          <legend class="h5 mb-0 fw-semibold">Responsable</legend>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <%= f.input :contact_name, label: "Nombre", placeholder: "Ej: Juan Pérez",
+                input_html: { class: 'form-control form-control-lg', style: 'border-radius: 8px;' } %>
+          </div>
+          <div class="col-md-6">
+            <%= f.input :contact_phone, label: "Teléfono", placeholder: "8888-8888",
+                input_html: { class: 'form-control form-control-lg', style: 'border-radius: 8px;' } %>
+          </div>
+        </div>
+      </fieldset>
+
+      <%# 📍 DIRECCIÓN %>
+      <fieldset class="mb-5">
+        <div class="d-flex align-items-center mb-4">
+          <div class="bg-warning bg-opacity-10 rounded-2 p-2 me-3">
+            <i class="bi bi-geo-alt fs-5 text-warning"></i>
+          </div>
+          <legend class="h5 mb-0 fw-semibold">Dirección del Mandado</legend>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-8">
+            <%= f.input :address, 
+                label: "Dirección",
+                input_html: { name: 'delivery_address[address]', class: 'form-control form-control-lg', style: 'border-radius: 8px;' },
+                placeholder: "Ej: Bodega Principal, Oficinas Centrales",
+                required: true %>
+          </div>
+          <div class="col-md-4">
+            <%= f.input :address_description,
+                label: "Referencia (opcional)",
+                input_html: { name: 'delivery_address[description]', class: 'form-control form-control-lg', style: 'border-radius: 8px;' },
+                placeholder: "Ej: Puerta trasera",
+                required: false %>
+          </div>
+        </div>
+      </fieldset>
+
+      <%# 📝 DETALLE DEL MANDADO %>
+      <fieldset class="mb-5">
+        <div class="d-flex align-items-center mb-4">
+          <div class="bg-secondary bg-opacity-10 rounded-2 p-2 me-3">
+            <i class="bi bi-pencil-square fs-5 text-secondary"></i>
+          </div>
+          <legend class="h5 mb-0 fw-semibold">Detalle del Mandado</legend>
+        </div>
+        <%= f.simple_fields_for :delivery_items do |di| %>
+          <%= di.simple_fields_for :order_item do |oi| %>
+            <%= oi.input :product, as: :text, 
+                label: "Descripción",
+                input_html: { rows: 4, placeholder: "Ej: Comprar tornillos en ferretería", 
+                             class: 'form-control form-control-lg', style: 'border-radius: 8px;' },
+                hint: "Especifique qué se debe realizar en este mandado" %>
+          <% end %>
+        <% end %>
+      </fieldset>
+
+      <%# ✅ BOTONES DE ACCIÓN %>
+      <div class="border-top pt-4 mt-5">
+        <div class="d-flex justify-content-end gap-3">
+          <%= link_to deliveries_path, class: "btn btn-lg btn-outline-secondary px-4", style: "border-radius: 8px;" do %>
+            <i class="bi bi-x-circle me-2"></i>Cancelar
+          <% end %>
+          <%= f.button :submit, class: "btn btn-lg btn-success px-5 shadow-sm", style: "border-radius: 8px;" do %>
+            <i class="bi bi-check-circle me-2"></i>Guardar Mandado
           <% end %>
         </div>
       </div>
-      <!-- ✅ BOTONES DE ACCIÓN -->
-      <div class="border-top pt-3 d-flex justify-content-end gap-2">
-        <%= link_to "Cancelar", deliveries_path, class: "btn btn-outline-secondary" %>
-        <%= f.button :submit, "Guardar Mandado", class: "btn btn-success px-4" %>
-      </div>
     <% end %>
   </div>
+</div>
 </div>

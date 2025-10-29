@@ -2,21 +2,71 @@
 <style>
   .nav-pills .nav-link {
     transition: all 0.3s ease;
-    font-weight: 500;
-    border-radius: 8px;
-    margin: 0 2px;
+    font-weight: 600;
+    border-radius: 12px;
+    margin: 0 4px;
+    padding: 12px 20px;
+    border: 2px solid transparent;
+    position: relative;
+  }
+
+  .nav-pills .nav-link:not(.active):not(.bg-success):not(.bg-danger) {
+    background-color: #f8f9fa;
+    color: #6c757d;
+  }
+
+  .nav-pills .nav-link:not(.active):not(.bg-success):not(.bg-danger):hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+  }
+
+  .nav-pills .nav-link.active {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+    transform: scale(1.05);
   }
 
   .nav-pills .nav-link.bg-success {
-    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+    background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.4);
   }
 
   .nav-pills .nav-link.bg-danger {
-    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+    background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
   }
 
   .nav-pills .nav-link.border-warning {
-    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.4);
+    border-color: #ffc107;
+    box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.3);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.3); }
+    50% { box-shadow: 0 0 0 8px rgba(255, 193, 7, 0.2); }
+  }
+
+  .nav-pills .nav-link i {
+    font-size: 1.1em;
+  }
+
+  .step {
+    animation: fadeIn 0.4s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .wizard-buttons {
+    background: linear-gradient(to top, #f8f9fa 0%, transparent 100%);
+    padding-top: 24px;
+    margin-top: 24px;
   }
 </style>
 <%= simple_form_for delivery, html: {
@@ -26,46 +76,49 @@
     "delivery-form-orders-url-value": orders_for_client_deliveries_path
   }
 } do |f| %>
-  <!-- Navegación tipo wizard con estilo semáforo -->
-  <ul class="nav nav-pills justify-content-center mb-4" data-delivery-wizard-target="nav">
-    <li class="nav-item">
-      <a class="nav-link active" href="#" data-index="0" data-action="delivery-wizard#goToStep">
-        <i class="bi bi-circle me-1" data-delivery-wizard-target="icon" data-step="0"></i>
-        Cliente
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="#" data-index="1" data-action="delivery-wizard#goToStep">
-        <i class="bi bi-circle me-1" data-delivery-wizard-target="icon" data-step="1"></i>
-        Pedido
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="#" data-index="2" data-action="delivery-wizard#goToStep">
-        <i class="bi bi-circle me-1" data-delivery-wizard-target="icon" data-step="2"></i>
-        Dirección
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="#" data-index="3" data-action="delivery-wizard#goToStep">
-        <i class="bi bi-circle me-1" data-delivery-wizard-target="icon" data-step="3"></i>
-        Datos
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="#" data-index="4" data-action="delivery-wizard#goToStep">
-        <i class="bi bi-circle me-1" data-delivery-wizard-target="icon" data-step="4"></i>
-        Productos
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="#" data-index="5" data-action="delivery-wizard#goToStep">
-        <i class="bi bi-circle me-1" data-delivery-wizard-target="icon" data-step="5"></i>
-        Confirmación
-      </a>
-    </li>
-  </ul>
-  <!-- Resto de tu formulario igual... -->
+  <!-- Navegación tipo wizard con diseño mejorado -->
+  <div class="mb-5">
+    <ul class="nav nav-pills justify-content-center flex-wrap gap-2" data-delivery-wizard-target="nav">
+      <li class="nav-item">
+        <a class="nav-link active" href="#" data-index="0" data-action="delivery-wizard#goToStep">
+          <i class="bi bi-circle-fill me-2" data-delivery-wizard-target="icon" data-step="0"></i>
+          <span class="d-none d-sm-inline">Cliente</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" data-index="1" data-action="delivery-wizard#goToStep">
+          <i class="bi bi-circle-fill me-2" data-delivery-wizard-target="icon" data-step="1"></i>
+          <span class="d-none d-sm-inline">Pedido</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" data-index="2" data-action="delivery-wizard#goToStep">
+          <i class="bi bi-circle-fill me-2" data-delivery-wizard-target="icon" data-step="2"></i>
+          <span class="d-none d-sm-inline">Dirección</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" data-index="3" data-action="delivery-wizard#goToStep">
+          <i class="bi bi-circle-fill me-2" data-delivery-wizard-target="icon" data-step="3"></i>
+          <span class="d-none d-sm-inline">Datos</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" data-index="4" data-action="delivery-wizard#goToStep">
+          <i class="bi bi-circle-fill me-2" data-delivery-wizard-target="icon" data-step="4"></i>
+          <span class="d-none d-sm-inline">Productos</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" data-index="5" data-action="delivery-wizard#goToStep">
+          <i class="bi bi-circle-fill me-2" data-delivery-wizard-target="icon" data-step="5"></i>
+          <span class="d-none d-sm-inline">Confirmación</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+  
+  <!-- Steps del formulario -->
   <div class="step" data-delivery-wizard-target="step">
     <%= render "deliveries/upsert_partials/client_fields", f: f, clients: clients %>
   </div>
@@ -84,10 +137,17 @@
   <div class="step d-none" data-delivery-wizard-target="step">
     <%= render "deliveries/upsert_partials/confirm_summary", f: f %>
   </div>
-  <!-- Botones -->
-  <div class="d-flex justify-content-between mt-4">
-    <button type="button" class="btn btn-outline-secondary" data-action="delivery-wizard#prev">← Atrás</button>
-    <button type="button" class="btn btn-primary" data-action="delivery-wizard#next" data-delivery-wizard-target="nextButton">Siguiente →</button>
-    <%= f.submit "Guardar entrega", class: "btn btn-success d-none", data: { delivery_wizard_target: "submitButton" } %>
+  
+  <!-- Botones con diseño mejorado -->
+  <div class="wizard-buttons">
+    <div class="d-flex justify-content-between align-items-center">
+      <button type="button" class="btn btn-outline-secondary btn-lg rounded-pill px-4 shadow-sm" data-action="delivery-wizard#prev">
+        <i class="bi bi-arrow-left me-2"></i>Atrás
+      </button>
+      <button type="button" class="btn btn-primary btn-lg rounded-pill px-4 shadow" data-action="delivery-wizard#next" data-delivery-wizard-target="nextButton">
+        Siguiente<i class="bi bi-arrow-right ms-2"></i>
+      </button>
+      <%= f.submit "Guardar entrega", class: "btn btn-success btn-lg rounded-pill px-5 shadow d-none", data: { delivery_wizard_target: "submitButton" } %>
+    </div>
   </div>
 <% end %>

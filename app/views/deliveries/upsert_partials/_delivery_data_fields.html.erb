@@ -1,19 +1,53 @@
-<div class="card shadow-sm mb-4">
-  <div class="card-header bg-light">
-    <i class="bi bi-calendar-event me-2 text-primary"></i><strong>Datos de entrega</strong>
+<div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden">
+  <div class="card-header bg-gradient text-white py-3" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+    <div class="d-flex align-items-center">
+      <div class="bg-white bg-opacity-25 rounded-circle p-2 me-3">
+        <i class="bi bi-calendar-event-fill fs-5"></i>
+      </div>
+      <div>
+        <h5 class="mb-0 fw-bold">Datos de entrega</h5>
+        <small class="opacity-75">Configure la fecha y detalles de la entrega</small>
+      </div>
+    </div>
   </div>
-  <div class="card-body">
-    <div class="row g-3">
+  <div class="card-body p-4">
+    <div class="row g-4">
       <% unless (current_user.seller? || current_user.production_manager?) && !delivery.new_record? %>
         <div class="col-md-4">
-          <%= f.label :delivery_date, "Fecha de servicio", class: "form-label" %>
-          <%= f.date_field :delivery_date, class: "form-control", required: true %>
+          <%= f.label :delivery_date, class: "form-label fw-semibold" do %>
+            <i class="bi bi-calendar3 me-2 text-danger"></i>Fecha de servicio
+          <% end %>
+          <%= f.date_field :delivery_date, class: "form-control form-control-lg rounded-3", required: true %>
         </div>
       <% end %>
-      <div class="col-md-4"><%= f.input :contact_name, label: "Contacto" %></div>
-      <div class="col-md-4"><%= f.input :contact_phone, label: "Teléfono" %></div>
-      <div class="col-12"><%= f.input :delivery_notes, as: :text, label: "Notas", input_html: { rows: 2 } %></div>
-      <div class="col-md-6"><%= f.input :delivery_time_preference, label: "Preferencia de horario", placeholder: "Ej: Mañana, tarde, 2:00 pm" %></div>
+      
+      <div class="col-md-4">
+        <%= f.label :contact_name, class: "form-label fw-semibold" do %>
+          <i class="bi bi-person-lines-fill me-2 text-primary"></i>Contacto
+        <% end %>
+        <%= f.input_field :contact_name, class: "form-control form-control-lg rounded-3", placeholder: "Nombre del contacto" %>
+      </div>
+      
+      <div class="col-md-4">
+        <%= f.label :contact_phone, class: "form-label fw-semibold" do %>
+          <i class="bi bi-telephone-fill me-2 text-success"></i>Teléfono
+        <% end %>
+        <%= f.input_field :contact_phone, class: "form-control form-control-lg rounded-3", placeholder: "Teléfono de contacto" %>
+      </div>
+      
+      <div class="col-md-6">
+        <%= f.label :delivery_time_preference, class: "form-label fw-semibold" do %>
+          <i class="bi bi-clock-fill me-2 text-info"></i>Preferencia de horario
+        <% end %>
+        <%= f.input_field :delivery_time_preference, class: "form-control form-control-lg rounded-3", placeholder: "Ej: Mañana, tarde, 2:00 pm" %>
+      </div>
+      
+      <div class="col-12">
+        <%= f.label :delivery_notes, class: "form-label fw-semibold" do %>
+          <i class="bi bi-chat-square-text-fill me-2 text-warning"></i>Notas adicionales
+        <% end %>
+        <%= f.input_field :delivery_notes, as: :text, class: "form-control form-control-lg rounded-3", rows: 3, placeholder: "Agregue cualquier información adicional sobre la entrega..." %>
+      </div>
     </div>
   </div>
 </div>

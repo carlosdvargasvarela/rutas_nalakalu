@@ -1,93 +1,126 @@
 <%# app/views/deliveries/upsert_partials/_order_items_fields.html.erb %>
-<div class="card shadow-sm mb-4">
-  <div class="card-header bg-light d-flex justify-content-between align-items-center">
-    <span><i class="bi bi-box-seam me-2 text-primary"></i><strong>Productos</strong></span>
-    <%= link_to "Agregar producto", "#", class: "btn btn-outline-secondary btn-sm", 
-          data: { action: "click->delivery-form#addDeliveryItem" } %>
+<div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden">
+  <div class="card-header bg-gradient text-white py-3 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+    <div class="d-flex align-items-center">
+      <div class="bg-white bg-opacity-25 rounded-circle p-2 me-3">
+        <i class="bi bi-box-seam-fill fs-5"></i>
+      </div>
+      <div>
+        <h5 class="mb-0 fw-bold">Productos</h5>
+        <small class="opacity-75">Agregue los productos a entregar</small>
+      </div>
+    </div>
+    <%= link_to "#", class: "btn btn-light btn-sm rounded-pill px-3 shadow-sm", 
+          data: { action: "click->delivery-form#addDeliveryItem" } do %>
+      <i class="bi bi-plus-circle-fill me-1"></i>Agregar producto
+    <% end %>
   </div>
   <div class="card-body p-0">
-    <table class="table mb-0 align-middle">
-      <thead class="table-light">
-        <tr>
-          <th>Producto</th>
-          <th>Cantidad pedida</th>
-          <th>A entregar</th>
-          <th>Notas</th>
-          <th width="80"></th>
-        </tr>
-      </thead>
-      <tbody id="delivery-items-container">
-        <%# Items existentes %>
-        <%= f.simple_fields_for :delivery_items do |di_f| %>
-          <tr class="delivery-item-row">
-            <%= di_f.hidden_field :id %>
-            <%= di_f.hidden_field :order_item_id %>
-            <td>
-              <%= di_f.simple_fields_for :order_item do |oi_f| %>
-                <%= oi_f.hidden_field :id %>
-                <%= oi_f.input :product, label: false, placeholder: "Nombre del producto", 
-                    input_html: { class: "form-control" } %>
-              <% end %>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th class="py-3 px-4 fw-semibold text-muted">
+              <i class="bi bi-tag me-2"></i>Producto
+            </th>
+            <th class="py-3 px-4 fw-semibold text-muted text-center">
+              <i class="bi bi-box me-2"></i>Cantidad pedida
+            </th>
+            <th class="py-3 px-4 fw-semibold text-muted text-center">
+              <i class="bi bi-truck me-2"></i>A entregar
+            </th>
+            <th class="py-3 px-4 fw-semibold text-muted">
+              <i class="bi bi-chat-left-text me-2"></i>Notas
+            </th>
+            <th class="py-3 px-4 text-center" width="80"></th>
+          </tr>
+        </thead>
+        <tbody id="delivery-items-container">
+          <%# Items existentes %>
+          <%= f.simple_fields_for :delivery_items do |di_f| %>
+            <tr class="delivery-item-row border-bottom">
+              <%= di_f.hidden_field :id %>
+              <%= di_f.hidden_field :order_item_id %>
+              <td class="px-4">
+                <%= di_f.simple_fields_for :order_item do |oi_f| %>
+                  <%= oi_f.hidden_field :id %>
+                  <%= oi_f.input :product, label: false, placeholder: "Nombre del producto", 
+                      input_html: { class: "form-control rounded-3" } %>
+                <% end %>
+              </td>
+              <td class="px-4 text-center">
+                <%= di_f.simple_fields_for :order_item do |oi_f| %>
+                  <%= oi_f.input :quantity, label: false, placeholder: "Cant.", 
+                      input_html: { class: "form-control text-center rounded-3", type: "number", min: 1, style: "max-width: 100px; margin: 0 auto;" } %>
+                <% end %>
+              </td>
+              <td class="px-4 text-center">
+                <%= di_f.input :quantity_delivered, label: false, placeholder: "A entregar", 
+                    input_html: { class: "form-control text-center rounded-3", type: "number", min: 1, style: "max-width: 100px; margin: 0 auto;" } %>
+              </td>
+              <td class="px-4">
+                <%= di_f.simple_fields_for :order_item do |oi_f| %>
+                  <%= oi_f.input :notes, label: false, placeholder: "Notas (opcional)", 
+                      input_html: { class: "form-control rounded-3", rows: 1 } %>
+                <% end %>
+              </td>
+              <td class="text-center px-4">
+                <% unless f.object.persisted? %>
+                  <%= link_to "#", class: "btn btn-outline-danger btn-sm rounded-circle", 
+                      data: { action: "click->delivery-form#removeDeliveryItem" } do %>
+                    <i class="bi bi-x-lg"></i>
+                  <% end %>
+                <% end %>
+                <%= di_f.hidden_field :_destroy, class: "destroy-flag" %>
+              </td>
+            </tr>
+          <% end %>
+          
+          <%# Template oculto para nuevos items %>
+          <tr class="delivery-item-template delivery-item-row border-bottom" style="display:none;">
+            <td class="px-4">
+              <input class="form-control rounded-3" placeholder="Nombre del producto" 
+                     name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][product]" />
             </td>
-            <td>
-              <%= di_f.simple_fields_for :order_item do |oi_f| %>
-                <%= oi_f.input :quantity, label: false, placeholder: "Cantidad", 
-                    input_html: { class: "form-control", type: "number", min: 1 } %>
-              <% end %>
+            <td class="px-4 text-center">
+              <input class="form-control text-center rounded-3" type="number" min="1" value="1" placeholder="Cant."
+                     name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][quantity]"
+                     style="max-width: 100px; margin: 0 auto;" />
             </td>
-            <td>
-              <%= di_f.input :quantity_delivered, label: false, placeholder: "A entregar", 
-                  input_html: { class: "form-control", type: "number", min: 1 } %>
+            <td class="px-4 text-center">
+              <input class="form-control text-center rounded-3" type="number" min="1" value="1" placeholder="A entregar"
+                     name="delivery[delivery_items_attributes][NEW_RECORD][quantity_delivered]"
+                     style="max-width: 100px; margin: 0 auto;" />
             </td>
-            <td>
-              <%= di_f.simple_fields_for :order_item do |oi_f| %>
-                <%= oi_f.input :notes, label: false, placeholder: "Notas (opcional)", 
-                    input_html: { class: "form-control", rows: 1 } %>
-              <% end %>
+            <td class="px-4">
+              <textarea class="form-control rounded-3" rows="1" placeholder="Notas (opcional)"
+                        name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][notes]"></textarea>
             </td>
-            <td class="text-center">
-              <% unless f.object.persisted? %>
-                <%= link_to "×", "#", class: "btn btn-outline-danger btn-sm", 
-                    data: { action: "click->delivery-form#removeDeliveryItem" } %>
-              <% end %>
-              <%= di_f.hidden_field :_destroy, class: "destroy-flag" %>
+            <td class="text-center px-4">
+              <a href="#" class="btn btn-outline-danger btn-sm rounded-circle" 
+                 data-action="click->delivery-form#removeDeliveryItem">
+                <i class="bi bi-x-lg"></i>
+              </a>
+              <input type="hidden" name="delivery[delivery_items_attributes][NEW_RECORD][_destroy]" class="destroy-flag" />
             </td>
           </tr>
-        <% end %>
-        <%# Template oculto para nuevos items %>
-        <tr class="delivery-item-template delivery-item-row" style="display:none;">
-          <td>
-            <input class="form-control" placeholder="Nombre del producto" 
-                   name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][product]" />
-          </td>
-          <td>
-            <input class="form-control" type="number" min="1" value="1" placeholder="Cantidad"
-                   name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][quantity]" />
-          </td>
-          <td>
-            <input class="form-control" type="number" min="1" value="1" placeholder="A entregar"
-                   name="delivery[delivery_items_attributes][NEW_RECORD][quantity_delivered]" />
-          </td>
-          <td>
-            <textarea class="form-control" rows="1" placeholder="Notas (opcional)"
-                      name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][notes]"></textarea>
-          </td>
-          <td class="text-center">
-            <a href="#" class="btn btn-outline-danger btn-sm" 
-               data-action="click->delivery-form#removeDeliveryItem">×</a>
-            <input type="hidden" name="delivery[delivery_items_attributes][NEW_RECORD][_destroy]" class="destroy-flag" />
-          </td>
-        </tr>
-        <%# Fila para mostrar cuando no hay productos %>
-        <% if f.object.delivery_items.empty? %>
-          <tr class="no-items-row">
-            <td colspan="5" class="text-center text-muted py-4">
-              <i class="bi bi-box me-2"></i>
-              No hay productos agregados. Haz clic en "Agregar producto" para comenzar.
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+          
+          <%# Fila para mostrar cuando no hay productos %>
+          <% if f.object.delivery_items.empty? %>
+            <tr class="no-items-row">
+              <td colspan="5" class="text-center text-muted py-5">
+                <div class="d-flex flex-column align-items-center justify-content-center">
+                  <div class="bg-light rounded-circle p-4 mb-3">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                  </div>
+                  <p class="mb-0 fw-semibold">No hay productos agregados</p>
+                  <p class="small text-muted">Haz clic en "Agregar producto" para comenzar</p>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>

@@ -1,89 +1,119 @@
-<!-- app/views/clients/index.html.erb -->
-<div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
-  <h3 class="mb-0">Clientes</h3>
-  <div class="d-flex gap-2">
-    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filters">
-      <i class="bi bi-funnel"></i> Filtros
-    </button>
-    <% if policy(Client).create? %>
-      <%= link_to raw('<i class="bi bi-plus-lg"></i> Nuevo'), new_client_path, class: "btn btn-primary" %>
-    <% end %>
-  </div>
-</div>
 
-<div id="filters" class="collapse mb-3">
-  <div class="card">
-    <div class="card-body">
-      <%= search_form_for @q, url: clients_path, method: :get, builder: SimpleForm::FormBuilder, html: { class: "row g-2" } do |f| %>
-        <div class="col-md-4">
-          <%= f.input :name_cont, label: "Nombre contiene", input_html: { placeholder: "Ej. María Pérez" } %>
+<!-- app/views/clients/index.html.erb -->
+
+<div class="container-fluid py-4">
+  <!-- Header estilo dashboard -->
+  <div class="dashboard-header mb-4">
+    <div class="row align-items-center position-relative">
+      <div class="col-md-8">
+        <h2 class="fw-bold mb-3">
+          <i class="bi bi-people me-2"></i>
+          Clientes
+        </h2>
+        <p class="text-white-50 mb-2">
+          Gestión y consulta de clientes registrados
+        </p>
+        <p class="fst-italic text-white-50 mb-0">"Conectando personas, potenciando relaciones."</p>
+      </div>
+      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <div class="btn-toolbar justify-content-md-end gap-2 flex-wrap">
+          <button class="btn btn-light btn-lg rounded-3 dashboard-action-btn" type="button" data-bs-toggle="collapse" data-bs-target="#filters">
+            <i class="bi bi-funnel me-1"></i> Filtros
+          </button>
+          <% if policy(Client).create? %>
+            <%= link_to new_client_path, class: "btn btn-primary btn-lg rounded-3 dashboard-action-btn" do %>
+              <i class="bi bi-plus-lg me-1"></i> Nuevo
+            <% end %>
+          <% end %>
         </div>
-        <div class="col-md-4">
-          <%= f.input :email_cont, label: "Correo contiene", input_html: { placeholder: "usuario@empresa.com" } %>
-        </div>
-        <div class="col-md-4">
-          <%= f.input :phone_cont, label: "Teléfono contiene", input_html: { placeholder: "8xx-xxxx" } %>
-        </div>
-        <div class="col-12 d-flex gap-2">
-          <%= f.submit "Aplicar filtros", class: "btn btn-outline-primary" %>
-          <%= link_to "Limpiar", clients_path, class: "btn btn-outline-secondary" %>
-        </div>
-      <% end %>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="card">
-  <div class="table-responsive">
-    <table class="table table-hover table-sm align-middle mb-0">
-      <thead class="table-light">
-        <tr>
-          <th><%= sort_link(@q, :name, "Nombre") %></th>
-          <th>Teléfono</th>
-          <th>Correo</th>
-          <th><%= sort_link(@q, :created_at, "Creado") %></th>
-          <th class="text-end">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% if @clients.any? %>
-          <% @clients.each do |client| %>
+  <!-- Filtros -->
+  <div id="filters" class="collapse mb-4">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+      <div class="card-header bg-gradient text-white py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <i class="bi bi-funnel me-2"></i>Filtros de búsqueda
+      </div>
+      <div class="card-body p-4">
+        <%= search_form_for @q, url: clients_path, method: :get, builder: SimpleForm::FormBuilder, html: { class: "row g-4" } do |f| %>
+          <div class="col-md-4">
+            <%= f.input :name_cont, label: "Nombre contiene", input_html: { placeholder: "Ej. María Pérez", class: "form-control form-control-lg rounded-3" } %>
+          </div>
+          <div class="col-md-4">
+            <%= f.input :email_cont, label: "Correo contiene", input_html: { placeholder: "usuario@empresa.com", class: "form-control form-control-lg rounded-3" } %>
+          </div>
+          <div class="col-md-4">
+            <%= f.input :phone_cont, label: "Teléfono contiene", input_html: { placeholder: "8xx-xxxx", class: "form-control form-control-lg rounded-3" } %>
+          </div>
+          <div class="col-12 d-flex gap-2 mt-2">
+            <%= f.submit "Aplicar filtros", class: "btn btn-outline-primary btn-lg rounded-pill px-4" %>
+            <%= link_to "Limpiar", clients_path, class: "btn btn-outline-secondary btn-lg rounded-pill px-4" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de clientes -->
+  <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="py-3 px-4 fw-semibold text-muted"><%= sort_link(@q, :name, "Nombre") %></th>
+            <th class="py-3 px-4 fw-semibold text-muted">Teléfono</th>
+            <th class="py-3 px-4 fw-semibold text-muted">Correo</th>
+            <th class="py-3 px-4 fw-semibold text-muted"><%= sort_link(@q, :created_at, "Creado") %></th>
+            <th class="py-3 px-4 text-end fw-semibold text-muted">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @clients.any? %>
+            <% @clients.each do |client| %>
+              <tr>
+                <td class="fw-semibold px-4">
+                  <%= link_to client.name, client_path(client), class: "link-primary link-underline-opacity-0" %>
+                </td>
+                <td class="px-4"><%= client.phone.presence || "-" %></td>
+                <td class="px-4"><%= client.email.presence || "-" %></td>
+                <td class="px-4"><%= l(client.created_at, format: :short) %></td>
+                <td class="text-end px-4">
+                  <div class="btn-group btn-group-sm">
+                    <%= link_to raw('<i class="bi bi-eye"></i>'), client_path(client), class: "btn btn-outline-primary rounded-circle", title: "Ver" %>
+                    <% if policy(client).update? %>
+                      <%= link_to raw('<i class="bi bi-pencil"></i>'), edit_client_path(client), class: "btn btn-outline-secondary rounded-circle", title: "Editar" %>
+                    <% end %>
+                    <% if policy(client).destroy? %>
+                      <%= link_to raw('<i class="bi bi-trash"></i>'), client_path(client),
+                          data: { turbo_method: :delete, turbo_confirm: "¿Eliminar este cliente?" },
+                          class: "btn btn-outline-danger rounded-circle", title: "Eliminar" %>
+                    <% end %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
             <tr>
-              <td class="fw-semibold"><%= link_to client.name, client_path(client), class: "link-primary link-underline-opacity-0" %></td>
-              <td><%= client.phone.presence || "-" %></td>
-              <td><%= client.email.presence || "-" %></td>
-              <td><%= l(client.created_at, format: :short) %></td>
-              <td class="text-end">
-                <div class="btn-group btn-group-sm">
-                  <%= link_to raw('<i class="bi bi-eye"></i>'), client_path(client), class: "btn btn-outline-primary", title: "Ver" %>
-                  <% if policy(client).update? %>
-                    <%= link_to raw('<i class="bi bi-pencil"></i>'), edit_client_path(client), class: "btn btn-outline-secondary", title: "Editar" %>
-                  <% end %>
-                  <% if policy(client).destroy? %>
-                    <%= link_to raw('<i class="bi bi-trash"></i>'), client_path(client),
-                        data: { turbo_method: :delete, turbo_confirm: "¿Eliminar este cliente?" },
-                        class: "btn btn-outline-danger", title: "Eliminar" %>
-                  <% end %>
+              <td colspan="5">
+                <div class="p-5 text-center text-muted">
+                  <div class="bg-light rounded-circle p-4 mb-3 d-inline-block">
+                    <i class="bi bi-people fs-1 text-muted"></i>
+                  </div>
+                  <p class="mb-0 fw-semibold">No hay clientes que coincidan con los filtros</p>
+                  <p class="small text-muted">Intenta ajustar los criterios de búsqueda</p>
                 </div>
               </td>
             </tr>
           <% end %>
-        <% else %>
-          <tr>
-            <td colspan="5">
-              <div class="p-4 text-center text-muted">
-                <i class="bi bi-people fs-3 d-block mb-2"></i>
-                No hay clientes que coincidan con los filtros.
-              </div>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-  <div class="card-footer bg-white">
-    <div class="d-flex justify-content-center m-0">
-      <%= paginate @clients %>
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer bg-white">
+      <div class="d-flex justify-content-center m-0">
+        <%= paginate @clients %>
+      </div>
     </div>
   </div>
 </div>

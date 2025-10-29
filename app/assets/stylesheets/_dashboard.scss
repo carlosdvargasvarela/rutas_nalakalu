@@ -1,23 +1,27 @@
 // Dashboard - Modern Design with Animations
 
+// Importar mixins primero
+@import 'mixins';
+@import 'animations';
+@import 'dashboard_core';
+@import 'dashboard_badges';
+@import 'dashboard_buttons';
+@import 'dashboard_deliveries';
+@import 'dashboard_tasks';
+@import 'dashboard_notifications';
+@import 'dashboard_empty_state';
+
 // Header Section
 .dashboard-header {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  @include linear-gradient(135deg, #1a1a1a, #2d2d2d);
   border-radius: 1.5rem;
   padding: 2rem;
   margin-bottom: 2rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  @include box-shadow(0, 10px, 40px, rgba(0, 0, 0, 0.15));
   animation: fadeInDown 0.6s ease-out;
-  position: relative;
-  overflow: hidden;
+  @include overlay-gradient(1, 1);
   
   &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
     background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
     pointer-events: none;
   }
@@ -34,35 +38,20 @@
 
 // Action Buttons
 .dashboard-action-btn {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
+  @include ripple-effect(rgba(255, 255, 255, 0.3));
+  @include button-states(-3px, -1px);
   
   &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
     transition: width 0.6s, height 0.6s;
   }
   
   &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+    @include box-shadow(0, 10px, 25px, rgba(0, 0, 0, 0.2));
     
     &::before {
       width: 300px;
       height: 300px;
     }
-  }
-  
-  &:active {
-    transform: translateY(-1px);
   }
 }
 
@@ -70,21 +59,16 @@
 .kpi-card {
   border-radius: 1.25rem;
   border: none;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  @include linear-gradient(135deg, #ffffff, #f8f9fa);
+  @include box-shadow(0, 4px, 20px, rgba(0, 0, 0, 0.08));
+  @include cubic-transition(all, 0.4s);
   animation: fadeInUp 0.6s ease-out;
   animation-fill-mode: both;
+  @include staggered-animation-delay(8, 0s, 0.1s);
   
   &:hover {
     transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-  }
-  
-  @for $i from 1 through 8 {
-    &:nth-child(#{$i}) {
-      animation-delay: #{$i * 0.1}s;
-    }
+    @include box-shadow(0, 15px, 40px, rgba(0, 0, 0, 0.15));
   }
 }
 
@@ -92,12 +76,12 @@
 .approval-card {
   border-radius: 1.5rem;
   border: none;
-  box-shadow: 0 8px 35px rgba(0, 0, 0, 0.12);
+  @include box-shadow(0, 8px, 35px, rgba(0, 0, 0, 0.12));
   animation: fadeIn 0.8s ease-out;
   overflow: hidden;
   
-  .card-header {
-    background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+    .card-header {
+    @include linear-gradient(135deg, #000000, #1a1a1a);
     border: none;
     padding: 1.5rem;
     position: relative;
@@ -109,7 +93,7 @@
       left: 0;
       width: 100%;
       height: 3px;
-      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      @include linear-gradient(90deg, #667eea, #764ba2);
     }
     
     h5 {
@@ -123,7 +107,7 @@
   
   .table {
     tr {
-      transition: all 0.3s ease;
+      @include smooth-transition();
       
       &:hover {
         background: linear-gradient(90deg, rgba(102, 126, 234, 0.08) 0%, transparent 100%);
@@ -133,11 +117,11 @@
   }
   
   .btn {
-    transition: all 0.3s ease;
+    @include smooth-transition();
     
     &:hover {
       transform: scale(1.05);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      @include box-shadow(0, 5px, 15px, rgba(0, 0, 0, 0.2));
     }
   }
 }
@@ -204,152 +188,100 @@
 .rescheduled-card {
   border-radius: 1.5rem;
   border: none;
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+  @include box-shadow(0, 6px, 25px, rgba(0, 0, 0, 0.1));
   animation: fadeInUp 0.7s ease-out;
-  transition: all 0.3s ease;
+  @include smooth-transition();
   
   &:hover {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    @include box-shadow(0, 12px, 40px, rgba(0, 0, 0, 0.15));
   }
   
   .card-header {
-    transition: all 0.3s ease;
+    @include smooth-transition();
     
     &:hover {
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+      @include linear-gradient(135deg, #f8f9fa, #e9ecef);
     }
     
     .badge {
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 8px rgba(13, 202, 240, 0.3);
+      @include smooth-transition();
+      @include box-shadow(0, 2px, 8px, rgba(13, 202, 240, 0.3));
       
       &:hover {
         transform: scale(1.05);
-        box-shadow: 0 4px 12px rgba(13, 202, 240, 0.4);
+        @include box-shadow(0, 4px, 12px, rgba(13, 202, 240, 0.4));
       }
     }
   }
   
   .table tbody tr {
-    transition: all 0.3s ease;
-    border-left: 3px solid transparent;
-    
-    &:hover {
-      background: linear-gradient(90deg, rgba(13, 202, 240, 0.08) 0%, transparent 100%);
-      border-left-color: #0dcaf0;
-      transform: translateX(5px);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    }
+    @include hover-border-left(#0dcaf0, rgba(13, 202, 240, 0.08), 5px);
   }
 }
 
 // Unplanned Deliveries Card
 .unplanned-deliveries-card {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.4s ease;
+  @include card-hover-effect(-5px, 0 10px 35px rgba(0, 0, 0, 0.15));
+  @include box-shadow(0, 4px, 20px, rgba(0, 0, 0, 0.08));
   animation: fadeInUp 0.6s ease-out;
   
-  &:hover {
-    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
-    transform: translateY(-5px);
-  }
-  
   .card-header {
-    transition: all 0.3s ease;
+    @include smooth-transition();
     
     &:hover {
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+      @include linear-gradient(135deg, #f8f9fa, #e9ecef);
     }
   }
   
   .delivery-item-animated {
-    transition: all 0.3s ease;
-    border-left: 3px solid transparent;
-    
-    &:hover {
-      background: linear-gradient(90deg, rgba(13, 110, 253, 0.05) 0%, transparent 100%);
-      border-left-color: #0d6efd;
-      transform: translateX(5px);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    }
+    @include hover-border-left(#0d6efd, rgba(13, 110, 253, 0.05), 5px);
   }
   
   .delivery-count-badge {
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+    @include badge-hover-effect(1.05);
+    @include box-shadow(0, 2px, 8px, rgba(13, 110, 253, 0.3));
     
     &:hover {
-      transform: scale(1.05);
-      box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+      @include box-shadow(0, 4px, 12px, rgba(13, 110, 253, 0.4));
     }
   }
 }
 
 // Reschedule Notifications Card
 .reschedule-notifications-card {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.4s ease;
+  @include card-hover-effect(-5px, 0 10px 35px rgba(0, 0, 0, 0.15));
+  @include box-shadow(0, 4px, 20px, rgba(0, 0, 0, 0.08));
   animation: fadeInUp 0.7s ease-out;
   
-  &:hover {
-    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
-    transform: translateY(-5px);
-  }
-  
   .list-group-item {
-    transition: all 0.3s ease;
-    border-left: 3px solid transparent;
-    
-    &:hover {
-      background: linear-gradient(90deg, rgba(255, 193, 7, 0.1) 0%, transparent 100%);
-      border-left-color: #ffc107;
-      transform: translateX(5px);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    }
+    @include hover-border-left(#ffc107, rgba(255, 193, 7, 0.1), 5px);
   }
 }
 
 // Recent Notifications Card
+
 .recent-notifications-card {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.4s ease;
+  @include card-hover-effect(-5px, 0 10px 35px rgba(0, 0, 0, 0.15));
+  @include box-shadow(0, 4px, 20px, rgba(0, 0, 0, 0.08));
   animation: fadeInUp 0.7s ease-out;
   animation-delay: 0.1s;
   animation-fill-mode: both;
   
-  &:hover {
-    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
-    transform: translateY(-5px);
-  }
-  
   .list-group-item {
-    transition: all 0.3s ease;
-    border-left: 3px solid transparent;
-    
-    &:hover {
-      background: linear-gradient(90deg, rgba(13, 110, 253, 0.05) 0%, transparent 100%);
-      border-left-color: #0d6efd;
-      transform: translateX(5px);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    }
+    @include hover-border-left(#0d6efd, rgba(13, 110, 253, 0.05), 5px);
   }
 }
 
 // Pending Tasks Card
 .pending-tasks-card {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.4s ease;
+  @include card-hover-effect(-5px, 0 10px 35px rgba(0, 0, 0, 0.15));
+  @include box-shadow(0, 4px, 20px, rgba(0, 0, 0, 0.08));
   animation: fadeInUp 0.7s ease-out;
   animation-delay: 0.2s;
   animation-fill-mode: both;
   
-  &:hover {
-    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
-    transform: translateY(-5px);
-  }
-  
   .card-body li {
-    transition: all 0.3s ease;
+    @include smooth-transition();
     padding: 0.75rem;
     border-radius: 0.5rem;
     margin-bottom: 0.5rem !important;
@@ -357,78 +289,62 @@
     &:hover {
       background: rgba(25, 135, 84, 0.05);
       transform: translateX(5px);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      @include box-shadow(0, 2px, 10px, rgba(0, 0, 0, 0.05));
     }
   }
 }
 
 // Stats Card
 .stats-card {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.4s ease;
+  @include card-hover-effect(-5px, 0 10px 35px rgba(0, 0, 0, 0.15));
+  @include box-shadow(0, 4px, 20px, rgba(0, 0, 0, 0.08));
   animation: fadeInUp 0.8s ease-out;
-  
-  &:hover {
-    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
-    transform: translateY(-5px);
-  }
 }
 
 // Global badge animations
 .badge {
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: scale(1.05);
-    filter: brightness(1.1);
-  }
+  @include badge-hover-effect(1.05);
 }
 
 // Enhanced button interactions
 .btn {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  &:hover {
-    transform: translateY(-2px);
-  }
-  
-  &:active {
-    transform: translateY(0);
-  }
+  @include button-states(-2px, 0);
+
 }
 
 // Delivery badges with pulse effect
 .delivery-type-badge,
 .delivery-status-badge {
-  transition: all 0.3s ease;
+  @include smooth-transition();
   
   &:hover {
     transform: scale(1.1);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    @include box-shadow(0, 3px, 10px, rgba(0, 0, 0, 0.2));
   }
 }
 
 // Card headers with subtle gradient on hover
 .card-header {
-  transition: all 0.3s ease;
+  @include smooth-transition();
   
   &.bg-primary:hover {
-    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%) !important;
+    @include linear-gradient(135deg, #0d6efd, #0b5ed7);
   }
   
   &.bg-success:hover {
-    background: linear-gradient(135deg, #198754 0%, #157347 100%) !important;
+    @include linear-gradient(135deg, #198754, #157347);
   }
   
   &.bg-warning:hover {
-    background: linear-gradient(135deg, #ffc107 0%, #ffca2c 100%) !important;
+    @include linear-gradient(135deg, #ffc107, #ffca2c);
   }
   
   &.bg-info:hover {
-    background: linear-gradient(135deg, #0dcaf0 0%, #31d2f2 100%) !important;
+    @include linear-gradient(135deg, #0dcaf0, #31d2f2);
   }
   
   &.bg-secondary:hover {
-    background: linear-gradient(135deg, #6c757d 0%, #5c636a 100%) !important;
+    @include linear-gradient(135deg, #6c757d, #5c636a);
   }
 }
+

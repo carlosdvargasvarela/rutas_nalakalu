@@ -326,4 +326,6 @@ class Delivery < ApplicationRecord
     # Cualquier otra mezcla de no terminales → no cambiar
     nil
   end
+
+  attr_accessor :address, :address_description
 end
