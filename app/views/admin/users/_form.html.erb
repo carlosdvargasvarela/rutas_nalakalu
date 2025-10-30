@@ -5,24 +5,24 @@
       <%= f.input :name,
                   label: "Nombre",
                   input_html: { class: "form-control form-control-lg rounded-3 border-2 shadow-sm devise-sessions-input" },
-                  label_html: { class: "fw-semibold text-dark mb-2" } %>
+                  label_html: { class: "fw-semibold text-dark mb-2", style: "font-family: 'Inter', 'Matter', sans-serif; font-weight: 500;" } %>
       <%= f.input :email,
                   label: "Correo electrónico",
                   input_html: { class: "form-control form-control-lg rounded-3 border-2 shadow-sm devise-sessions-input" },
-                  label_html: { class: "fw-semibold text-dark mb-2" } %>
+                  label_html: { class: "fw-semibold text-dark mb-2", style: "font-family: 'Inter', 'Matter', sans-serif; font-weight: 500;" } %>
       <%= f.input :role,
                   label: "Rol",
                   collection: User.roles.keys.map { |r| [r.humanize, r] },
                   include_blank: false,
                   input_html: { class: "form-select form-select-lg rounded-3 border-2 shadow-sm devise-sessions-input" },
-                  label_html: { class: "fw-semibold text-dark mb-2" } %>
+                  label_html: { class: "fw-semibold text-dark mb-2", style: "font-family: 'Inter', 'Matter', sans-serif; font-weight: 500;" } %>
       <div class="mb-3">
         <%= f.input :send_notifications,
                     as: :boolean,
                     label: "Recibir notificaciones",
                     wrapper_html: { class: "form-check form-switch mb-0" },
                     input_html: { class: "form-check-input" },
-                    label_html: { class: "form-check-label ms-2 text-muted" } %>
+                    label_html: { class: "form-check-label ms-2", style: "font-family: 'Space Mono', monospace !important; font-weight: 400 !important; color: #6c757d;" } %>
       </div>
       <%# En edit: permitir cambio de contraseña; en new puedes mantener visible (tu controller le pone una por defecto igualmente) %>
       <%= f.input :password,
@@ -30,18 +30,19 @@
                   hint: (@user.persisted? ? "Déjalo en blanco para no cambiarla" : "Opcional, se enviará correo de acceso"),
                   required: false,
                   input_html: { class: "form-control form-control-lg rounded-3 border-2 shadow-sm devise-sessions-input" },
-                  label_html: { class: "fw-semibold text-dark mb-2" } %>
+                  label_html: { class: "fw-semibold text-dark mb-2", style: "font-family: 'Inter', 'Matter', sans-serif; font-weight: 500;" },
+                  hint_html: { style: "font-family: 'Space Mono', monospace !important; font-size: 0.875rem !important; font-weight: 400 !important;" } %>
       <%= f.input :password_confirmation,
                   label: "Confirmar contraseña",
                   required: false,
                   input_html: { class: "form-control form-control-lg rounded-3 border-2 shadow-sm devise-sessions-input" },
-                  label_html: { class: "fw-semibold text-dark mb-2" } %>
+                  label_html: { class: "fw-semibold text-dark mb-2", style: "font-family: 'Inter', 'Matter', sans-serif; font-weight: 500;" } %>
       <%# Código de vendedor: visible si es seller o si el registro es nuevo (por si se selecciona seller en vivo) %>
       <% if @user.seller? || @user.new_record? || @user.role == "seller" %>
         <%= f.input :seller_code,
                     label: "Código de vendedor",
                     input_html: { value: @user.seller&.seller_code, class: "form-control form-control-lg rounded-3 border-2 shadow-sm devise-sessions-input" },
-                    label_html: { class: "fw-semibold text-dark mb-2" } %>
+                    label_html: { class: "fw-semibold text-dark mb-2", style: "font-family: 'Inter', 'Matter', sans-serif; font-weight: 500;" } %>
       <% end %>
     </div>
   </div>
