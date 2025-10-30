@@ -1,0 +1,69 @@
+<% content_for :title, 'Log de cambios' %>
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h3 class="mb-0">
+    <i class="bi bi-clock-history me-2"></i>
+    Log de cambios
+  </h3>
+</div>
+<div class="card mb-4">
+  <div class="card-body">
+    <%= search_form_for @q, url: audit_logs_path, method: :get, html: { class: 'row g-3' } do |f| %>
+      <div class="col-12 col-md-3">
+        <%= f.label :item_type_eq, 'Recurso', class: 'form-label' %>
+        <%= f.select :item_type_eq, options_for_select([['Todos', '']] + @item_types.map { |t| [t, t] }, @q.item_type_eq), {}, class: 'form-select' %>
+      </div>
+      <div class="col-12 col-md-3">
+        <%= f.label :event_eq, 'Evento', class: 'form-label' %>
+        <%= f.select :event_eq, options_for_select([['Todos', '']] + @events, @q.event_eq), {}, class: 'form-select' %>
+      </div>
+      <div class="col-12 col-md-3">
+        <%= f.label :whodunnit_eq, 'Usuario', class: 'form-label' %>
+        <%= f.select :whodunnit_eq, options_for_select([['Todos', '']] + User.order(:name).pluck(:name, :id).map { |n, id| [n, id.to_s] }, @q.whodunnit_eq), {}, class: 'form-select' %>
+      </div>
+      <div class="col-12 col-md-3">
+        <%= f.label :created_at_gteq, 'Desde', class: 'form-label' %>
+        <%= f.date_field :created_at_gteq, value: (@q.created_at_gteq&.to_date), class: 'form-control' %>
+      </div>
+      <div class="col-12 col-md-3">
+        <%= f.label :created_at_lteq, 'Hasta', class: 'form-label' %>
+        <%= f.date_field :created_at_lteq, value: (@q.created_at_lteq&.to_date), class: 'form-control' %>
+      </div>
+      <div class="col-12 col-md-6 d-flex align-items-end gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-funnel me-1"></i> Aplicar filtros
+        </button>
+        <a href="<%= audit_logs_path %>" class="btn btn-outline-secondary">
+          <i class="bi bi-x-circle me-1"></i> Limpiar
+        </a>
+      </div>
+    <% end %>
+  </div>
+</div>
+<div class="table-responsive">
+  <table class="table align-middle">
+    <thead class="table-light">
+      <tr>
+        <th style="width: 160px;">Fecha</th>
+        <th style="width: 220px;">Usuario</th>
+        <th>Recurso</th>
+        <th style="width: 140px;">Evento</th>
+        <th>Cambios</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if @versions.any? %>
+        <%= render partial: 'version_row', collection: @versions, as: :version, locals: { users_by_id: @users_by_id } %>
+      <% else %>
+        <tr>
+          <td colspan="5" class="text-center text-muted py-5">
+            <i class="bi bi-journal-text d-block fs-2 mb-2"></i>
+            No hay cambios para los filtros seleccionados.
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<div class="d-flex justify-content-center">
+  <%= paginate @versions %>
+</div>

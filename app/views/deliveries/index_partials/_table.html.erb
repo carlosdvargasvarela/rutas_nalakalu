@@ -76,26 +76,24 @@
             <small class="text-muted d-block">(<%= delivery.order.seller.seller_code %>)</small>
           </td>
           <td>
-            <span class="badge bg-<%= delivery_status_color(delivery.status) %>">
-              <%= delivery.display_status %>
-            </span>
+            <%= status_badge(delivery, with_icon: true) %>
           </td>
           <td>
             <% if delivery.delivery_plan.present? %>
               <%= link_to delivery_plan_path(delivery.delivery_plan), 
-                    class: "badge bg-info text-decoration-none", 
+                    class: "badge bg-info text-dark text-decoration-none", 
                     title: "Ver plan de entrega" do %>
                 <i class="bi bi-truck"></i> Plan
               <% end %>
             <% else %>
-              <span class="badge bg-light text-muted">Sin plan</span>
+              <span class="badge bg-light text-dark">Sin plan</span>
             <% end %>
           </td>
           <td>
             <% if delivery.has_service_cases? %>
               <span class="badge bg-warning text-dark">Sí</span>
             <% else %>
-              <span class="badge bg-light text-muted">No</span>
+              <span class="badge bg-light text-dark">No</span>
             <% end %>
           </td>
           <td class="text-center">
@@ -131,9 +129,7 @@
                         <div>
                           <strong><%= item.order_item.product %></strong>
                           <span class="badge bg-secondary ms-1"><%= item.quantity %></span>
-                          <span class="badge bg-<%= delivery_status_color(item.status) %> ms-1">
-                            <%= item.display_status %>
-                          </span>
+                          <span class="ms-1"><%= status_badge(item) %></span>
                         </div>
                       </div>
                       <% if item.notes.present? %>

@@ -9,16 +9,16 @@ module Deliveries
       @current_user = current_user
     end
 
-    # Devuelve la(s) entrega(s) creada(s).
-    # Si es pickup_with_return -> devuelve [pickup_delivery, return_delivery]
-    # Si no, devuelve [single_delivery]
     def call
       ActiveRecord::Base.transaction do
         base_date = safe_date(params.dig(:delivery, :delivery_date)) || Date.current
         dtype     = (params.dig(:delivery, :delivery_type).presence || :pickup).to_s
 
-        address = if params.dig(:delivery, :delivery_address_id).present?
-          DeliveryAddress.find(params[:delivery][:delivery_address_id])
+        raw_id = params.dig(:delivery, :delivery_address_id).to_s
+        normalized = raw_id.present? && raw_id != "__new__" ? raw_id : nil
+
+        address = if normalized.present?
+          DeliveryAddress.find(normalized)
         else
           parent_delivery.delivery_address
         end
@@ -34,16 +34,15 @@ module Deliveries
           return_delivery.delivery_items = clone_items_with_type(pickup_delivery, "return_delivery")
           return_delivery.save!
 
-          # Guarda en ivar por si al controller le interesa
-          @created_deliveries = [pickup_delivery, return_delivery]
-          pickup_delivery # DEVUELVE el principal
+          @created_deliveries = [ pickup_delivery, return_delivery ]
+          pickup_delivery
         else
           single_delivery = build_service_delivery(address, base_date, dtype)
           single_delivery.delivery_items = build_service_items(dtype)
           single_delivery.save!
 
-          @created_deliveries = [single_delivery]
-          single_delivery # DEVUELVE uno
+          @created_deliveries = [ single_delivery ]
+          single_delivery
         end
       end
     rescue => e
@@ -51,7 +50,6 @@ module Deliveries
       raise e
     end
 
-    # opcionalmente un reader
     attr_reader :created_deliveries
 
     private
@@ -94,10 +92,8 @@ module Deliveries
     end
 
     def build_service_items(delivery_type)
-      # Si vienen items en params, procesarlos
       if params.dig(:delivery, :delivery_items_attributes).present?
         process_service_items_from_params(delivery_type)
-      # Si viene flag copy_items, copiar del padre
       elsif params[:copy_items] == "1"
         copy_items_from_parent(delivery_type)
       else
@@ -117,8 +113,8 @@ module Deliveries
           original = OrderItem.find(item_params.dig(:order_item_attributes, :id))
           duplicate_order_item_with_prefix(original, delivery_type)
         else
-          # Crear nuevo con prefijo
           oi_attrs = item_params[:order_item_attributes]
+          next if oi_attrs.blank? || oi_attrs[:product].to_s.strip.blank?
           build_order_item_with_prefix(parent_delivery.order, oi_attrs, delivery_type)
         end
 
@@ -134,7 +130,6 @@ module Deliveries
 
     def copy_items_from_parent(delivery_type)
       parent_delivery.delivery_items.map do |item|
-        # Duplicar el order_item con el prefijo correspondiente
         dup_oi = duplicate_order_item_with_prefix(item.order_item, delivery_type)
 
         DeliveryItem.new(
@@ -147,7 +142,6 @@ module Deliveries
       end
     end
 
-    # Clona los items de una entrega a otra cambiando el tipo (para prefijos correctos)
     def clone_items_with_type(source_delivery, target_delivery_type)
       source_delivery.delivery_items.map do |di|
         dup_oi = duplicate_order_item_with_prefix(di.order_item, target_delivery_type)
