@@ -1,0 +1,6 @@
+{
+    "solargraph.commandPath": "~/.rbenv/shims/solargraph",
+    "solargraph.formatting": true,
+    "editor.stickyScroll.enabled": true,
+    "emmet.includeLanguages": { "erb": "html", "ruby": "html" }
+}
