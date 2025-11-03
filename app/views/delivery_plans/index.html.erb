@@ -8,7 +8,7 @@
       <small class="text-muted">Gestión de rutas semanales de entrega</small>
     </div>
     <div class="d-flex gap-2">
-      <%= link_to delivery_plans_path(format: :xlsx), class: "btn btn-outline-success btn-sm d-flex align-items-center gap-2" do %>
+      <%= link_to delivery_plans_path(request.query_parameters.merge(format: :xlsx)), class: "btn btn-outline-success btn-sm d-flex align-items-center gap-2" do %>
         <i class="bi bi-file-earmark-spreadsheet"></i> Exportar Excel
       <% end %>
       <%= link_to new_delivery_plan_path, class: "btn btn-success btn-sm d-flex align-items-center gap-2" do %>

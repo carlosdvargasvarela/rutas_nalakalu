@@ -1,6 +1,7 @@
 # app/models/paper_trail/version.rb
 module PaperTrail
   class Version < ::ActiveRecord::Base
+    include PaperTrail::VersionConcern
     self.table_name = "versions"
 
     # IMPORTANTE: Lista explícita de atributos que Ransack puede usar
@@ -13,7 +14,7 @@ module PaperTrail
         whodunnit
         object
         created_at
-        # object_changes  # descomenta si tu versions table lo tiene y querés permitirlo
+        # object_changes # descomenta si tu versions table lo tiene y querés permitirlo
       ]
     end
 

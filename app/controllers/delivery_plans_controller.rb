@@ -1,32 +1,33 @@
 # app/controllers/delivery_plans_controller.rb
 class DeliveryPlansController < ApplicationController
-
   def index
     @q = DeliveryPlan.ransack(params[:q])
 
+    base_result = @q.result
+                    .left_joins(:deliveries)
+                    .select("delivery_plans.*, MIN(deliveries.delivery_date) AS first_delivery_date")
+                    .group("delivery_plans.id")
+                    .order("MIN(deliveries.delivery_date) DESC")
+
     respond_to do |format|
       format.html do
-        # HTML: con agregación para usar first_delivery_date en ORDER y SELECT
-        @delivery_plans = @q.result
-                            .preload(:driver, :deliveries)
-                            .left_joins(:deliveries)
-                            .select("delivery_plans.*, MIN(deliveries.delivery_date) AS first_delivery_date")
-                            .group("delivery_plans.id")
-                            .order("MIN(deliveries.delivery_date) DESC")
+        @delivery_plans = base_result.preload(:driver, :deliveries)
       end
 
       format.xlsx do
-        # Excel: los filtros de first_delivery_date ya funcionan gracias al ransacker
-        @delivery_plans = @q.result.includes(
-          :driver,
-          delivery_plan_assignments: {
-            delivery: [
-              { order: [:client, :seller] },
-              :delivery_address,
-              { delivery_items: :order_item }
-            ]
-          }
-        ).distinct.to_a
+        @delivery_plans = base_result
+                            .includes(
+                              :driver,
+                              delivery_plan_assignments: {
+                                delivery: [
+                                  { order: [ :client, :seller ] },
+                                  :delivery_address,
+                                  { delivery_items: :order_item }
+                                ]
+                              }
+                            )
+                            .distinct
+                            .to_a
 
         response.headers["Content-Disposition"] = 'attachment; filename="planes_entrega.xlsx"'
       end
@@ -34,7 +35,6 @@ class DeliveryPlansController < ApplicationController
   end
 
   def new
-    # Rango de fechas
     authorize DeliveryPlan
     if params.dig(:q, :delivery_date_gteq).present? && params.dig(:q, :delivery_date_lteq).present?
       from = Date.parse(params[:q][:delivery_date_gteq])
@@ -43,7 +43,6 @@ class DeliveryPlansController < ApplicationController
       from = to = Date.today
     end
 
-    # Usar el scope para entregas disponibles para planes
     base_scope = Delivery
       .where(delivery_date: from..to)
       .available_for_plan
@@ -60,7 +59,6 @@ class DeliveryPlansController < ApplicationController
     authorize @delivery_plan
     delivery_ids = Array(params[:delivery_ids]).reject(&:blank?)
 
-    # Cargar las entregas seleccionadas
     deliveries = Delivery.where(id: delivery_ids)
     unique_dates = deliveries.pluck(:delivery_date).uniq
 
@@ -74,7 +72,6 @@ class DeliveryPlansController < ApplicationController
       return render_new_with_selection(delivery_ids)
     end
 
-    # Calcular week y year basado en las entregas
     first_date = unique_dates.first
     @delivery_plan.week = first_date.cweek
     @delivery_plan.year = first_date.cwyear
@@ -99,12 +96,11 @@ class DeliveryPlansController < ApplicationController
     @assignments = @delivery_plan.delivery_plan_assignments.includes(
       delivery: [
         :delivery_items,
-        order: [:client, :seller],
+        order: [ :client, :seller ],
         delivery_address: :client
       ]
     ).order(:stop_order)
 
-    # Calcular rango de fechas desde las entregas
     delivery_dates = @deliveries.pluck(:delivery_date)
     @from_date = delivery_dates.min
     @to_date   = delivery_dates.max
@@ -128,7 +124,7 @@ class DeliveryPlansController < ApplicationController
           delivery = assignment.delivery
           address  = delivery.delivery_address
           delivery.active_items_for_plan_for(current_user).map do |item|
-            address_text = [address.address, address.description].compact.join(" - ")
+            address_text = [ address.address, address.description ].compact.join(" - ")
             map_link =
               if address.latitude.present? && address.longitude.present?
                 " (Waze: https://waze.com/ul?ll=#{address.latitude},#{address.longitude}&navigate=yes)"
@@ -159,7 +155,7 @@ class DeliveryPlansController < ApplicationController
             ]
           end
         end
-        pdf.table([headers] + rows, header: true,
+        pdf.table([ headers ] + rows, header: true,
                   row_colors: %w[F0F0F0 FFFFFF],
                   position: :center,
                   cell_style: { inline_format: true })
@@ -206,10 +202,8 @@ class DeliveryPlansController < ApplicationController
     authorize @delivery_plan
     @assignments = @delivery_plan.delivery_plan_assignments.includes(delivery: [ :order, :delivery_address, order: :client ]).order(:stop_order)
 
-    # Fecha de las entregas ya asignadas (todas deben ser iguales)
     delivery_date = @assignments.first&.delivery&.delivery_date
 
-    # Entregas disponibles para agregar usando el scope
     @available_deliveries = if delivery_date
       Delivery
         .where(delivery_date: delivery_date)
@@ -224,7 +218,6 @@ class DeliveryPlansController < ApplicationController
     authorize @delivery_plan
 
     if @delivery_plan.update(delivery_plan_params)
-      # Actualiza el orden de las paradas
       if params[:stop_orders]
         params[:stop_orders].each do |assignment_id, stop_order|
           assignment = @delivery_plan.delivery_plan_assignments.find(assignment_id)
@@ -234,7 +227,6 @@ class DeliveryPlansController < ApplicationController
 
       redirect_to @delivery_plan, notice: "Plan de ruta actualizado correctamente."
     else
-      # Si hay errores, volver a cargar los datos necesarios para la vista
       @assignments = @delivery_plan.delivery_plan_assignments.includes(
         delivery: [ :order, :delivery_address, order: :client ]
       ).order(:stop_order)
@@ -260,8 +252,7 @@ class DeliveryPlansController < ApplicationController
     if @delivery_plan.destroy
       redirect_to delivery_plans_path, notice: "Plan de ruta eliminado correctamente."
     else
-      # Si el before_destroy bloquea la eliminación, mostramos el error y redirigimos
-      alert_message = @delivery_plan.errors.full_messages.presence || ["No se pudo eliminar el plan de ruta."]
+      alert_message = @delivery_plan.errors.full_messages.presence || [ "No se pudo eliminar el plan de ruta." ]
       redirect_back fallback_location: delivery_plans_path, alert: alert_message.join(". ")
     end
   end
@@ -298,7 +289,6 @@ class DeliveryPlansController < ApplicationController
     authorize @delivery_plan
     delivery = Delivery.find(params[:delivery_id])
 
-    # Validación: misma fecha y no asignada
     if delivery.delivery_date == @delivery_plan.deliveries.first.delivery_date &&
       !DeliveryPlanAssignment.exists?(delivery_id: delivery.id)
       DeliveryPlanAssignment.create!(delivery_plan: @delivery_plan, delivery_id: delivery.id)
@@ -315,7 +305,6 @@ class DeliveryPlansController < ApplicationController
   end
 
   def render_new_with_selection(selected_ids)
-    # Rango de fechas
     if params.dig(:q, :delivery_date_gteq).present? && params.dig(:q, :delivery_date_lteq).present?
       from = Date.parse(params[:q][:delivery_date_gteq])
       to = Date.parse(params[:q][:delivery_date_lteq])
