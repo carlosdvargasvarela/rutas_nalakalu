@@ -1,3 +1,4 @@
+<!-- app/views/deliveries/show_partials/_map.html.erb -->
 <div class="col-12 mb-4">
   <div class="card shadow-sm">
     <div class="card-header bg-light">
@@ -7,7 +8,7 @@
       <% if delivery.delivery_address.latitude.present? && delivery.delivery_address.longitude.present? %>
         <div id="delivery-map"
              data-controller="delivery-map"
-             data-delivery-map-api-key-value="<%= Rails.application.credentials.dig(:google_maps, :api_key) %>"
+             data-delivery-map-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
              data-delivery-map-points-value="<%= [{
                lat: delivery.delivery_address.latitude,
                lng: delivery.delivery_address.longitude,

@@ -1,20 +1,23 @@
+<!-- app/views/delivery_plans/show_partials/_map.html.erb -->
 <div class="card shadow-sm mb-4">
   <div class="card-header bg-light fw-bold">
     <i class="bi bi-map me-2"></i> Mapa de Ruta
   </div>
   <div class="card-body p-0">
-    <div data-controller="delivery-plan-map"
-     data-delivery-plan-map-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
-     data-delivery-plan-map-optimize-value="false"
-     data-delivery-plan-map-points-value="<%= assignments.map { |a| {
-       id: a.id, stop_order: a.stop_order,
-       address: a.delivery.delivery_address.address,
-       lat: a.delivery.delivery_address.latitude,
-       lng: a.delivery.delivery_address.longitude,
-       order_number: a.delivery.order.number,
-       client: a.delivery.order.client.name,
-       date: l(a.delivery.delivery_date)
-     } }.to_json %>">
+    <div
+      data-controller="delivery-plan-map"
+      data-delivery-plan-map-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
+      data-delivery-plan-map-points-value="<%= assignments.map { |a|
+        {
+          id: a.id, stop_order: a.stop_order,
+          address: a.delivery.delivery_address.address,
+          lat: a.delivery.delivery_address.latitude,
+          lng: a.delivery.delivery_address.longitude,
+          order_number: a.delivery.order.number,
+          client: a.delivery.order.client.name,
+          date: l(a.delivery.delivery_date)
+        }
+      }.to_json %>">
       <div style="height:420px" class="border rounded" data-delivery-plan-map-target="map"></div>
     </div>
   </div>

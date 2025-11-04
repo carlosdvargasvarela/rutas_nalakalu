@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_10_16_190004) do
+ActiveRecord::Schema[7.2].define(version: 2025_11_04_195629) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -90,7 +90,11 @@ ActiveRecord::Schema[7.2].define(version: 2025_10_16_190004) do
     t.decimal "latitude", precision: 10, scale: 6
     t.decimal "longitude", precision: 10, scale: 6
     t.string "plus_code"
+    t.string "place_id"
+    t.string "normalized_address"
+    t.string "geocode_quality"
     t.index ["client_id"], name: "index_delivery_addresses_on_client_id"
+    t.index ["place_id"], name: "index_delivery_addresses_on_place_id"
   end
 
   create_table "delivery_import_rows", force: :cascade do |t|
