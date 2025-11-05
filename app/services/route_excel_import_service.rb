@@ -8,6 +8,8 @@ class RouteExcelImportService
 
   # Importa todas las filas del archivo (para uso en consola o importación masiva)
   def import_routes
+    raise "No se proporcionó archivo para importación masiva" unless @spreadsheet
+
     results = { success: 0, errors: [] }
     (2..@spreadsheet.last_row).each do |row|
       begin
@@ -30,69 +32,101 @@ class RouteExcelImportService
   def validate_row(data)
     errors = []
     errors << "La fecha de entrega es obligatoria" if data[:delivery_date].blank?
-    errors << "El número de pedido es obligatorio" if data[:order_number].blank?
-    errors << "El nombre del cliente es obligatorio" if data[:client_name].blank?
-    errors << "El producto es obligatorio" if data[:product].blank?
+    errors << "El número de pedido es obligatorio" if blank_str?(data[:order_number])
+    errors << "El nombre del cliente es obligatorio" if blank_str?(data[:client_name])
+    errors << "El producto es obligatorio" if blank_str?(data[:product])
     errors << "La cantidad es obligatoria" if data[:quantity].blank? || data[:quantity].to_i <= 0
-    errors << "El código de vendedor es obligatorio" if data[:seller_code].blank?
-    errors << "El lugar de entrega es obligatorio" if data[:place].blank?
+    errors << "El código de vendedor es obligatorio" if blank_str?(data[:seller_code])
+    errors << "El lugar de entrega es obligatorio" if blank_str?(data[:place])
     errors
   end
 
   # Procesa una fila (hash de datos), creando o actualizando registros según sea necesario
   def process_row(data)
-    client = Client.find_or_create_by!(name: data[:client_name])
-    address = client.delivery_addresses.find_or_create_by!(address: data[:place])
-    seller = Seller.find_by(seller_code: data[:seller_code])
-    raise "Vendedor con código #{data[:seller_code]} no encontrado" unless seller
+    # Normaliza strings para evitar nil.strip en cualquier parte del flujo
+    order_number   = safe_str(data[:order_number])
+    client_name    = safe_str(data[:client_name])
+    product_name   = safe_str(data[:product])
+    seller_code    = safe_str(data[:seller_code])
+    place_text     = safe_str(data[:place])
+    contact_text   = safe_str(data[:contact])
+    notes_text     = safe_str(data[:notes])
+    time_pref_text = safe_str(data[:time_preference])
 
-    order = Order.find_or_create_by!(number: data[:order_number]) do |o|
+    quantity = data[:quantity].to_i
+    raise "Cantidad inválida" if quantity <= 0
+
+    # Entidades base
+    client = Client.find_or_create_by!(name: client_name)
+
+    # Dirección: find_or_create_by para no duplicar; el geocoding enriquecido se dispara en el modelo al cambiar address
+    address = client.delivery_addresses.find_or_create_by!(address: place_text)
+
+    # Mejora de geocoding: si la dirección es nueva o no tiene coords, pasamos description con referencias
+    if address.saved_change_to_id? || address.latitude.blank? || address.longitude.blank?
+      refs = [ contact_text, time_pref_text, notes_text ].map { |v| v.presence }.compact.join(", ").presence
+      if refs.present?
+        # Solo actualizar description si aporta algo y no dispara geocoding de nuevo innecesariamente
+        address.update(description: refs)
+        # Nota: según tu modelo, la geocodificación solo corre si cambia address (before_validation). Esto NO fuerza re-geocodificar,
+        # pero dejará guardadas referencias para una eventual edición o para el picker.
+        # Si quisieras reintentar geocoding cuando no hay coords, puedes forzar un save si no hay lat/lng:
+        if address.latitude.blank? || address.longitude.blank?
+          address.save(validate: false)
+        end
+      end
+    end
+
+    seller = Seller.find_by(seller_code: seller_code)
+    raise "Vendedor con código #{seller_code} no encontrado" unless seller
+
+    order = Order.find_or_create_by!(number: order_number) do |o|
       o.client = client
       o.seller = seller
       o.status = :in_production
     end
+    order.update!(seller: seller) if order.seller_id != seller.id
 
-    order.update!(seller: seller) if order.seller != seller
+    # OrderItem
+    order_item = order.order_items.find_or_initialize_by(product: product_name)
 
-    # ✅ OrderItem: ahora podemos usar find_or_initialize_by sin miedo
-    order_item = order.order_items.find_or_initialize_by(product: data[:product])
-
-    # Combinar notas si ya existía
-    combined_notes = if order_item.persisted? && data[:notes].present? && data[:notes] != order_item.notes
-      [ order_item.notes, data[:notes] ].compact.reject(&:blank?).uniq.join("; ")
-    else
-      data[:notes] || order_item.notes
-    end
+    combined_notes =
+      if order_item.persisted? && notes_text.present? && notes_text != safe_str(order_item.notes)
+        [ safe_str(order_item.notes), notes_text ].reject(&:blank?).uniq.join("; ")
+      else
+        notes_text.presence || order_item.notes
+      end
 
     order_item.assign_attributes(
-      quantity: data[:quantity],  # ← Ya viene sumada del job
+      quantity: quantity,         # Ya viene sumada desde el PrepareJob
       notes: combined_notes,
       status: :in_production
     )
     order_item.save!
 
-    # ✅ Delivery
-    delivery = order.deliveries
-                    .where(delivery_date: data[:delivery_date], delivery_address_id: address.id)
-                    .first_or_initialize
+    # Delivery
+    delivery = order.deliveries.where(delivery_date: data[:delivery_date], delivery_address_id: address.id).first_or_initialize
 
     if delivery.new_record?
+      contact_name, contact_phone = parse_contact(contact_text)
+
       delivery.assign_attributes(
         delivery_address: address,
-        contact_name: parse_contact(data[:contact]).first,
-        contact_phone: parse_contact(data[:contact]).last,
-        delivery_time_preference: data[:time_preference],
+        contact_name: contact_name,
+        contact_phone: contact_phone,
+        delivery_time_preference: time_pref_text,
         status: :scheduled
       )
       delivery.save!
     end
 
-    # ✅ DeliveryItem
-    service_case = data[:team].to_s.downcase.include?("c.s") || data[:team].to_s.downcase.include?("cs")
+    # DeliveryItem
+    # Detectar "caso de servicio" por contenido de team
+    service_case = safe_str(data[:team]).downcase.include?("c.s") || safe_str(data[:team]).downcase.include?("cs")
 
     delivery_item = delivery.delivery_items.find_or_initialize_by(order_item: order_item)
     delivery_item.assign_attributes(
-      quantity_delivered: data[:quantity],  # ← Ya viene sumada
+      quantity_delivered: quantity, # Ya viene sumada
       status: :pending,
       service_case: service_case
     )
@@ -102,30 +136,47 @@ class RouteExcelImportService
   # Extrae los datos de una fila del Excel (para importación masiva)
   def extract_row_data(row)
     {
-      delivery_date: @spreadsheet.cell(row, "A"),
-      team: @spreadsheet.cell(row, "B"),
-      order_number: @spreadsheet.cell(row, "C")&.to_s,
-      client_name: @spreadsheet.cell(row, "D")&.to_s,
-      product: @spreadsheet.cell(row, "E")&.to_s,
-      quantity: @spreadsheet.cell(row, "F").to_i,
-      seller_code: @spreadsheet.cell(row, "G")&.to_s,
-      place: @spreadsheet.cell(row, "H")&.to_s,
-      contact: @spreadsheet.cell(row, "I")&.to_s,
-      notes: @spreadsheet.cell(row, "J")&.to_s,
-      time_preference: @spreadsheet.cell(row, "K")&.to_s
+      delivery_date:   @spreadsheet.cell(row, "A"),
+      team:            @spreadsheet.cell(row, "B"),
+      order_number:    @spreadsheet.cell(row, "C")&.to_s&.strip,
+      client_name:     @spreadsheet.cell(row, "D")&.to_s&.strip,
+      product:         @spreadsheet.cell(row, "E")&.to_s&.strip,
+      quantity:        @spreadsheet.cell(row, "F").to_i,
+      seller_code:     @spreadsheet.cell(row, "G")&.to_s&.strip,
+      place:           @spreadsheet.cell(row, "H")&.to_s&.strip,
+      contact:         @spreadsheet.cell(row, "I")&.to_s&.strip,
+      notes:           @spreadsheet.cell(row, "J")&.to_s&.strip,
+      time_preference: @spreadsheet.cell(row, "K")&.to_s&.strip
     }
   end
 
-  # Utilidad para parsear el campo de contacto
+  # Utilidad para parsear el campo de contacto "Nombre / Tel" o "Nombre - Tel"
   def parse_contact(contact_str)
-    if contact_str&.include?("/")
-      parts = contact_str.split("/")
-      [ parts[0].strip, parts[1].strip ]
-    elsif contact_str&.include?("-")
-      parts = contact_str.split("-")
-      [ parts[0].strip, parts[1].strip ]
+    s = safe_str(contact_str)
+    if s.include?("/")
+      parts = s.split("/")
+      [ safe_str(parts[0]).presence, safe_str(parts[1]).presence ]
+    elsif s.include?("-")
+      parts = s.split("-")
+      [ safe_str(parts[0]).presence, safe_str(parts[1]).presence ]
     else
-      [ contact_str, nil ]
+      [ s.presence, nil ]
     end
+  end
+
+  private
+
+  # Convierte a string, recorta espacios y puede devolver nil si queda vacío
+  def norm_str(v)
+    v.to_s.strip.presence
+  end
+
+  # Convierte a string y recorta; nunca devuelve nil (si queda vacío, retorna "")
+  def safe_str(v)
+    v.to_s.strip
+  end
+
+  def blank_str?(v)
+    safe_str(v).blank?
   end
 end
