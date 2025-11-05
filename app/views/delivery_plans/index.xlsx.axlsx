@@ -7,36 +7,42 @@ header_style = wb.styles.add_style(
   bg_color: "4472C4",
   fg_color: "FFFFFF",
   b: true,
-  alignment: { horizontal: :center }
+  alignment: { horizontal: :center, wrap_text: true }
 )
 
 scheduled_style = wb.styles.add_style(
   bg_color: "FFF2CC",
-  border: { style: :thin, color: "D6B656" }
+  border: { style: :thin, color: "D6B656" },
+  alignment: { wrap_text: true, vertical: :top }
 )
 
 ready_style = wb.styles.add_style(
   bg_color: "E2EFDA",
-  border: { style: :thin, color: "70AD47" }
+  border: { style: :thin, color: "70AD47" },
+  alignment: { wrap_text: true, vertical: :top }
 )
 
 confirmed_style = wb.styles.add_style(
   bg_color: "DEEBF7",
-  border: { style: :thin, color: "5B9BD5" }
+  border: { style: :thin, color: "5B9BD5" },
+  alignment: { wrap_text: true, vertical: :top }
 )
 
 delivered_style = wb.styles.add_style(
   bg_color: "D5E8D4",
-  border: { style: :thin, color: "82B366" }
+  border: { style: :thin, color: "82B366" },
+  alignment: { wrap_text: true, vertical: :top }
 )
 
 cancelled_style = wb.styles.add_style(
   bg_color: "F8CECC",
-  border: { style: :thin, color: "B85450" }
+  border: { style: :thin, color: "B85450" },
+  alignment: { wrap_text: true, vertical: :top }
 )
 
 default_style = wb.styles.add_style(
-  border: { style: :thin, color: "CCCCCC" }
+  border: { style: :thin, color: "CCCCCC" },
+  alignment: { wrap_text: true, vertical: :top }
 )
 
 # =====================
@@ -93,6 +99,11 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
                   end
 
       if delivery.active_items_for_plan_for(current_user).empty?
+        # Combinar notas para fila sin productos
+        all_notes = []
+        all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.respond_to?(:delivery_notes) && delivery.delivery_notes.present?
+        notes_text = all_notes.join("\n")
+
         # Fila sin productos
         sheet.add_row [
           delivery_plan.week || "N/A",
@@ -111,14 +122,15 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
           delivery.display_status || "Sin estado",
           delivery.delivery_time_preference.presence || "Sin preferencia",
           "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
-          ""
+          notes_text
         ], style: row_style
 
       else
         # Una fila por cada producto
         delivery.active_items_for_plan_for(current_user).each do |delivery_item|
-          # Combinar notas
+          # Combinar notas con saltos de línea
           all_notes = []
+          all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.respond_to?(:delivery_notes) && delivery.delivery_notes.present?
           all_notes << "PRODUCCIÓN: #{delivery_item.order_item.notes}" if delivery_item.order_item&.notes.present?
           all_notes << "LOGÍSTICA: #{delivery_item.notes}" if delivery_item.notes.present?
           notes_text = all_notes.join("\n")
@@ -150,7 +162,7 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
   # =====================
   # Ajustes de hoja
   # =====================
-  sheet.column_widths 8, 8, 12, 15, 25, 10, 12, 20, 30, 8, 15, 10, 15, 15, 15, 25, 40
+  sheet.column_widths 8, 8, 12, 15, 25, 10, 12, 20, 30, 8, 15, 10, 15, 15, 15, 25, 50
 
   # Filtros automáticos
   if @delivery_plans.any?
