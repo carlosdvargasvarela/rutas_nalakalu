@@ -43,9 +43,12 @@
                 <i class="bi bi-person-fill-add me-2 fs-5"></i>
                 <span class="fw-bold">Datos del nuevo cliente</span>
               </div>
-              <button type="button" class="btn btn-sm btn-light rounded-circle"
-                      data-action="click->delivery-form#cancelNewClientFields">
-                <i class="bi bi-x-lg"></i>
+              <button type="button" class="btn btn-sm rounded-circle p-0 nalakalu-close-btn"
+                      style="width: 36px; height: 36px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); transition: all 0.2s ease;"
+                      data-action="click->delivery-form#cancelNewClientFields"
+                      onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'; this.style.transform='rotate(90deg)'"
+                      onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'; this.style.transform='rotate(0deg)'">
+                <i class="bi bi-x-lg" style="font-size: 1.1rem;"></i>
               </button>
             </div>
           </div>

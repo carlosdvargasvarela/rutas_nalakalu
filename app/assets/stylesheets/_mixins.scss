@@ -1,7 +1,4 @@
-// app/assets/stylesheets/_mixins.scss
-// Mixins reutilizables para estilos comunes
-
-// Mixin para transiciones suaves
+// Mixins reutilizables
 @mixin smooth-transition($properties: all, $duration: 0.3s, $timing: ease) {
   transition: $properties $duration $timing;
 }
@@ -10,41 +7,6 @@
   transition: $properties $duration cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-// Mixin para efecto ripple/onda al hacer click
-@mixin ripple-effect($bg-color: rgba(255, 255, 255, 0.3)) {
-  position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: $bg-color;
-    transform: translate(-50%, -50%);
-    transition: width 0.5s ease, height 0.5s ease;
-  }
-  
-  &:hover::before {
-    width: 300%;
-    height: 300%;
-  }
-}
-
-// Mixin para efecto de elevación al hover
-@mixin hover-lift($translate-y: -4px, $scale: 1.05, $shadow: 0 6px 16px rgba(0, 0, 0, 0.2)) {
-  @include cubic-transition();
-  
-  &:hover {
-    transform: translateY($translate-y) scale($scale);
-    box-shadow: $shadow;
-  }
-}
-
-// Mixin para sombras personalizables
 @mixin box-shadow($x: 0, $y: 4px, $blur: 12px, $color: rgba(0, 0, 0, 0.1)) {
   box-shadow: $x $y $blur $color;
 }
@@ -53,81 +15,13 @@
   box-shadow: $shadow1, $shadow2;
 }
 
-// Mixin para efecto de brillo/shimmer
-@mixin shimmer-effect($duration: 3s) {
-  position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(
-      45deg,
-      transparent 30%,
-      rgba(255, 255, 255, 0.3) 50%,
-      transparent 70%
-    );
-    animation: shimmer $duration infinite;
-  }
-}
-
-// Mixin para gradientes lineales
 @mixin linear-gradient($direction, $color-start, $color-end) {
   background: linear-gradient($direction, $color-start 0%, $color-end 100%);
 }
 
-// Mixin para borde animado inferior
-@mixin animated-border-bottom($height: 3px, $color-start: #0d6efd, $color-end: #0dcaf0, $duration: 0.5s) {
-  position: relative;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 0;
-    height: $height;
-    background: linear-gradient(to right, $color-start, $color-end);
-    transition: width $duration cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 6px rgba($color-start, 0.4);
-  }
-  
-  &:hover::after {
-    width: 100%;
-  }
-}
-
-// Mixin para efecto de escala en iconos
-@mixin icon-hover-effect($scale: 1.3, $rotate: 5deg, $color: #0d6efd) {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0));
-  
-  &:hover {
-    color: $color;
-    transform: scale($scale) rotate($rotate);
-    filter: drop-shadow(0 3px 6px rgba($color, 0.4));
-  }
-}
-
-// Mixin para efectos de hover en cards
-@mixin card-hover-effect($translate-y: -5px, $shadow: 0 10px 35px rgba(0, 0, 0, 0.15)) {
-  @include cubic-transition(all, 0.4s);
-  
-  &:hover {
-    box-shadow: $shadow;
-    transform: translateY($translate-y);
-  }
-}
-
-// Mixin para hover con borde izquierdo
 @mixin hover-border-left($border-color: #0d6efd, $bg-gradient-start: rgba(13, 110, 253, 0.05), $translate-x: 5px) {
   transition: all 0.3s ease;
   border-left: 3px solid transparent;
-  
   &:hover {
     background: linear-gradient(90deg, $bg-gradient-start 0%, transparent 100%);
     border-left-color: $border-color;
@@ -136,64 +30,20 @@
   }
 }
 
-// Mixin para delays de animación escalonados
 @mixin staggered-animation-delay($max-items: 6, $base-delay: 0.1s, $increment: 0.05s) {
   @for $i from 1 through $max-items {
-    &:nth-child(#{$i}) {
-      animation-delay: #{$base-delay + ($i - 1) * $increment};
-    }
+    &:nth-child(#{$i}) { animation-delay: #{$base-delay + ($i - 1) * $increment}; }
   }
-  
-  &:nth-child(n+#{$max-items + 1}) {
-    animation-delay: #{$base-delay + $max-items * $increment};
-  }
+  &:nth-child(n+#{$max-items + 1}) { animation-delay: #{$base-delay + $max-items * $increment}; }
 }
 
-// Mixin para efectos de overlay con gradiente
-@mixin overlay-gradient($opacity: 0, $hover-opacity: 1) {
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: inherit;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, transparent 100%);
-    opacity: $opacity;
-    transition: opacity 0.4s ease;
-  }
-  
-  &:hover::before {
-    opacity: $hover-opacity;
-  }
-}
-
-// Mixin para estados de botón (hover y active)
 @mixin button-states($translate-hover: -2px, $translate-active: 0) {
   @include cubic-transition();
-  
-  &:hover {
-    transform: translateY($translate-hover);
-  }
-  
-  &:active {
-    transform: translateY($translate-active);
-  }
+  &:hover { transform: translateY($translate-hover); }
+  &:active { transform: translateY($translate-active); }
 }
 
-// Mixin para efectos en badges
 @mixin badge-hover-effect($scale: 1.05) {
   transition: all 0.3s ease;
-  
-  &:hover {
-    transform: scale($scale);
-    filter: brightness(1.1);
-  }
-}
-
-// Mixin para animación de fade in con dirección
-@mixin fade-in-animation($name, $duration: 0.5s, $delay: 0s) {
-  animation: $name $duration ease-out $delay forwards;
-  opacity: 0;
+  &:hover { transform: scale($scale); filter: brightness(1.1); }
 }

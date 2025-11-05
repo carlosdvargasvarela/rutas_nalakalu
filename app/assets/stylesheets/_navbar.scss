@@ -1,79 +1,47 @@
-// Navbar - NaLakalú Design
-
-// Variables - Paleta NaLakalú
-$nalakalu-cream: #FFF7EE;
-$nalakalu-brown: #3D342C;
-$nalakalu-orange: #A54E1E;
-
-// Selector reforzado para evitar overrides
-// Aplicamos también a variantes .navbar-light / .navbar-dark y a cualquier .bg-* aplicado
-#mainNavbar,
-.navbar#mainNavbar,
-.navbar.navbar-expand-lg#mainNavbar,
-.navbar-light#mainNavbar,
-.navbar-dark#mainNavbar,
-.bg-transparent#mainNavbar,
-.bg-light#mainNavbar,
-.bg-dark#mainNavbar {
-  // Sobreescribir variables CSS de Bootstrap
-  --bs-navbar-color: #{$nalakalu-cream};
-  --bs-navbar-hover-color: #{$nalakalu-orange};
-  --bs-navbar-active-color: #{$nalakalu-orange};
-  --bs-navbar-brand-color: #{$nalakalu-cream};
-  --bs-navbar-brand-hover-color: #{$nalakalu-orange};
-
-  // Forzamos color y quitamos imágenes/gradientes que puedan venir de Bootstrap o de otra hoja
-  background: $nalakalu-brown !important;
-  background-color: $nalakalu-brown !important;
-  background-image: none !important; // <- reset importante
+// Navbar - Diseño NaLakalú
+#mainNavbar, .navbar#mainNavbar, .navbar.navbar-expand-lg#mainNavbar, .navbar-light#mainNavbar, .navbar-dark#mainNavbar, .bg-transparent#mainNavbar, .bg-light#mainNavbar, .bg-dark#mainNavbar {
+  --bs-navbar-color: #{$nalakalu-warm-white};
+  --bs-navbar-hover-color: #{$nalakalu-craft-orange};
+  --bs-navbar-active-color: #{$nalakalu-craft-orange};
+  --bs-navbar-brand-color: #{$nalakalu-warm-white};
+  --bs-navbar-brand-hover-color: #{$nalakalu-craft-orange};
+  background: $nalakalu-dark-coffee !important;
+  background-color: $nalakalu-dark-coffee !important;
+  background-image: none !important;
   box-shadow: 0 2px 12px rgba(61, 52, 44, 0.15) !important;
-  color: $nalakalu-cream !important;
-  z-index: 1030; // por si hay overlays en algunas páginas
+  color: $nalakalu-warm-white !important;
+  z-index: 1030;
 }
 
-// Mantener el resto de tu CSS igual pero anidar bajo el selector reforzado para máxima especificidad
 #mainNavbar {
-  // Brand/Logo
   .navbar-brand {
-    color: $nalakalu-cream !important;
+    color: $nalakalu-warm-white !important;
     font-weight: 600;
-    transition: all 0.3s ease;
-
+    transition: $transition-normal;
     &:hover {
-      color: $nalakalu-orange !important;
+      color: $nalakalu-craft-orange !important;
       transform: translateY(-2px);
+      i { color: $nalakalu-craft-orange; }
     }
-
-    i {
-      color: $nalakalu-cream;
-      transition: color 0.3s ease;
-    }
-
-    &:hover i {
-      color: $nalakalu-orange;
-    }
-
-    // Logo image
+    i { color: $nalakalu-warm-white; transition: $transition-normal; }
+    
     .navbar-logo {
       height: 56px;
       width: auto;
-      transition: all 0.3s ease;
-      filter: brightness(0) invert(1); // Convierte a blanco
-    }
-
-    &:hover .navbar-logo {
-      filter: brightness(0) saturate(100%) invert(48%) sepia(75%) saturate(684%) hue-rotate(348deg) brightness(92%) contrast(88%); // Convierte a naranja
-      transform: scale(1.05);
+      transition: $transition-normal;
+      filter: brightness(0) invert(1);
+      &:hover {
+        filter: brightness(0) saturate(100%) invert(48%) sepia(75%) saturate(684%) hue-rotate(348deg) brightness(92%) contrast(88%);
+        transform: scale(1.05);
+      }
     }
   }
 
-  // Links de navegación
   .nav-link {
-    color: $nalakalu-cream !important;
-    transition: all 0.3s ease;
+    color: $nalakalu-warm-white !important;
+    transition: $transition-normal;
     position: relative;
     font-weight: 500;
-
     &::after {
       content: '';
       position: absolute;
@@ -82,110 +50,57 @@ $nalakalu-orange: #A54E1E;
       transform: translateX(-50%);
       width: 0;
       height: 2px;
-      background: $nalakalu-orange;
-      transition: width 0.3s ease;
+      background: $nalakalu-craft-orange;
+      transition: $transition-normal;
     }
-
-    &:hover {
-      color: $nalakalu-orange !important;
-
-      &::after {
-        width: 80%;
-      }
+    &:hover, &.active {
+      color: $nalakalu-craft-orange !important;
+      &::after { width: 80%; }
+      i { color: $nalakalu-craft-orange; }
     }
-
-    &.active {
-      color: $nalakalu-orange !important;
-
-      &::after {
-        width: 80%;
-      }
-    }
-
-    i {
-      color: $nalakalu-cream;
-      transition: color 0.3s ease;
-    }
-
-    &:hover i,
-    &.active i {
-      color: $nalakalu-orange;
-    }
+    i { color: $nalakalu-warm-white; transition: $transition-normal; }
   }
 
-  // Dropdown menu
   .dropdown-menu {
-    background: $nalakalu-brown;
+    background: $nalakalu-dark-coffee;
     border: 1px solid rgba(255, 247, 238, 0.1);
     box-shadow: 0 4px 16px rgba(61, 52, 44, 0.2);
-
     .dropdown-item {
-      color: $nalakalu-cream;
-      transition: all 0.3s ease;
-
-      &:hover {
-        background: rgba(165, 78, 30, 0.2);
-        color: $nalakalu-orange;
-      }
-
-      &:active {
-        background: rgba(165, 78, 30, 0.3);
-        color: $nalakalu-orange;
+      color: $nalakalu-warm-white;
+      transition: $transition-normal;
+      &:hover, &:active { 
+        background: rgba(165, 78, 30, 0.2); 
+        color: $nalakalu-craft-orange; 
       }
     }
-
-    .dropdown-divider {
-      border-color: rgba(255, 247, 238, 0.1);
-    }
+    .dropdown-divider { border-color: rgba(255, 247, 238, 0.1); }
   }
 
-  // Toggler para móvil
   .navbar-toggler {
     border-color: rgba(255, 247, 238, 0.3);
-
-    &:focus {
-      box-shadow: 0 0 0 0.2rem rgba(255, 247, 238, 0.25);
-    }
-
+    &:focus { box-shadow: 0 0 0 0.2rem rgba(255, 247, 238, 0.25); }
     .navbar-toggler-icon {
       background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 247, 238, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
     }
   }
 
-  // Badges y notificaciones
-  .badge {
-    background: $nalakalu-orange !important;
-    color: white !important;
-  }
-
-  // Texto y elementos adicionales
-  .navbar-text {
-    color: $nalakalu-cream !important;
-  }
+  .badge { background: $nalakalu-craft-orange !important; color: white !important; }
+  .navbar-text { color: $nalakalu-warm-white !important; }
 }
 
-// Responsive adjustments
 @media (max-width: 991.98px) {
   #mainNavbar {
     .navbar-collapse {
-      background: $nalakalu-brown;
+      background: $nalakalu-dark-coffee;
       padding: 1rem;
-      border-radius: 0.5rem;
+      border-radius: $radius-sm;
       margin-top: 1rem;
     }
-
     .nav-link {
       padding: 0.75rem 1rem;
-      border-radius: 0.375rem;
-
-      &::after {
-        display: none;
-      }
-
-      &:hover,
-      &.active {
-        background: rgba(165, 78, 30, 0.2);
-      }
+      border-radius: $radius-sm;
+      &::after { display: none; }
+      &:hover, &.active { background: rgba(165, 78, 30, 0.2); }
     }
   }
 }

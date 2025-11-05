@@ -18,10 +18,10 @@ export default class extends Controller {
     connect() {
         // Asegurar que todos los selects tengan la opción "Agregar nuevo ..."
         if (this.hasAddressSelectTarget) {
-            this.ensureNewOption(this.addressSelectTarget, "Agregar nueva dirección…")
+            this.ensureNewOption(this.addressSelectTarget, "▼ Agregar nueva dirección…")
         }
         if (this.hasOrderSelectTarget) {
-            this.ensureNewOption(this.orderSelectTarget, "Agregar nuevo pedido…")
+            this.ensureNewOption(this.orderSelectTarget, "▼ Agregar nuevo pedido…")
         }
 
         // Pre-submit defensivo: limpiar "__new__" si se quedó en el select
@@ -81,11 +81,11 @@ export default class extends Controller {
         if (handled) {
             if (this.hasAddressSelectTarget) {
                 this.addressSelectTarget.innerHTML = '<option value="">Selecciona una dirección</option>'
-                this.ensureNewOption(this.addressSelectTarget, "Agregar nueva dirección…")
+                this.ensureNewOption(this.addressSelectTarget, "▼ Agregar nueva dirección…")
             }
             if (this.hasOrderSelectTarget) {
                 this.orderSelectTarget.innerHTML = '<option value="">Selecciona un pedido</option>'
-                this.ensureNewOption(this.orderSelectTarget, "Agregar nuevo pedido…")
+                this.ensureNewOption(this.orderSelectTarget, "▼ Agregar nuevo pedido…")
             }
             return
         }
@@ -114,7 +114,7 @@ export default class extends Controller {
                 .then(response => response.json())
                 .then(orders => {
                     this.orderSelectTarget.innerHTML = '<option value="">Selecciona un pedido</option>'
-                    this.ensureNewOption(this.orderSelectTarget, "Agregar nuevo pedido…")
+                    this.ensureNewOption(this.orderSelectTarget, "▼ Agregar nuevo pedido…")
 
                     orders.forEach(order => {
                         this.orderSelectTarget.innerHTML += `<option value="${order.id}">${order.number}</option>`
@@ -123,10 +123,10 @@ export default class extends Controller {
                 .catch(error => console.error('Error cargando pedidos:', error))
         } else {
             this.addressSelectTarget.innerHTML = '<option value="">Selecciona una dirección</option>'
-            this.ensureNewOption(this.addressSelectTarget, "Agregar nueva dirección…")
+            this.ensureNewOption(this.addressSelectTarget, "▼ Agregar nueva dirección…")
 
             this.orderSelectTarget.innerHTML = '<option value="">Selecciona un pedido</option>'
-            this.ensureNewOption(this.orderSelectTarget, "Agregar nuevo pedido…")
+            this.ensureNewOption(this.orderSelectTarget, "▼ Agregar nuevo pedido…")
         }
 
         const wizardController = this.application.getControllerForElementAndIdentifier(

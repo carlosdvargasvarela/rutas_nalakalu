@@ -1,0 +1,181 @@
+// Estilos para la página Nueva Entrega - Na Lakalú Brand Kit
+
+.deliveries-new-page {
+  background: $nalakalu-warm-white;
+  min-height: 100vh;
+  padding: $space-lg 0;
+}
+
+// Header de la página
+.delivery-new-header {
+  background-color: $nalakalu-beige;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%233D342C' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  border-radius: $radius-xl;
+  padding: $space-lg $space-xl;
+  margin-bottom: $space-xl;
+  box-shadow: $shadow-soft;
+  border: 1px solid rgba($nalakalu-dark-coffee, 0.1);
+  
+  .icon-container {
+    background: $nalakalu-laurel-green;
+    width: 70px;
+    height: 70px;
+    border-radius: $radius-md;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: $shadow-medium;
+    transition: transform $transition-fast;
+    will-change: transform;
+    
+    &:hover {
+      transform: translateY(-2px);
+    }
+    
+    i {
+      font-size: 2rem;
+      color: $nalakalu-warm-white;
+    }
+  }
+  
+  h1 {
+    color: $nalakalu-dark-coffee;
+    font-family: $font-heading;
+    font-weight: 300; // Fraunces Light
+    font-size: 2.25rem;
+    margin-bottom: $space-xs;
+    letter-spacing: -0.02em;
+  }
+  
+  .subtitle {
+    color: $nalakalu-dark-coffee;
+    font-family: $font-body;
+    font-size: 0.95rem;
+    margin: 0;
+  }
+}
+
+// Tarjeta del formulario
+.delivery-form-card {
+  background: white;
+  border-radius: $radius-xl;
+  padding: $space-xl;
+  box-shadow: $shadow-medium;
+  border: 1px solid rgba($nalakalu-beige, 0.5);
+  transition: box-shadow $transition-fast;
+  will-change: box-shadow;
+  
+  &:hover {
+    box-shadow: $shadow-strong;
+  }
+  
+  // Estilos para los campos del formulario dentro de la tarjeta
+  .form-label {
+    color: $nalakalu-dark-coffee;
+    font-family: $font-body;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: $space-xs;
+    letter-spacing: 0.01em;
+  }
+  
+  .form-control,
+  .form-select {
+    border: 2px solid rgba($nalakalu-beige, 0.8);
+    border-radius: $radius-sm;
+    padding: $space-sm $space-md;
+    font-family: $font-body;
+    color: $nalakalu-dark-coffee;
+    background: $nalakalu-warm-white;
+    transition: border-color $transition-fast, box-shadow $transition-fast;
+    will-change: border-color;
+    
+    &:focus {
+      border-color: $nalakalu-craft-orange;
+      box-shadow: 0 0 0 0.2rem rgba($nalakalu-craft-orange, 0.15);
+      background: white;
+    }
+    
+    &::placeholder {
+      color: rgba($nalakalu-dark-coffee, 0.4);
+    }
+  }
+  
+  // Botones
+  .btn-primary {
+    background: $nalakalu-craft-orange;
+    border: none;
+    border-radius: $radius-md;
+    padding: $space-sm $space-lg;
+    font-family: $font-body;
+    font-weight: 600;
+    color: $nalakalu-warm-white;
+    box-shadow: $shadow-soft;
+    transition: transform $transition-fast, box-shadow $transition-fast, background-color $transition-fast;
+    will-change: transform;
+    
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: $shadow-medium;
+      background: darken($nalakalu-craft-orange, 5%);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+  }
+  
+  .btn-secondary,
+  .btn-outline-secondary {
+    background: rgba($nalakalu-beige, 0.3);
+    border: 2px solid $nalakalu-beige;
+    border-radius: $radius-md;
+    padding: $space-sm $space-lg;
+    font-family: $font-body;
+    font-weight: 600;
+    color: $nalakalu-dark-coffee;
+    transition: background-color $transition-fast, border-color $transition-fast;
+    
+    &:hover {
+      background: $nalakalu-beige;
+      border-color: darken($nalakalu-beige, 10%);
+      color: $nalakalu-dark-coffee;
+    }
+  }
+}
+
+// Textos dentro de la página
+.deliveries-new-page {
+  color: $nalakalu-dark-coffee;
+  font-family: $font-body;
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: $font-heading;
+    color: $nalakalu-dark-coffee;
+  }
+}
+
+// Mejora de alertas y mensajes
+.alert {
+  border: none;
+  border-radius: $radius-md;
+  padding: $space-md $space-lg;
+  
+  &.alert-success {
+    background: rgba($nalakalu-laurel-green, 0.15);
+    color: darken($nalakalu-laurel-green, 20%);
+    border-left: 4px solid $nalakalu-laurel-green;
+  }
+  
+  &.alert-warning {
+    background: rgba($nalakalu-pale-rose, 0.15);
+    color: darken($nalakalu-pale-rose, 30%);
+    border-left: 4px solid $nalakalu-pale-rose;
+  }
+  
+  &.alert-danger {
+    background: rgba($nalakalu-craft-orange, 0.15);
+    color: darken($nalakalu-craft-orange, 15%);
+    border-left: 4px solid $nalakalu-craft-orange;
+  }
+}

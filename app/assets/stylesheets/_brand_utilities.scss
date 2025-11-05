@@ -1,0 +1,82 @@
+// Utilidades adicionales para el Brand Kit Na Lakalú
+
+// Clases de color de texto
+.text-nalakalu-coffee { color: $nalakalu-dark-coffee !important; }
+.text-nalakalu-orange { color: $nalakalu-craft-orange !important; }
+.text-nalakalu-green { color: $nalakalu-laurel-green !important; }
+.text-nalakalu-rose { color: $nalakalu-pale-rose !important; }
+.text-nalakalu-beige { color: $nalakalu-beige !important; }
+
+// Clases de fondo
+.bg-nalakalu-warm { background-color: $nalakalu-warm-white !important; }
+.bg-nalakalu-beige { background-color: $nalakalu-beige !important; }
+.bg-nalakalu-rose { background-color: $nalakalu-pale-rose !important; }
+.bg-nalakalu-coffee { background-color: $nalakalu-dark-coffee !important; }
+.bg-nalakalu-orange { background-color: $nalakalu-craft-orange !important; }
+.bg-nalakalu-green { background-color: $nalakalu-laurel-green !important; }
+
+// Clases de borde
+.border-nalakalu-coffee { border-color: $nalakalu-dark-coffee !important; }
+.border-nalakalu-orange { border-color: $nalakalu-craft-orange !important; }
+.border-nalakalu-green { border-color: $nalakalu-laurel-green !important; }
+.border-nalakalu-rose { border-color: $nalakalu-pale-rose !important; }
+
+// Mixin para botones artesanales
+@mixin nalakalu-btn($bg-color, $text-color: $nalakalu-warm-white) {
+  background: $bg-color;
+  border-color: $bg-color;
+  color: $text-color;
+  font-family: $font-body;
+  font-weight: 500;
+  transition: $transition-normal;
+  
+  &:hover {
+    background: darken($bg-color, 8%);
+    border-color: darken($bg-color, 8%);
+    color: $text-color;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba($bg-color, 0.3);
+  }
+}
+
+// Botones artesanales
+.btn-nalakalu-primary { @include nalakalu-btn($nalakalu-craft-orange); }
+.btn-nalakalu-secondary { @include nalakalu-btn($nalakalu-pale-rose, $nalakalu-dark-coffee); }
+.btn-nalakalu-success { @include nalakalu-btn($nalakalu-laurel-green); }
+
+// Badges artesanales
+.badge-nalakalu-primary { background: $nalakalu-craft-orange; color: $nalakalu-warm-white; font-family: $font-body; }
+.badge-nalakalu-success { background: $nalakalu-laurel-green; color: $nalakalu-warm-white; font-family: $font-body; }
+.badge-nalakalu-coffee { background: $nalakalu-dark-coffee; color: $nalakalu-warm-white; font-family: $font-body; }
+
+// Tarjetas artesanales
+.card-nalakalu {
+  background: linear-gradient(135deg, $nalakalu-warm-white 0%, lighten($nalakalu-beige, 5%) 100%);
+  border: 1px solid $nalakalu-beige;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-soft;
+  transition: $transition-normal;
+  &:hover { box-shadow: $shadow-medium; transform: translateY(-3px); }
+}
+
+// Enlaces artesanales
+.link-nalakalu {
+  color: $nalakalu-craft-orange;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: $transition-fast;
+  &:hover { color: darken($nalakalu-craft-orange, 10%); border-bottom-color: $nalakalu-craft-orange; }
+}
+
+// Divisor artesanal
+.divider-nalakalu {
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, $nalakalu-pale-rose 50%, transparent 100%);
+  margin: $space-lg 0;
+  border: none;
+}
+
+// Sombras artesanales
+.shadow-nalakalu-sm { box-shadow: $shadow-soft; }
+.shadow-nalakalu-md { box-shadow: $shadow-medium; }
+.shadow-nalakalu-lg { box-shadow: $shadow-strong; }

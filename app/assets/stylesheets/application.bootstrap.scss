@@ -1,16 +1,23 @@
 // app/assets/stylesheets/application.bootstrap.scss
+// Importar variables de marca primero
+@import "brand_variables";
+
 @import 'bootstrap/scss/bootstrap';
 @import 'bootstrap-icons/font/bootstrap-icons';
 @import "navbar";
 @import "notifications";
 @import "dashboard";
 @import "devise_sessions";
+@import "deliveries_new";
 
 // Estilos globales para consistencia
 body {
   background-color: #FFF7EE !important; // nalakalu-cream
-  
-  &.bg-light {
-    background-color: #FFF7EE !important; // Sobreescribir bg-light de Bootstrap
-  }
+  &.bg-light { background-color: #FFF7EE !important; }
+}
+
+// Delivery Plans responsive (consolidado desde delivery_plans.css.scss)
+@media (max-width: 576px) {
+  [data-delivery-plan-map-target="map"] { height: 280px !important; }
+  h1.fs-4, h2.fs-4 { font-size: 1.25rem; }
 }

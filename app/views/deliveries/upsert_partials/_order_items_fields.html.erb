@@ -66,9 +66,12 @@
               </td>
               <td class="text-center px-4">
                 <% unless f.object.persisted? %>
-                  <%= link_to "#", class: "btn btn-outline-danger btn-sm rounded-circle", 
+                  <%= link_to "#", class: "btn btn-outline-danger btn-sm rounded-circle p-0", 
+                      style: "width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease;",
+                      onmouseover: "this.style.transform='rotate(90deg)'; this.style.background='#dc3545'; this.style.borderColor='#dc3545'; this.querySelector('i').style.color='white';",
+                      onmouseout: "this.style.transform='rotate(0deg)'; this.style.background='transparent'; this.style.borderColor='#dc3545'; this.querySelector('i').style.color='';",
                       data: { action: "click->delivery-form#removeDeliveryItem" } do %>
-                    <i class="bi bi-x-lg"></i>
+                    <i class="bi bi-x-lg" style="font-size: 0.9rem; transition: color 0.2s ease;"></i>
                   <% end %>
                 <% end %>
                 <%= di_f.hidden_field :_destroy, class: "destroy-flag" %>
@@ -97,9 +100,12 @@
                         name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][notes]"></textarea>
             </td>
             <td class="text-center px-4">
-              <a href="#" class="btn btn-outline-danger btn-sm rounded-circle" 
+              <a href="#" class="btn btn-outline-danger btn-sm rounded-circle p-0" 
+                 style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease;"
+                 onmouseover="this.style.transform='rotate(90deg)'; this.style.background='#dc3545'; this.style.borderColor='#dc3545'; this.querySelector('i').style.color='white';"
+                 onmouseout="this.style.transform='rotate(0deg)'; this.style.background='transparent'; this.style.borderColor='#dc3545'; this.querySelector('i').style.color='';"
                  data-action="click->delivery-form#removeDeliveryItem">
-                <i class="bi bi-x-lg"></i>
+                <i class="bi bi-x-lg" style="font-size: 0.9rem; transition: color 0.2s ease;"></i>
               </a>
               <input type="hidden" name="delivery[delivery_items_attributes][NEW_RECORD][_destroy]" class="destroy-flag" />
             </td>

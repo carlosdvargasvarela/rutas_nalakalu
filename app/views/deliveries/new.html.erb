@@ -1,23 +1,23 @@
 <%# app/views/deliveries/new.html.erb %>
 <%= render "shared/flash_errors", objects: [@client, @order, @delivery, @address] %>
 
-<div class="container-fluid px-4 py-4">
-  <!-- Header con diseño mejorado -->
-  <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
-    <div class="d-flex align-items-center">
-      <div class="bg-primary bg-gradient rounded-circle p-3 me-3 shadow-sm">
-        <i class="bi bi-truck text-white fs-3"></i>
-      </div>
-      <div>
-        <h1 class="mb-0 fw-bold">Nueva entrega</h1>
-        <p class="text-muted mb-0 small">Complete el siguiente formulario para crear una nueva entrega</p>
+<div class="deliveries-new-page">
+  <div class="container-fluid px-4">
+    <!-- Header con diseño Na Lakalú -->
+    <div class="delivery-new-header">
+      <div class="d-flex align-items-center">
+        <div class="icon-container me-4">
+          <i class="bi bi-truck"></i>
+        </div>
+        <div>
+          <h1>Nueva entrega</h1>
+          <p class="subtitle">Complete el siguiente formulario para crear una nueva entrega</p>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Formulario con diseño mejorado -->
-  <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-    <div class="card-body p-4 p-lg-5">
+    <!-- Formulario con diseño artesanal -->
+    <div class="delivery-form-card">
       <%= render "deliveries/upsert_partials/form", delivery: @delivery, clients: @clients, addresses: @addresses %>
     </div>
   </div>

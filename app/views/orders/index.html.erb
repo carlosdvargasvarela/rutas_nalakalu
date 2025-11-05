@@ -12,10 +12,10 @@
       <div class="col-md-6 text-md-end mt-3 mt-md-0">
         <div class="btn-toolbar justify-content-md-end gap-2 flex-wrap">
           <% if policy(Delivery).new? %>
-            <%= link_to new_delivery_path, class: "btn btn-light btn-sm rounded-3 dashboard-action-btn" do %>
+            <%= link_to new_delivery_path, class: "btn btn-sm rounded-3", style: "background-color: #A54E1E; color: #FFF7EE; border: none; transition: all 0.2s ease;", onmouseover: "this.style.backgroundColor='#8a4119'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(165, 78, 30, 0.3)';", onmouseout: "this.style.backgroundColor='#A54E1E'; this.style.transform='translateY(0)'; this.style.boxShadow='none';" do %>
               <i class="bi bi-plus-circle me-1"></i> Nueva entrega
             <% end %>
-            <%= link_to new_internal_delivery_deliveries_path, class: "btn btn-light btn-sm rounded-3 dashboard-action-btn" do %>
+            <%= link_to new_internal_delivery_deliveries_path, class: "btn btn-sm rounded-3", style: "background-color: #C49D90; color: #3D342C; border: none; transition: all 0.2s ease;", onmouseover: "this.style.backgroundColor='#b38a7d'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(196, 157, 144, 0.3)';", onmouseout: "this.style.backgroundColor='#C49D90'; this.style.transform='translateY(0)'; this.style.boxShadow='none';" do %>
               <i class="bi bi-bag-plus me-1"></i> Nuevo mandado
             <% end %>
           <% end %>
@@ -83,11 +83,11 @@
       <!-- Botones -->
       <div class="col-md-2">
         <label class="form-label small fw-semibold text-dark">&nbsp;</label>
-        <%= f.submit "Buscar", class: "btn btn-dark w-100 rounded-3 dashboard-action-btn" %>
+        <%= f.submit "Buscar", class: "btn w-100 rounded-3", style: "background-color: #A54E1E; color: #FFF7EE; border: none; transition: all 0.2s ease;", onmouseover: "this.style.backgroundColor='#8a4119'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(165, 78, 30, 0.3)';", onmouseout: "this.style.backgroundColor='#A54E1E'; this.style.transform='translateY(0)'; this.style.boxShadow='none';" %>
       </div>
       <div class="col-md-2">
         <label class="form-label small fw-semibold text-dark">&nbsp;</label>
-        <%= link_to "Quitar filtros", orders_path, class: "btn btn-outline-dark w-100 rounded-3 dashboard-action-btn" %>
+        <%= link_to "Quitar filtros", orders_path, class: "btn w-100 rounded-3", style: "background-color: #C49D90; color: #3D342C; border: none; transition: all 0.2s ease;", onmouseover: "this.style.backgroundColor='#b38a7d'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(196, 157, 144, 0.3)';", onmouseout: "this.style.backgroundColor='#C49D90'; this.style.transform='translateY(0)'; this.style.boxShadow='none';" %>
       </div>
     <% end %>
     </div>
@@ -98,30 +98,30 @@
     <div class="card kpi-card">
       <div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
         <table class="table table-hover align-middle mb-0">
-          <thead class="table-dark sticky-top">
+          <thead class="sticky-top" style="background: linear-gradient(135deg, #E2D2B9 0%, #C49D90 100%);">
             <tr>
-              <th scope="col" class="fw-bold"># Orden</th>
-              <th scope="col" class="fw-bold">Cliente</th>
-              <th scope="col" class="fw-bold">Vendedor</th>
-              <th scope="col" class="fw-bold" style="width: 25%;">Productos</th>
-              <th scope="col" class="fw-bold" style="width: 20%;">Entregas</th>
-              <th scope="col" class="fw-bold">Estado</th>
-              <th scope="col" class="text-center fw-bold">Acciones</th>
+              <th scope="col" class="fw-bold" style="color: #3D342C; border: none; padding: 1rem 0.75rem;"># Orden</th>
+              <th scope="col" class="fw-bold" style="color: #3D342C; border: none; padding: 1rem 0.75rem;">Cliente</th>
+              <th scope="col" class="fw-bold" style="color: #3D342C; border: none; padding: 1rem 0.75rem;">Vendedor</th>
+              <th scope="col" class="fw-bold" style="width: 25%; color: #3D342C; border: none; padding: 1rem 0.75rem;">Productos</th>
+              <th scope="col" class="fw-bold" style="width: 20%; color: #3D342C; border: none; padding: 1rem 0.75rem;">Entregas</th>
+              <th scope="col" class="fw-bold" style="color: #3D342C; border: none; padding: 1rem 0.75rem;">Estado</th>
+              <th scope="col" class="text-center fw-bold" style="color: #3D342C; border: none; padding: 1rem 0.75rem;">Acciones</th>
             </tr>
           </thead>
           <tbody>
             <% @orders.each do |order| %>
-              <tr>
-                <td><span class="badge bg-dark fw-bold"><%= order.number %></span></td>
-                <td><i class="bi bi-person me-1 text-primary"></i><strong><%= order.client.name %></strong></td>
-                <td><%= order.seller.name %> <span class="badge bg-light text-dark"><%= order.seller.seller_code %></span></td>
+              <tr style="border-bottom: 1px solid #E2D2B9;">
+                <td><span class="badge fw-bold" style="background-color: #3D342C; color: #FFF7EE;"><%= order.number %></span></td>
+                <td><i class="bi bi-person me-1" style="color: #A54E1E;"></i><strong style="color: #3D342C;"><%= order.client.name %></strong></td>
+                <td><span style="color: #3D342C;"><%= order.seller.name %></span> <span class="badge" style="background-color: #E2D2B9; color: #3D342C; font-weight: 600;"><%= order.seller.seller_code %></span></td>
                 <td>
                   <% order.order_items.each do |item| %>
                     <div class="d-flex align-items-center mb-2">
-                      <span class="badge bg-dark me-2 px-2"><%= item.quantity %></span>
-                      <strong class="text-dark"><%= item.product %></strong>
+                      <span class="badge me-2" style="background-color: #C49D90; color: #3D342C; font-weight: 600; padding: 0.35rem 0.65rem;"><%= item.quantity %></span>
+                      <strong style="color: #3D342C;"><%= item.product %></strong>
                       <% if item.order_item_notes.any? %>
-                        <span class="badge bg-warning text-dark ms-2" title="<%= pluralize(item.order_item_notes.count, 'nota') %>">
+                        <span class="badge ms-2" style="background-color: #A54E1E; color: #FFF7EE;" title="<%= pluralize(item.order_item_notes.count, 'nota') %>">
                           <i class="bi bi-chat-left-text"></i> <%= item.order_item_notes.count %>
                         </span>
                       <% end %>
@@ -131,8 +131,8 @@
                 <td>
                   <% order.deliveries.each do |delivery| %>
                     <div class="mb-2">
-                      <i class="bi bi-calendar-event me-1 text-primary"></i> 
-                      <span class="fw-semibold"><%= format_date_dd_mm_yyyy(delivery.delivery_date) %></span>
+                      <i class="bi bi-calendar-event me-1" style="color: #A54E1E;"></i> 
+                      <span class="fw-semibold" style="color: #3D342C;"><%= format_date_dd_mm_yyyy(delivery.delivery_date) %></span>
                       <span class="badge bg-<%= delivery_status_color(delivery.status) %> ms-1"><%= delivery.display_status %></span>
                     </div>
                   <% end %>
@@ -141,12 +141,12 @@
                   <span class="badge bg-<%= order_status_color(order.status) %> px-3 py-2"><%= order.display_status %></span>
                 </td>
                 <td class="text-center">
-                  <div class="btn-group" role="group">
-                    <%= link_to order_path(order), class: "btn btn-sm btn-outline-dark dashboard-action-btn", title: "Ver detalles" do %>
-                      <i class="bi bi-eye"></i>
+                  <div class="d-flex gap-2 justify-content-center">
+                    <%= link_to order_path(order), class: "btn btn-sm rounded-circle", style: "background-color: #C49D90; color: #3D342C; border: none; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;", title: "Ver detalles", onmouseover: "this.style.backgroundColor='#b38a7d'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(196, 157, 144, 0.3)';", onmouseout: "this.style.backgroundColor='#C49D90'; this.style.transform='translateY(0)'; this.style.boxShadow='none';" do %>
+                      <i class="bi bi-eye" style="font-size: 1rem;"></i>
                     <% end %>
-                    <%= button_to order_path(order), method: :delete, data: { confirm: "¿Seguro que deseas eliminar este pedido?" }, class: "btn btn-sm btn-outline-danger dashboard-action-btn" do %>
-                      <i class="bi bi-trash"></i>
+                    <%= button_to order_path(order), method: :delete, data: { confirm: "¿Seguro que deseas eliminar este pedido?" }, class: "btn btn-sm rounded-circle", style: "background-color: #A54E1E; color: #FFF7EE; border: none; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;", onmouseover: "this.style.backgroundColor='#8a4119'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(165, 78, 30, 0.3)';", onmouseout: "this.style.backgroundColor='#A54E1E'; this.style.transform='translateY(0)'; this.style.boxShadow='none';" do %>
+                      <i class="bi bi-trash" style="font-size: 1rem;"></i>
                     <% end %>
                   </div>
                 </td>

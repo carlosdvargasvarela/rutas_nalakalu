@@ -1,0 +1,45 @@
+// Brand Kit Na Lakalú - Variables de Diseño
+// Paleta Cromática Artesanal
+
+// Colores principales
+$nalakalu-warm-white: #FFF7EE;      // Blanco hueso - Fondo principal
+$nalakalu-beige: #E2D2B9;            // Beige - Tarjetas y bloques
+$nalakalu-pale-rose: #C49D90;        // Palo rosa - Acentos y secciones
+$nalakalu-dark-coffee: #3D342C;      // Café oscuro - Texto principal
+$nalakalu-craft-orange: #A54E1E;     // Naranja artesanal - Botones y acciones
+$nalakalu-laurel-green: #89987B;     // Verde laurel - Estados positivos
+
+// Estados semánticos
+$status-pending: $nalakalu-laurel-green;    // Pendientes
+$status-active: $nalakalu-dark-coffee;      // Activos
+$status-overdue: $nalakalu-craft-orange;    // Vencidas
+$status-completed: $nalakalu-laurel-green;  // Completadas
+
+// Tipografía
+$font-heading: 'Fraunces', serif;        // Títulos y encabezados - elegancia
+$font-body: 'Matter', sans-serif;         // Texto y cuerpo - moderno y limpio
+$font-data: 'Space Mono', monospace;      // Datos y métricas - estructura técnica
+
+// Sombras artesanales
+$shadow-soft: 0 4px 20px rgba(61, 52, 44, 0.08);
+$shadow-medium: 0 8px 30px rgba(61, 52, 44, 0.12);
+$shadow-strong: 0 12px 40px rgba(61, 52, 44, 0.16);
+
+// Bordes redondeados
+$radius-sm: 0.75rem;
+$radius-md: 1.25rem;
+$radius-lg: 1.5rem;
+$radius-xl: 2rem;
+
+// Espaciado generoso (aire artesanal)
+$space-xs: 0.5rem;
+$space-sm: 1rem;
+$space-md: 1.5rem;
+$space-lg: 2rem;
+$space-xl: 3rem;
+$space-xxl: 4rem;
+
+// Transiciones suaves
+$transition-fast: 0.2s ease;
+$transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+$transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
