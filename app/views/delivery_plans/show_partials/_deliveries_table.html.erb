@@ -24,38 +24,75 @@
             <% delivery_plan.delivery_plan_assignments.order(:stop_order).each do |assignment| %>
               <% delivery = assignment.delivery %>
               <tr>
-                <td><span class="badge bg-primary"><%= assignment.stop_order %></span></td>
                 <td>
-                  <%= link_to delivery.order.number, delivery_path(delivery), class: "fw-bold" %>
+                  <span class="badge bg-primary"><%= assignment.stop_order %></span>
+                </td>
+
+                <td>
+                  <%= link_to delivery.order.number, delivery_path(delivery), class: "fw-bold text-decoration-none text-primary" %>
+
+                  <%# Nota de la entrega (ej. delivery.delivery_notes) con tooltip como en la vista ejemplo %>
+                  <% if delivery.respond_to?(:delivery_notes) && delivery.delivery_notes.present? %>
+                    <span class="badge bg-info text-dark ms-1"
+                          data-bs-toggle="tooltip"
+                          data-bs-placement="top"
+                          title="<%= delivery.delivery_notes %>">
+                      <i class="bi bi-sticky"></i>
+                    </span>
+                  <% end %>
+
+                  <%# Indicador de que hay notas en ítems u order_items %>
                   <% if delivery.delivery_items.any? { |di| di.notes.present? || di.order_item.notes.present? } %>
-                    <span class="badge bg-warning text-dark ms-1"><i class="bi bi-sticky"></i> Nota</span>
+                    <span class="badge bg-warning text-dark ms-1">
+                      <i class="bi bi-sticky"></i> Nota
+                    </span>
                   <% end %>
                 </td>
+
                 <td><%= delivery.order.client.name %></td>
+
                 <td><%= delivery.order.seller.seller_code %></td>
+
                 <td>
                   <%= link_to delivery.delivery_address.full_address,
                         "https://www.google.com/maps?q=#{delivery.delivery_address.latitude},#{delivery.delivery_address.longitude}",
                         target: "_blank", rel: "noopener", class: "text-decoration-none" %>
                 </td>
-                <td><%= delivery.delivery_time_preference.presence || "Sin preferencia" %></td>
-                <td><%= l delivery.delivery_date, format: :long %></td>
-                <td><span class="badge bg-<%= delivery_status_color(delivery.status) %>"><%= delivery.display_status %></span></td>
+
                 <td>
-                  <i class="bi bi-telephone me-1"></i><%= delivery.contact_name %>
-                  <%= link_to delivery.contact_phone, "tel:#{delivery.contact_phone}" if delivery.contact_phone.present? %>
+                  <span class="<%= delivery.delivery_time_preference.present? ? 'fw-bold' : 'text-muted' %>">
+                    <%= delivery.delivery_time_preference.presence || "Sin preferencia" %>
+                  </span>
                 </td>
+
+                <td><%= l delivery.delivery_date, format: :long %></td>
+
+                <td>
+                  <span class="badge bg-<%= delivery_status_color(delivery.status) %>">
+                    <%= delivery.display_status %>
+                  </span>
+                </td>
+
+                <td>
+                  <i class="bi bi-person-lines-fill me-1"></i><%= delivery.contact_name %>
+                  <% if delivery.contact_phone.present? %>
+                    <br>
+                    <i class="bi bi-telephone me-1"></i>
+                    <%= link_to delivery.contact_phone, "tel:#{delivery.contact_phone}", class: "text-decoration-none small" %>
+                  <% end %>
+                </td>
+
                 <td>
                   <% if delivery.delivery_items.any? %>
                     <div class="d-flex flex-column gap-1">
                       <button class="btn btn-sm btn-outline-info"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#productosEntrega<%= delivery.id %>">
+                              data-bs-toggle="collapse"
+                              data-bs-target="#productosEntrega<%= delivery.id %>">
                         <i class="bi bi-box-seam"></i> Ver productos
                       </button>
                       <button class="btn btn-sm btn-outline-primary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#notaEntregaModal<%= delivery.id %>">
+                              data-bs-toggle="modal"
+                              data-bs-target="#notaEntregaModal<%= delivery.id %>">
                         <i class="bi bi-sticky"></i> Agregar nota
                       </button>
                     </div>
@@ -64,25 +101,48 @@
                   <% end %>
                 </td>
               </tr>
+
               <% if delivery.delivery_items.any? %>
                 <tr class="collapse" id="productosEntrega<%= delivery.id %>">
                   <td colspan="10" class="bg-light">
-                    <ul class="mb-0 ps-3 small">
-                      <% delivery.active_items_for_plan_for(current_user).each do |item| %>
-                        <li>
-                          <strong><%= item.order_item.product %></strong>
-                          <span class="badge bg-secondary ms-1"><%= item.quantity %></span>
-                          <% if item.notes.present? %>
-                            <br>
-                            <span class="text-primary"><i class="bi bi-pin-angle-fill"></i> <em><%= item.notes %></em></span>
-                          <% end %>
-                          <% if item.order_item.notes.present? %>
-                            <br>
-                            <span class="text-muted"><i class="bi bi-info-circle"></i> <%= item.order_item.notes %></span>
-                          <% end %>
-                        </li>
-                      <% end %>
-                    </ul>
+                    <div class="p-2">
+                      <strong class="d-block mb-2">
+                        <i class="bi bi-box-seam me-1"></i> Productos de la entrega
+                      </strong>
+
+                      <ul class="mb-0 ps-3">
+                        <% delivery.active_items_for_plan_for(current_user).each do |item| %>
+                          <li class="mb-3">
+                            <div class="d-flex align-items-start justify-content-between">
+                              <div>
+                                <strong><%= item.order_item.product %></strong>
+                                <span class="badge bg-secondary ms-1"><%= item.quantity %></span>
+                              </div>
+                            </div>
+
+                            <%# NOTAS del DeliveryItem: MUY VISIBLES %>
+                            <% if item.notes.present? %>
+                              <div class="mt-2 p-2" style="background:#fff4e5; border-left:4px solid #fd7e14; border-radius:6px;">
+                                <span class="fw-bold text-dark">
+                                  <i class="bi bi-pin-angle-fill me-1 text-warning"></i> Nota de entrega:
+                                </span>
+                                <div class="mt-1 text-dark"><em><%= item.notes %></em></div>
+                              </div>
+                            <% end %>
+
+                            <%# NOTAS del OrderItem: también visibles pero secundarias %>
+                            <% if item.order_item.notes.present? %>
+                              <div class="mt-2 p-2" style="background:#eef6ff; border-left:4px solid #0d6efd; border-radius:6px;">
+                                <span class="fw-bold text-primary">
+                                  <i class="bi bi-info-circle me-1"></i> Nota del producto:
+                                </span>
+                                <div class="mt-1 text-dark"><%= item.order_item.notes %></div>
+                              </div>
+                            <% end %>
+                          </li>
+                        <% end %>
+                      </ul>
+                    </div>
                   </td>
                 </tr>
               <% end %>
@@ -91,7 +151,9 @@
         </table>
       </div>
     <% else %>
-      <div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>No hay entregas asignadas.</div>
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>No hay entregas asignadas.
+      </div>
     <% end %>
   </div>
 </div>

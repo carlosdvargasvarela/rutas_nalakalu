@@ -12,7 +12,8 @@
           <th>Cliente</th>
           <th>Dirección</th>
           <th>Hora pref.</th>
-          <th style="width:200px;">Productos</th>
+          <th style="width:220px;">Productos</th>
+          <th style="width:280px;">Notas</th>
           <th style="width:70px;">Acción</th>
         </tr>
       </thead>
@@ -21,7 +22,6 @@
              data-sortable-url-value="<%= update_order_delivery_plan_path(delivery_plan) %>">
         <% assignments.each_with_index do |assignment, idx| %>
           <% d = assignment.delivery %>
-          <!-- Fila principal + productos (misma fila colapsable) -->
           <tr data-assignment-id="<%= assignment.id %>">
             <td class="text-center">
               <i class="bi bi-grip-vertical drag-handle text-muted"></i>
@@ -30,35 +30,69 @@
               <span class="badge bg-primary stop-number"><%= assignment.stop_order || idx+1 %></span>
             </td>
             <td><%= d.order.client.name %></td>
-            <td><%= d.delivery_address.address %></td>
+            <td><%= [d.delivery_address.address, d.delivery_address.description].compact.join(" - ") %></td>
             <td><%= d.delivery_time_preference.presence || "--" %></td>
+
             <td>
-              <a data-bs-toggle="collapse" href="#products_<%= assignment.id %>" 
-                 role="button" aria-expanded="false" 
+              <a data-bs-toggle="collapse" href="#products_<%= assignment.id %>"
+                 role="button" aria-expanded="false"
                  aria-controls="products_<%= assignment.id %>">
                 <i class="bi bi-caret-down"></i> Ver productos
               </a>
               <div class="collapse mt-2" id="products_<%= assignment.id %>">
                 <ul class="list-unstyled small mb-0">
                   <% d.delivery_items.includes(:order_item).each do |di| %>
-                    <li>
+                    <li class="mb-2">
                       • <strong><%= di.order_item.product %></strong>
-                      <span class="badge bg-info">
-                        <%= di.quantity %> unidades
-                      </span>
+                      <span class="badge bg-info"><%= di.quantity %> unidades</span>
                       <% if di.service_case %>
                         <span class="badge bg-warning text-dark">Caso de servicio</span>
-                      <% end %>
-                      <% if di.notes.present? %>
-                        <div class="text-muted small">
-                          <i class="bi bi-chat-left-text me-1"></i> <%= di.notes %>
-                        </div>
                       <% end %>
                     </li>
                   <% end %>
                 </ul>
               </div>
             </td>
+
+            <!-- Nueva columna: Notas -->
+            <td style="min-width: 280px;">
+              <%# Nota de la entrega (si existe campo) %>
+              <% if d.respond_to?(:delivery_notes) && d.delivery_notes.present? %>
+                <div class="mb-2 p-2" style="background:#fff4e5; border-left:4px solid #fd7e14; border-radius:6px;">
+                  <span class="fw-bold text-dark">
+                    <i class="bi bi-sticky me-1 text-warning"></i> Nota de la entrega:
+                  </span>
+                  <div class="mt-1 text-dark"><em><%= d.delivery_notes %></em></div>
+                </div>
+              <% end %>
+
+              <%# Notas de DeliveryItem %>
+              <% d.delivery_items.each do |di| %>
+                <% if di.notes.present? %>
+                  <div class="mb-2 p-2" style="background:#fff4e5; border-left:4px solid #fd7e14; border-radius:6px;">
+                    <span class="fw-bold text-dark">
+                      <i class="bi bi-pin-angle-fill me-1 text-warning"></i> Nota de entrega:
+                    </span>
+                    <div class="mt-1 text-dark"><em><%= di.notes %></em></div>
+                    <div class="small text-muted mt-1"><i class="bi bi-box-seam me-1"></i><%= di.order_item.product %></div>
+                  </div>
+                <% end %>
+              <% end %>
+
+              <%# Notas de OrderItem %>
+              <% d.delivery_items.includes(:order_item).each do |di| %>
+                <% if di.order_item.notes.present? %>
+                  <div class="mb-2 p-2" style="background:#eef6ff; border-left:4px solid #0d6efd; border-radius:6px;">
+                    <span class="fw-bold text-primary">
+                      <i class="bi bi-info-circle me-1"></i> Nota del producto:
+                    </span>
+                    <div class="mt-1 text-dark"><%= di.order_item.notes %></div>
+                    <div class="small text-muted mt-1"><i class="bi bi-box-seam me-1"></i><%= di.order_item.product %></div>
+                  </div>
+                <% end %>
+              <% end %>
+            </td>
+
             <td>
               <%= button_to delivery_plan_delivery_plan_assignment_path(delivery_plan, assignment),
                 method: :delete,

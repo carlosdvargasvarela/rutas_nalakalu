@@ -18,6 +18,7 @@
             <th>Rango de horas</th>
             <th>Fecha</th>
             <th>Productos</th>
+            <th>Notas</th>
           </tr>
         </thead>
         <tbody>
@@ -29,14 +30,53 @@
                             data: { action: "delivery-plan-sidebar#toggle",
                                     label: "#{delivery.order.number} - #{delivery.order.client.name}" } %>
               </td>
-              <td><%= delivery.order.number %></td>
+              <td class="fw-bold text-primary"><%= delivery.order.number %></td>
               <td><%= delivery.order.client.name %></td>
-              <td><%= delivery.delivery_address.address.truncate(40) %></td>
+              <td><%= [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - ") %></td>
               <td><%= delivery.delivery_time_preference || "Sin preferencia" %></td>
               <td><%= l delivery.delivery_date, format: :short %></td>
               <td>
                 <% delivery.active_items_for_plan_for(current_user).each do |item| %>
-                  <span class="badge bg-light text-dark"><%= item.order_item.product %> (<%= item.quantity_delivered %>)</span>
+                  <span class="badge bg-light text-dark me-1">
+                    <%= item.order_item.product %> (<%= item.quantity_delivered %>)
+                  </span>
+                <% end %>
+              </td>
+              <td style="min-width: 300px;">
+                <%# Nota de la entrega (si existe campo) %>
+                <% if delivery.respond_to?(:delivery_notes) && delivery.delivery_notes.present? %>
+                  <div class="mb-2 p-2" style="background:#fff4e5; border-left:4px solid #fd7e14; border-radius:6px;">
+                    <span class="fw-bold text-dark">
+                      <i class="bi bi-sticky me-1 text-warning"></i> Nota de la entrega:
+                    </span>
+                    <div class="mt-1 text-dark"><em><%= delivery.delivery_notes %></em></div>
+                  </div>
+                <% end %>
+
+                <%# Notas de DeliveryItem %>
+                <% delivery.active_items_for_plan_for(current_user).each do |item| %>
+                  <% if item.notes.present? %>
+                    <div class="mb-2 p-2" style="background:#fff4e5; border-left:4px solid #fd7e14; border-radius:6px;">
+                      <span class="fw-bold text-dark">
+                        <i class="bi bi-pin-angle-fill me-1 text-warning"></i> Nota de entrega:
+                      </span>
+                      <div class="mt-1 text-dark"><em><%= item.notes %></em></div>
+                      <div class="small text-muted mt-1"><i class="bi bi-box-seam me-1"></i><%= item.order_item.product %></div>
+                    </div>
+                  <% end %>
+                <% end %>
+
+                <%# Notas de OrderItem %>
+                <% delivery.active_items_for_plan_for(current_user).each do |item| %>
+                  <% if item.order_item.notes.present? %>
+                    <div class="mb-2 p-2" style="background:#eef6ff; border-left:4px solid #0d6efd; border-radius:6px;">
+                      <span class="fw-bold text-primary">
+                        <i class="bi bi-info-circle me-1"></i> Nota del producto:
+                      </span>
+                      <div class="mt-1 text-dark"><%= item.order_item.notes %></div>
+                      <div class="small text-muted mt-1"><i class="bi bi-box-seam me-1"></i><%= item.order_item.product %></div>
+                    </div>
+                  <% end %>
                 <% end %>
               </td>
             </tr>
