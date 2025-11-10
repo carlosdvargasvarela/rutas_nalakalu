@@ -2,9 +2,10 @@
       url: create_service_case_deliveries_path,
       html: {
         data: {
-          controller: "delivery-form",
+          controller: "delivery-form address-validator",
           "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
-          "delivery-form-orders-url-value": orders_for_client_deliveries_path
+          "delivery-form-orders-url-value": orders_for_client_deliveries_path,
+          action: "submit->address-validator#validateBeforeSubmit"
         }
       } do |f| %>
   
@@ -122,7 +123,9 @@
     <%= link_to deliveries_path, class: "btn btn-light border" do %>
       <i class="bi bi-x-circle me-1"></i>Cancelar
     <% end %>
-    <button type="submit" class="btn btn-warning">
+    <button type="submit" 
+            class="btn btn-warning"
+            data-address-validator-target="submitButton">
       <i class="bi bi-check-circle me-1"></i>Guardar caso de servicio
     </button>
   </div>

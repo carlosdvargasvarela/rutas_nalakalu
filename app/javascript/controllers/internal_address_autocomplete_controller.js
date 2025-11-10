@@ -55,6 +55,9 @@ export default class extends Controller {
       this.reverseGeocode(position);
     });
 
+    // Inicializar Geocoder
+    this.geocoder = new google.maps.Geocoder();
+
     this.autocomplete = new google.maps.places.Autocomplete(this.inputTarget, {
       componentRestrictions: { country: "cr" },
       fields: [
@@ -87,33 +90,100 @@ export default class extends Controller {
   }
 
   updateCoordinates(lat, lng) {
-    if (this.hasLatTarget) this.latTarget.value = lat;
-    if (this.hasLngTarget) this.lngTarget.value = lng;
+    if (this.hasLatTarget) this.latTarget.value = lat.toFixed(7);
+    if (this.hasLngTarget) this.lngTarget.value = lng.toFixed(7);
   }
 
-  updateMapFromCoordinates(event) {
+  async updateMapFromCoordinates(event) {
+    if (!this.hasLatTarget || !this.hasLngTarget) return;
+
     const lat = parseFloat(this.latTarget.value);
     const lng = parseFloat(this.lngTarget.value);
 
-    if (isNaN(lat) || isNaN(lng)) return;
+    if (isNaN(lat) || isNaN(lng)) {
+      console.warn("Coordenadas inválidas");
+      return;
+    }
+
+    // Validar rangos razonables para Costa Rica
+    if (lat < 8 || lat > 11.5 || lng < -86 || lng > -82) {
+      this.showCoordinateWarning(
+        "Las coordenadas están fuera del rango de Costa Rica"
+      );
+      return;
+    }
 
     const position = { lat, lng };
     this.map.setCenter(position);
     this.map.setZoom(17);
     this.marker.position = position;
+
+    // Hacer reverse geocoding
+    await this.reverseGeocode(position);
   }
 
-  reverseGeocode(position) {
-    const geocoder = new google.maps.Geocoder();
+  async reverseGeocode(position) {
+    if (!this.geocoder) {
+      console.warn("Geocoder no inicializado");
+      return;
+    }
 
-    geocoder.geocode({ location: position }, (results, status) => {
-      if (status === "OK" && results[0]) {
-        this.inputTarget.value = results[0].formatted_address;
+    try {
+      const response = await this.geocoder.geocode({ location: position });
 
-        if (results[0].plus_code && this.hasPlusTarget) {
-          this.plusTarget.value = results[0].plus_code.global_code || "";
+      if (response.results && response.results.length > 0) {
+        const result = response.results[0];
+
+        // Actualizar el campo de dirección con la dirección normalizada
+        if (this.hasInputTarget) {
+          this.inputTarget.value = result.formatted_address;
+
+          // Disparar evento para validación
+          this.inputTarget.dispatchEvent(new Event("input", { bubbles: true }));
         }
+
+        // Actualizar Plus Code
+        if (result.plus_code && this.hasPlusTarget) {
+          this.plusTarget.value =
+            result.plus_code.global_code ||
+            result.plus_code.compound_code ||
+            "";
+        }
+
+        console.log("✅ Reverse geocoding exitoso:", result.formatted_address);
+      } else {
+        console.warn("No se encontraron resultados de reverse geocoding");
+        this.showCoordinateWarning(
+          "No se pudo obtener una dirección para estas coordenadas"
+        );
       }
-    });
+    } catch (error) {
+      console.error("Error en reverse geocoding:", error);
+      this.showCoordinateWarning(
+        "Error al obtener la dirección. Verifique las coordenadas."
+      );
+    }
+  }
+
+  showCoordinateWarning(message) {
+    let warning = document.getElementById("internal-coordinate-warning");
+
+    if (!warning) {
+      warning = document.createElement("div");
+      warning.id = "internal-coordinate-warning";
+      warning.className =
+        "alert alert-warning alert-dismissible fade show mt-2";
+
+      const detailsElement = this.element.querySelector("details .card-body");
+      if (detailsElement) {
+        detailsElement.appendChild(warning);
+      }
+    }
+
+    warning.innerHTML = `
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      <strong>Advertencia:</strong> ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
   }
 }

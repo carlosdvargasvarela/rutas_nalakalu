@@ -50,23 +50,40 @@
 
       <!-- TAB 2: BUSCAR/CREAR NUEVA DIRECCIÓN -->
       <div class="tab-pane fade" id="new-address" role="tabpanel" aria-labelledby="new-tab">
+        
+        <!-- Alerta preventiva -->
+        <div class="alert alert-warning mb-3">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Importante:</strong> No pegue enlaces de Waze o Google Maps. Escriba la dirección de forma descriptiva o use el buscador.
+        </div>
+
         <div data-controller="address-autocomplete"
              data-address-autocomplete-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>">
           
           <!-- Campo de búsqueda -->
           <div class="mb-3">
             <%= label_tag "delivery_address[address]", "Buscar dirección", class: "form-label fw-bold" %>
-            <%= text_field_tag "delivery_address[address]", nil,
-                placeholder: "Ej: Walmart Escazú, GCode 7JXW+5FH...",
-                class: "form-control form-control-lg",
-                data: { 
-                  "address-autocomplete-target": "input",
-                  "delivery-form-target": "newAddressInput",
-                  action: "input->delivery-form#validateAddress"
-                } %>
+            <div class="position-relative">
+              <%= text_field_tag "delivery_address[address]", nil,
+                  placeholder: "Ej: 200 metros norte de la Iglesia, casa blanca con portón negro",
+                  class: "form-control form-control-lg",
+                  data: { 
+                    "address-autocomplete-target": "input",
+                    "delivery-form-target": "newAddressInput",
+                    "address-validator-target": "addressInput",
+                    action: "input->delivery-form#validateAddress input->address-validator#validateAddress"
+                  } %>
+              <div class="position-absolute top-50 end-0 translate-middle-y me-3 d-none" 
+                  data-address-autocomplete-target="loadingSpinner">
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                  <span class="visually-hidden">Cargando...</span>
+                </div>
+              </div>
+            </div>
             <div class="form-text">
               <i class="bi bi-info-circle me-1"></i>
-              Busca una dirección en Google Maps o escribe una dirección informal
+              Busca una dirección en Google Maps o escribe una dirección informal. 
+              <strong>También puedes ingresar coordenadas manualmente</strong> en la sección de detalles técnicos.
             </div>
           </div>
 
@@ -92,9 +109,13 @@
           <div class="mb-3">
             <%= label_tag "delivery_address[description]", "Referencia adicional", class: "form-label" %>
             <%= text_field_tag "delivery_address[description]", nil,
-                placeholder: "Ej: Casa blanca, portón negro",
+                placeholder: "Ej: Casa blanca, portón negro, frente al supermercado",
                 class: "form-control",
-                data: { "delivery-form-target": "newAddressDescription" } %>
+                data: { 
+                  "delivery-form-target": "newAddressDescription",
+                  "address-validator-target": "addressInput",
+                  action: "input->address-validator#validateAddress"
+                } %>
           </div>
 
           <!-- Detalles avanzados (colapsable) -->
@@ -105,9 +126,16 @@
             
             <div class="card bg-light">
               <div class="card-body">
+                <div class="alert alert-info mb-3">
+                  <i class="bi bi-lightbulb me-2"></i>
+                  <strong>Tip:</strong> Si conoce las coordenadas exactas, ingréselas aquí. 
+                  Al actualizar ambos campos (latitud y longitud), el sistema obtendrá automáticamente 
+                  la dirección normalizada desde Google Maps.
+                </div>
+                
                 <div class="row g-3">
                   <div class="col-md-4">
-                    <%= label_tag "delivery_address[latitude]", "Latitud", class: "form-label small" %>
+                    <%= label_tag "delivery_address[latitude]", "Latitud", class: "form-label small fw-bold" %>
                     <%= number_field_tag "delivery_address[latitude]", nil,
                         step: "any",
                         class: "form-control form-control-sm", 
@@ -117,9 +145,10 @@
                           "delivery-form-target": "newAddressLat",
                           action: "change->address-autocomplete#updateMapFromCoordinates"
                         } %>
+                    <div class="form-text">Rango: 8.0 a 11.5</div>
                   </div>
                   <div class="col-md-4">
-                    <%= label_tag "delivery_address[longitude]", "Longitud", class: "form-label small" %>
+                    <%= label_tag "delivery_address[longitude]", "Longitud", class: "form-label small fw-bold" %>
                     <%= number_field_tag "delivery_address[longitude]", nil,
                         step: "any",
                         class: "form-control form-control-sm", 
@@ -129,21 +158,24 @@
                           "delivery-form-target": "newAddressLng",
                           action: "change->address-autocomplete#updateMapFromCoordinates"
                         } %>
+                    <div class="form-text">Rango: -86.0 a -82.0</div>
                   </div>
                   <div class="col-md-4">
-                    <%= label_tag "delivery_address[plus_code]", "Plus Code", class: "form-label small" %>
+                    <%= label_tag "delivery_address[plus_code]", "Plus Code", class: "form-label small fw-bold" %>
                     <%= text_field_tag "delivery_address[plus_code]", nil,
                         class: "form-control form-control-sm", 
                         placeholder: "W2H5+2Q San José",
+                        readonly: true,
                         data: { 
                           "address-autocomplete-target": "plus",
                           "delivery-form-target": "newAddressPlusCode"
                         } %>
+                    <div class="form-text">Se llena automáticamente</div>
                   </div>
                 </div>
                 <div class="form-text mt-2">
                   <i class="bi bi-info-circle me-1"></i>
-                  Estos campos se llenan automáticamente al buscar en Google Maps, pero puede editarlos manualmente
+                  Al ingresar coordenadas válidas, el campo de dirección se actualizará automáticamente
                 </div>
               </div>
             </div>

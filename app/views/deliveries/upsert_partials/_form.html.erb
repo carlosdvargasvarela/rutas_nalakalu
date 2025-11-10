@@ -1,10 +1,12 @@
-<%= simple_form_for delivery, html: {
-  data: {
-    controller: "delivery-form",
-    "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
-    "delivery-form-orders-url-value": orders_for_client_deliveries_path
-  }
-} do |f| %>
+<%= simple_form_for delivery,
+      html: {
+        data: {
+          controller: "delivery-form address-validator",
+          "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
+          "delivery-form-orders-url-value": orders_for_client_deliveries_path,
+          action: "submit->address-validator#validateBeforeSubmit"
+        }
+      } do |f| %>
   <% if delivery.errors.any? %>
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
       <h4 class="alert-heading">Se encontraron <%= pluralize(delivery.errors.count, "error", "errores") %>:</h4>
@@ -109,7 +111,9 @@
           <%= link_to "Cancelar", deliveries_path, class: "btn btn-outline-secondary" %>
         </div>
         <div>
-          <%= f.submit "Guardar entrega", class: "btn btn-primary btn-lg" %>
+          <%= f.submit "Guardar entrega", 
+              class: "btn btn-primary btn-lg px-5",
+              data: { "address-validator-target": "submitButton" } %>
         </div>
       </div>
     </div>

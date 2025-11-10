@@ -2,7 +2,8 @@
       url: create_internal_delivery_deliveries_path,
       html: {
         data: {
-          controller: "internal-delivery-form"
+          controller: "internal-delivery-form address-validator",
+          action: "submit->address-validator#validateBeforeSubmit"
         }
       } do |f| %>
   
@@ -97,7 +98,9 @@
           <%= link_to "Cancelar", deliveries_path, class: "btn btn-outline-secondary" %>
         </div>
         <div>
-          <%= f.submit "Guardar mandado interno", class: "btn btn-success btn-lg px-5" %>
+          <%= f.submit "Guardar mandado interno", 
+                class: "btn btn-success btn-lg px-5",
+                data: { "address-validator-target": "submitButton" } %>
         </div>
       </div>
     </div>
