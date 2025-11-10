@@ -66,15 +66,56 @@ module Deliveries
       addr_id = normalize_id(delivery_params[:delivery_address_id])
 
       if addr_id.present?
-        DeliveryAddress.find(addr_id).tap do |addr|
-          if params[:delivery_address].present? && address_params.values.any?(&:present?)
-            addr.update!(address_params)
+        addr = DeliveryAddress.find(addr_id)
+
+        # Si vienen nuevos datos de dirección, actualizarlos
+        if params[:delivery_address].present? && address_params.values.any?(&:present?)
+          # Priorizar coordenadas si vienen
+          update_attrs = address_params.dup
+
+          lat = update_attrs[:latitude].to_s.strip
+          lng = update_attrs[:longitude].to_s.strip
+
+          # Si hay coordenadas, asegurarse de que se actualicen primero
+          if lat.present? && lng.present?
+            addr.latitude = lat.to_f
+            addr.longitude = lng.to_f
           end
+
+          # Actualizar el resto de atributos
+          addr.assign_attributes(update_attrs.except(:latitude, :longitude))
+          addr.save!
         end
+
+        addr
       elsif params[:delivery_address]&.[](:address).present?
-        client.delivery_addresses.find_or_create_by!(address: params[:delivery_address][:address]) do |addr|
-          addr.assign_attributes(address_params)
+        addr_attrs = address_params
+        address_text = addr_attrs[:address].to_s.strip
+
+        lat = addr_attrs[:latitude].to_s.strip
+        lng = addr_attrs[:longitude].to_s.strip
+
+        # Buscar por coordenadas primero si están presentes
+        if lat.present? && lng.present?
+          existing = client.delivery_addresses.find_by(
+            latitude: lat.to_f.round(6),
+            longitude: lng.to_f.round(6)
+          )
+          return existing if existing
         end
+
+        # Buscar por dirección
+        existing = client.delivery_addresses.find_by(address: address_text)
+        if existing
+          # Actualizar coordenadas si vienen nuevas
+          if lat.present? && lng.present?
+            existing.update!(latitude: lat.to_f, longitude: lng.to_f)
+          end
+          return existing
+        end
+
+        # Crear nueva
+        client.delivery_addresses.create!(addr_attrs)
       else
         raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debes seleccionar o ingresar una dirección."
       end
