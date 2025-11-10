@@ -1,13 +1,20 @@
-<%# app/views/shared/_address_autocomplete_fields.html.erb %>
-<div class="d-flex justify-content-between align-items-center mb-2">
-  <span class="fw-bold text-primary">
-    <i class="bi bi-geo-alt-plus me-2"></i>Nueva dirección
-  </span>
-  <button type="button" class="btn btn-outline-danger btn-sm"
-          data-action="click->delivery-form#cancelNewAddressFields">
-    <i class="bi bi-x-lg"></i> Cancelar
-  </button>
+<!-- Campo de búsqueda -->
+<div class="mb-3">
+  <%= label_tag "delivery_address[address]", "Buscar dirección", class: "form-label fw-bold" %>
+  <%= text_field_tag "delivery_address[address]", nil,
+      placeholder: "Ej: Walmart Escazú, GCode 7JXW+5FH...",
+      class: "form-control form-control-lg",
+      data: { 
+        "address-autocomplete-target": "input",
+        "delivery-form-target": "newAddressInput",
+        action: "input->delivery-form#validateAddress"
+      } %>
+  <div class="form-text">
+    <i class="bi bi-info-circle me-1"></i>
+    Busca una dirección en Google Maps o escribe una dirección informal
+  </div>
 </div>
+
 <!-- Info dirección seleccionada -->
 <div data-address-autocomplete-target="selectedAddressInfo" 
      class="alert alert-info mb-3" 
@@ -20,22 +27,12 @@
     </div>
   </div>
 </div>
-<!-- Campo de búsqueda -->
-<div class="mb-3">
-  <%= label_tag "delivery_address[address]", "Buscar dirección", class: "form-label" %>
-  <%= text_field_tag "delivery_address[address]", nil,
-      placeholder: "Ej: Walmart Escazú, GCode 7JXW+5FH...",
-      class: "form-control",
-      data: { 
-        "address-autocomplete-target": "input",
-        "delivery-form-target": "newAddressInput"
-      } %>
-  <div class="form-text">💡 Busca una dirección o selecciona una existente para modificar.</div>
-</div>
-<!-- Mapa -->
+
+<!-- Mapa pequeño para preview -->
 <div data-address-autocomplete-target="map"
      style="height: 250px;"
      class="mb-3 border rounded"></div>
+
 <!-- Hidden fields -->
 <%= hidden_field_tag "delivery_address[client_id]", (client&.id || delivery.order&.client&.id), 
     data: { "delivery-form-target": "newAddressClientId" } %>
@@ -54,8 +51,10 @@
       "address-autocomplete-target": "plus",
       "delivery-form-target": "newAddressPlusCode"
     } %>
+
+<!-- Referencia adicional -->
 <div class="mb-3">
-  <%= label_tag "delivery_address[description]", "Referencia", class: "form-label" %>
+  <%= label_tag "delivery_address[description]", "Referencia adicional", class: "form-label" %>
   <%= text_field_tag "delivery_address[description]", nil,
       placeholder: "Ej: Casa blanca, portón negro",
       class: "form-control",

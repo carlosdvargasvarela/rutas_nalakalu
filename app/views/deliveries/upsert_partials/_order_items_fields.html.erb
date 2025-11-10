@@ -1,4 +1,3 @@
-<%# app/views/deliveries/upsert_partials/_order_items_fields.html.erb %>
 <div class="card shadow-sm mb-4">
   <div class="card-header bg-light d-flex justify-content-between align-items-center">
     <span><i class="bi bi-box-seam me-2 text-primary"></i><strong>Productos</strong></span>
@@ -16,7 +15,7 @@
           <th width="80"></th>
         </tr>
       </thead>
-      <tbody id="delivery-items-container">
+      <tbody id="delivery-items-container" data-delivery-form-target="itemsContainer">
         <%# Items existentes %>
         <%= f.simple_fields_for :delivery_items do |di_f| %>
           <tr class="delivery-item-row">
@@ -26,18 +25,18 @@
               <%= di_f.simple_fields_for :order_item do |oi_f| %>
                 <%= oi_f.hidden_field :id %>
                 <%= oi_f.input :product, label: false, placeholder: "Nombre del producto", 
-                    input_html: { class: "form-control" } %>
+                    input_html: { class: "form-control", data: { action: "input->delivery-form#validateProducts" } } %>
               <% end %>
             </td>
             <td>
               <%= di_f.simple_fields_for :order_item do |oi_f| %>
                 <%= oi_f.input :quantity, label: false, placeholder: "Cantidad", 
-                    input_html: { class: "form-control", type: "number", min: 1 } %>
+                    input_html: { class: "form-control", type: "number", min: 1, data: { action: "input->delivery-form#validateProducts" } } %>
               <% end %>
             </td>
             <td>
               <%= di_f.input :quantity_delivered, label: false, placeholder: "A entregar", 
-                  input_html: { class: "form-control", type: "number", min: 1 } %>
+                  input_html: { class: "form-control", type: "number", min: 1, data: { action: "input->delivery-form#validateProducts" } } %>
             </td>
             <td>
               <%= di_f.simple_fields_for :order_item do |oi_f| %>
@@ -55,18 +54,21 @@
           </tr>
         <% end %>
         <%# Template oculto para nuevos items %>
-        <tr class="delivery-item-template delivery-item-row" style="display:none;">
+        <tr class="delivery-item-template delivery-item-row" style="display:none;" data-delivery-form-target="itemTemplate">
           <td>
             <input class="form-control" placeholder="Nombre del producto" 
-                   name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][product]" />
+                   name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][product]"
+                   data-action="input->delivery-form#validateProducts" />
           </td>
           <td>
             <input class="form-control" type="number" min="1" value="1" placeholder="Cantidad"
-                   name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][quantity]" />
+                   name="delivery[delivery_items_attributes][NEW_RECORD][order_item_attributes][quantity]"
+                   data-action="input->delivery-form#validateProducts" />
           </td>
           <td>
             <input class="form-control" type="number" min="1" value="1" placeholder="A entregar"
-                   name="delivery[delivery_items_attributes][NEW_RECORD][quantity_delivered]" />
+                   name="delivery[delivery_items_attributes][NEW_RECORD][quantity_delivered]"
+                   data-action="input->delivery-form#validateProducts" />
           </td>
           <td>
             <textarea class="form-control" rows="1" placeholder="Notas (opcional)"
@@ -80,7 +82,7 @@
         </tr>
         <%# Fila para mostrar cuando no hay productos %>
         <% if f.object.delivery_items.empty? %>
-          <tr class="no-items-row">
+          <tr class="no-items-row" data-delivery-form-target="noItemsRow">
             <td colspan="5" class="text-center text-muted py-4">
               <i class="bi bi-box me-2"></i>
               No hay productos agregados. Haz clic en "Agregar producto" para comenzar.

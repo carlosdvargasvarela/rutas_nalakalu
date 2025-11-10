@@ -1,32 +1,181 @@
-<%# app/views/deliveries/_address_fields.html.erb %>
-<div class="card shadow-sm mb-4">
-  <div class="card-header bg-light">
-    <i class="bi bi-geo-alt me-2 text-primary"></i><strong>Dirección</strong>
-  </div>
-  <div class="card-body">
-    <div class="row g-3">
-      <div class="col-md-8">
-        <%= f.select :delivery_address_id,
-            options_from_collection_for_select(addresses, :id, :address, f.object.delivery_address_id),
-            { prompt: "Selecciona una dirección" },
-            class: "form-select",
-            data: { controller: "tom-select",
-                    "delivery-form-target": "addressSelect",
-                    action: "change->delivery-form#addressChanged" } %>
-      </div>
-      <div class="col-md-4 d-flex align-items-end">
-        <button type="button"
-                class="btn btn-outline-primary btn-sm"
-                data-action="click->delivery-form#toggleNewAddressFields">
-          <i class="bi bi-geo-alt-plus me-1"></i> Nueva dirección
+<div class="card border-0">
+  <div class="card-body p-0">
+    
+    <!-- TABS PARA ALTERNAR ENTRE DIRECCIONES EXISTENTES Y NUEVA -->
+    <ul class="nav nav-tabs mb-4" id="addressTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="existing-tab" data-bs-toggle="tab" data-bs-target="#existing-address" type="button" role="tab" aria-controls="existing-address" aria-selected="true">
+          <i class="bi bi-bookmark-fill me-1"></i> Direcciones guardadas
         </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="new-tab" data-bs-toggle="tab" data-bs-target="#new-address" type="button" role="tab" aria-controls="new-address" aria-selected="false">
+          <i class="bi bi-plus-circle me-1"></i> Buscar/Crear nueva
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="addressTabContent">
+      
+      <!-- TAB 1: DIRECCIONES EXISTENTES -->
+      <div class="tab-pane fade show active" id="existing-address" role="tabpanel" aria-labelledby="existing-tab">
+        <div class="mb-3">
+          <%= f.label :delivery_address_id, "Seleccionar dirección guardada", class: "form-label fw-bold" %>
+          <%= f.select :delivery_address_id,
+              options_from_collection_for_select(addresses, :id, :address, f.object.delivery_address_id),
+              { prompt: "Selecciona una dirección" },
+              class: "form-select form-select-lg",
+              data: { 
+                controller: "tom-select",
+                "delivery-form-target": "addressSelect",
+                "address-selector-target": "select",
+                action: "change->delivery-form#addressChanged change->delivery-form#validateAddress change->address-selector#updateMap"
+              } %>
+          <div class="form-text">
+            <i class="bi bi-info-circle me-1"></i>
+            Seleccione una dirección previamente guardada del cliente
+          </div>
+        </div>
+
+        <!-- Mostrar detalles de la dirección seleccionada -->
+        <div id="selected-address-details" class="alert alert-info d-none" role="alert" data-address-selector-target="details">
+          <h6 class="alert-heading"><i class="bi bi-pin-map me-1"></i> Detalles de la dirección</h6>
+          <p class="mb-1"><strong>Dirección:</strong> <span data-address-selector-target="detailAddress"></span></p>
+          <p class="mb-1"><strong>Referencia:</strong> <span data-address-selector-target="detailReference"></span></p>
+          <p class="mb-1"><strong>Latitud:</strong> <span data-address-selector-target="detailLat"></span></p>
+          <p class="mb-1"><strong>Longitud:</strong> <span data-address-selector-target="detailLng"></span></p>
+          <p class="mb-0"><strong>Plus Code:</strong> <span data-address-selector-target="detailPlusCode"></span></p>
+        </div>
+      </div>
+
+      <!-- TAB 2: BUSCAR/CREAR NUEVA DIRECCIÓN -->
+      <div class="tab-pane fade" id="new-address" role="tabpanel" aria-labelledby="new-tab">
+        <div data-controller="address-autocomplete"
+             data-address-autocomplete-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>">
+          
+          <!-- Campo de búsqueda -->
+          <div class="mb-3">
+            <%= label_tag "delivery_address[address]", "Buscar dirección", class: "form-label fw-bold" %>
+            <%= text_field_tag "delivery_address[address]", nil,
+                placeholder: "Ej: Walmart Escazú, GCode 7JXW+5FH...",
+                class: "form-control form-control-lg",
+                data: { 
+                  "address-autocomplete-target": "input",
+                  "delivery-form-target": "newAddressInput",
+                  action: "input->delivery-form#validateAddress"
+                } %>
+            <div class="form-text">
+              <i class="bi bi-info-circle me-1"></i>
+              Busca una dirección en Google Maps o escribe una dirección informal
+            </div>
+          </div>
+
+          <!-- Info dirección seleccionada -->
+          <div data-address-autocomplete-target="selectedAddressInfo" 
+               class="alert alert-info mb-3" 
+               style="display:none;">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-info-circle me-2"></i>
+              <div>
+                <strong>Dirección seleccionada:</strong><br>
+                <span data-address-autocomplete-target="selectedAddressText"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mapa pequeño para preview -->
+          <div data-address-autocomplete-target="map"
+               style="height: 250px;"
+               class="mb-3 border rounded"></div>
+
+          <!-- Referencia adicional -->
+          <div class="mb-3">
+            <%= label_tag "delivery_address[description]", "Referencia adicional", class: "form-label" %>
+            <%= text_field_tag "delivery_address[description]", nil,
+                placeholder: "Ej: Casa blanca, portón negro",
+                class: "form-control",
+                data: { "delivery-form-target": "newAddressDescription" } %>
+          </div>
+
+          <!-- Detalles avanzados (colapsable) -->
+          <details class="mt-4">
+            <summary class="btn btn-outline-secondary btn-sm mb-3">
+              <i class="bi bi-gear me-1"></i> Coordenadas y detalles técnicos
+            </summary>
+            
+            <div class="card bg-light">
+              <div class="card-body">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <%= label_tag "delivery_address[latitude]", "Latitud", class: "form-label small" %>
+                    <%= number_field_tag "delivery_address[latitude]", nil,
+                        step: "any",
+                        class: "form-control form-control-sm", 
+                        placeholder: "9.9281",
+                        data: { 
+                          "address-autocomplete-target": "lat",
+                          "delivery-form-target": "newAddressLat",
+                          action: "change->address-autocomplete#updateMapFromCoordinates"
+                        } %>
+                  </div>
+                  <div class="col-md-4">
+                    <%= label_tag "delivery_address[longitude]", "Longitud", class: "form-label small" %>
+                    <%= number_field_tag "delivery_address[longitude]", nil,
+                        step: "any",
+                        class: "form-control form-control-sm", 
+                        placeholder: "-84.0907",
+                        data: { 
+                          "address-autocomplete-target": "lng",
+                          "delivery-form-target": "newAddressLng",
+                          action: "change->address-autocomplete#updateMapFromCoordinates"
+                        } %>
+                  </div>
+                  <div class="col-md-4">
+                    <%= label_tag "delivery_address[plus_code]", "Plus Code", class: "form-label small" %>
+                    <%= text_field_tag "delivery_address[plus_code]", nil,
+                        class: "form-control form-control-sm", 
+                        placeholder: "W2H5+2Q San José",
+                        data: { 
+                          "address-autocomplete-target": "plus",
+                          "delivery-form-target": "newAddressPlusCode"
+                        } %>
+                  </div>
+                </div>
+                <div class="form-text mt-2">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Estos campos se llenan automáticamente al buscar en Google Maps, pero puede editarlos manualmente
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <!-- Hidden field para client_id -->
+          <%= hidden_field_tag "delivery_address[client_id]", (delivery.order&.client&.id), 
+              data: { "delivery-form-target": "newAddressClientId" } %>
+
+        </div>
       </div>
     </div>
-    <div data-delivery-form-target="newAddressFields"
-         data-controller="address-autocomplete"
-         data-address-autocomplete-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
-         class="card card-body border-primary mt-3" style="display:none;">
-      <%= render "deliveries/upsert_partials/address_autocomplete_fields", delivery: f.object, client: @client %>
+
+    <!-- MAPA SIEMPRE VISIBLE -->
+    <div class="card mt-4 border" data-controller="address-selector">
+      <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="bi bi-map me-2"></i>Vista previa del mapa</h6>
+      </div>
+      <div class="card-body p-0">
+        <div id="address-map" 
+             style="height: 400px; width: 100%;" 
+             data-controller="address-map"
+             data-address-map-latitude-value="<%= delivery.delivery_address&.latitude || 9.9281 %>"
+             data-address-map-longitude-value="<%= delivery.delivery_address&.longitude || -84.0907 %>"
+             data-address-selector-target="map">
+        </div>
+      </div>
+      <div class="card-footer bg-light text-muted small">
+        <i class="bi bi-info-circle me-1"></i>
+        El mapa se actualiza automáticamente al seleccionar o buscar una dirección
+      </div>
     </div>
+
   </div>
 </div>

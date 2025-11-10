@@ -1,5 +1,12 @@
 # app/controllers/delivery_addresses_controller.rb
 class DeliveryAddressesController < ApplicationController
+  def show
+    @delivery_address = DeliveryAddress.find(params[:id])
+    respond_to do |format|
+      format.json { render json: @delivery_address }
+    end
+  end
+
   def create
     @address = DeliveryAddress.new(address_params)
     if @address.save

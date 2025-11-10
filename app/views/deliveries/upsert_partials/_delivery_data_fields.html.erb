@@ -7,13 +7,36 @@
       <% unless (current_user.seller? || current_user.production_manager?) && !delivery.new_record? %>
         <div class="col-md-4">
           <%= f.label :delivery_date, "Fecha de servicio", class: "form-label" %>
-          <%= f.date_field :delivery_date, class: "form-control", required: true %>
+          <%= f.date_field :delivery_date, 
+              class: "form-control", 
+              required: true,
+              data: { action: "change->delivery-form#validateDeliveryData" } %>
         </div>
       <% end %>
-      <div class="col-md-4"><%= f.input :contact_name, label: "Contacto" %></div>
-      <div class="col-md-4"><%= f.input :contact_phone, label: "Teléfono" %></div>
-      <div class="col-12"><%= f.input :delivery_notes, as: :text, label: "Notas", input_html: { rows: 2 } %></div>
-      <div class="col-md-6"><%= f.input :delivery_time_preference, label: "Preferencia de horario", placeholder: "Ej: Mañana, tarde, 2:00 pm" %></div>
+      <div class="col-md-4">
+        <%= f.input :contact_name, 
+            label: "Contacto",
+            input_html: { data: { action: "input->delivery-form#validateDeliveryData" } } %>
+      </div>
+      <div class="col-md-4">
+        <%= f.input :contact_phone, 
+            label: "Teléfono",
+            input_html: { data: { action: "input->delivery-form#validateDeliveryData" } } %>
+      </div>
+      <div class="col-12">
+        <%= f.input :delivery_notes, 
+            as: :text, 
+            label: "Notas", 
+            input_html: { rows: 2 } %>
+      </div>
+      <div class="col-md-6">
+        <%= f.label :delivery_time_preference, "Preferencia de horario", class: "form-label" %>
+        <%= f.select :delivery_time_preference,
+            [["Mañana", "Mañana"], ["Tarde", "Tarde"], ["Indiferente", "Indiferente"]],
+            { prompt: "Seleccione horario" },
+            class: "form-select",
+            data: { action: "change->delivery-form#validateDeliveryData" } %>
+      </div>
     </div>
   </div>
 </div>
