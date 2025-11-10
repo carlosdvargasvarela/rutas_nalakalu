@@ -1,0 +1,105 @@
+<%= simple_form_for delivery, 
+      url: create_internal_delivery_deliveries_path,
+      html: {
+        data: {
+          controller: "internal-delivery-form"
+        }
+      } do |f| %>
+  
+  <% if delivery.errors.any? %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <h4 class="alert-heading">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        Se encontraron <%= pluralize(delivery.errors.count, "error", "errores") %>:
+      </h4>
+      <ul class="mb-0">
+        <% delivery.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% end %>
+
+  <div class="accordion" id="internalDeliveryAccordion">
+    
+    <!-- SECCIÓN 1: DETALLES DE ENTREGA -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingDeliveryDetails">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDeliveryDetails" aria-expanded="true" aria-controls="collapseDeliveryDetails">
+          <i class="bi bi-calendar-event me-2"></i>
+          <strong>Detalles de la entrega</strong>
+          <span class="badge bg-warning ms-2" data-internal-delivery-form-target="deliveryDetailsBadge">!</span>
+        </button>
+      </h2>
+      <div id="collapseDeliveryDetails" class="accordion-collapse collapse show" aria-labelledby="headingDeliveryDetails" data-bs-parent="#internalDeliveryAccordion">
+        <div class="accordion-body">
+          <%= render "deliveries/internal_delivery_partials/delivery_details_fields", f: f, delivery: delivery %>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: RESPONSABLE -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingResponsible">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseResponsible" aria-expanded="false" aria-controls="collapseResponsible">
+          <i class="bi bi-person-badge me-2"></i>
+          <strong>Responsable</strong>
+          <span class="badge bg-warning ms-2" data-internal-delivery-form-target="responsibleBadge">!</span>
+        </button>
+      </h2>
+      <div id="collapseResponsible" class="accordion-collapse collapse" aria-labelledby="headingResponsible" data-bs-parent="#internalDeliveryAccordion">
+        <div class="accordion-body">
+          <%= render "deliveries/internal_delivery_partials/responsible_fields", f: f, delivery: delivery %>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 3: DIRECCIÓN -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingAddress">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAddress" aria-expanded="false" aria-controls="collapseAddress">
+          <i class="bi bi-geo-alt-fill me-2"></i>
+          <strong>Dirección del mandado</strong>
+          <span class="badge bg-warning ms-2" data-internal-delivery-form-target="addressBadge">!</span>
+        </button>
+      </h2>
+      <div id="collapseAddress" class="accordion-collapse collapse" aria-labelledby="headingAddress" data-bs-parent="#internalDeliveryAccordion">
+        <div class="accordion-body">
+          <%= render "deliveries/internal_delivery_partials/address_fields", f: f, delivery: delivery %>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 4: DETALLE DEL MANDADO -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingTaskDetails">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTaskDetails" aria-expanded="false" aria-controls="collapseTaskDetails">
+          <i class="bi bi-pencil-square me-2"></i>
+          <strong>Detalle del mandado</strong>
+          <span class="badge bg-warning ms-2" data-internal-delivery-form-target="taskDetailsBadge">!</span>
+        </button>
+      </h2>
+      <div id="collapseTaskDetails" class="accordion-collapse collapse" aria-labelledby="headingTaskDetails" data-bs-parent="#internalDeliveryAccordion">
+        <div class="accordion-body">
+          <%= render "deliveries/internal_delivery_partials/task_details_fields", f: f, delivery: delivery %>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTONES DE ACCIÓN -->
+  <div class="card mt-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <%= link_to "Cancelar", deliveries_path, class: "btn btn-outline-secondary" %>
+        </div>
+        <div>
+          <%= f.submit "Guardar mandado interno", class: "btn btn-success btn-lg px-5" %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
