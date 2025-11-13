@@ -9,8 +9,9 @@ module NotificationsHelper
     when "next_week_pending_confirmation" then "Pendientes de Confirmar Próxima Semana"
     when "reschedule_delivery" then "Reprogramación de Entrega"
     when "reschedule_item" then "Reprogramación de Item"
+    when "generic" then "Tus Notificaciones"
     else
-      type.to_s.humanize
+      "Tus Notificaciones"
     end
   end
 

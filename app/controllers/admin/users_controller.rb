@@ -68,8 +68,9 @@ class Admin::UsersController < ApplicationController
   end
 
   def toggle_notifications
-    @user.update!(send_notifications: !@user.send_notifications)
-    status = @user.send_notifications? ? "activadas" : "desactivadas"
+    new_status = !@user.send_notifications
+    @user.update_column(:send_notifications, new_status)
+    status = new_status ? "activadas" : "desactivadas"
     redirect_to admin_users_path, notice: "Notificaciones #{status} para #{@user.name}"
   end
 

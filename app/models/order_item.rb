@@ -1,6 +1,6 @@
 # app/models/order_item.rb
 class OrderItem < ApplicationRecord
-  has_paper_trail
+  # has_paper_trail
 
   # Relaciones
   belongs_to :order

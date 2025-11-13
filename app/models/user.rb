@@ -21,7 +21,7 @@ class User < ApplicationRecord
   end
 
   # Relaciones
-  has_paper_trail
+  # has_paper_trail
   has_one :seller
   has_many :notifications, dependent: :destroy
   has_many :orders, foreign_key: :seller_id, dependent: :nullify

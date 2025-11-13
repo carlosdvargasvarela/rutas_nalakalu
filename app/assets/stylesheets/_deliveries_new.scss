@@ -73,7 +73,7 @@
   .form-label {
     color: $nalakalu-dark-coffee;
     font-family: $font-body;
-    font-weight: 600;
+    font-weight: 400;
     font-size: 0.9rem;
     margin-bottom: $space-xs;
     letter-spacing: 0.01em;
@@ -108,7 +108,7 @@
     border-radius: $radius-md;
     padding: $space-sm $space-lg;
     font-family: $font-body;
-    font-weight: 600;
+    font-weight: 400;
     color: $nalakalu-warm-white;
     box-shadow: $shadow-soft;
     transition: transform $transition-fast, box-shadow $transition-fast, background-color $transition-fast;
@@ -132,7 +132,7 @@
     border-radius: $radius-md;
     padding: $space-sm $space-lg;
     font-family: $font-body;
-    font-weight: 600;
+    font-weight: 400;
     color: $nalakalu-dark-coffee;
     transition: background-color $transition-fast, border-color $transition-fast;
     

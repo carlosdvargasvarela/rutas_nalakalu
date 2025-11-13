@@ -116,7 +116,7 @@
   @include button-states(-2px, 0);
   box-shadow: 0 4px 12px rgba(61, 52, 44, 0.25) !important;
   font-family: $font-body !important;
-  font-weight: 600 !important;
+  font-weight: 400 !important;
   font-size: 1.05rem !important;
   letter-spacing: 0.3px;
   transition: $transition-normal;
@@ -185,7 +185,7 @@
     label {
       font-family: $font-body !important;
       color: $nalakalu-dark-coffee !important;
-      font-weight: 500 !important;
+      font-weight: 400 !important;
       font-size: 0.95rem !important;
     }
     .form-check-label {

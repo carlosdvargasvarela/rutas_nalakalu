@@ -88,10 +88,10 @@ es:
 
       paper_trail/version:
         event: Evento  #g
-        item: :activerecord.models.item  #g
         item_type: Tipo de artículo  #g
+        item_id: ID de artículo  #g
         object: Objeto  #g
-        whodunnit: Whodunnit  #g
+        whodunnit: Quién lo hizo  #g
 
       seller:
         name: Nombre  #g

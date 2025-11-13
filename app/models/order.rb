@@ -4,7 +4,7 @@ class Order < ApplicationRecord
   # CONFIGURACIÓN Y RELACIONES
   # ============================================================================
 
-  has_paper_trail
+  # has_paper_trail
   belongs_to :client
   belongs_to :seller
   has_many :order_items, dependent: :destroy

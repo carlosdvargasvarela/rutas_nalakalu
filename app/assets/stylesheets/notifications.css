@@ -1,15 +1,57 @@
 /* app/assets/stylesheets/notifications.css */
-
-.notification-item {
-    transition: all 0.2s ease;
+/* Brand Colors */
+:root {
+    --nalakalu-warm-white: #FFF7EE;
+    --nalakalu-beige: #E2D2B9;
+    --nalakalu-pale-rose: #C49D90;
+    --nalakalu-dark-coffee: #3D342C;
+    --nalakalu-craft-orange: #A54E1E;
+    --nalakalu-laurel-green: #89987B;
 }
 
-.notification-item:hover {
-    background-color: #f8f9fa !important;
+/* Tarjetas de notificaciones */
+.card {
+    background-color: var(--nalakalu-beige);
+    border: none;
+    box-shadow: 0 2px 8px rgba(61, 52, 44, 0.08);
+}
+
+.card-header {
+    background-color: var(--nalakalu-dark-coffee) !important;
+    border-bottom: none;
+    color: var(--nalakalu-warm-white) !important;
+}
+
+/* Items de la lista de notificaciones */
+.list-group-item {
+    background-color: var(--nalakalu-warm-white);
+    border: 1px solid rgba(61, 52, 44, 0.08);
+    border-left: 3px solid transparent;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.list-group-item:hover {
+    background-color: var(--nalakalu-beige) !important;
+    border-left-color: var(--nalakalu-craft-orange);
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(165, 78, 30, 0.12);
+}
+
+/* Notificaciones no leídas */
+.list-group-item-light {
+    background-color: var(--nalakalu-beige) !important;
+    border-left-color: var(--nalakalu-craft-orange);
+}
+
+.list-group-item-light:hover {
+    background-color: var(--nalakalu-pale-rose) !important;
+    border-left-color: var(--nalakalu-craft-orange);
+    box-shadow: 0 4px 16px rgba(165, 78, 30, 0.18);
 }
 
 .notification-content {
     line-height: 1.6;
+    color: var(--nalakalu-dark-coffee);
 }
 
 .notification-content p {
@@ -20,44 +62,95 @@
     margin-bottom: 0;
 }
 
-.card-header {
-    border-bottom: none;
-}
-
 .notification-meta {
     opacity: 0.8;
 }
 
+/* Badges personalizados */
+.badge.bg-white {
+    background-color: var(--nalakalu-warm-white) !important;
+    color: var(--nalakalu-dark-coffee) !important;
+    border: 1px solid rgba(61, 52, 44, 0.1);
+}
+
+/* Badge en header oscuro - mejor contraste */
+.card-header .badge.bg-white,
+.card-header .badge.bg-white.text-dark {
+    background-color: var(--nalakalu-craft-orange) !important;
+    color: var(--nalakalu-warm-white) !important;
+    border: none;
+}
+
+.badge.bg-primary {
+    background-color: var(--nalakalu-craft-orange) !important;
+    color: var(--nalakalu-warm-white) !important;
+}
+
+/* Botones personalizados */
+.btn-outline-light {
+    border-color: var(--nalakalu-warm-white);
+    color: var(--nalakalu-warm-white);
+}
+
+.btn-outline-light:hover {
+    background-color: var(--nalakalu-warm-white);
+    color: var(--nalakalu-dark-coffee);
+    border-color: var(--nalakalu-warm-white);
+}
+
+.btn-outline-dark {
+    border-color: var(--nalakalu-dark-coffee);
+    color: var(--nalakalu-dark-coffee);
+}
+
+.btn-outline-dark:hover {
+    background-color: var(--nalakalu-craft-orange);
+    color: var(--nalakalu-warm-white);
+    border-color: var(--nalakalu-craft-orange);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(165, 78, 30, 0.2);
+}
+
+/* Estado vacío */
+.card[style*="background-color: #343a40"] {
+    background: linear-gradient(135deg, var(--nalakalu-dark-coffee) 0%, var(--nalakalu-pale-rose) 100%) !important;
+}
+
 @media (max-width: 768px) {
-    .notification-item {
+    .list-group-item {
         padding: 1rem !important;
     }
 
-    .notification-item .row {
+    .list-group-item:hover {
+        transform: translateX(2px);
+    }
+
+    .list-group-item .row {
         flex-direction: column;
     }
 
-    .notification-item .col-md-4 {
+    .list-group-item .col-md-4 {
         margin-top: 1rem;
         text-align: left !important;
     }
 }
 
 /* Animación para notificaciones nuevas */
-.bg-light {
-    animation: pulse-light 2s ease-in-out;
+.list-group-item-light {
+    animation: pulse-brand 2s ease-in-out;
 }
 
-@keyframes pulse-light {
+@keyframes pulse-brand {
     0% {
-        background-color: #e3f2fd;
+        background-color: var(--nalakalu-pale-rose);
+        border-left-color: var(--nalakalu-craft-orange);
     }
 
     50% {
-        background-color: #f8f9fa;
+        background-color: var(--nalakalu-beige);
     }
 
     100% {
-        background-color: #f8f9fa;
+        background-color: var(--nalakalu-beige);
     }
 }

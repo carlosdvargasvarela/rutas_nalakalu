@@ -3,7 +3,7 @@
 
 class DeliveryPlanAssignment < ApplicationRecord
   # Versionado y auditoría
-  has_paper_trail
+  # has_paper_trail
 
   # Asociaciones
   belongs_to :delivery_plan

@@ -47,15 +47,15 @@
     </a>
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationsDropdown" style="min-width: 350px;">
       <% current_user.notifications.recent.limit(10).each do |notification| %>
-        <li class="<%= 'bg-light' unless notification.read %>">
+        <li style="<%= 'background-color: #FFF7EE;' unless notification.read %>">
           <a class="dropdown-item d-flex justify-content-between align-items-center" href="<%= notification.target_path %>">
-            <span>
+            <span style="<%= 'color: #3D342C;' unless notification.read %>">
               <%= notification.message %>
               <br>
-              <small class="text-muted"><%= l(notification.created_at, format: :short) %></small>
+              <small style="<%= notification.read ? 'color: rgba(255, 255, 255, 0.7);' : 'color: #6c757d;' %>"><%= l(notification.created_at, format: :short) %></small>
             </span>
             <% unless notification.read %>
-              <span class="badge bg-primary ms-2">Nuevo</span>
+              <span class="badge ms-2" style="background-color: #A54E1E; color: white;">Nuevo</span>
             <% end %>
           </a>
         </li>

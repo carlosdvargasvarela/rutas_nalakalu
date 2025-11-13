@@ -7,6 +7,6 @@
 <%= render "deliveries/show_partials/history", delivery: @delivery, delivery_history: @delivery_history %>
 <%= render "deliveries/show_partials/products", delivery: @delivery, future_deliveries: @future_deliveries %>
 <%= link_to (session[:deliveries_return_to] || deliveries_path),
-             class: "btn btn-secondary mt-3" do %>
+             class: "btn btn-secondary btn-back-deliveries mt-3" do %>
   <i class="bi bi-arrow-left"></i> Volver a Entregas
 <% end %>

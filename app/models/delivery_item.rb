@@ -4,7 +4,7 @@ class DeliveryItem < ApplicationRecord
   # CONFIGURACIÓN Y RELACIONES
   # ============================================================================
 
-  has_paper_trail
+  # has_paper_trail
   belongs_to :delivery
   belongs_to :order_item
 

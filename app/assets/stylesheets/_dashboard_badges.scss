@@ -1,7 +1,8 @@
 // Estilos para badges
 .delivery-count-badge {
-  animation: pulse-subtle 2s ease-in-out infinite;
   @include box-shadow(0, 3px, 10px, rgba(13, 110, 253, 0.3));
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .delivery-date-badge {
@@ -11,18 +12,24 @@
   @include box-shadow-layered(0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.8));
   @include cubic-transition(all, 0.4s);
   position: relative;
+  backface-visibility: hidden;
+  perspective: 1000px;
+  transform: translateZ(0);
 }
 
 .delivery-item-animated:hover .delivery-date-badge {
   @include box-shadow-layered(0 8px 20px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(255, 255, 255, 0.9));
-  transform: translateY(-4px) scale(1.05);
+  transform: translateY(-4px) scale(1.05) translateZ(0);
 }
 
 .delivery-type-badge, .delivery-status-badge {
   @include cubic-transition();
   @include box-shadow(0, 2px, 6px, rgba(0, 0, 0, 0.15));
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  
   &:hover {
-    transform: scale(1.15) rotate(2deg);
+    transform: scale(1.15) rotate(2deg) translateZ(0);
     @include box-shadow(0, 4px, 12px, rgba(0, 0, 0, 0.25));
   }
 }

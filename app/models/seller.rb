@@ -1,6 +1,6 @@
 # app/models/seller.rb
 class Seller < ApplicationRecord
-  has_paper_trail
+  # has_paper_trail # Temporalmente desactivado por bug en v16.0
   belongs_to :user
   has_many :orders, dependent: :destroy
 

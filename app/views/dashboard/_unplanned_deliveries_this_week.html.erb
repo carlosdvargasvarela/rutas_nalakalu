@@ -13,8 +13,8 @@
     <div class="list-group list-group-flush">
       <% deliveries.each do |delivery| %>
         <div class="list-group-item delivery-item-animated">
-          <div class="d-flex align-items-start justify-content-between gap-3">
-            <div class="d-flex align-items-start gap-3 flex-grow-1">
+          <div class="d-flex flex-column flex-md-row align-items-start justify-content-between gap-3">
+            <div class="d-flex flex-column flex-sm-row align-items-start gap-3 flex-grow-1 w-100">
               <div class="delivery-date-badge text-center" style="min-width: 110px;">
                 <div class="fw-bold"><%= l delivery.delivery_date, format: :short %></div>
                 <%# Color según tipo %>
@@ -68,8 +68,8 @@
                 <% end %>
               </div>
             </div>
-            <div class="text-end delivery-actions">
-              <div class="btn-group delivery-btn-group">
+            <div class="text-end text-sm-start text-md-end delivery-actions w-100 w-md-auto">
+              <div class="btn-group delivery-btn-group flex-wrap">
                 <%= link_to delivery_path(delivery),
                             class: "btn btn-outline-primary btn-sm rounded-pill" do %>
                   <i class="bi bi-eye"></i> Ver

@@ -1,6 +1,6 @@
 # app/models/delivery_plan.rb
 class DeliveryPlan < ApplicationRecord
-  has_paper_trail
+  # has_paper_trail # Temporalmente desactivado por bug en v16.0
   has_many :delivery_plan_assignments, -> { order(:stop_order) }, dependent: :destroy
   has_many :deliveries, through: :delivery_plan_assignments
   has_many :delivery_plan_locations, dependent: :destroy

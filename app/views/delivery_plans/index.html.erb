@@ -7,14 +7,14 @@
           <i class="bi bi-map me-2"></i>
           Planes de Entrega
         </h2>
-        <p class="fst-italic text-white-50 mb-0">"Gestión de rutas semanales de entrega"</p>
+        <p class="fst-italic text-dark-50 mb-0">"Gestión de rutas semanales de entrega"</p>
       </div>
       <div class="col-md-6 text-md-end mt-3 mt-md-0">
         <div class="btn-toolbar justify-content-md-end gap-2 flex-wrap">
-          <%= link_to delivery_plans_path(format: :xlsx), class: "btn btn-outline-light btn-sm rounded-3 dashboard-action-btn d-inline-flex align-items-center gap-2" do %>
+          <%= link_to delivery_plans_path(format: :xlsx), class: "btn btn-sm rounded-3 dashboard-action-btn d-inline-flex align-items-center gap-2", style: "border: 2px solid white; color: white; background-color: transparent;" do %>
             <i class="bi bi-file-earmark-spreadsheet"></i> Excel
           <% end %>
-          <%= link_to new_delivery_plan_path, class: "btn btn-light btn-sm rounded-3 dashboard-action-btn d-inline-flex align-items-center gap-2" do %>
+          <%= link_to new_delivery_plan_path, class: "btn btn-sm rounded-3 dashboard-action-btn d-inline-flex align-items-center gap-2", style: "background-color: white; color: #3D342C; border: none;" do %>
             <i class="bi bi-plus-circle"></i> Nuevo plan
           <% end %>
         </div>
@@ -26,11 +26,11 @@
     <div class="card kpi-card mb-4">
       <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div class="d-flex align-items-center gap-3">
-          <div class="rounded-circle bg-dark bg-opacity-10 d-inline-flex align-items-center justify-content-center shadow-sm" style="width:48px;height:48px;">
-            <i class="bi bi-info-circle fs-5 text-dark"></i>
+          <div class="rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm" style="width:48px;height:48px; background-color: #E2D2B9;">
+            <i class="bi bi-info-circle fs-5" style="color: #3D342C;"></i>
           </div>
           <div>
-            <div class="fw-semibold">Se encontraron <span class="badge bg-dark"><%= @delivery_plans.to_a.size %></span> planes de entrega</div>
+            <div class="fw-semibold">Se encontraron <span class="badge" style="background-color: #3D342C; color: white;"><%= @delivery_plans.to_a.size %></span> planes de entrega</div>
             <small class="text-muted"><i class="bi bi-truck me-1"></i><%= @delivery_plans.sum { |plan| plan.deliveries.size } %> entregas totales</small>
           </div>
         </div>
@@ -47,40 +47,40 @@
   <% end %>
   <%# ================== FILTROS ================== %>
   <div class="card kpi-card mb-4">
-    <div class="card-header bg-transparent border-0 fw-bold text-dark">
+    <div class="card-header bg-transparent border-0 fw-bold" style="color: #3D342C;">
       <i class="bi bi-funnel me-2"></i> Filtros de búsqueda
     </div>
     <div class="card-body">
       <%= search_form_for @q, url: delivery_plans_path, method: :get, html: { class: "row g-3 align-items-end" } do |f| %>
         <div class="col-12 col-md-2">
-          <%= f.label :first_delivery_date_gteq, "Desde", class: "form-label small fw-semibold text-dark" %>
+          <%= f.label :first_delivery_date_gteq, "Desde", class: "form-label small fw-semibold", style: "color: #3D342C;" %>
           <%= f.date_field :first_delivery_date_gteq, class: "form-control border-0 bg-light" %>
         </div>
         <div class="col-12 col-md-2">
-          <%= f.label :first_delivery_date_lteq, "Hasta", class: "form-label small fw-semibold text-dark" %>
+          <%= f.label :first_delivery_date_lteq, "Hasta", class: "form-label small fw-semibold", style: "color: #3D342C;" %>
           <%= f.date_field :first_delivery_date_lteq, class: "form-control border-0 bg-light" %>
         </div>
         <div class="col-12 col-md-2">
-          <%= f.label :status_eq, "Estado", class: "form-label small fw-semibold text-dark" %>
+          <%= f.label :status_eq, "Estado", class: "form-label small fw-semibold", style: "color: #3D342C;" %>
           <%= f.select :status_eq, 
                 options_for_select(DeliveryPlan.statuses.keys.map { |s| [s.humanize, s] }, params.dig(:q, :status_eq)), 
                 { include_blank: "Todos los estados" }, 
                 { class: "form-select border-0 bg-light" } %>
         </div>
         <div class="col-12 col-md-2">
-          <%= f.label :truck_eq, "Camión", class: "form-label small fw-semibold text-dark" %>
+          <%= f.label :truck_eq, "Camión", class: "form-label small fw-semibold", style: "color: #3D342C;" %>
           <%= f.select :truck_eq, 
                 options_for_select(DeliveryPlan.distinct.pluck(:truck).compact.map { |t| [t, t] }, params.dig(:q, :truck_eq)), 
                 { include_blank: "Todos los camiones" }, 
                 { class: "form-select border-0 bg-light" } %>
         </div>
         <div class="col-12 col-md-2">
-          <%= f.label :driver_name_cont, "Conductor", class: "form-label small fw-semibold text-dark" %>
+          <%= f.label :driver_name_cont, "Conductor", class: "form-label small fw-semibold", style: "color: #3D342C;" %>
           <%= f.text_field :driver_name_cont, class: "form-control border-0 bg-light", placeholder: "Buscar conductor..." %>
         </div>
         <div class="col-12 col-md-2 d-flex gap-2">
-          <%= f.submit "Buscar", class: "btn btn-dark btn-sm flex-fill rounded-3 dashboard-action-btn" %>
-          <%= link_to "Limpiar", delivery_plans_path, class: "btn btn-outline-dark btn-sm flex-fill rounded-3 dashboard-action-btn" %>
+          <%= f.submit "Buscar", class: "btn btn-sm flex-fill rounded-3 dashboard-action-btn", style: "background-color: #3D342C; color: white; border: none;" %>
+          <%= link_to "Limpiar", delivery_plans_path, class: "btn btn-sm flex-fill rounded-3 dashboard-action-btn", style: "border: 1px solid #3D342C; color: #3D342C; background-color: transparent;" %>
         </div>
       <% end %>
     </div>
@@ -90,7 +90,7 @@
     <div class="card-body p-0">
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
-          <thead class="table-dark">
+          <thead style="background-color: #3D342C; color: white;">
             <tr>
               <th>Semana</th>
               <th>Fechas</th>
@@ -127,12 +127,12 @@
               <tr>
                 <td>
                   <% if plan.year.present? && plan.week.present? %>
-                    <span class="badge bg-primary fs-6">
+                    <span class="badge fs-6" style="background-color: #A54E1E; color: white;">
                       <i class="bi bi-calendar-week me-1"></i>
                       <%= plan.week %> / <%= plan.year %>
                     </span>
                   <% else %>
-                    <span class="badge bg-secondary">
+                    <span class="badge" style="background-color: #C49D90; color: white;">
                       <i class="bi bi-question-circle me-1"></i>
                       Sin definir
                     </span>
@@ -174,7 +174,7 @@
                 <td>
                   <% if plan.driver.present? %>
                     <div class="d-flex align-items-center">
-                      <i class="bi bi-person-circle text-primary me-2"></i>
+                      <i class="bi bi-person-circle me-2" style="color: #A54E1E;"></i>
                       <span><%= plan.driver.name %></span>
                     </div>
                   <% else %>
@@ -185,7 +185,7 @@
                 </td>
                 <td>
                   <% if plan.truck.present? %>
-                    <span class="badge bg-dark">
+                    <span class="badge" style="background-color: #3D342C; color: white;">
                       <i class="bi bi-truck-front me-1"></i>
                       <%= plan.truck %>
                     </span>
@@ -194,7 +194,7 @@
                   <% end %>
                 </td>
                 <td>
-                  <span class="badge bg-info text-dark fs-6">
+                  <span class="badge fs-6" style="background-color: #E2D2B9; color: #3D342C;">
                     <i class="bi bi-box-seam me-1"></i>
                     <%= total_count %> entregas
                   </span>
@@ -202,8 +202,8 @@
                 <td>
                   <div class="d-flex align-items-center gap-2">
                     <div class="progress" style="width: 60px; height: 8px;">
-                      <div class="progress-bar bg-success" 
-                           style="width: <%= progress_percentage %>%"></div>
+                      <div class="progress-bar" 
+                           style="width: <%= progress_percentage %>%; background-color: #89987B;"></div>
                     </div>
                     <small class="text-muted"><%= delivered_count %>/<%= total_count %></small>
                   </div>
@@ -211,16 +211,19 @@
                 <td class="text-center">
       <div class="btn-group">
         <%= link_to delivery_plan_path(plan), 
-          class: "btn btn-sm btn-outline-dark dashboard-action-btn", 
+          class: "btn btn-sm dashboard-action-btn", 
+          style: "border-color: #3D342C; color: #3D342C;",
                           title: "Ver detalles" do %>
                       <i class="bi bi-eye"></i>
                     <% end %>
         <%= link_to edit_delivery_plan_path(plan), 
-          class: "btn btn-sm btn-outline-dark dashboard-action-btn", 
+          class: "btn btn-sm dashboard-action-btn", 
+          style: "border-color: #3D342C; color: #3D342C;",
                           title: "Editar plan" do %>
                       <i class="bi bi-pencil"></i>
                     <% end %>
-                    <button class="btn btn-sm btn-outline-dark dropdown-toggle dropdown-toggle-split" 
+                    <button class="btn btn-sm dropdown-toggle dropdown-toggle-split" 
+                            style="border-color: #3D342C; color: #3D342C;"
                             data-bs-toggle="dropdown" aria-expanded="false">
                       <span class="visually-hidden">Más opciones</span>
                     </button>
@@ -260,7 +263,7 @@
                     <i class="bi bi-calendar-x fs-1 text-muted mb-3"></i>
                     <h5 class="text-muted">No hay planes de entrega</h5>
                     <p class="text-muted mb-3">No se encontraron planes que coincidan con los filtros aplicados.</p>
-                    <%= link_to new_delivery_plan_path, class: "btn btn-dark rounded-3 dashboard-action-btn" do %>
+                    <%= link_to new_delivery_plan_path, class: "btn rounded-3 dashboard-action-btn", style: "background-color: #3D342C; color: white;" do %>
                       <i class="bi bi-plus-circle me-1"></i>Crear primer plan
                     <% end %>
                   </div>
