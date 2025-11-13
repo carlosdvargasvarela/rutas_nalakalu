@@ -1,21 +1,13 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-  static targets = [
-    "input",
-    "map",
-    "lat",
-    "lng",
-    "plus",
-    "selectedAddressInfo",
-    "selectedAddressText",
-  ];
+  static targets = ["input", "description", "map", "lat", "lng", "plus"];
   static values = {
     apiKey: String,
   };
 
   connect() {
-    console.log("AddressAutocompleteController connected");
+    console.log("InternalAddressAutocompleteController connected");
     this.loadGoogleMapsAPI();
   }
 
@@ -26,11 +18,11 @@ export default class extends Controller {
     }
 
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${this.apiKeyValue}&libraries=places,marker&callback=initAddressAutocomplete`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${this.apiKeyValue}&libraries=places,marker&callback=initInternalAddressAutocomplete`;
     script.async = true;
     script.defer = true;
 
-    window.initAddressAutocomplete = () => {
+    window.initInternalAddressAutocomplete = () => {
       this.initializeAutocomplete();
     };
 
@@ -43,23 +35,20 @@ export default class extends Controller {
     const { Map } = await google.maps.importLibrary("maps");
     const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
 
-    // Inicializar mapa
     this.map = new Map(this.mapTarget, {
       center: { lat: 9.9281, lng: -84.0907 },
       zoom: 13,
-      mapId: "DELIVERY_ADDRESS_MAP_ID",
+      mapId: "INTERNAL_DELIVERY_MAP_ID",
       mapTypeControl: false,
       streetViewControl: false,
     });
 
-    // Inicializar marcador
     this.marker = new AdvancedMarkerElement({
       map: this.map,
       position: { lat: 9.9281, lng: -84.0907 },
       gmpDraggable: true,
     });
 
-    // Evento cuando se arrastra el marcador
     this.marker.addListener("dragend", (event) => {
       const position = event.latLng;
       this.updateCoordinates(position.lat(), position.lng());
@@ -69,7 +58,6 @@ export default class extends Controller {
     // Inicializar Geocoder
     this.geocoder = new google.maps.Geocoder();
 
-    // Inicializar Autocomplete
     this.autocomplete = new google.maps.places.Autocomplete(this.inputTarget, {
       componentRestrictions: { country: "cr" },
       fields: [
@@ -84,29 +72,20 @@ export default class extends Controller {
     this.autocomplete.addListener("place_changed", () => {
       const place = this.autocomplete.getPlace();
 
-      if (!place.geometry) {
-        console.warn("No se encontró geometría para el lugar seleccionado");
-        return;
-      }
+      if (!place.geometry) return;
 
       const location = place.geometry.location;
 
-      // Actualizar mapa
       this.map.setCenter(location);
       this.map.setZoom(17);
       this.marker.position = location;
 
-      // Actualizar coordenadas
       this.updateCoordinates(location.lat(), location.lng());
 
-      // Actualizar Plus Code
       if (place.plus_code && this.hasPlusTarget) {
         this.plusTarget.value =
           place.plus_code.global_code || place.plus_code.compound_code || "";
       }
-
-      // Mostrar info de dirección seleccionada
-      this.showSelectedAddressInfo(place.formatted_address || place.name);
     });
   }
 
@@ -116,7 +95,6 @@ export default class extends Controller {
   }
 
   async updateMapFromCoordinates(event) {
-    // Validar que ambos campos tengan valores
     if (!this.hasLatTarget || !this.hasLngTarget) return;
 
     const lat = parseFloat(this.latTarget.value);
@@ -136,13 +114,11 @@ export default class extends Controller {
     }
 
     const position = { lat, lng };
-
-    // Actualizar mapa
     this.map.setCenter(position);
     this.map.setZoom(17);
     this.marker.position = position;
 
-    // Hacer reverse geocoding para obtener la dirección
+    // Hacer reverse geocoding
     await this.reverseGeocode(position);
   }
 
@@ -166,16 +142,13 @@ export default class extends Controller {
           this.inputTarget.dispatchEvent(new Event("input", { bubbles: true }));
         }
 
-        // Actualizar Plus Code si está disponible
+        // Actualizar Plus Code
         if (result.plus_code && this.hasPlusTarget) {
           this.plusTarget.value =
             result.plus_code.global_code ||
             result.plus_code.compound_code ||
             "";
         }
-
-        // Mostrar info de dirección
-        this.showSelectedAddressInfo(result.formatted_address);
 
         console.log("✅ Reverse geocoding exitoso:", result.formatted_address);
       } else {
@@ -192,24 +165,16 @@ export default class extends Controller {
     }
   }
 
-  showSelectedAddressInfo(address) {
-    if (!this.hasSelectedAddressInfoTarget) return;
-
-    this.selectedAddressTextTarget.textContent = address;
-    this.selectedAddressInfoTarget.style.display = "block";
-  }
-
   showCoordinateWarning(message) {
-    // Crear o actualizar alerta de advertencia
-    let warning = document.getElementById("coordinate-warning");
+    let warning = document.getElementById("internal-coordinate-warning");
 
     if (!warning) {
       warning = document.createElement("div");
-      warning.id = "coordinate-warning";
+      warning.id = "internal-coordinate-warning";
       warning.className =
         "alert alert-warning alert-dismissible fade show mt-2";
 
-      const detailsElement = this.element.querySelector("details");
+      const detailsElement = this.element.querySelector("details .card-body");
       if (detailsElement) {
         detailsElement.appendChild(warning);
       }

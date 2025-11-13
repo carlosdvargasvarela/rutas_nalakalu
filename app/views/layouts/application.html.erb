@@ -16,7 +16,7 @@
     <!-- JavaScript con Importmap -->
     <%= javascript_importmap_tags %>
     <!-- Google Maps -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=<%= ENV['GOOGLE_MAPS_API_KEY'] %>&libraries=places"></script>
+    <%= javascript_include_tag "https://maps.googleapis.com/maps/api/js?key=#{ENV['GOOGLE_MAPS_API_KEY']}&libraries=places&callback=Function.prototype", async: true, defer: true %>
   </head>
   <body class="bg-light" data-controller="bootstrap">
     <!-- 🚩 Navbar persistente (no se destruye con Turbo) -->

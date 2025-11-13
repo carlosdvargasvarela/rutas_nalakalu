@@ -1,24 +1,19 @@
 <div class="container-fluid py-4">
   <%# ================== ENCABEZADO ================== %>
-  <div class="dashboard-header">
-    <div class="row align-items-center position-relative">
-      <div class="col-md-6">
-        <h2 class="fw-bold mb-3">
-          <i class="bi bi-map me-2"></i>
-          Planes de Entrega
-        </h2>
-        <p class="fst-italic text-dark-50 mb-0">"Gestión de rutas semanales de entrega"</p>
-      </div>
-      <div class="col-md-6 text-md-end mt-3 mt-md-0">
-        <div class="btn-toolbar justify-content-md-end gap-2 flex-wrap">
-          <%= link_to delivery_plans_path(format: :xlsx), class: "btn btn-sm rounded-3 dashboard-action-btn d-inline-flex align-items-center gap-2", style: "border: 2px solid white; color: white; background-color: transparent;" do %>
-            <i class="bi bi-file-earmark-spreadsheet"></i> Excel
-          <% end %>
-          <%= link_to new_delivery_plan_path, class: "btn btn-sm rounded-3 dashboard-action-btn d-inline-flex align-items-center gap-2", style: "background-color: white; color: #3D342C; border: none;" do %>
-            <i class="bi bi-plus-circle"></i> Nuevo plan
-          <% end %>
-        </div>
-      </div>
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h2 class="mb-1 text-dark fw-bold fs-4">
+        <i class="bi bi-map text-primary me-2"></i>Planes de Entrega
+      </h2>
+      <small class="text-muted">Gestión de rutas semanales de entrega</small>
+    </div>
+    <div class="d-flex gap-2">
+      <%= link_to delivery_plans_path(request.query_parameters.merge(format: :xlsx)), class: "btn btn-outline-success btn-sm d-flex align-items-center gap-2" do %>
+        <i class="bi bi-file-earmark-spreadsheet"></i> Exportar Excel
+      <% end %>
+      <%= link_to new_delivery_plan_path, class: "btn btn-success btn-sm d-flex align-items-center gap-2" do %>
+        <i class="bi bi-plus-circle"></i> Nuevo Plan
+      <% end %>
     </div>
   </div>
   <%# ================== RESUMEN ================== %>

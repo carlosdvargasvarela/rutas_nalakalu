@@ -1,153 +1,121 @@
-<%# app/views/deliveries/_form.html.erb %>
-<style>
-  .nav-pills .nav-link {
-    transition: all 0.3s ease;
-    font-weight: 600;
-    border-radius: 12px;
-    margin: 0 4px;
-    padding: 12px 20px;
-    border: 2px solid transparent;
-    position: relative;
-  }
+<%= simple_form_for delivery,
+      html: {
+        data: {
+          controller: "delivery-form address-validator",
+          "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
+          "delivery-form-orders-url-value": orders_for_client_deliveries_path,
+          action: "submit->address-validator#validateBeforeSubmit"
+        }
+      } do |f| %>
+  <% if delivery.errors.any? %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <h4 class="alert-heading">Se encontraron <%= pluralize(delivery.errors.count, "error", "errores") %>:</h4>
+      <ul class="mb-0">
+        <% delivery.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% end %>
 
-  .nav-pills .nav-link:not(.active):not(.bg-success):not(.bg-danger) {
-    background-color: #f8f9fa;
-    color: #6c757d;
-  }
+  <div class="accordion" id="deliveryFormAccordion">
+    
+    <!-- SECCIÓN 1: CLIENTE -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingClient">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseClient" aria-expanded="true" aria-controls="collapseClient">
+          <i class="bi bi-person-fill me-2"></i>
+          <strong>Cliente</strong>
+          <span class="badge bg-warning ms-2" data-delivery-form-target="clientBadge">!</span>
+        </button>
+      </h2>
+      <div id="collapseClient" class="accordion-collapse collapse show" aria-labelledby="headingClient" data-bs-parent="#deliveryFormAccordion">
+        <div class="accordion-body">
+          <%= render "deliveries/upsert_partials/client_fields", f: f, clients: clients, delivery: delivery %>
+        </div>
+      </div>
+    </div>
 
-  .nav-pills .nav-link:not(.active):not(.bg-success):not(.bg-danger):hover {
-    background-color: #e9ecef;
-    transform: translateY(-2px);
-  }
+    <!-- SECCIÓN 2: PEDIDO -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingOrder">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOrder" aria-expanded="false" aria-controls="collapseOrder">
+          <i class="bi bi-receipt me-2"></i>
+          <strong>Pedido</strong>
+          <span class="badge bg-warning ms-2" data-delivery-form-target="orderBadge">!</span>
+        </button>
+      </h2>
+      <div id="collapseOrder" class="accordion-collapse collapse" aria-labelledby="headingOrder" data-bs-parent="#deliveryFormAccordion">
+        <div class="accordion-body">
+          <%= render "deliveries/upsert_partials/order_fields", f: f, delivery: delivery %>
+        </div>
+      </div>
+    </div>
 
-  .nav-pills .nav-link.active {
-    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
-    transform: scale(1.05);
-  }
+    <!-- SECCIÓN 3: DIRECCIÓN DE ENTREGA -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingAddress">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAddress" aria-expanded="false" aria-controls="collapseAddress">
+          <i class="bi bi-geo-alt-fill me-2"></i>
+          <strong>Dirección de entrega</strong>
+          <span class="badge bg-warning ms-2" data-delivery-form-target="addressBadge">!</span>
+        </button>
+      </h2>
+      <div id="collapseAddress" class="accordion-collapse collapse" aria-labelledby="headingAddress" data-bs-parent="#deliveryFormAccordion">
+        <div class="accordion-body">
+          <%= render "deliveries/upsert_partials/address_fields", f: f, addresses: addresses, delivery: delivery %>
+        </div>
+      </div>
+    </div>
 
-  .nav-pills .nav-link.bg-success {
-    background: linear-gradient(135deg, #198754 0%, #146c43 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.4);
-  }
+    <!-- SECCIÓN 4: DATOS DE ENTREGA -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingDeliveryData">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDeliveryData" aria-expanded="false" aria-controls="collapseDeliveryData">
+          <i class="bi bi-calendar-check me-2"></i>
+          <strong>Datos de entrega</strong>
+          <span class="badge bg-warning ms-2" data-delivery-form-target="deliveryDataBadge">!</span>
+        </button>
+      </h2>
+      <div id="collapseDeliveryData" class="accordion-collapse collapse" aria-labelledby="headingDeliveryData" data-bs-parent="#deliveryFormAccordion">
+        <div class="accordion-body">
+          <%= render "deliveries/upsert_partials/delivery_data_fields", f: f, delivery: delivery %>
+        </div>
+      </div>
+    </div>
 
-  .nav-pills .nav-link.bg-danger {
-    background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-  }
+    <!-- SECCIÓN 5: PRODUCTOS -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingProducts">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProducts" aria-expanded="false" aria-controls="collapseProducts">
+          <i class="bi bi-box-seam me-2"></i>
+          <strong>Productos</strong>
+          <span class="badge bg-warning ms-2" data-delivery-form-target="productsBadge">!</span>
+        </button>
+      </h2>
+      <div id="collapseProducts" class="accordion-collapse collapse" aria-labelledby="headingProducts" data-bs-parent="#deliveryFormAccordion">
+        <div class="accordion-body">
+          <%= render "deliveries/upsert_partials/order_items_fields", f: f %>
+        </div>
+      </div>
+    </div>
 
-  .nav-pills .nav-link.border-warning {
-    border-color: #ffc107;
-    box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.3);
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.3); }
-    50% { box-shadow: 0 0 0 8px rgba(255, 193, 7, 0.2); }
-  }
-
-  .nav-pills .nav-link i {
-    font-size: 1.1em;
-  }
-
-  .step {
-    animation: fadeIn 0.4s ease-in-out;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .wizard-buttons {
-    background: linear-gradient(to top, #f8f9fa 0%, transparent 100%);
-    padding-top: 24px;
-    margin-top: 24px;
-  }
-</style>
-<%= simple_form_for delivery, html: {
-  data: {
-    controller: "delivery-wizard delivery-form",
-    "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
-    "delivery-form-orders-url-value": orders_for_client_deliveries_path
-  }
-} do |f| %>
-  <!-- Navegación tipo wizard con diseño mejorado -->
-  <div class="mb-5">
-    <ul class="nav nav-pills justify-content-center flex-wrap gap-2" data-delivery-wizard-target="nav">
-      <li class="nav-item">
-        <a class="nav-link active" href="#" data-index="0" data-action="delivery-wizard#goToStep">
-          <i class="bi bi-circle-fill me-2" data-delivery-wizard-target="icon" data-step="0"></i>
-          <span class="d-none d-sm-inline">Cliente</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#" data-index="1" data-action="delivery-wizard#goToStep">
-          <i class="bi bi-circle-fill me-2" data-delivery-wizard-target="icon" data-step="1"></i>
-          <span class="d-none d-sm-inline">Pedido</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#" data-index="2" data-action="delivery-wizard#goToStep">
-          <i class="bi bi-circle-fill me-2" data-delivery-wizard-target="icon" data-step="2"></i>
-          <span class="d-none d-sm-inline">Dirección</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#" data-index="3" data-action="delivery-wizard#goToStep">
-          <i class="bi bi-circle-fill me-2" data-delivery-wizard-target="icon" data-step="3"></i>
-          <span class="d-none d-sm-inline">Datos</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#" data-index="4" data-action="delivery-wizard#goToStep">
-          <i class="bi bi-circle-fill me-2" data-delivery-wizard-target="icon" data-step="4"></i>
-          <span class="d-none d-sm-inline">Productos</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#" data-index="5" data-action="delivery-wizard#goToStep">
-          <i class="bi bi-circle-fill me-2" data-delivery-wizard-target="icon" data-step="5"></i>
-          <span class="d-none d-sm-inline">Confirmación</span>
-        </a>
-      </li>
-    </ul>
   </div>
-  
-  <!-- Steps del formulario -->
-  <div class="step" data-delivery-wizard-target="step">
-    <%= render "deliveries/upsert_partials/client_fields", f: f, clients: clients %>
-  </div>
-  <div class="step d-none" data-delivery-wizard-target="step">
-    <%= render "deliveries/upsert_partials/order_fields", f: f %>
-  </div>
-  <div class="step d-none" data-delivery-wizard-target="step">
-    <%= render "deliveries/upsert_partials/address_fields", f: f, addresses: addresses, delivery: delivery %>
-  </div>
-  <div class="step d-none" data-delivery-wizard-target="step">
-    <%= render "deliveries/upsert_partials/delivery_data_fields", f: f, delivery: delivery %>
-  </div>
-  <div class="step d-none" data-delivery-wizard-target="step">
-    <%= render "deliveries/upsert_partials/order_items_fields", f: f %>
-  </div>
-  <div class="step d-none" data-delivery-wizard-target="step">
-    <%= render "deliveries/upsert_partials/confirm_summary", f: f %>
-  </div>
-  
-  <!-- Botones con diseño mejorado -->
-  <div class="wizard-buttons">
-    <div class="d-flex justify-content-between align-items-center">
-      <button type="button" class="btn btn-outline-secondary btn-lg rounded-pill px-4 shadow-sm" data-action="delivery-wizard#prev">
-        <i class="bi bi-arrow-left me-2"></i>Atrás
-      </button>
-      <button type="button" class="btn btn-primary btn-lg rounded-pill px-4 shadow" data-action="delivery-wizard#next" data-delivery-wizard-target="nextButton">
-        Siguiente<i class="bi bi-arrow-right ms-2"></i>
-      </button>
-      <%= f.submit "Guardar entrega", class: "btn btn-success btn-lg rounded-pill px-5 shadow d-none", data: { delivery_wizard_target: "submitButton" } %>
+
+  <!-- BOTONES DE ACCIÓN -->
+  <div class="card mt-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <%= link_to "Cancelar", deliveries_path, class: "btn btn-outline-secondary" %>
+        </div>
+        <div>
+          <%= f.submit "Guardar entrega", 
+              class: "btn btn-primary btn-lg px-5",
+              data: { "address-validator-target": "submitButton" } %>
+        </div>
+      </div>
     </div>
   </div>
 <% end %>

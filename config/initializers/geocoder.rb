@@ -1,9 +1,13 @@
 # config/initializers/geocoder.rb
 Geocoder.configure(
   lookup: :google,
-  api_key: "AIzaSyBGqLJVEomqQc4qRA1_6Sp7clVxRZCbAno",
+  api_key: ENV["GOOGLE_MAPS_API_KEY"],
   use_https: true,
-  units: :km,
+  language: :es,
+  params: {
+    region: "cr",            # Sesgo por Costa Rica
+    components: "country:CR" # Restringe a CR
+  },
   timeout: 5,
-  language: :es # mejor precisión para Costa Rica en español
+  units: :km
 )

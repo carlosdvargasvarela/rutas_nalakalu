@@ -95,13 +95,36 @@ module Deliveries
 
       if params[:delivery_address].present?
         addr_attrs = params.require(:delivery_address).permit(:address, :description, :latitude, :longitude, :plus_code)
+
+        # Priorizar coordenadas: si vienen lat/lng, usarlas primero
+        lat = addr_attrs[:latitude].to_s.strip
+        lng = addr_attrs[:longitude].to_s.strip
         address_text = addr_attrs[:address].to_s.strip
 
-        raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debe seleccionarse o crearse una dirección." if address_text.blank?
+        # Si hay coordenadas pero no hay dirección, error
+        if lat.present? && lng.present? && address_text.blank?
+          raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new),
+                "Debe proporcionar una dirección junto con las coordenadas."
+        end
 
+        # Si no hay dirección en absoluto, error
+        raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new),
+              "Debe seleccionarse o crearse una dirección." if address_text.blank?
+
+        # Buscar dirección existente por coordenadas primero (si están presentes)
+        if lat.present? && lng.present?
+          existing = client.delivery_addresses.find_by(
+            latitude: lat.to_f.round(6),
+            longitude: lng.to_f.round(6)
+          )
+          return existing if existing
+        end
+
+        # Buscar por dirección
         existing = client.delivery_addresses.find_by(address: address_text)
         return existing if existing
 
+        # Crear nueva dirección con prioridad a coordenadas
         return client.delivery_addresses.create!(addr_attrs)
       end
 

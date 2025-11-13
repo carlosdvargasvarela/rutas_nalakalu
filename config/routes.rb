@@ -182,7 +182,11 @@ Rails.application.routes.draw do
   # DIRECCIONES DE ENTREGA
   # =============================================================================
   # Creación de nuevas direcciones de entrega
-  resources :delivery_addresses, only: [ :create ]
+  resources :delivery_addresses, only: [ :create ] do 
+    member do
+      get :show, defaults: { format: :json }
+    end
+  end
 
   namespace :admin do
     resources :users, only: [ :index, :new, :create, :edit, :update ] do

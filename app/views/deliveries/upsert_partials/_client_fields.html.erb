@@ -1,15 +1,6 @@
-<%# app/views/deliveries/_client_fields.html.erb %>
-<div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden">
-  <div class="card-header bg-gradient text-white py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-    <div class="d-flex align-items-center">
-      <div class="bg-white bg-opacity-25 rounded-circle p-2 me-3">
-        <i class="bi bi-person-fill fs-5"></i>
-      </div>
-      <div>
-        <h5 class="mb-0 fw-bold">Cliente</h5>
-        <small class="opacity-75">Seleccione o cree un nuevo cliente</small>
-      </div>
-    </div>
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light">
+    <i class="bi bi-person me-2 text-primary"></i><strong>Cliente</strong>
   </div>
   <div class="card-body p-4">
     <div class="row g-4">
@@ -19,16 +10,20 @@
         </label>
         <%= select_tag :client_id,
           options_from_collection_for_select(clients, :id, :name, f.object.order&.client_id),
-          class: "form-select form-select-lg rounded-3",
-          data: { "delivery-form-target": "clientSelect", action: "change->delivery-form#clientChanged" } %>
+          class: "form-select",
+          data: { 
+            controller: "tom-select",
+            "delivery-form-target": "clientSelect", 
+            action: "change->delivery-form#clientChanged change->delivery-form#validateClient" 
+          } %>
       </div>
       <div class="col-lg-4 d-flex align-items-end">
         <% unless f.object.persisted? %>
           <button type="button"
                   class="btn btn-outline-primary btn-lg w-100 rounded-3"
                   data-action="click->delivery-form#toggleNewClientFields"
-            data-delivery-form-target="addClientButton">
-            <i class="bi bi-person-plus-fill me-2"></i>Nuevo cliente
+                  data-delivery-form-target="addClientButton">
+            <i class="bi bi-person-plus me-1"></i> Nuevo cliente
           </button>
         <% end %>
       </div>

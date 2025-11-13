@@ -13,9 +13,7 @@ class DeliveryImportPrepareJob
       end
 
       original_ext = import.file.blob.filename.extension&.downcase
-      if original_ext.blank?
-        raise "No se pudo detectar la extensión del archivo"
-      end
+      raise "No se pudo detectar la extensión del archivo" if original_ext.blank?
 
       file = Tempfile.new([ "import", ".#{original_ext}" ])
       file.binmode
@@ -35,52 +33,38 @@ class DeliveryImportPrepareJob
         raise "El archivo está vacío o no tiene datos válidos"
       end
 
-      # ✅ PASO 1: Extraer todas las filas en memoria
       raw_rows = []
+
       (2..spreadsheet.last_row).each do |row_num|
         data = {
-          delivery_date: spreadsheet.cell(row_num, "A"),
-          team: spreadsheet.cell(row_num, "B"),
-          order_number: spreadsheet.cell(row_num, "C")&.to_s&.strip,
-          client_name: spreadsheet.cell(row_num, "D")&.to_s&.strip,
-          product: spreadsheet.cell(row_num, "E")&.to_s&.strip,
-          quantity: spreadsheet.cell(row_num, "F")&.to_i,
-          seller_code: spreadsheet.cell(row_num, "G")&.to_s&.strip,
-          place: spreadsheet.cell(row_num, "H")&.to_s&.strip,
-          contact: spreadsheet.cell(row_num, "I")&.to_s&.strip,
-          notes: spreadsheet.cell(row_num, "J")&.to_s&.strip,
-          time_preference: spreadsheet.cell(row_num, "K")&.to_s&.strip
+          delivery_date:   spreadsheet.cell(row_num, "A"),
+          team:            norm_str(spreadsheet.cell(row_num, "B")),
+          order_number:    norm_str(spreadsheet.cell(row_num, "C")),
+          client_name:     norm_str(spreadsheet.cell(row_num, "D")),
+          product:         norm_str(spreadsheet.cell(row_num, "E")),
+          quantity:        spreadsheet.cell(row_num, "F").to_i,
+          seller_code:     norm_str(spreadsheet.cell(row_num, "G")),
+          place:           norm_str(spreadsheet.cell(row_num, "H")),
+          contact:         norm_str(spreadsheet.cell(row_num, "I")),
+          notes:           norm_str(spreadsheet.cell(row_num, "J")),
+          time_preference: norm_str(spreadsheet.cell(row_num, "K"))
         }
 
         next if data.values.compact.empty?
         raw_rows << data
       end
 
-      # ✅ PASO 2: Agrupar por (order_number, product, delivery_date, place)
-      # y sumar cantidades + combinar notas
-      grouped = raw_rows.group_by do |row|
-        [
-          row[:order_number],
-          row[:product],
-          row[:delivery_date],
-          row[:place]
-        ]
-      end
+      grouped = raw_rows.group_by { |row| [ row[:order_number], row[:product], row[:delivery_date], row[:place] ] }
 
       rows_processed = 0
 
-      grouped.each do |key, rows|
-        # Tomar el primer registro como base
+      grouped.each do |_key, rows|
         merged_data = rows.first.dup
+        merged_data[:quantity] = rows.sum { |r| r[:quantity].to_i }
 
-        # Sumar cantidades
-        merged_data[:quantity] = rows.sum { |r| r[:quantity] }
-
-        # Combinar notas (sin duplicados)
-        all_notes = rows.map { |r| r[:notes] }.compact.reject(&:blank?).uniq
+        all_notes = rows.map { |r| r[:notes] }.compact_blank.uniq
         merged_data[:notes] = all_notes.join("; ") if all_notes.any?
 
-        # Validar la fila consolidada
         errors = service.validate_row(merged_data)
 
         DeliveryImportRow.create!(
@@ -92,9 +76,7 @@ class DeliveryImportPrepareJob
         rows_processed += 1
       end
 
-      if rows_processed == 0
-        raise "No se encontraron filas válidas para procesar en el archivo"
-      end
+      raise "No se encontraron filas válidas para procesar en el archivo" if rows_processed == 0
 
       import.update!(status: :ready_for_review)
       Rails.logger.info "DeliveryImportPrepareJob completed for import #{import_id}: #{rows_processed} rows processed"
@@ -103,15 +85,16 @@ class DeliveryImportPrepareJob
       Rails.logger.error "DeliveryImportPrepareJob failed for import #{import_id}: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
 
-      import.update!(
-        status: :failed,
-        import_errors: "Error procesando archivo: #{e.message}"
-      )
+      import.update!(status: :failed, import_errors: "Error procesando archivo: #{e.message}")
     ensure
-      if file
-        file.close
-        file.unlink
-      end
+      file&.close
+      file&.unlink
     end
+  end
+
+  private
+
+  def norm_str(v)
+    v.to_s.strip.presence
   end
 end
