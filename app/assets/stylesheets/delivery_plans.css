@@ -1,0 +1,52 @@
+/* app/assets/stylesheets/delivery_plans.css */
+
+/* Grupo siendo arrastrado */
+.dragging-group {
+  opacity: 0.5;
+  background-color: #e3f2fd !important;
+  border-left: 4px solid #2196f3 !important;
+}
+
+/* Elemento fantasma durante el arrastre */
+.sortable-ghost {
+  opacity: 0.4;
+  background-color: #bbdefb !important;
+}
+
+/* Elemento seleccionado */
+.sortable-chosen {
+  background-color: #e3f2fd !important;
+  cursor: grabbing !important;
+}
+
+/* Elemento siendo arrastrado */
+.sortable-drag {
+  opacity: 1 !important;
+  background-color: #fff !important;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3) !important;
+}
+
+/* Estilo del handle de arrastre */
+.drag-handle {
+  cursor: grab;
+  transition: color 0.2s;
+}
+
+.drag-handle:hover {
+  color: #0d6efd !important;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Borde visual para grupos */
+.stop-group-header {
+  border-left: 4px solid #0d6efd;
+}
+
+/* Indicador de grupo múltiple */
+.stop-item.table-active {
+  background-color: #f8f9fa;
+  border-left: 3px solid #6c757d;
+}

@@ -54,6 +54,70 @@ class DeliveryPlansController < ApplicationController
     @to = to
   end
 
+  def add_delivery_to_plan
+    @delivery_plan = DeliveryPlan.find(params[:id])
+    authorize @delivery_plan
+    delivery = Delivery.find(params[:delivery_id])
+
+    if delivery.delivery_date == @delivery_plan.deliveries.first.delivery_date &&
+      !DeliveryPlanAssignment.exists?(delivery_id: delivery.id)
+
+      grouper = DeliveryPlanStopGrouper.new(@delivery_plan)
+      existing_stop = grouper.find_stop_for_location(delivery)
+
+      if existing_stop
+        # NO usar create! directamente porque dispara acts_as_list
+        # Crear sin callbacks y luego asignar stop_order manualmente
+        assignment = DeliveryPlanAssignment.new(
+          delivery_plan: @delivery_plan,
+          delivery_id: delivery.id
+        )
+        assignment.save(validate: false) # Guarda sin callbacks
+        assignment.update_column(:stop_order, existing_stop) # Asigna stop_order sin disparar callbacks
+
+        redirect_to edit_delivery_plan_path(@delivery_plan),
+                    notice: "Entrega agregada al plan en la parada ##{existing_stop} (misma ubicación)."
+      else
+        last_order = @delivery_plan.delivery_plan_assignments.maximum(:stop_order) || 0
+
+        assignment = DeliveryPlanAssignment.new(
+          delivery_plan: @delivery_plan,
+          delivery_id: delivery.id
+        )
+        assignment.save(validate: false)
+        assignment.update_column(:stop_order, last_order + 1)
+
+        redirect_to edit_delivery_plan_path(@delivery_plan),
+                    notice: "Entrega agregada al plan como nueva parada."
+      end
+    else
+      redirect_to edit_delivery_plan_path(@delivery_plan),
+                  alert: "No se pudo agregar la entrega."
+    end
+  end
+
+  def update_order
+    @delivery_plan = DeliveryPlan.find(params[:id])
+    authorize @delivery_plan
+
+    stop_orders = params[:stop_orders] || {}
+
+    ActiveRecord::Base.transaction do
+      stop_orders.each do |assignment_id, stop_order|
+        assignment = @delivery_plan.delivery_plan_assignments.find(assignment_id)
+        assignment.update!(stop_order: stop_order.to_i)
+      end
+
+      # 🔁 Reagrupar después de reordenar manualmente
+      DeliveryPlanStopGrouper.new(@delivery_plan).call
+    end
+
+    render json: { status: "success" }
+  rescue => e
+    Rails.logger.error("[DeliveryPlansController#update_order] #{e.class}: #{e.message}")
+    render json: { status: "error", message: e.message }, status: :unprocessable_entity
+  end
+
   def create
     @delivery_plan = DeliveryPlan.new(delivery_plan_params)
     authorize @delivery_plan
@@ -77,12 +141,21 @@ class DeliveryPlansController < ApplicationController
     @delivery_plan.year = first_date.cwyear
 
     if @delivery_plan.save
-      delivery_ids.each do |delivery_id|
-        DeliveryPlanAssignment.create!(delivery_plan: @delivery_plan, delivery_id: delivery_id)
+      delivery_ids.each_with_index do |delivery_id, index|
+        DeliveryPlanAssignment.create!(
+          delivery_plan: @delivery_plan,
+          delivery_id: delivery_id,
+          stop_order: index + 1
+        )
         delivery = Delivery.find(delivery_id)
         delivery.update_status_based_on_items
       end
-      redirect_to edit_delivery_plan_path(@delivery_plan), notice: "Plan de ruta creado exitosamente. Ahora puedes ajustar el orden o asignar conductor."
+
+      # Agrupar paradas por ubicación
+      DeliveryPlanStopGrouper.new(@delivery_plan).call
+
+      redirect_to edit_delivery_plan_path(@delivery_plan),
+                  notice: "Plan de ruta creado exitosamente. Las paradas fueron agrupadas por ubicación."
     else
       flash.now[:alert] = "Error al crear el plan de ruta."
       render_new_with_selection(delivery_ids)
@@ -213,38 +286,6 @@ class DeliveryPlansController < ApplicationController
     end
   end
 
-  def update
-    @delivery_plan = DeliveryPlan.find(params[:id])
-    authorize @delivery_plan
-
-    if @delivery_plan.update(delivery_plan_params)
-      if params[:stop_orders]
-        params[:stop_orders].each do |assignment_id, stop_order|
-          assignment = @delivery_plan.delivery_plan_assignments.find(assignment_id)
-          assignment.update(stop_order: stop_order)
-        end
-      end
-
-      redirect_to @delivery_plan, notice: "Plan de ruta actualizado correctamente."
-    else
-      @assignments = @delivery_plan.delivery_plan_assignments.includes(
-        delivery: [ :order, :delivery_address, order: :client ]
-      ).order(:stop_order)
-
-      delivery_date = @assignments.first&.delivery&.delivery_date
-      @available_deliveries = if delivery_date
-        Delivery
-          .where(delivery_date: delivery_date)
-          .where(status: :ready_to_deliver)
-          .where.not(id: DeliveryPlanAssignment.select(:delivery_id))
-      else
-        []
-      end
-
-      render :edit, status: :unprocessable_entity
-    end
-  end
-
   def destroy
     @delivery_plan = DeliveryPlan.find(params[:id])
     authorize @delivery_plan
@@ -265,36 +306,6 @@ class DeliveryPlansController < ApplicationController
       redirect_to @delivery_plan, notice: "Plan enviado a logística."
     else
       redirect_to edit_delivery_plan_path(@delivery_plan), alert: "Debes asignar un conductor y confirmar todas las entregas antes de enviar a logística."
-    end
-  end
-
-  def update_order
-    @delivery_plan = DeliveryPlan.find(params[:id])
-    authorize @delivery_plan
-
-    if params[:stop_orders]
-      params[:stop_orders].each do |assignment_id, stop_order|
-        assignment = @delivery_plan.delivery_plan_assignments.find(assignment_id)
-        assignment.update(stop_order: stop_order)
-      end
-    end
-
-    render json: { status: "success" }
-  rescue => e
-    render json: { status: "error", message: e.message }, status: 422
-  end
-
-  def add_delivery_to_plan
-    @delivery_plan = DeliveryPlan.find(params[:id])
-    authorize @delivery_plan
-    delivery = Delivery.find(params[:delivery_id])
-
-    if delivery.delivery_date == @delivery_plan.deliveries.first.delivery_date &&
-      !DeliveryPlanAssignment.exists?(delivery_id: delivery.id)
-      DeliveryPlanAssignment.create!(delivery_plan: @delivery_plan, delivery_id: delivery.id)
-      redirect_to edit_delivery_plan_path(@delivery_plan), notice: "Entrega agregada al plan."
-    else
-      redirect_to edit_delivery_plan_path(@delivery_plan), alert: "No se pudo agregar la entrega."
     end
   end
 

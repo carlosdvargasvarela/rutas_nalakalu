@@ -1,109 +1,77 @@
-import { Controller } from "@hotwired/stimulus"
-import Sortable from "sortablejs"
+// app/javascript/controllers/sortable_controller.js
+import { Controller } from "@hotwired/stimulus";
+import Sortable from "sortablejs";
 
 export default class extends Controller {
-    static targets = ["list"]
-    static values = { url: String }
+  static targets = ["list"];
+  static values = { url: String };
 
-    connect() {
-        this.sortable = Sortable.create(this.listTarget, {
-            animation: 150,
-            ghostClass: "sortable-ghost",
-            chosenClass: "sortable-chosen",
-            dragClass: "sortable-drag",
-            handle: ".drag-handle",
-            onEnd: this.onEnd.bind(this)
-        })
+  connect() {
+    this.sortable = Sortable.create(this.listTarget, {
+      animation: 150,
+      handle: ".drag-handle",
+      ghostClass: "sortable-ghost",
+      chosenClass: "sortable-chosen",
+      dragClass: "sortable-drag",
+      draggable: ".stop-group-header",
+
+      onEnd: () => {
+        this.updateStopOrder();
+      },
+    });
+  }
+
+  disconnect() {
+    if (this.sortable) {
+      this.sortable.destroy();
     }
+  }
 
-    disconnect() {
-        if (this.sortable) {
-            this.sortable.destroy()
+  updateStopOrder() {
+    // Obtener todos los headers de grupo en el nuevo orden
+    const headers = this.listTarget.querySelectorAll(".stop-group-header");
+    const stopOrders = {};
+    let currentStop = 1;
+
+    headers.forEach((header) => {
+      // Dentro de cada header, buscar todas las filas con data-assignment-id
+      const groupRows = header.querySelectorAll("tr[data-assignment-id]");
+
+      groupRows.forEach((row) => {
+        const assignmentId = row.dataset.assignmentId;
+        stopOrders[assignmentId] = currentStop;
+      });
+
+      currentStop++;
+    });
+
+    console.log("stopOrders a enviar:", stopOrders);
+    this.sendUpdateToServer(stopOrders);
+  }
+
+  sendUpdateToServer(stopOrders) {
+    const csrfToken = document.querySelector("[name='csrf-token']").content;
+
+    fetch(this.urlValue, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ stop_orders: stopOrders }),
+    })
+      .then((response) => {
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          console.error("Error al actualizar el orden");
+          alert("Error al actualizar el orden de las paradas");
         }
-    }
-
-    onEnd(event) {
-        // Actualizar los números de parada visualmente
-        this.updateStopNumbers()
-
-        // Preparar datos para enviar al servidor
-        const formData = new FormData()
-        const rows = this.listTarget.querySelectorAll("tr[data-assignment-id]")
-
-        rows.forEach((row, index) => {
-            const assignmentId = row.dataset.assignmentId
-            const stopOrder = index + 1
-            formData.append(`stop_orders[${assignmentId}]`, stopOrder)
-        })
-
-        // Enviar actualización al servidor
-        if (this.urlValue) {
-            fetch(this.urlValue, {
-                method: "PATCH",
-                body: formData,
-                headers: {
-                    "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content,
-                    "Accept": "application/json"
-                }
-            })
-                .then(response => {
-                    if (response.ok) {
-                        this.showSuccess()
-                    } else {
-                        this.showError()
-                    }
-                })
-                .catch(() => {
-                    this.showError()
-                })
-        }
-    }
-
-    updateStopNumbers() {
-        const rows = this.listTarget.querySelectorAll("tr[data-assignment-id]")
-        rows.forEach((row, index) => {
-            const stopNumberCell = row.querySelector(".stop-number")
-            if (stopNumberCell) {
-                stopNumberCell.textContent = index + 1
-            }
-        })
-    }
-
-    showSuccess() {
-        // Mostrar mensaje de éxito temporal
-        const alert = document.createElement("div")
-        alert.className = "alert alert-success alert-dismissible fade show position-fixed"
-        alert.style.cssText = "top: 20px; right: 20px; z-index: 1050; min-width: 300px;"
-        alert.innerHTML = `
-      <i class="bi bi-check-circle me-2"></i>
-      Orden actualizado correctamente
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `
-        document.body.appendChild(alert)
-
-        setTimeout(() => {
-            if (alert.parentNode) {
-                alert.remove()
-            }
-        }, 3000)
-    }
-
-    showError() {
-        // Mostrar mensaje de error temporal
-        const alert = document.createElement("div")
-        alert.className = "alert alert-danger alert-dismissible fade show position-fixed"
-        alert.style.cssText = "top: 20px; right: 20px; z-index: 1050; min-width: 300px;"
-        alert.innerHTML = `
-      <i class="bi bi-exclamation-triangle me-2"></i>
-      Error al actualizar el orden
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `
-        document.body.appendChild(alert)
-
-        setTimeout(() => {
-            if (alert.parentNode) {
-                alert.remove()
-            }
-        }, 5000)
-    }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("Error de conexión al actualizar el orden");
+      });
+  }
 }
