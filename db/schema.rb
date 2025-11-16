@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_11_04_195629) do
+ActiveRecord::Schema[7.2].define(version: 2025_11_16_101135) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -72,8 +72,12 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_04_195629) do
     t.boolean "approved", default: true, null: false
     t.text "reschedule_reason"
     t.boolean "archived", default: false, null: false
+    t.boolean "confirmed_by_vendor", default: false, null: false
+    t.datetime "confirmed_by_vendor_at"
     t.index ["approved"], name: "index_deliveries_on_approved"
     t.index ["archived"], name: "index_deliveries_on_archived"
+    t.index ["confirmed_by_vendor"], name: "index_deliveries_on_confirmed_by_vendor"
+    t.index ["confirmed_by_vendor_at"], name: "index_deliveries_on_confirmed_by_vendor_at"
     t.index ["delivery_address_id"], name: "index_deliveries_on_delivery_address_id"
     t.index ["delivery_date"], name: "index_deliveries_on_delivery_date"
     t.index ["delivery_type"], name: "index_deliveries_on_delivery_type"

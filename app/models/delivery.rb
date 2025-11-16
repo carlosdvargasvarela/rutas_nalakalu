@@ -283,6 +283,31 @@ class Delivery < ApplicationRecord
   end
 
   # ============================================================================
+  # MÉTODOS PARA CONFIRMACIÓN POR VENDEDOR
+  # ============================================================================
+
+  def mark_as_confirmed_by_vendor!(user = nil)
+    update!(
+      confirmed_by_vendor: true,
+      confirmed_by_vendor_at: Time.current
+    )
+    Rails.logger.info "[Delivery##{id}] Confirmada por vendedor#{user ? " (#{user.email})" : ""}"
+  end
+
+  def unconfirm_by_vendor!
+    update!(
+      confirmed_by_vendor: false,
+      confirmed_by_vendor_at: nil
+    )
+    Rails.logger.info "[Delivery##{id}] Confirmación de vendedor removida"
+  end
+
+  # Scope para reportes
+  def self.unconfirmed_by_vendor
+    where(confirmed_by_vendor: false)
+  end
+
+  # ============================================================================
   # MÉTODOS PRIVADOS
   # ============================================================================
 

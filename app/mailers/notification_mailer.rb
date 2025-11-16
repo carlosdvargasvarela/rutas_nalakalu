@@ -1,6 +1,6 @@
 # app/mailers/notification_mailer.rb
 class NotificationMailer < ApplicationMailer
-  default from: "notificaciones@nalakalu.com"
+  default from: "NaLakalu Notificaciones <alerts@nalakalu.com>"
 
   def generic_notification
     @user_id       = params[:user_id]

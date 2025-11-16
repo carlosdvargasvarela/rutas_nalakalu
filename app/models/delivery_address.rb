@@ -16,6 +16,78 @@ class DeliveryAddress < ApplicationRecord
     address
   end
 
+  # ============================================================================
+  # VALIDACIÓN DE DIRECCIONES PARA REPORTES
+  # ============================================================================
+
+  # Palabras/frases que indican dirección inválida
+  INVALID_ADDRESS_KEYWORDS = [
+    "pendiente", "por definir", "por definir dirección", "por definir dir",
+    "pend", "tbd", "n/a", "sin dirección", "sin direccion", "no definido",
+    "a definir", ".", "-", "x"
+  ].freeze
+
+  # Bounding box de Costa Rica (aproximado)
+  CR_LAT_MIN = 8.0
+  CR_LAT_MAX = 11.5
+  CR_LON_MIN = -86.0
+  CR_LON_MAX = -82.0
+
+  def address_errors
+    errors = []
+    errors << "Sin coordenadas" if missing_coordinates?
+    errors << "Coordenadas cero" if latitude.to_f.zero? && longitude.to_f.zero?
+    errors << "Dirección vacía" if address.blank?
+    errors << "Descripción vacía" if description.blank?
+    errors << "Texto de dirección inválido" if invalid_address_text?
+    errors << "Fuera de Costa Rica" if out_of_cr_bounds?
+    errors << "Geocodificación sin resultados" if geocode_quality == "no_match"
+    errors << "Geocodificación parcial" if geocode_quality&.include?("partial")
+    errors
+  end
+
+  def has_address_errors?
+    address_errors.any?
+  end
+
+  def error_summary
+    address_errors.join("; ")
+  end
+
+  private
+
+  def missing_coordinates?
+    latitude.blank? || longitude.blank? || latitude.zero? || longitude.zero?
+  end
+
+  def invalid_address_text?
+    return true if address.blank?
+
+    addr_lower = address.to_s.downcase.strip
+    desc_lower = description.to_s.downcase.strip
+    full_text = "#{addr_lower} #{desc_lower}".strip
+
+    # Detectar palabras prohibidas
+    return true if INVALID_ADDRESS_KEYWORDS.any? { |kw| full_text.include?(kw) }
+
+    # Detectar URLs
+    return true if full_text.match?(%r{https?://})
+
+    # Detectar direcciones muy cortas (menos de 5 caracteres sin contar espacios)
+    return true if addr_lower.gsub(/\s+/, "").length < 5
+
+    false
+  end
+
+  def out_of_cr_bounds?
+    return false if missing_coordinates?
+
+    lat = latitude.to_f
+    lon = longitude.to_f
+
+    lat < CR_LAT_MIN || lat > CR_LAT_MAX || lon < CR_LON_MIN || lon > CR_LON_MAX
+  end
+
   private
 
   def should_geocode?

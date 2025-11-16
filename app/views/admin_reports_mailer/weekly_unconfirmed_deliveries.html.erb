@@ -1,0 +1,66 @@
+<div class="header">
+  <h1>📊 Informe Semanal de Entregas No Confirmadas</h1>
+  <p>Semana del <%= l(@report_data[:week_start], format: :long) %> al <%= l(@report_data[:week_end], format: :long) %></p>
+</div>
+
+<div class="content">
+  <div class="highlight-box">
+    <h2 style="margin-top: 0; color: #667eea;">Resumen Ejecutivo</h2>
+    <p>
+      Durante la semana pasada se identificaron <strong><%= @report_data[:total_count] %></strong> 
+      entrega(s) que <strong>NO fueron confirmadas</strong> por los vendedores antes de su fecha programada.
+    </p>
+  </div>
+
+  <div class="stats">
+    <div class="stat-item">
+      <span class="stat-number"><%= @report_data[:total_count] %></span>
+      <span class="stat-label">Entregas sin confirmar</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-number"><%= @report_data[:seller_summary].count %></span>
+      <span class="stat-label">Vendedores afectados</span>
+    </div>
+  </div>
+
+  <h3 style="color: #667eea; margin-top: 30px;">Top 5 Vendedores con Más Entregas Sin Confirmar</h3>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>Vendedor</th>
+        <th>Código</th>
+        <th style="text-align: center;">Cantidad</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @report_data[:top_sellers].each do |seller| %>
+        <tr>
+          <td><strong><%= seller[:name] %></strong></td>
+          <td><%= seller[:code] %></td>
+          <td style="text-align: center;">
+            <span style="background: #dc3545; color: white; padding: 4px 12px; border-radius: 12px; font-weight: bold;">
+              <%= seller[:count] %>
+            </span>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <div class="attachment-notice">
+    📎 <strong>Archivo Excel adjunto</strong><br>
+    Se adjunta un archivo Excel con el detalle completo de todas las entregas no confirmadas, 
+    incluyendo información del cliente, dirección, estado y notas.
+  </div>
+
+  <p style="margin-top: 30px; color: #666; font-size: 14px;">
+    <strong>Recomendación:</strong> Coordinar con los vendedores para establecer un proceso de confirmación 
+    más temprano que permita a logística planificar las rutas con mayor certeza.
+  </p>
+</div>
+
+<div class="footer">
+  <p>Este es un informe automático generado por el Sistema de Rutas NaLakalu</p>
+  <p>Generado el <%= l(Time.current, format: :long) %></p>
+</div>
