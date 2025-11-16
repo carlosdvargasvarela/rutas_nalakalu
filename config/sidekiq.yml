@@ -1,19 +1,15 @@
+# config/sidekiq.yml
 :concurrency: 5
 :queues:
   - default
   - mailers
   - low
+
 :schedule:
-  sales_reminder_weekly:
-    cron: "0 7 * * 1"
-    class: "SalesReminderJob"
-    args:
-      - weekly
-  sales_reminder_daily:
-    cron: "0 8 * * *"
-    class: "SalesReminderJob"
-    args:
-      - daily
-  production_reminder:
-    cron: "0 7 * * 1"
-    class: "ProductionReminderJob"
+  # Alerta diaria de entregas pendientes de confirmar para la próxima semana
+  next_week_pending_confirmations_daily:
+    # 01:52 todos los días, hora Costa Rica
+    cron: "55 1 * * *"
+    class: "NextWeekPendingConfirmationsJob"
+    queue: default
+    description: "Envía correos diarios a sellers y admins con entregas pendientes de confirmar para la próxima semana"

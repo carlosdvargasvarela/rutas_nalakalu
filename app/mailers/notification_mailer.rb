@@ -23,7 +23,7 @@ class NotificationMailer < ApplicationMailer
     )
   end
 
-  # ⚡ Nuevo: notificación para correos externos (sin user_id)
+  # Notificación para correos externos (sin user_id)
   def external_notification
     @message       = params[:message]
     @notifiable_id = params[:notifiable_id]
@@ -53,6 +53,7 @@ class NotificationMailer < ApplicationMailer
     when "weekly_reminder"     then "📋 Resumen Semanal de Ventas"
     when "daily_reminder"      then "🔔 Recordatorio Diario de Entregas"
     when "urgent_alert"        then "🚨 Alerta Urgente de Producción"
+    when "next_week_pending_confirmation" then "🔔 Entregas pendientes de confirmar para la próxima semana"
     when "reschedule_delivery"
       if notifiable.is_a?(Delivery) && notifiable.order.present?
         "🔄 Pedido ##{notifiable.order.number} reagendado"

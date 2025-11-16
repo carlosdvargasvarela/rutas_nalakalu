@@ -1,0 +1,5 @@
+next_week_pending_confirmations_daily:
+  cron: '10 2 * * * America/Costa_Rica'
+  class: NextWeekPendingConfirmationsJob
+  queue: default
+  description: "Envía correos diarios a sellers y admins con entregas pendientes de confirmar para la próxima semana"

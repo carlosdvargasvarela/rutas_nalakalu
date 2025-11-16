@@ -141,11 +141,69 @@ class NotificationService
     end
   end
 
+  # ✅ NUEVO: Alerta diaria de entregas pendientes de confirmar para la próxima semana
+  def self.send_daily_next_week_pending_confirmations!
+    # Calcular rango de la próxima semana ISO
+    next_week_start, next_week_end = IsoWeekHelper.next_iso_week_range
+
+    # Buscar entregas que cumplen las condiciones
+    pending_deliveries = Delivery
+      .where(status: :scheduled)
+      .where(approved: true)
+      .where(archived: false)
+      .where(delivery_date: next_week_start..next_week_end)
+      .where.not(delivery_type: :internal_delivery)
+      .includes(order: [ :client, :seller ], delivery_address: :client, delivery_items: { order_item: :order })
+
+    return if pending_deliveries.empty?
+
+    Rails.logger.info "[NextWeekPendingConfirmations] Encontradas #{pending_deliveries.count} entregas pendientes para la próxima semana (#{next_week_start} - #{next_week_end})"
+
+    # Agrupar por seller
+    deliveries_by_seller = pending_deliveries.group_by { |d| d.order.seller }
+
+    # Enviar correo a cada seller
+    deliveries_by_seller.each do |seller, deliveries|
+      next unless seller&.user
+
+      message = build_next_week_pending_message_for_seller(seller, deliveries, next_week_start, next_week_end)
+
+      # Enviar correo directo al seller (respetando send_notifications)
+      NotificationMailer.safe_notify(
+        user_id: seller.user.id,
+        message: message,
+        type: "next_week_pending_confirmation",
+        notifiable_id: nil,
+        notifiable_type: nil
+      )
+
+      Rails.logger.info "[NextWeekPendingConfirmations] Correo enviado a seller: #{seller.user.email} (#{deliveries.count} entregas)"
+    end
+
+    # Enviar correo global a todos los admins
+    admin_users = User.where(role: :admin)
+    if admin_users.any?
+      message = build_next_week_pending_message_for_admins(pending_deliveries, next_week_start, next_week_end)
+
+      admin_users.each do |admin|
+        NotificationMailer.safe_notify(
+          user_id: admin.id,
+          message: message,
+          type: "next_week_pending_confirmation",
+          notifiable_id: nil,
+          notifiable_type: nil
+        )
+      end
+
+      Rails.logger.info "[NextWeekPendingConfirmations] Correo enviado a #{admin_users.count} administradores"
+    end
+  end
+
   # -----------------------
   # Helpers privados
   # -----------------------
   def self.delivery_in_current_iso_week?(delivery)
-    # Reutiliza tu lógica ISO ya existente
+    IsoWeekHelper.in_current_iso_week?(delivery.delivery_date)
   end
   private_class_method :delivery_in_current_iso_week?
 
@@ -197,4 +255,68 @@ class NotificationService
     ].compact.join("\n")
   end
   private_class_method :current_week_rescheduled_message
+
+  # ✅ NUEVO: Construir mensaje para seller
+  def self.build_next_week_pending_message_for_seller(seller, deliveries, start_date, end_date)
+    seller_name = seller.name.presence || seller.user.name.presence || seller.user.email
+    formatted_range = "#{I18n.l(start_date, format: :short)} - #{I18n.l(end_date, format: :short)}"
+
+    message = "🔔 Hola #{seller_name},\n\n"
+    message += "Tienes #{deliveries.count} entrega(s) pendiente(s) de confirmar para la próxima semana (#{formatted_range}):\n\n"
+
+    deliveries.sort_by(&:delivery_date).each do |delivery|
+      fecha = I18n.l(delivery.delivery_date, format: :long)
+      order_number = delivery.order.number
+      client_name = delivery.order.client.name
+      address = delivery.delivery_address.address
+      address += " (#{delivery.delivery_address.description})" if delivery.delivery_address.description.present?
+
+      message += "📦 Pedido ##{order_number}\n"
+      message += "   📅 Fecha: #{fecha}\n"
+      message += "   👤 Cliente: #{client_name}\n"
+      message += "   📍 Dirección: #{address}\n"
+      message += "   🏷️ Tipo: #{delivery.display_type}\n"
+      message += "   ⚠️ Estado: #{delivery.display_status}\n\n"
+    end
+
+    message += "Por favor, confirma estas entregas con tus clientes lo antes posible para que logística pueda planificar las rutas.\n\n"
+    message += "Saludos,\nEquipo NaLakalu"
+
+    message
+  end
+  private_class_method :build_next_week_pending_message_for_seller
+
+  # ✅ NUEVO: Construir mensaje para admins
+  def self.build_next_week_pending_message_for_admins(deliveries, start_date, end_date)
+    formatted_range = "#{I18n.l(start_date, format: :short)} - #{I18n.l(end_date, format: :short)}"
+
+    message = "📊 Resumen de entregas pendientes de confirmar para la próxima semana (#{formatted_range}):\n\n"
+    message += "Total de entregas: #{deliveries.count}\n\n"
+
+    # Agrupar por seller para el resumen
+    by_seller = deliveries.group_by { |d| d.order.seller }
+
+    by_seller.each do |seller, seller_deliveries|
+      seller_name = seller&.name || "Sin vendedor"
+      seller_code = seller&.seller_code || "N/A"
+
+      message += "👨‍💼 #{seller_name} (#{seller_code}): #{seller_deliveries.count} entrega(s)\n"
+
+      seller_deliveries.sort_by(&:delivery_date).each do |delivery|
+        fecha = I18n.l(delivery.delivery_date, format: :short)
+        order_number = delivery.order.number
+        client_name = delivery.order.client.name
+
+        message += "   • #{fecha} - Pedido ##{order_number} - #{client_name}\n"
+      end
+
+      message += "\n"
+    end
+
+    message += "Recuerda coordinar con los vendedores para confirmar estas entregas.\n\n"
+    message += "Saludos,\nSistema NaLakalu"
+
+    message
+  end
+  private_class_method :build_next_week_pending_message_for_admins
 end

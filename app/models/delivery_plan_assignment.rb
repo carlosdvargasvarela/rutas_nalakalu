@@ -19,10 +19,9 @@ class DeliveryPlanAssignment < ApplicationRecord
   # Ordenamiento
   acts_as_list scope: :delivery_plan, column: :stop_order
 
-  # Enums - CORREGIDO: cambiar 'n_route' por 'in_route'
   enum status: {
     pending: 0,
-    in_route: 1,      # <- CAMBIO AQUÍ
+    in_route: 1,
     completed: 2,
     cancelled: 3
   }, _default: :pending
