@@ -100,7 +100,7 @@ class OrderItem < ApplicationRecord
     if status == "ready"
       seller_user = order.seller.user
       message = "El producto '#{product}' del pedido #{order.number} está listo para confirmar con el cliente."
-      NotificationService.create_for_users([ seller_user ], self, message)
+      # NotificationService.create_for_users([ seller_user ], self, message)
     end
   end
 end

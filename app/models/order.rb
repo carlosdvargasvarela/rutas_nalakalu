@@ -312,7 +312,7 @@ class Order < ApplicationRecord
   def notify_status_change
     case status
     when "ready_for_delivery"
-      NotificationService.notify_order_ready_for_delivery(self)
+      # NotificationService.notify_order_ready_for_delivery(self)
     end
   end
 

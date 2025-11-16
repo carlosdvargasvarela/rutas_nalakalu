@@ -143,7 +143,7 @@ class DeliveryItem < ApplicationRecord
     if all_ready
       seller_user = delivery.order.seller.user
       message = "Todos los productos del pedido #{delivery.order.number} para la entrega del #{delivery.delivery_date.strftime('%d/%m/%Y')} están listos para entrega."
-      NotificationService.create_for_users([ seller_user ], delivery, message)
+      # NotificationService.create_for_users([ seller_user ], delivery, message)
     end
   end
 end

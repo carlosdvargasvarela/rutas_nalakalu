@@ -248,7 +248,7 @@ class Delivery < ApplicationRecord
     users << delivery_plan.driver if delivery_plan&.driver
 
     message = "Todos los productos del pedido #{order.number} para la entrega del #{delivery_date.strftime('%d/%m/%Y')} fueron confirmados por el vendedor."
-    NotificationService.create_for_users(users.compact.uniq, self, message)
+    # NotificationService.create_for_users(users.compact.uniq, self, message)
   end
 
   # ============================================================================
@@ -342,6 +342,9 @@ class Delivery < ApplicationRecord
 
     # Todos los no terminales confirmed → confirmado para entregar
     if non_terminal_statuses.all? { |s| s == "confirmed" }
+      unless delivery_plans.exists?
+        mark_as_confirmed_by_vendor!
+      end
       return delivery_plans.exists? ? :in_plan : :ready_to_deliver
     end
 

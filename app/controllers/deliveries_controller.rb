@@ -213,6 +213,7 @@ class DeliveriesController < ApplicationController
   def confirm_all_items
     authorize @delivery, :edit?
     updated = @delivery.delivery_items.where(status: :pending).update_all(status: :confirmed, updated_at: Time.current)
+    @delivery.mark_as_confirmed_by_vendor!
     @delivery.update_status_based_on_items
     redirect_to(session.delete(:deliveries_return_to) || delivery_path(@delivery), notice: "#{updated} productos confirmados para entrega.")
   end
