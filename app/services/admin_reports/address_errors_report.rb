@@ -24,9 +24,9 @@ module AdminReports
       Rails.logger.info "[AddressErrorsReport] Encontradas #{deliveries_with_errors.count} entregas con errores de dirección"
 
       report_data = build_report_data(deliveries_with_errors)
-      excel_file = generate_excel(deliveries_with_errors)
+      delivery_ids = deliveries_with_errors.map(&:id)
 
-      send_report(report_data, excel_file)
+      send_report(report_data, delivery_ids)
     end
 
     private
@@ -35,7 +35,7 @@ module AdminReports
       current_week_start = @reference_date.beginning_of_week(:monday)
       prev_week_start = current_week_start - 1.week
       prev_week_end = prev_week_start + 6.days
-      [prev_week_start, prev_week_end]
+      [ prev_week_start, prev_week_end ]
     end
 
     def fetch_deliveries_with_address_errors
@@ -44,7 +44,7 @@ module AdminReports
         .where(approved: true)
         .where(archived: false)
         .where.not(delivery_type: :internal_delivery)
-        .includes(order: [:client, :seller], delivery_address: :client)
+        .includes(order: [ :client, :seller ], delivery_address: :client)
         .order(:delivery_date, "orders.number")
 
       # Filtrar solo las que tienen errores
@@ -80,83 +80,14 @@ module AdminReports
       }
     end
 
-    def generate_excel(deliveries)
-      package = Axlsx::Package.new
-      workbook = package.workbook
-
-      # Estilos
-      header_style = workbook.styles.add_style(
-        bg_color: "CC0000",
-        fg_color: "FFFFFF",
-        b: true,
-        alignment: { horizontal: :center, vertical: :center, wrap_text: true }
-      )
-
-      date_style = workbook.styles.add_style(
-        format_code: "dd/mm/yyyy"
-      )
-
-      error_style = workbook.styles.add_style(
-        fg_color: "CC0000",
-        b: true
-      )
-
-      workbook.add_worksheet(name: "Errores de Dirección") do |sheet|
-        # Encabezados
-        sheet.add_row([
-          "Fecha de Entrega",
-          "Pedido",
-          "Cliente",
-          "Vendedor",
-          "Código Vendedor",
-          "Email Vendedor",
-          "Dirección",
-          "Descripción",
-          "Latitud",
-          "Longitud",
-          "Errores Detectados",
-          "Calidad Geocodificación",
-          "Estado Entrega"
-        ], style: header_style)
-
-        # Datos
-        deliveries.each do |delivery|
-          seller = delivery.order.seller
-          address = delivery.delivery_address
-          errors = address.error_summary
-
-          sheet.add_row([
-            delivery.delivery_date,
-            delivery.order.number,
-            delivery.order.client.name,
-            seller&.name || "N/A",
-            seller&.seller_code || "N/A",
-            seller&.user&.email || "N/A",
-            address.address,
-            address.description,
-            address.latitude,
-            address.longitude,
-            errors,
-            address.geocode_quality,
-            delivery.display_status
-          ], style: [date_style, nil, nil, nil, nil, nil, nil, nil, nil, nil, error_style, nil, nil])
-        end
-
-        # Ajustar anchos de columna
-        sheet.column_widths(12, 15, 25, 20, 15, 25, 35, 25, 12, 12, 40, 20, 18)
-      end
-
-      package.to_stream
-    end
-
-    def send_report(report_data, excel_file)
+    def send_report(report_data, delivery_ids)
       recipients = build_recipients_list
 
       recipients.each do |recipient|
         AdminReportsMailer.address_errors_report(
           recipient: recipient,
           report_data: report_data,
-          excel_file: excel_file
+          delivery_ids: delivery_ids
         ).deliver_later
       end
 

@@ -24,9 +24,9 @@ module AdminReports
       Rails.logger.info "[WeeklyUnconfirmedDeliveries] Encontradas #{deliveries.count} entregas sin confirmar"
 
       report_data = build_report_data(deliveries)
-      excel_file = generate_excel(deliveries)
+      delivery_ids = deliveries.map(&:id)
 
-      send_report(report_data, excel_file)
+      send_report(report_data, delivery_ids)
     end
 
     private
@@ -71,75 +71,14 @@ module AdminReports
       }
     end
 
-    def generate_excel(deliveries)
-      package = Axlsx::Package.new
-      workbook = package.workbook
-
-      # Estilos
-      header_style = workbook.styles.add_style(
-        bg_color: "0066CC",
-        fg_color: "FFFFFF",
-        b: true,
-        alignment: { horizontal: :center, vertical: :center, wrap_text: true }
-      )
-
-      date_style = workbook.styles.add_style(
-        format_code: "dd/mm/yyyy"
-      )
-
-      workbook.add_worksheet(name: "Entregas No Confirmadas") do |sheet|
-        # Encabezados
-        sheet.add_row([
-          "Fecha de Entrega",
-          "Pedido",
-          "Cliente",
-          "Vendedor",
-          "Código Vendedor",
-          "Email Vendedor",
-          "Dirección",
-          "Descripción Dirección",
-          "Tipo de Entrega",
-          "Estado",
-          "En Plan de Ruta",
-          "Notas"
-        ], style: header_style)
-
-        # Datos
-        deliveries.each do |delivery|
-          seller = delivery.order.seller
-          in_plan = delivery.delivery_plans.any? ? "Sí" : "No"
-
-          sheet.add_row([
-            delivery.delivery_date,
-            delivery.order.number,
-            delivery.order.client.name,
-            seller&.name || "N/A",
-            seller&.seller_code || "N/A",
-            seller&.user&.email || "N/A",
-            delivery.delivery_address.address,
-            delivery.delivery_address.description,
-            delivery.display_type,
-            delivery.display_status,
-            in_plan,
-            delivery.delivery_notes
-          ], style: [ date_style, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil ])
-        end
-
-        # Ajustar anchos de columna
-        sheet.column_widths(12, 15, 25, 20, 15, 25, 35, 25, 20, 18, 12, 30)
-      end
-
-      package.to_stream
-    end
-
-    def send_report(report_data, excel_file)
+    def send_report(report_data, delivery_ids)
       recipients = build_recipients_list
 
       recipients.each do |recipient|
         AdminReportsMailer.weekly_unconfirmed_deliveries(
           recipient: recipient,
           report_data: report_data,
-          excel_file: excel_file
+          delivery_ids: delivery_ids
         ).deliver_later
       end
 

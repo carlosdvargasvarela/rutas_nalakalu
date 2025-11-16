@@ -11,7 +11,7 @@ next_week_pending_confirmations_daily:
 # Informes gerenciales semanales
 # Se ejecuta todos los miércoles a las 07:00 hora Costa Rica
 weekly_admin_reports:
-  cron: "40 4 * * * America/Costa_Rica"
+  cron: "46 4 * * * America/Costa_Rica"
   class: WeeklyAdminReportsJob
   queue: default
   description: "Genera y envía informes semanales de entregas no confirmadas y errores en direcciones"
