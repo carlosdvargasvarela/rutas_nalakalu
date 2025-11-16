@@ -24,7 +24,7 @@ class DeliveryAddress < ApplicationRecord
   INVALID_ADDRESS_KEYWORDS = [
     "pendiente", "por definir", "por definir dirección", "por definir dir",
     "pend", "tbd", "n/a", "sin dirección", "sin direccion", "no definido",
-    "a definir", ".", "-", "x"
+    "a definir"
   ].freeze
 
   # Bounding box de Costa Rica (aproximado)
@@ -38,7 +38,6 @@ class DeliveryAddress < ApplicationRecord
     errors << "Sin coordenadas" if missing_coordinates?
     errors << "Coordenadas cero" if latitude.to_f.zero? && longitude.to_f.zero?
     errors << "Dirección vacía" if address.blank?
-    errors << "Descripción vacía" if description.blank?
     errors << "Texto de dirección inválido" if invalid_address_text?
     errors << "Fuera de Costa Rica" if out_of_cr_bounds?
     errors << "Geocodificación sin resultados" if geocode_quality == "no_match"
@@ -67,14 +66,19 @@ class DeliveryAddress < ApplicationRecord
     desc_lower = description.to_s.downcase.strip
     full_text = "#{addr_lower} #{desc_lower}".strip
 
-    # Detectar palabras prohibidas
+    # 1) Detectar palabras/frases prohibidas claras
     return true if INVALID_ADDRESS_KEYWORDS.any? { |kw| full_text.include?(kw) }
 
-    # Detectar URLs
+    # 2) Detectar URLs (copiar enlaces en vez de direcciones)
     return true if full_text.match?(%r{https?://})
 
-    # Detectar direcciones muy cortas (menos de 5 caracteres sin contar espacios)
-    return true if addr_lower.gsub(/\s+/, "").length < 5
+    # 3) Direcciones extremadamente cortas (ej: "x", "xx", "aaa")
+    #    - Menos de 5 caracteres sin espacios
+    #    - Y que no tengan números ni signos típicos de direcciones (,+#-)
+    compact = addr_lower.gsub(/\s+/, "")
+    if compact.length < 5 && compact !~ /[0-9]/ && compact !~ /[,+#-]/
+      return true
+    end
 
     false
   end

@@ -1,17 +1,19 @@
 # config/sidekiq_schedule.yml
-# Tareas programadas para Sidekiq
+
 # Envío diario de correos sobre entregas pendientes de confirmar para la próxima semana
 # Se ejecuta todos los días a las 00:01 hora Costa Rica
 next_week_pending_confirmations_daily:
-  cron: '1 0 * * * America/Costa_Rica'
+  cron: "1 0 * * *"
   class: NextWeekPendingConfirmationsJob
   queue: default
   description: "Envía correos diarios a sellers y admins con entregas pendientes de confirmar para la próxima semana"
+  rails_timezone: "America/Costa_Rica"
 
 # Informes gerenciales semanales
-# Se ejecuta todos los miércoles a las 07:00 hora Costa Rica
+# Se ejecuta todos los martes a las 07:00 hora Costa Rica
 weekly_admin_reports:
-  cron: "46 4 * * * America/Costa_Rica"
+  cron: "0 7 * * 2"
   class: WeeklyAdminReportsJob
   queue: default
   description: "Genera y envía informes semanales de entregas no confirmadas y errores en direcciones"
+  rails_timezone: "America/Costa_Rica"
