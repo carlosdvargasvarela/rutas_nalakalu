@@ -73,16 +73,33 @@ module Deliveries
     end
 
     def find_or_create_client
+      # 1) Si viene un client_id (seleccionado desde combo), usar ese
       if params[:client_id].present?
-        Client.find(params[:client_id])
-      elsif params[:client].present? && (params[:client][:email].present? || params[:client][:phone].present?)
-        existing = nil
-        existing = Client.find_by(email: params[:client][:email]) if params[:client][:email].present?
-        existing ||= Client.find_by(phone: params[:client][:phone]) if params[:client][:phone].present?
-        existing || Client.create!(params.require(:client).permit(:name, :phone, :email))
-      else
-        raise ActiveRecord::RecordInvalid.new(Client.new), "Debe seleccionarse un cliente."
+        return Client.find(params[:client_id])
       end
+
+      # 2) Si vienen datos de cliente en el formulario
+      if params[:client].present?
+        attrs = params.require(:client).permit(:name, :phone, :email)
+
+        # Solo validación fuerte: que haya al menos nombre
+        if attrs[:name].to_s.strip.blank?
+          raise ActiveRecord::RecordInvalid.new(Client.new), "Debe indicarse el nombre del cliente."
+        end
+
+        # Intentar reutilizar por email/teléfono si existen
+        existing = nil
+        existing = Client.find_by(email: attrs[:email]) if attrs[:email].present?
+        existing ||= Client.find_by(phone: attrs[:phone]) if attrs[:phone].present?
+
+        return existing if existing
+
+        # Si no existe, crear con lo que haya (nombre obligatorio, email/phone opcionales)
+        return Client.create!(attrs)
+      end
+
+      # 3) Si no viene ni client_id ni params[:client], error
+      raise ActiveRecord::RecordInvalid.new(Client.new), "Debe seleccionarse o crearse un cliente."
     end
 
     def find_or_create_address(client)
