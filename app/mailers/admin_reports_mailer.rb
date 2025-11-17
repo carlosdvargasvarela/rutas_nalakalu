@@ -64,6 +64,40 @@ class AdminReportsMailer < ApplicationMailer
     )
   end
 
+  # =========================
+  # Entregas no confirmadas - semana actual
+  # =========================
+
+  def current_week_unconfirmed_deliveries(recipient:, report_data:, delivery_ids:)
+    @report_data = report_data
+    @recipient = recipient
+
+    deliveries = Delivery
+                   .where(id: delivery_ids)
+                   .includes(order: [:client, :seller], delivery_address: :client, delivery_items: { order_item: :order })
+
+    excel_stream = generate_unconfirmed_deliveries_excel(deliveries)
+    filename = "entregas_no_confirmadas_semana_actual_#{report_data[:week_start].strftime('%Y%m%d')}.xlsx"
+
+    attachments[filename] = excel_stream.string
+
+    mail(
+      to: recipient,
+      subject: "📊 Informe Semanal: Entregas No Confirmadas Semana Actual (#{report_data[:week_start].strftime('%d/%m')} - #{report_data[:week_end].strftime('%d/%m/%Y')})"
+    )
+  end
+
+  def current_week_unconfirmed_deliveries_empty(recipient:, week_start:, week_end:)
+    @week_start = week_start
+    @week_end = week_end
+    @recipient = recipient
+
+    mail(
+      to: recipient,
+      subject: "✅ Informe Semanal: Sin Entregas Pendientes de Confirmar Esta Semana (#{week_start.strftime('%d/%m')} - #{week_end.strftime('%d/%m/%Y')})"
+    )
+  end
+
   private
 
   def generate_unconfirmed_deliveries_excel(deliveries)

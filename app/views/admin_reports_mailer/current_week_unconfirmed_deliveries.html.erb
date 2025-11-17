@@ -1,0 +1,47 @@
+<h2>Informe semanal - Entregas no confirmadas (Semana actual)</h2>
+
+<p>
+  Hola <%= @recipient %>,
+</p>
+
+<p>
+  A continuación, el resumen de las entregas <strong>no confirmadas por vendedor</strong>
+  con fecha de entrega entre
+  <strong><%= @report_data[:week_start].strftime('%d/%m/%Y') %></strong> y
+  <strong><%= @report_data[:week_end].strftime('%d/%m/%Y') %></strong>.
+</p>
+
+<p>
+  Total de entregas no confirmadas: <strong><%= @report_data[:total_count] %></strong>
+</p>
+
+<h3>Resumen por vendedor</h3>
+<table border="1" cellpadding="4" cellspacing="0">
+  <thead>
+    <tr>
+      <th>Vendedor</th>
+      <th>Código</th>
+      <th>Email</th>
+      <th>Cantidad de entregas no confirmadas</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @report_data[:seller_summary].each do |seller| %>
+      <tr>
+        <td><%= seller[:name] %></td>
+        <td><%= seller[:code] %></td>
+        <td><%= seller[:email] %></td>
+        <td><%= seller[:count] %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p>
+  Se adjunta un archivo Excel con el detalle de cada entrega.
+</p>
+
+<p>
+  Saludos,<br>
+  Sistema de rutas NaLakalu
+</p>

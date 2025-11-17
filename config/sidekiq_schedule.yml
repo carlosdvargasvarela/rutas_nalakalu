@@ -17,3 +17,12 @@ weekly_admin_reports:
   queue: default
   description: "Genera y envía informes semanales de entregas no confirmadas y errores en direcciones"
   rails_timezone: "America/Costa_Rica"
+
+# Informe gerencial: Entregas no confirmadas con entrega esta semana
+# Se ejecuta todos los lunes a las 07:00 hora Costa Rica
+current_week_unconfirmed_deliveries:
+  cron: "0 7 * * 1"
+  class: CurrentWeekUnconfirmedDeliveriesJob
+  queue: default
+  description: "Genera y envía informe semanal de entregas no confirmadas a entregar en la semana actual"
+  rails_timezone: "America/Costa_Rica"
