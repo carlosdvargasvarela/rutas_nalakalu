@@ -298,6 +298,33 @@ class DeliveryPlansController < ApplicationController
     end
   end
 
+  def update
+    @delivery_plan = DeliveryPlan.find(params[:id])
+    authorize @delivery_plan
+
+    if @delivery_plan.update(delivery_plan_params)
+      redirect_to edit_delivery_plan_path(@delivery_plan),
+                  notice: "Plan de ruta actualizado correctamente."
+    else
+      flash.now[:alert] = @delivery_plan.errors.full_messages.to_sentence.presence ||
+                          "No se pudo actualizar el plan de ruta."
+
+      # Necesario para volver a renderizar :edit con lo mismo que usas ahí
+      @assignments = @delivery_plan.delivery_plan_assignments
+                                  .includes(delivery: [ :order, :delivery_address, order: :client ])
+                                  .order(:stop_order)
+
+      delivery_date = @assignments.first&.delivery&.delivery_date
+      @available_deliveries = if delivery_date
+        Delivery.where(delivery_date: delivery_date).available_for_plan
+      else
+        []
+      end
+
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
   def send_to_logistics
     @delivery_plan = DeliveryPlan.find(params[:id])
     authorize @delivery_plan
