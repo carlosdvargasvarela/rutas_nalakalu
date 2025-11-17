@@ -10,6 +10,19 @@ class DeliveryPlanAssignmentsController < ApplicationController
 
     # Eliminar sin callbacks para evitar que acts_as_list haga cosas raras
     assignment.delete
+    delivery = assignment.delivery
+    if delivery.present?
+      delivery.delivery_items.each do |item|
+        unless item.cancelled? || item.delivered?
+          if item.pending?
+            item.update!(status: :pending)
+          elsif item.confirmed? || item.in_plan?
+            item.update!(status: :confirmed)
+          end
+        end
+      end
+      delivery.update_status_based_on_items
+    end
 
     # Recargar assignments
     delivery_plan.delivery_plan_assignments.reload
