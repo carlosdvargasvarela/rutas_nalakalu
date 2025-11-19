@@ -21,22 +21,21 @@
   revisar y corregir las direcciones directamente en el sistema o en Google Maps.
 </p>
 
-<h3>Significado de los errores</h3>
-<ul>
-  <li><strong>Sin coordenadas</strong>: La dirección no tiene latitud/longitud guardadas.</li>
-  <li><strong>Coordenadas cero</strong>: Las coordenadas están en (0, 0), lo que indica un valor inválido.</li>
-  <li><strong>Dirección vacía</strong>: El campo de dirección está en blanco.</li>
-  <li><strong>Descripción vacía</strong>: El detalle adicional de la dirección está vacío.</li>
-  <li><strong>Texto de dirección inválido</strong>: La dirección contiene textos genéricos como "pendiente", "por definir", etc., o es demasiado corta para ubicarla.</li>
-  <li><strong>Fuera de Costa Rica</strong>: Las coordenadas caen fuera del rango geográfico de Costa Rica.</li>
-  <li><strong>Geocodificación sin resultados</strong>: Google Maps no devolvió una ubicación válida para la dirección indicada.</li>
-  <li><strong>Geocodificación parcial</strong>: Google Maps encontró una coincidencia poco precisa (por ejemplo, solo el cantón o la provincia).</li>
-</ul>
-
+<h3>¿Qué significan estos errores?</h3>
 <p>
-  Te recomendamos priorizar la corrección de las direcciones con:
-  <strong>Sin coordenadas</strong>, <strong>Coordenadas cero</strong>,
-  <strong>Texto de dirección inválido</strong> y <strong>Fuera de Costa Rica</strong>.
+  Estos errores indican que <strong>Google Maps no pudo encontrar o entender la dirección tal como fue escrita</strong> en el sistema.
+  Esto puede causar problemas al generar las rutas de entrega.
+</p>
+<ul>
+  <li><strong>"Sin coordenadas" o "Coordenadas cero"</strong>: Google Maps no pudo ubicar la dirección en el mapa, o la ubicó en un punto incorrecto (como el centro del océano).</li>
+  <li><strong>"Dirección vacía" o "Descripción vacía"</strong>: Faltan datos importantes en la dirección o en su descripción.</li>
+  <li><strong>"Texto de dirección inválido"</strong>: La dirección contiene palabras genéricas como "pendiente", "por definir", "N/A", o es demasiado corta para ser una dirección real.</li>
+  <li><strong>"Fuera de Costa Rica"</strong>: La dirección fue ubicada por Google Maps fuera de los límites de Costa Rica.</li>
+  <li><strong>"Geocodificación sin resultados" o "Geocodificación parcial"</strong>: Google Maps no encontró una coincidencia exacta para la dirección, o solo encontró una ubicación muy general (por ejemplo, solo el país o la provincia, no la dirección exacta).</li>
+</ul>
+<p>
+  <strong>¿Qué hacer?</strong> Te recomendamos revisar estas direcciones en el sistema y corregirlas para que Google Maps pueda entenderlas correctamente.
+  Asegúrate de que la dirección sea lo más específica posible y que no contenga abreviaturas o textos genéricos.
 </p>
 
 <p>
