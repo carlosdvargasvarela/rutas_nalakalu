@@ -26,3 +26,21 @@ current_week_unconfirmed_deliveries:
   queue: default
   description: "Genera y envía informe semanal de entregas no confirmadas a entregar en la semana actual"
   rails_timezone: "America/Costa_Rica"
+
+# Informe para vendedores: errores de dirección en sus entregas de la semana actual
+# Lunes 07:10 hora Costa Rica
+seller_address_errors_current_week:
+  cron: "10 7 * * 1"
+  class: SellerAddressErrorsCurrentWeekJob
+  queue: default
+  description: "Envía a cada vendedor un informe de errores de dirección en sus entregas de la semana actual"
+  rails_timezone: "America/Costa_Rica"
+
+# Informe para vendedores: errores de dirección en sus entregas de la semana siguiente
+# Lunes 07:20 hora Costa Rica
+seller_address_errors_next_week:
+  cron: "20 7 * * 1"
+  class: SellerAddressErrorsNextWeekJob
+  queue: default
+  description: "Envía a cada vendedor un informe de errores de dirección en sus entregas de la semana siguiente"
+  rails_timezone: "America/Costa_Rica"

@@ -1,0 +1,45 @@
+<h2>Errores de dirección en tus entregas - Semana actual</h2>
+
+<p>
+  Hola <%= @seller.name %>,
+</p>
+
+<p>
+  A continuación se muestra un resumen de las entregas
+  <strong>con errores de dirección</strong>
+  entre el
+  <strong><%= @report_data[:week_start].strftime('%d/%m/%Y') %></strong> y
+  <strong><%= @report_data[:week_end].strftime('%d/%m/%Y') %></strong>.
+</p>
+
+<p>
+  Total de entregas con errores de dirección: <strong><%= @report_data[:total_count] %></strong>
+</p>
+
+<p>
+  Se adjunta un archivo Excel con el detalle de cada entrega para que puedas
+  revisar y corregir las direcciones directamente en el sistema o en Google Maps.
+</p>
+
+<h3>Significado de los errores</h3>
+<ul>
+  <li><strong>Sin coordenadas</strong>: La dirección no tiene latitud/longitud guardadas.</li>
+  <li><strong>Coordenadas cero</strong>: Las coordenadas están en (0, 0), lo que indica un valor inválido.</li>
+  <li><strong>Dirección vacía</strong>: El campo de dirección está en blanco.</li>
+  <li><strong>Descripción vacía</strong>: El detalle adicional de la dirección está vacío.</li>
+  <li><strong>Texto de dirección inválido</strong>: La dirección contiene textos genéricos como "pendiente", "por definir", etc., o es demasiado corta para ubicarla.</li>
+  <li><strong>Fuera de Costa Rica</strong>: Las coordenadas caen fuera del rango geográfico de Costa Rica.</li>
+  <li><strong>Geocodificación sin resultados</strong>: Google Maps no devolvió una ubicación válida para la dirección indicada.</li>
+  <li><strong>Geocodificación parcial</strong>: Google Maps encontró una coincidencia poco precisa (por ejemplo, solo el cantón o la provincia).</li>
+</ul>
+
+<p>
+  Te recomendamos priorizar la corrección de las direcciones con:
+  <strong>Sin coordenadas</strong>, <strong>Coordenadas cero</strong>,
+  <strong>Texto de dirección inválido</strong> y <strong>Fuera de Costa Rica</strong>.
+</p>
+
+<p>
+  Saludos,<br>
+  Sistema de rutas NaLakalu
+</p>
