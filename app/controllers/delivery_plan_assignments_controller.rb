@@ -3,7 +3,7 @@ class DeliveryPlanAssignmentsController < ApplicationController
   def destroy
     assignment = DeliveryPlanAssignment.find(params[:id])
     delivery_plan = assignment.delivery_plan
-    authorize delivery_plan
+    authorize delivery_plan, :update?
 
     # Guardar el stop_order antes de eliminar
     deleted_stop_order = assignment.stop_order
