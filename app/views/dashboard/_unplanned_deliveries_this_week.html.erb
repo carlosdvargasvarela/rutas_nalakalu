@@ -17,32 +17,35 @@
             <div class="d-flex flex-column flex-sm-row align-items-start gap-3 flex-grow-1 w-100">
               <div class="delivery-date-badge text-center" style="min-width: 110px;">
                 <div class="fw-bold"><%= l delivery.delivery_date, format: :short %></div>
-                <%# Color según tipo %>
-                <% type_color =
-                     if delivery.normal? then 'success'
-                     elsif delivery.internal_delivery? then 'warning'
-                     elsif delivery.only_pickup? then 'info'
-                     else 'secondary'
-                     end %>
+                <%# Color según tipo con estilos inline para mejor contraste %>
+                <% if delivery.normal?
+                     badge_style = 'background-color: #198754; color: white;' # Verde oscuro
+                   elsif delivery.internal_delivery?
+                     badge_style = 'background-color: #ffc107; color: #000;' # Amarillo con texto negro
+                   elsif delivery.only_pickup?
+                     badge_style = 'background-color: #0dcaf0; color: #000;' # Cyan con texto negro
+                   else
+                     badge_style = 'background-color: #212529; color: white;' # Negro
+                   end %>
                 <div class="mt-1">
-                  <span class="badge bg-<%= type_color %> delivery-type-badge">
+                  <span class="badge delivery-type-badge" style="<%= badge_style %>">
                     <%= delivery.display_type %>
                   </span>
                 </div>
-                <%# Badge de estado %>
-                <% status_color = case delivery.status
-                     when 'scheduled' then 'secondary'
-                     when 'ready_to_deliver' then 'success'
-                     when 'in_plan' then 'primary'
-                     when 'in_route' then 'info'
-                     when 'delivered' then 'success'
-                     when 'rescheduled' then 'warning'
-                     when 'cancelled' then 'danger'
-                     when 'failed' then 'danger'
-                     else 'secondary'
+                <%# Badge de estado con estilos inline %>
+                <% status_style = case delivery.status
+                     when 'scheduled' then 'background-color: #6c757d; color: white;' # Gris oscuro
+                     when 'ready_to_deliver' then 'background-color: #198754; color: white;' # Verde oscuro
+                     when 'in_plan' then 'background-color: #0d6efd; color: white;' # Azul oscuro
+                     when 'in_route' then 'background-color: #0dcaf0; color: #000;' # Cyan con negro
+                     when 'delivered' then 'background-color: #198754; color: white;' # Verde oscuro
+                     when 'rescheduled' then 'background-color: #fd7e14; color: white;' # Naranja oscuro
+                     when 'cancelled' then 'background-color: #dc3545; color: white;' # Rojo
+                     when 'failed' then 'background-color: #dc3545; color: white;' # Rojo
+                     else 'background-color: #6c757d; color: white;' # Gris oscuro
                      end %>
                 <div class="mt-1">
-                  <span class="badge bg-<%= status_color %> bg-opacity-75 delivery-status-badge">
+                  <span class="badge delivery-status-badge" style="<%= status_style %>">
                     <%= delivery.display_status %>
                   </span>
                 </div>

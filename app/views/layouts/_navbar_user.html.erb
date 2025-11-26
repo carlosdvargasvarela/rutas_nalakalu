@@ -1,5 +1,16 @@
 <!-- Navbar menu partial -->
 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+  <!-- Dark Mode Toggle -->
+  <li class="nav-item d-flex align-items-center me-3" data-controller="dark-mode">
+    <div class="dark-mode-toggle-container dark-mode-toggle-compact">
+      <span class="dark-mode-label d-none d-md-inline" data-dark-mode-target="label">Modo oscuro</span>
+      <label class="dark-mode-switch">
+        <input type="checkbox" data-dark-mode-target="toggle" data-action="change->dark-mode#toggle">
+        <span class="dark-mode-slider"></span>
+      </label>
+    </div>
+  </li>
+  
   <li class="nav-item dropdown">
     <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
       <i class="bi bi-person-circle me-1"></i>

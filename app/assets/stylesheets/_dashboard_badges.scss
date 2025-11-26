@@ -6,15 +6,20 @@
 }
 
 .delivery-date-badge {
-  @include linear-gradient(135deg, #f8f9fa, #e9ecef);
+  @include linear-gradient(135deg, #495057, #6c757d);
   border-radius: 0.75rem;
   padding: 0.75rem;
-  @include box-shadow-layered(0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.8));
+  @include box-shadow-layered(0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.1));
   @include cubic-transition(all, 0.4s);
   position: relative;
   backface-visibility: hidden;
   perspective: 1000px;
   transform: translateZ(0);
+  color: white; // Texto blanco para contraste
+  
+  .fw-bold {
+    color: white; // Asegurar que la fecha también sea blanca
+  }
 }
 
 .delivery-item-animated:hover .delivery-date-badge {

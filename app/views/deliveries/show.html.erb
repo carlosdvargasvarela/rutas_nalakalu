@@ -1,12 +1,14 @@
-<%= render "deliveries/show_partials/header", delivery: @delivery %>
-<%= render "deliveries/show_partials/alerts", delivery: @delivery %>
-<div class="row mb-4">
-  <%= render "deliveries/show_partials/summary_cards", delivery: @delivery %>
+<div class="deliveries-show-page">
+  <%= render "deliveries/show_partials/header", delivery: @delivery %>
+  <%= render "deliveries/show_partials/alerts", delivery: @delivery %>
+  <div class="row mb-4">
+    <%= render "deliveries/show_partials/summary_cards", delivery: @delivery %>
+  </div>
+  <%= render "deliveries/show_partials/map", delivery: @delivery %>
+  <%= render "deliveries/show_partials/history", delivery: @delivery, delivery_history: @delivery_history %>
+  <%= render "deliveries/show_partials/products", delivery: @delivery, future_deliveries: @future_deliveries %>
+  <%= link_to (session[:deliveries_return_to] || deliveries_path),
+               class: "btn btn-secondary btn-back-deliveries mt-3" do %>
+    <i class="bi bi-arrow-left"></i> Volver a Entregas
+  <% end %>
 </div>
-<%= render "deliveries/show_partials/map", delivery: @delivery %>
-<%= render "deliveries/show_partials/history", delivery: @delivery, delivery_history: @delivery_history %>
-<%= render "deliveries/show_partials/products", delivery: @delivery, future_deliveries: @future_deliveries %>
-<%= link_to (session[:deliveries_return_to] || deliveries_path),
-             class: "btn btn-secondary btn-back-deliveries mt-3" do %>
-  <i class="bi bi-arrow-left"></i> Volver a Entregas
-<% end %>

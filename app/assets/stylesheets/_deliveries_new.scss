@@ -179,3 +179,98 @@
     border-left: 4px solid $nalakalu-craft-orange;
   }
 }
+
+// ========================================
+// Dark mode overrides for New Delivery page
+// ========================================
+
+// Keep these overrides local to the page so they don't interfere with global card rules
+.dark-mode {
+  .deliveries-new-page {
+    background: $dark-background !important;
+    color: $dark-text-primary !important;
+  }
+
+  .deliveries-new-page .delivery-new-header {
+    background: linear-gradient(180deg, $dark-surface 0%, $dark-surface-elevated 100%);
+    border: 1px solid $dark-border-subtle;
+    box-shadow: $dark-shadow-soft;
+
+    .icon-container {
+      background: $dark-accent-green !important;
+      box-shadow: $dark-shadow-medium;
+
+      i {
+        color: $dark-text-primary !important;
+      }
+    }
+
+    h1 {
+      color: $dark-text-primary !important;
+    }
+
+    .subtitle {
+      color: $dark-text-secondary !important;
+    }
+  }
+
+  .deliveries-new-page .delivery-form-card {
+    background: $dark-surface !important;
+    border: 1px solid $dark-border-subtle !important;
+    box-shadow: $dark-shadow-medium;
+    color: $dark-text-primary !important;
+  }
+
+  .deliveries-new-page .delivery-form-card {
+    .form-label {
+      color: $dark-text-secondary !important;
+    }
+
+    .form-control,
+    .form-select {
+      background: $dark-surface-elevated !important;
+      color: $dark-text-primary !important;
+      border: 1px solid $dark-border-medium !important;
+
+      &::placeholder {
+        color: rgba($dark-text-primary, 0.55) !important;
+      }
+
+      &:focus {
+        border-color: $dark-accent-orange !important;
+        box-shadow: 0 0 0 0.2rem rgba($dark-accent-orange, 0.12) !important;
+        background: $dark-surface !important;
+      }
+    }
+
+    .btn-primary {
+      background: $dark-accent-orange !important;
+      border-color: $dark-accent-orange !important;
+      color: #FFFFFF !important;
+      box-shadow: 0 6px 18px rgba($dark-accent-orange, 0.18) !important;
+
+      &:hover {
+        background: lighten($dark-accent-orange, 6%) !important;
+      }
+    }
+
+    .btn-secondary,
+    .btn-outline-secondary {
+      background: transparent !important;
+      border-color: $dark-border-medium !important;
+      color: $dark-text-primary !important;
+    }
+
+    // Fix dropdown icon color in dark mode
+    .accordion-button::after {
+      filter: brightness(0) invert(1) !important;
+    }
+  }
+
+  // Alerts inside this page should use dark mode alert styles
+  .deliveries-new-page .alert {
+    background: $dark-surface-elevated !important;
+    color: $dark-text-primary !important;
+    border-left-color: $dark-accent-green !important;
+  }
+}

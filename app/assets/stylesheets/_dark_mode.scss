@@ -1,0 +1,1536 @@
+// Dark Mode - NaLakalú Brand Kit
+// Filosofía: Madera oscura pulida, cálida y sofisticada
+
+// ========================================
+// 1. VARIABLES DEL MODO OSCURO
+// ========================================
+
+// Fondo General - Café Profundo (madera oscura pulida)
+$dark-background: #3D342C;
+
+// Superficies Elevadas - Café con sutil luminosidad
+$dark-surface: lighten(#3D342C, 3%);
+$dark-surface-elevated: lighten(#3D342C, 5%);
+
+// Tipografía - Blancos cálidos
+$dark-text-primary: #FFF7EE; // Blanco hueso (texto principal)
+$dark-text-secondary: #E2D2B9; // Beige (texto secundario)
+
+// Acentos - SIN CAMBIOS (funcionan perfectamente con café oscuro)
+$dark-accent-orange: #A54E1E; // Naranja (botones principales)
+$dark-accent-rose: #C49D90; // Palo rosa (íconos, contenedores)
+$dark-accent-green: #89987B; // Verde laurel (detalles sutiles)
+
+// Bordes y divisores sutiles
+$dark-border-subtle: rgba(226, 210, 185, 0.1); // Beige con mínima intensidad
+$dark-border-medium: rgba(226, 210, 185, 0.15);
+
+// Sombras cálidas
+$dark-shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.3);
+$dark-shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.4);
+$dark-shadow-strong: 0 12px 40px rgba(0, 0, 0, 0.5);
+
+// ========================================
+// 2. ESTILOS BASE DEL MODO OSCURO
+// ========================================
+
+body.dark-mode {
+  background-color: $dark-background !important;
+  color: $dark-text-primary;
+  transition: background-color 0.3s ease, color 0.3s ease;
+
+  // Override Bootstrap bg-light
+  &.bg-light {
+    background-color: $dark-background !important;
+  }
+}
+
+// ========================================
+// 3. TIPOGRAFÍA EN MODO OSCURO
+// ========================================
+
+.dark-mode {
+
+  // Delivery show: make summary card text fully readable (white) in dark mode
+  .delivery-summary-card,
+  .delivery-summary-card .card-header,
+  .delivery-summary-card .card-body,
+  .delivery-summary-card p,
+  .delivery-summary-card .badge,
+  .delivery-summary-card .list-group-item,
+  .delivery-summary-card .text-muted {
+    color: $dark-text-primary !important;
+  }
+
+  // Forzar color blanco solo en el texto de campos dentro de los cards de resumen
+  // Esto afecta: Fecha de Entrega, Estado, Preferencia de Hora, Número de Pedido,
+  // Cliente, Vendedor, Dirección, Contacto, Teléfono Contacto (solo texto, no fondos)
+  .delivery-summary-card .card-body {
+
+    p,
+    p strong,
+    p strong i,
+    p i,
+    p a,
+    p span,
+    .badge,
+    .text-muted,
+    small {
+      color: $dark-text-primary !important;
+    }
+  }
+
+  .delivery-summary-card .card-header {
+    // keep the header background subtle but ensure text/icon contrast
+    background-color: darken($dark-surface, 3%) !important;
+    border-bottom: 1px solid $dark-border-subtle !important;
+  }
+
+  // Texto principal - Blanco hueso
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .heading,
+  .card-title,
+  p,
+  span,
+  div,
+  a,
+  li {
+    color: $dark-text-primary;
+  }
+
+  // Texto secundario - Beige
+  small,
+  .small,
+  label,
+  .form-label,
+  .text-muted,
+  .text-secondary {
+    color: $dark-text-secondary !important;
+  }
+
+  // Texto que debe mantenerse oscuro se convierte en claro
+  .text-dark {
+    color: $dark-text-primary !important;
+  }
+
+  .text-dark-50 {
+    color: $dark-text-secondary !important;
+  }
+
+  // Links
+  a {
+    color: $dark-text-primary;
+
+    &:hover {
+      color: $dark-accent-orange;
+    }
+  }
+}
+
+// ========================================
+// 4. HEADER DEL DASHBOARD
+// ========================================
+
+.dark-mode .dashboard-header {
+  background: linear-gradient(135deg,
+      darken($dark-background, 2%) 0%,
+      $dark-background 100%);
+  box-shadow: $dark-shadow-medium;
+  border: 1px solid $dark-border-subtle;
+
+  h2 {
+    color: $dark-text-primary;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  }
+
+  p {
+    color: $dark-text-secondary;
+
+    &.fst-italic {
+      color: $dark-text-secondary;
+      opacity: 0.8;
+    }
+  }
+
+  .badge {
+    background-color: $dark-accent-orange !important;
+    color: $dark-text-primary !important;
+    box-shadow: 0 2px 8px rgba($dark-accent-orange, 0.3);
+  }
+}
+
+// ========================================
+// 5. CARDS - Superficies elevadas
+// ========================================
+
+.dark-mode {
+
+  .card,
+  .kpi-card,
+  .dashboard-card,
+  .approval-card,
+  .notification-card,
+  .rescheduled-card,
+  .unplanned-deliveries-card,
+  .reschedule-notifications-card,
+  .recent-notifications-card,
+  .pending-tasks-card,
+  .stats-card {
+    background-color: $dark-surface;
+    border: 1px solid $dark-border-subtle;
+    box-shadow: $dark-shadow-soft;
+    color: $dark-text-primary;
+    border-radius: 1rem !important;
+    overflow: hidden;
+
+    &:hover {
+      background-color: $dark-surface-elevated;
+      box-shadow: $dark-shadow-medium;
+      border-color: $dark-border-medium;
+    }
+
+    // Card Header
+    .card-header {
+      background-color: darken($dark-background, 2%);
+      border-bottom: 1px solid $dark-border-medium;
+      color: $dark-text-primary;
+      border-radius: 0 !important;
+
+      h5,
+      h6 {
+        color: $dark-text-primary;
+      }
+
+      .badge {
+        background-color: $dark-accent-orange !important;
+        color: $dark-text-primary;
+      }
+    }
+
+    // Card Body
+    .card-body {
+      background-color: $dark-surface;
+      color: $dark-text-primary;
+    }
+
+    // Card Title
+    .card-title {
+      color: $dark-text-secondary;
+      font-family: $font-heading;
+    }
+  }
+}
+
+// Override: Remover texto oscuro forzado en headers — usar texto claro en modo oscuro
+// Esto afecta únicamente el color del texto, íconos y badges dentro de los headers de las cards.
+.dark-mode {
+
+  .dashboard-header,
+  .approval-card .card-header,
+  .rescheduled-card .card-header,
+  .unplanned-deliveries-card .card-header,
+  .reschedule-notifications-card .card-header,
+  .recent-notifications-card .card-header,
+  .pending-tasks-card .card-header,
+  .stats-card .card-header,
+  .kpi-card h6 {
+    /* Usar blanco cálido para mejor legibilidad en superficies oscuras */
+    color: $dark-text-primary !important;
+  }
+
+  .dashboard-header h2,
+  .approval-card .card-header h5,
+  .rescheduled-card .card-header h5,
+  .unplanned-deliveries-card .card-header h5,
+  .reschedule-notifications-card .card-header h5,
+  .recent-notifications-card .card-header h5,
+  .pending-tasks-card .card-header h5,
+  .stats-card .card-header h5 {
+    color: $dark-text-primary !important;
+  }
+
+  .approval-card .card-header i,
+  .rescheduled-card .card-header i,
+  .unplanned-deliveries-card .card-header i,
+  .reschedule-notifications-card .card-header i,
+  .recent-notifications-card .card-header i,
+  .pending-tasks-card .card-header i,
+  .stats-card .card-header i,
+  .dashboard-header i {
+    color: $dark-text-primary !important;
+  }
+
+  // Badges dentro de headers: mantener fondo para contraste, solo cambiar color del texto a blanco
+  .approval-card .card-header .badge,
+  .rescheduled-card .card-header .badge,
+  .unplanned-deliveries-card .card-header .badge,
+  .reschedule-notifications-card .card-header .badge,
+  .recent-notifications-card .card-header .badge,
+  .pending-tasks-card .card-header .badge,
+  .stats-card .card-header .badge,
+  .dashboard-header .badge {
+    color: $dark-text-primary !important;
+  }
+}
+
+// ========================================
+// BG-LIGHT & ACCORDION FIXES
+// Ensure elements that use Bootstrap's .bg-light are dark when inside .dark-mode
+// ========================================
+
+.dark-mode {
+
+  // General override for bg-light utility used throughout the app
+  .bg-light {
+    background-color: $dark-surface !important;
+    color: $dark-text-primary !important;
+    border-color: $dark-border-subtle !important;
+  }
+
+  // Inputs / input-group text that use bg-light
+  .input-group-text.bg-light,
+  .form-control.bg-light,
+  .form-select.bg-light {
+    background-color: $dark-surface-elevated !important;
+    color: $dark-text-primary !important;
+    border-color: $dark-border-medium !important;
+  }
+
+  // Accordions: ensure header buttons and bodies match dark surface
+  .accordion-button,
+  .accordion-button.bg-light {
+    background-color: $dark-surface-elevated !important;
+    color: $dark-text-primary !important;
+    box-shadow: none !important;
+    border: 1px solid $dark-border-subtle !important;
+  }
+
+  .accordion-body {
+    background: $dark-surface !important;
+    color: $dark-text-primary !important;
+    border-top: 1px solid $dark-border-subtle !important;
+  }
+
+  .accordion-item {
+    background: transparent !important;
+  }
+
+  // Utility: any element explicitly using text-dark should be lightened in dark mode
+  .text-dark {
+    color: $dark-text-primary !important;
+  }
+}
+
+// ========================================
+// NAV TABS / MAP HEADER FIXES
+// Ensure tab navs and specific white headers are dark in .dark-mode
+// ========================================
+
+.dark-mode {
+
+  // Nav tabs used in address selector (Buscar/Crear nueva)
+  .nav-tabs {
+    .nav-link {
+      background: transparent !important;
+      color: $dark-text-primary !important;
+      border: 1px solid transparent !important;
+
+      &.active {
+        background: $dark-surface-elevated !important;
+        color: $dark-text-primary !important;
+        border-color: $dark-border-subtle !important;
+        box-shadow: none !important;
+      }
+
+      // REMOVE hover effects completely in dark mode for clarity
+      &:hover,
+      &:focus,
+      &:active {
+        background: transparent !important;
+        color: $dark-text-primary !important;
+        transform: none !important;
+        box-shadow: none !important;
+        outline: none !important;
+      }
+    }
+  }
+
+  // Strong override for selected/active tab text/background when Bootstrap defaults force white
+  #addressTabs .nav-link.active,
+  .nav-tabs #addressTabs .nav-link.active,
+  .nav-tabs .nav-link.active,
+  .nav-tabs .nav-link.show,
+  .nav-tabs .nav-link[aria-selected="true"] {
+    background-color: $dark-surface-elevated !important;
+    color: $dark-text-primary !important;
+    border-color: $dark-border-medium !important;
+    box-shadow: none !important;
+  }
+
+  // Ensure icons inside tabs are visible
+  .nav-tabs .nav-link.active i,
+  .nav-tabs .nav-link.active .bi,
+  #addressTabs .nav-link.active i {
+    color: $dark-text-primary !important;
+  }
+
+  // Fix for specific headers that use bg-white in views (e.g., map preview header)
+  .card-header.bg-white {
+    background-color: $dark-surface-elevated !important;
+    color: $dark-text-primary !important;
+    border-bottom: 1px solid $dark-border-subtle !important;
+  }
+}
+
+// Specific: Make the dashboard main title white in dark mode only
+.dark-mode .dashboard-header h2,
+.dark-mode .dashboard-header h2 .bi,
+.dark-mode .dashboard-header i {
+  color: $dark-text-primary !important;
+}
+
+// ========================================
+// 6. ÍCONOS CIRCULARES - Palo Rosa
+// ========================================
+
+.dark-mode {
+
+  .rounded-circle,
+  .dashboard-icon .rounded-circle {
+    background-color: $dark-accent-rose !important;
+    border-color: darken($dark-accent-rose, 10%);
+    box-shadow: 0 4px 12px rgba($dark-accent-rose, 0.3);
+
+    i {
+      color: $dark-text-primary;
+    }
+
+    &:hover {
+      background-color: lighten($dark-accent-rose, 5%) !important;
+    }
+  }
+}
+
+// ========================================
+// 7. BOTONES - TODOS CON TEXTO BLANCO
+// ========================================
+
+.dark-mode {
+
+  // REGLA UNIVERSAL: TODOS los botones tienen texto blanco
+  button,
+  .btn,
+  a.btn,
+  input[type="submit"],
+  input[type="button"],
+  .dashboard-action-btn {
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active,
+    &:visited {
+      color: #FFFFFF !important;
+    }
+
+    i,
+    i.bi,
+    span {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Botones principales
+  .btn,
+  .dashboard-action-btn {
+    background-color: $dark-accent-orange !important;
+    border-color: $dark-accent-orange !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba($dark-accent-orange, 0.3);
+
+    &:hover {
+      background-color: lighten($dark-accent-orange, 8%) !important;
+      box-shadow: 0 6px 20px rgba($dark-accent-orange, 0.5);
+      transform: translateY(-2px);
+      color: #FFFFFF !important;
+    }
+
+    &:active {
+      transform: translateY(0);
+      color: #FFFFFF !important;
+    }
+
+    i {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Botones primarios
+  .btn-primary {
+    background-color: $dark-accent-orange !important;
+    border-color: $dark-accent-orange !important;
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: lighten($dark-accent-orange, 8%) !important;
+      color: #FFFFFF !important;
+    }
+
+    i {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Botones success
+  .btn-success {
+    background-color: $nalakalu-laurel-green !important;
+    border-color: $nalakalu-laurel-green !important;
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: lighten($nalakalu-laurel-green, 8%) !important;
+      color: #FFFFFF !important;
+    }
+
+    i {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Botones outline primary
+  .btn-outline-primary {
+    color: #FFFFFF !important;
+    border-color: $nalakalu-craft-orange !important;
+    background-color: transparent !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: $nalakalu-craft-orange !important;
+      border-color: $nalakalu-craft-orange !important;
+      color: #FFFFFF !important;
+    }
+
+    i {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Botones outline success
+  .btn-outline-success {
+    color: #FFFFFF !important;
+    border-color: $nalakalu-laurel-green !important;
+    background-color: transparent !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: $nalakalu-laurel-green !important;
+      border-color: $nalakalu-laurel-green !important;
+      color: #FFFFFF !important;
+    }
+
+    i {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Botones outline secondary
+  .btn-outline-secondary {
+    color: #FFFFFF !important;
+    border-color: $dark-border-medium !important;
+    background-color: transparent !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: $dark-surface-elevated !important;
+      color: #FFFFFF !important;
+    }
+
+    i {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Botones outline info
+  .btn-outline-info {
+    color: #FFFFFF !important;
+    border-color: #17a2b8 !important;
+    background-color: transparent !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: #17a2b8 !important;
+      color: #FFFFFF !important;
+    }
+
+    i {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Botones outline warning
+  .btn-outline-warning {
+    color: #FFFFFF !important;
+    border-color: #ffc107 !important;
+    background-color: transparent !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: #ffc107 !important;
+      color: #FFFFFF !important;
+    }
+
+    i {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Botones outline danger
+  .btn-outline-danger {
+    color: #FFFFFF !important;
+    border-color: #dc3545 !important;
+    background-color: transparent !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: #dc3545 !important;
+      color: #FFFFFF !important;
+    }
+
+    i {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Botones outline light y dark
+  .btn-outline-light,
+  .btn-outline-dark {
+    background-color: transparent !important;
+    border-color: $dark-border-medium !important;
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: $dark-accent-rose !important;
+      border-color: $dark-accent-rose !important;
+      color: #FFFFFF !important;
+    }
+
+    i {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Botones light
+  .btn-light {
+    background-color: $dark-surface !important;
+    border-color: $dark-border-medium !important;
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: $dark-surface-elevated !important;
+      color: #FFFFFF !important;
+    }
+
+    i {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Botones dark
+  .btn-dark {
+    background-color: $dark-accent-orange !important;
+    border-color: $dark-accent-orange !important;
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: lighten($dark-accent-orange, 8%) !important;
+      color: #FFFFFF !important;
+    }
+
+    i {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Botones con clase nalakalu
+  .btn-nalakalu-primary {
+    background-color: $dark-accent-orange !important;
+    border-color: $dark-accent-orange !important;
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: lighten($dark-accent-orange, 8%) !important;
+      color: #FFFFFF !important;
+    }
+
+    i {
+      color: #FFFFFF !important;
+    }
+  }
+}
+
+// ========================================
+// 8. TABLAS
+// ========================================
+
+.dark-mode {
+  .table {
+    color: $dark-text-primary !important;
+    background-color: $dark-surface;
+    border-color: $dark-border-medium;
+
+    thead {
+      background-color: lighten($dark-background, 8%);
+      border-color: $dark-border-medium;
+
+      th {
+        color: $dark-text-primary !important;
+        border-color: $dark-border-medium;
+        font-weight: 600;
+        background-color: lighten($dark-background, 8%);
+      }
+    }
+
+    tbody {
+      background-color: $dark-surface;
+
+      tr {
+        border-color: $dark-border-medium;
+        background-color: $dark-surface;
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        color: $dark-text-primary !important;
+
+        // Hover removido - ahora manejado por _tables_hover.scss
+
+        td,
+        th {
+          color: $dark-text-primary !important;
+          border-color: $dark-border-medium;
+          background-color: transparent;
+        }
+      }
+    }
+
+    // Asegurar que todos los textos sean blancos
+    td,
+    th,
+    span,
+    a,
+    div,
+    p {
+      color: $dark-text-primary !important;
+    }
+
+    // Badges dentro de tablas
+    .badge {
+      color: inherit !important;
+    }
+
+    // Hover removido - ahora manejado por _tables_hover.scss
+
+    &.table-light {
+      background-color: $dark-surface;
+
+      thead th {
+        background-color: lighten($dark-background, 8%);
+        color: $dark-text-primary;
+        font-weight: 600;
+      }
+
+      tbody tr {
+        background-color: $dark-surface;
+
+        // Hover removido - ahora manejado por _tables_hover.scss
+      }
+    }
+
+    &.table-striped {
+      tbody tr:nth-of-type(odd) {
+        background-color: rgba($dark-text-secondary, 0.05);
+      }
+
+      // Hover removido - ahora manejado por _tables_hover.scss
+    }
+
+    &.table-bordered {
+      border-color: $dark-border-medium;
+
+      th,
+      td {
+        border-color: $dark-border-medium;
+      }
+    }
+  }
+
+  // Asegurar que las celdas de tabla sean visibles
+  .table-responsive {
+    background-color: $dark-surface;
+
+    .table {
+      background-color: transparent;
+    }
+  }
+
+  // Para tablas dentro de cards
+  .card .table {
+    background-color: transparent;
+
+    thead th {
+      background-color: lighten($dark-background, 5%);
+    }
+
+    tbody tr {
+      background-color: transparent;
+
+      // Hover manejado por _tables_hover.scss
+    }
+  }
+
+  // Forzar texto blanco en tablas con estilos inline
+  .table tbody td,
+  .table tbody th,
+  .table tbody td strong,
+  .table tbody td span,
+  .table tbody td div,
+  .table tbody td [style*="color: #3D342C"],
+  .table tbody strong[style*="color: #3D342C"],
+  .table tbody span[style*="color: #3D342C"] {
+    color: $dark-text-primary !important;
+  }
+}
+
+// ========================================
+// 9. FORMULARIOS
+// ========================================
+
+.dark-mode {
+
+  .form-control,
+  .form-select,
+  textarea,
+  input {
+    background-color: $dark-surface;
+    border-color: $dark-border-medium;
+    color: $dark-text-primary;
+
+    &:focus {
+      background-color: $dark-surface-elevated;
+      border-color: $dark-accent-orange;
+      box-shadow: 0 0 0 0.2rem rgba($dark-accent-orange, 0.25);
+      color: $dark-text-primary;
+    }
+
+    &::placeholder {
+      color: $dark-text-secondary;
+      opacity: 0.6;
+    }
+  }
+
+  .form-label {
+    color: $dark-text-secondary;
+  }
+}
+
+// ========================================
+// 10. BADGES Y ESTADOS
+// ========================================
+
+.dark-mode {
+  .badge {
+    &.bg-dark {
+      background-color: $dark-accent-orange !important;
+      color: $dark-text-primary !important;
+    }
+
+    &.bg-light {
+      background-color: $dark-surface !important;
+      color: $dark-text-primary !important;
+    }
+
+    &.bg-white {
+      background-color: $dark-surface-elevated !important;
+      color: $dark-text-primary !important;
+    }
+  }
+}
+
+// ========================================
+// 11. DIVISORES Y BORDES
+// ========================================
+
+.dark-mode {
+
+  hr,
+  .border,
+  .border-top,
+  .border-bottom,
+  .border-start,
+  .border-end {
+    border-color: $dark-border-subtle !important;
+  }
+
+  .border-light {
+    border-color: $dark-border-medium !important;
+  }
+}
+
+// ========================================
+// 12. ALERTS Y NOTIFICACIONES
+// ========================================
+
+.dark-mode {
+  .alert {
+    background-color: $dark-surface;
+    border-color: $dark-border-medium;
+    color: $dark-text-primary;
+
+    &.alert-info {
+      background-color: rgba($dark-accent-green, 0.2);
+      border-color: $dark-accent-green;
+      color: $dark-text-primary;
+    }
+
+    &.alert-warning {
+      background-color: rgba($dark-accent-orange, 0.2);
+      border-color: $dark-accent-orange;
+      color: $dark-text-primary;
+    }
+
+    &.alert-success {
+      background-color: rgba($dark-accent-green, 0.2);
+      border-color: $dark-accent-green;
+      color: $dark-text-primary;
+    }
+  }
+}
+
+// ========================================
+// 13. NAVBAR
+// ========================================
+
+.dark-mode {
+  .navbar {
+    background-color: $dark-background !important;
+    border-bottom: 1px solid $dark-border-medium;
+    box-shadow: $dark-shadow-soft;
+
+    .navbar-brand {
+      color: $dark-text-primary !important;
+    }
+
+    .nav-link {
+      color: $dark-text-secondary !important;
+
+      &:hover {
+        color: $dark-accent-orange !important;
+      }
+
+      &.active {
+        color: $dark-accent-orange !important;
+      }
+    }
+  }
+}
+
+// ========================================
+// 14. DROPDOWN Y MENÚS
+// ========================================
+
+.dark-mode {
+  .dropdown-menu {
+    background-color: $dark-surface;
+    border-color: $dark-border-medium;
+    box-shadow: $dark-shadow-medium;
+
+    .dropdown-item {
+      color: $dark-text-primary;
+
+      &:hover {
+        background-color: $dark-surface-elevated;
+        color: $dark-accent-orange;
+      }
+
+      &:active {
+        background-color: $dark-accent-orange;
+        color: $dark-text-primary;
+      }
+    }
+
+    .dropdown-divider {
+      border-color: $dark-border-subtle;
+    }
+  }
+}
+
+// ========================================
+// 15. MODALES
+// ========================================
+
+.dark-mode {
+  .modal-content {
+    background-color: $dark-surface;
+    border-color: $dark-border-medium;
+    box-shadow: $dark-shadow-strong;
+
+    .modal-header {
+      background-color: darken($dark-background, 2%);
+      border-bottom-color: $dark-border-medium;
+
+      .modal-title {
+        color: $dark-text-primary;
+      }
+
+      .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+      }
+    }
+
+    .modal-body {
+      background-color: $dark-surface;
+      color: $dark-text-primary;
+    }
+
+    .modal-footer {
+      background-color: $dark-surface;
+      border-top-color: $dark-border-medium;
+    }
+  }
+}
+
+// ========================================
+// 16. ESTADOS ESPECIALES
+// ========================================
+
+.dark-mode {
+
+  // Empty states
+  .empty-state {
+    color: $dark-text-secondary;
+
+    .empty-icon {
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+    }
+  }
+
+  // Progress bars
+  .progress {
+    background-color: darken($dark-background, 3%);
+
+    .progress-bar {
+      background-color: $dark-accent-orange;
+    }
+  }
+
+  // List groups
+  .list-group-item {
+    background-color: $dark-surface;
+    border-color: $dark-border-subtle;
+    color: $dark-text-primary;
+
+    &:hover {
+      background-color: $dark-surface-elevated;
+    }
+
+    &.active {
+      background-color: $dark-accent-orange;
+      border-color: $dark-accent-orange;
+      color: $dark-text-primary;
+    }
+  }
+
+  // Unread notifications - remove white background in dark mode
+  .list-group-item-light {
+    background-color: $dark-surface-elevated !important;
+    border-left-color: $dark-accent-orange !important;
+    color: $dark-text-primary !important;
+
+    &:hover {
+      background-color: $dark-surface-elevated !important;
+      border-left-color: $dark-accent-orange !important;
+    }
+  }
+}
+
+// ========================================
+// 17. BACKGROUNDS ESPECÍFICOS
+// ========================================
+
+.dark-mode {
+  [style*="background-color: #FFF7EE"] {
+    background-color: $dark-background !important;
+  }
+
+  .bg-white {
+    background-color: $dark-surface !important;
+  }
+
+  .bg-light {
+    background-color: $dark-surface !important;
+  }
+
+  // Asegurar que los textos en fondos claros sean visibles
+  .bg-white,
+  .bg-light,
+  [style*="background-color: #FFF7EE"],
+  [style*="background-color: #fff"],
+  [style*="background-color: white"] {
+    color: $dark-text-primary !important;
+
+    * {
+      color: $dark-text-primary !important;
+    }
+
+    a {
+      color: $dark-accent-orange !important;
+
+      &:hover {
+        color: lighten($dark-accent-orange, 10%) !important;
+      }
+    }
+  }
+}
+
+// ========================================
+// 18. DETALLES SUTILES - Verde Laurel
+// ========================================
+
+.dark-mode {
+
+  .border-success,
+  .text-success {
+    border-color: $dark-accent-green !important;
+    color: $dark-accent-green !important;
+  }
+
+  // Líneas divisorias sutiles
+  .divider-subtle {
+    border-color: $dark-accent-green;
+    opacity: 0.3;
+  }
+}
+
+// ========================================
+// 19. RESPONSIVE
+// ========================================
+
+@media (max-width: 768px) {
+  .dark-mode {
+    .dashboard-header {
+      padding: $space-md;
+
+      h2 {
+        font-size: 1.5rem;
+      }
+    }
+
+    .card {
+      margin-bottom: $space-sm;
+    }
+  }
+}
+
+// ========================================
+// 20. ANIMACIONES SUAVES
+// ========================================
+
+.dark-mode * {
+  transition: background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+// ========================================
+// 21. OVERRIDE DE HOVER EN TABLAS - Removido, ahora en _tables_hover.scss
+// ========================================
+
+// ========================================
+// N. ESTILOS DE ENTREGAS EN MODO OSCURO - Removido
+// Las listas de entregas ahora usan el hover estándar
+// ========================================
+
+// ========================================
+// O. SOBRESCRITURA FINAL DE BOTONES (MÁXIMA PRIORIDAD)
+// ========================================
+body.dark-mode {
+
+  // REGLA UNIVERSAL PARA TODOS LOS BOTONES
+  button,
+  .btn,
+  a.btn,
+  .btn-sm,
+  .btn-lg,
+  input[type="submit"],
+  input[type="button"],
+  [class*="btn-"],
+  .dashboard-action-btn {
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active,
+    &:visited {
+      color: #FFFFFF !important;
+    }
+
+    i,
+    i.bi,
+    .bi,
+    span {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Forzar color blanco en TODOS los botones outline primary
+  .btn-outline-primary,
+  .btn-sm.btn-outline-primary,
+  .btn-lg.btn-outline-primary,
+  a.btn-outline-primary,
+  button.btn-outline-primary,
+  a.btn.btn-outline-primary {
+    color: #FFFFFF !important;
+    border-color: $nalakalu-craft-orange !important;
+    background: transparent !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: $nalakalu-craft-orange !important;
+      color: #FFFFFF !important;
+      border-color: $nalakalu-craft-orange !important;
+    }
+
+    i,
+    i.bi,
+    span {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Forzar color blanco en TODOS los botones outline success
+  .btn-outline-success,
+  .btn-sm.btn-outline-success,
+  .btn-lg.btn-outline-success,
+  a.btn-outline-success,
+  button.btn-outline-success,
+  a.btn.btn-outline-success {
+    color: #FFFFFF !important;
+    border-color: $nalakalu-laurel-green !important;
+    background: transparent !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: $nalakalu-laurel-green !important;
+      color: #FFFFFF !important;
+      border-color: $nalakalu-laurel-green !important;
+    }
+
+    i,
+    i.bi,
+    span {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Forzar color blanco en botones outline secondary
+  .btn-outline-secondary,
+  .btn-sm.btn-outline-secondary,
+  .btn-lg.btn-outline-secondary,
+  a.btn-outline-secondary,
+  button.btn-outline-secondary {
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: #FFFFFF !important;
+    }
+
+    i,
+    i.bi,
+    span {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Forzar color blanco en botones outline info
+  .btn-outline-info,
+  .btn-sm.btn-outline-info,
+  .btn-lg.btn-outline-info,
+  a.btn-outline-info,
+  button.btn-outline-info {
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: #FFFFFF !important;
+    }
+
+    i,
+    i.bi,
+    span {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Forzar color blanco en botones outline warning
+  .btn-outline-warning,
+  .btn-sm.btn-outline-warning,
+  .btn-lg.btn-outline-warning,
+  a.btn-outline-warning,
+  button.btn-outline-warning {
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: #FFFFFF !important;
+    }
+
+    i,
+    i.bi,
+    span {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Forzar color blanco en botones outline danger
+  .btn-outline-danger,
+  .btn-sm.btn-outline-danger,
+  .btn-lg.btn-outline-danger,
+  a.btn-outline-danger,
+  button.btn-outline-danger {
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: #FFFFFF !important;
+    }
+
+    i,
+    i.bi,
+    span {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Forzar color blanco en botones primary
+  .btn-primary,
+  .btn-sm.btn-primary,
+  .btn-lg.btn-primary,
+  a.btn-primary,
+  button.btn-primary {
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: #FFFFFF !important;
+    }
+
+    i,
+    i.bi,
+    span {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Forzar color blanco en botones success
+  .btn-success,
+  .btn-sm.btn-success,
+  .btn-lg.btn-success,
+  a.btn-success,
+  button.btn-success {
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: #FFFFFF !important;
+    }
+
+    i,
+    i.bi,
+    span {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Forzar color blanco en botones light
+  .btn-light,
+  .btn-sm.btn-light,
+  .btn-lg.btn-light,
+  a.btn-light,
+  button.btn-light {
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: #FFFFFF !important;
+    }
+
+    i,
+    i.bi,
+    span {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Forzar color blanco en botones dark
+  .btn-dark,
+  .btn-sm.btn-dark,
+  .btn-lg.btn-dark,
+  a.btn-dark,
+  button.btn-dark {
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: #FFFFFF !important;
+    }
+
+    i,
+    i.bi,
+    span {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Forzar color blanco en botones nalakalu
+  .btn-nalakalu-primary,
+  .btn-sm.btn-nalakalu-primary,
+  .btn-lg.btn-nalakalu-primary {
+    color: #FFFFFF !important;
+
+    &:hover,
+    &:focus,
+    &:active {
+      color: #FFFFFF !important;
+    }
+
+    i,
+    i.bi,
+    span {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Estilos específicos para botones dentro de delivery-actions
+  .delivery-actions {
+
+    button,
+    .btn,
+    a.btn,
+    button.btn,
+    [class*="btn-"] {
+      color: #FFFFFF !important;
+
+      &:hover,
+      &:focus,
+      &:active {
+        color: #FFFFFF !important;
+      }
+
+      i,
+      i.bi,
+      span {
+        color: #FFFFFF !important;
+      }
+    }
+  }
+
+  // Estilos para btn-group
+  .btn-group {
+
+    button,
+    .btn,
+    a.btn,
+    button.btn,
+    [class*="btn-"] {
+      color: #FFFFFF !important;
+
+      &:hover,
+      &:focus,
+      &:active {
+        color: #FFFFFF !important;
+      }
+
+      i,
+      i.bi,
+      span {
+        color: #FFFFFF !important;
+      }
+    }
+  }
+
+  // Estilos para delivery-btn-group
+  .delivery-btn-group {
+
+    button,
+    .btn,
+    a.btn,
+    button.btn,
+    [class*="btn-"] {
+      color: #FFFFFF !important;
+
+      &:hover,
+      &:focus,
+      &:active {
+        color: #FFFFFF !important;
+      }
+
+      i,
+      i.bi,
+      span {
+        color: #FFFFFF !important;
+      }
+    }
+  }
+
+  // Botones con clase rounded-pill
+  .rounded-pill {
+
+    &.btn,
+    &[class*="btn-"] {
+      color: #FFFFFF !important;
+
+      &:hover,
+      &:focus,
+      &:active {
+        color: #FFFFFF !important;
+      }
+
+      i,
+      i.bi,
+      span {
+        color: #FFFFFF !important;
+      }
+    }
+  }
+}

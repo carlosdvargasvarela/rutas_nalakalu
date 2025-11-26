@@ -53,27 +53,8 @@
               <input type="hidden" name="delivery[delivery_items_attributes][NEW_RECORD][_destroy]" class="destroy-flag" />
             </td>
           </tr>
-<<<<<<< HEAD
-          
-          <%# Fila para mostrar cuando no hay productos %>
-          <% if f.object.delivery_items.empty? %>
-            <tr class="no-items-row">
-              <td colspan="5" class="text-center text-muted py-5">
-                <div class="d-flex flex-column align-items-center justify-content-center">
-                  <div class="bg-light rounded-circle p-4 mb-3">
-                    <i class="bi bi-inbox fs-1 text-muted"></i>
-                  </div>
-                  <p class="mb-0 fw-semibold">No hay productos agregados</p>
-                  <p class="small text-muted">Haz clic en "Agregar producto" para comenzar</p>
-                </div>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-=======
         <% end %>
+
         <%# Template oculto para nuevos items %>
         <tr class="delivery-item-template delivery-item-row" style="display:none;" data-delivery-form-target="itemTemplate">
           <td>
@@ -101,6 +82,7 @@
             <input type="hidden" name="delivery[delivery_items_attributes][NEW_RECORD][_destroy]" class="destroy-flag" />
           </td>
         </tr>
+
         <%# Fila para mostrar cuando no hay productos %>
         <% if f.object.delivery_items.empty? %>
           <tr class="no-items-row" data-delivery-form-target="noItemsRow">
@@ -112,6 +94,5 @@
         <% end %>
       </tbody>
     </table>
->>>>>>> main
   </div>
 </div>

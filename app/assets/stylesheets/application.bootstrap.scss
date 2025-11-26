@@ -2,19 +2,149 @@
 // Importar variables de marca primero
 @import "brand_variables";
 
+// Sobrescribir variables de Bootstrap ANTES de importar Bootstrap
+$table-striped-bg: rgba(226, 210, 185, 0.03);
+
 @import 'bootstrap/scss/bootstrap';
 @import 'bootstrap-icons/font/bootstrap-icons';
 @import "navbar";
 @import "notifications";
 @import "dashboard";
 @import "devise_sessions";
+@import "dark_mode";
+@import "dark_mode_toggle";
 @import "deliveries_new";
 @import "deliveries_show";
+// Importar overrides al final para asegurar que tienen prioridad
+@import "dark_mode_overrides";
 
 // Estilos globales para consistencia
 body {
   background-color: #FFF7EE !important; // nalakalu-cream
-  &.bg-light { background-color: #FFF7EE !important; }
+
+  &.bg-light {
+    background-color: #FFF7EE !important;
+  }
+}
+
+// Asegurar texto claro (blanco) en headers con fondo claro
+.card-header.bg-light,
+.bg-light .card-header,
+.card-header.bg-light h1,
+.card-header.bg-light h2,
+.card-header.bg-light h3,
+.card-header.bg-light h4,
+.card-header.bg-light h5,
+.card-header.bg-light h6,
+.card-header.bg-light .h1,
+.card-header.bg-light .h2,
+.card-header.bg-light .h3,
+.card-header.bg-light .h4,
+.card-header.bg-light .h5,
+.card-header.bg-light .h6,
+.card-header.bg-light i,
+.card-header.bg-light .bi,
+.card-header.bg-light i.bi {
+  color: #fff !important;
+}
+
+// Override para modo claro: asegurar que headers con fondo oscuro muestren texto blanco
+// Esto cubre casos donde los headers no usan la clase .bg-light (dashboard, mapas, sticky headers, etc.)
+body:not(.dark-mode) {
+
+  .dashboard-header h2,
+  .delivery-show-header h1,
+  .card-header,
+  .delivery-map-container .card-header,
+  .sticky-top,
+  #mainNavbar {
+    color: #fff !important;
+  }
+
+  .card-header i,
+  .card-header .bi {
+    color: #fff !important;
+  }
+
+  // Alertas en modo claro: texto negro para legibilidad
+  .alert {
+    color: #000000 !important;
+
+    &.alert-danger,
+    &.alert-warning,
+    &.alert-info,
+    &.alert-success {
+      color: #000000 !important;
+    }
+
+    // Iconos dentro de las alerts
+    .bi {
+      color: #000000 !important;
+    }
+  }
+
+  // Clase utilitaria para forzar texto blanco en headers específicos
+  .header-text-light,
+  .header-text-light h1,
+  .header-text-light h2,
+  .header-text-light h3,
+  .header-text-light h4,
+  .header-text-light h5,
+  .header-text-light h6,
+  .header-text-light .h1,
+  .header-text-light .h2,
+  .header-text-light .h3,
+  .header-text-light .h4,
+  .header-text-light .h5,
+  .header-text-light .h6 {
+    color: #fff !important;
+  }
+
+  // Selector con alta especificidad para el header del mapa
+  #delivery-map-card>.card-header {
+    color: #fff !important;
+    background-color: var(--nalakalu-dark-coffee) !important;
+    /* mantener contraste si es necesario */
+  }
+}
+
+// Dashboard-specific override: prefer dark header text and icons in the dashboard
+// This undoes the blanket white header rule above for dashboard components
+body:not(.dark-mode) {
+
+  .dashboard-header,
+  .approval-card .card-header,
+  .rescheduled-card .card-header,
+  .unplanned-deliveries-card .card-header,
+  .reschedule-notifications-card .card-header,
+  .recent-notifications-card .card-header,
+  .pending-tasks-card .card-header,
+  .stats-card .card-header,
+  .kpi-card h6 {
+    color: $nalakalu-dark-coffee !important;
+  }
+
+  .dashboard-header h2,
+  .approval-card .card-header h5,
+  .rescheduled-card .card-header h5,
+  .unplanned-deliveries-card .card-header h5,
+  .reschedule-notifications-card .card-header h5,
+  .recent-notifications-card .card-header h5,
+  .pending-tasks-card .card-header h5,
+  .stats-card .card-header h5 {
+    color: $nalakalu-dark-coffee !important;
+  }
+
+  .approval-card .card-header i,
+  .rescheduled-card .card-header i,
+  .unplanned-deliveries-card .card-header i,
+  .reschedule-notifications-card .card-header i,
+  .recent-notifications-card .card-header i,
+  .pending-tasks-card .card-header i,
+  .stats-card .card-header i,
+  .dashboard-header i {
+    color: $nalakalu-dark-coffee !important;
+  }
 }
 
 // Asegurar que elementos sticky no interfieran con modales
@@ -25,7 +155,7 @@ body {
 // Fix para modales - asegurar que backdrop y modal funcionen correctamente
 .modal-open {
   overflow: hidden;
-  
+
   .modal {
     overflow-x: hidden;
     overflow-y: auto;
@@ -41,7 +171,7 @@ body {
   height: 100vh;
   background-color: #000;
   pointer-events: none;
-  
+
   &.show {
     opacity: 0;
   }
@@ -57,7 +187,7 @@ body {
   height: 100%;
   overflow: hidden;
   outline: 0;
-  
+
   &.show {
     display: block !important;
   }
@@ -68,7 +198,7 @@ body {
   width: auto;
   margin: 0.5rem;
   pointer-events: none;
-  
+
   @media (min-width: 576px) {
     max-width: 500px;
     margin: 1.75rem auto;
@@ -99,20 +229,20 @@ body {
   border-bottom: 2px solid #C49D90;
   border-top-left-radius: calc(1rem - 1px);
   border-top-right-radius: calc(1rem - 1px);
-  
+
   .modal-title {
     margin-bottom: 0;
     line-height: 1.5;
     color: #3D342C;
     font-weight: 500;
   }
-  
+
   .btn-close {
     padding: 0.5rem 0.5rem;
     margin: -0.5rem -0.5rem -0.5rem auto;
     filter: brightness(0.4);
     opacity: 1;
-    
+
     &:hover {
       opacity: 0.75;
     }
@@ -138,51 +268,84 @@ body {
   border-top: 1px solid #E2D2B9;
   border-bottom-right-radius: calc(1rem - 1px);
   border-bottom-left-radius: calc(1rem - 1px);
-  
-  > * {
+
+  >* {
     margin: 0.25rem;
   }
 }
 
-// Estilos globales para hover en tablas
-.table > tbody > tr {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-left: 3px solid transparent;
-  
-  &:hover {
-    background-color: #E2D2B9 !important; // nalakalu-beige
-    border-left-color: #A54E1E !important; // nalakalu-craft-orange
-    transform: translateX(4px);
-    box-shadow: 0 4px 12px rgba(165, 78, 30, 0.12);
-    cursor: pointer;
-    
-    td {
-      background-color: #E2D2B9 !important;
-    }
-  }
+// ============================================================================
+// DESACTIVAR TODOS LOS HOVERS DE TABLAS
+// ============================================================================
+.table-hover>tbody>tr:hover>*,
+.table>tbody>tr:hover>*,
+table>tbody>tr:hover>*,
+.table-hover tbody tr:hover,
+.table tbody tr:hover,
+table tbody tr:hover {
+  --bs-table-color-state: inherit !important;
+  --bs-table-bg-state: transparent !important;
+  --bs-table-hover-bg: transparent !important;
+  background-color: transparent !important;
+  color: inherit !important;
+  border-left: none !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
-// Asegurar que table-hover también funcione
-.table-hover > tbody > tr:hover {
-  --bs-table-hover-bg: #E2D2B9 !important;
-  background-color: #E2D2B9 !important;
-  
-  > * {
-    background-color: #E2D2B9 !important;
-  }
+body.dark-mode .table-hover>tbody>tr:hover>*,
+body.dark-mode .table>tbody>tr:hover>*,
+body.dark-mode table>tbody>tr:hover>*,
+body.dark-mode .table-hover tbody tr:hover,
+body.dark-mode .table tbody tr:hover,
+body.dark-mode table tbody tr:hover {
+  --bs-table-color-state: inherit !important;
+  --bs-table-bg-state: transparent !important;
+  --bs-table-hover-bg: transparent !important;
+  background-color: transparent !important;
+  color: inherit !important;
+  border-left: none !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
-// Para tablas con table-striped
-.table-striped > tbody > tr:hover {
-  background-color: #E2D2B9 !important;
-  
-  > * {
-    background-color: #E2D2B9 !important;
-  }
+// ============================================================================
+// DESACTIVAR TODOS LOS HOVERS DE LISTAS (list-group)
+// ============================================================================
+.list-group-item:hover,
+.list-group-item-action:hover,
+.delivery-item-animated:hover,
+button.list-group-item:hover,
+a.list-group-item:hover {
+  background-color: transparent !important;
+  color: inherit !important;
+  border-left: none !important;
+  transform: none !important;
+  box-shadow: none !important;
+  z-index: auto !important;
+}
+
+body.dark-mode .list-group-item:hover,
+body.dark-mode .list-group-item-action:hover,
+body.dark-mode .delivery-item-animated:hover,
+body.dark-mode button.list-group-item:hover,
+body.dark-mode a.list-group-item:hover {
+  background-color: transparent !important;
+  color: inherit !important;
+  border-left: none !important;
+  transform: none !important;
+  box-shadow: none !important;
+  z-index: auto !important;
 }
 
 // Delivery Plans responsive (consolidado desde delivery_plans.css.scss)
 @media (max-width: 576px) {
-  [data-delivery-plan-map-target="map"] { height: 280px !important; }
-  h1.fs-4, h2.fs-4 { font-size: 1.25rem; }
+  [data-delivery-plan-map-target="map"] {
+    height: 280px !important;
+  }
+
+  h1.fs-4,
+  h2.fs-4 {
+    font-size: 1.25rem;
+  }
 }

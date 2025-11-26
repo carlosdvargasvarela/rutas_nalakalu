@@ -404,10 +404,7 @@ body[class*="deliveries"][class*="show"],
       transition: $transition-fast;
       border-bottom: 1px solid rgba($nalakalu-pale-rose, 0.3);
 
-      &:hover {
-        background: linear-gradient(90deg, rgba($nalakalu-beige, 0.3) 0%, transparent 100%);
-        transform: translateX(3px);
-      }
+      // Hover manejado por _tables_hover.scss
 
       td {
         padding: $space-md;

@@ -1,0 +1,126 @@
+// Overrides específicos para modo oscuro
+
+// Reglas globales de modo oscuro para alertas/flash en todo el sitio
+body.dark-mode,
+.dark-mode {
+  .alert {
+    color: #FFFFFF !important;
+    /* asegurar texto blanco en alerts/flash */
+
+    &.alert-danger,
+    &.alert-warning,
+    &.alert-info,
+    &.alert-success {
+      color: #FFFFFF !important;
+    }
+
+    // Iconos dentro de las alerts
+    .bi {
+      color: #FFFFFF !important;
+    }
+
+    // Ajuste visual del botón de cerrar
+    .btn-close {
+      filter: brightness(0.95) !important;
+      opacity: 1 !important;
+    }
+  }
+}
+
+// Reglas específicas para la vista de entregas (show)
+body.dark-mode .deliveries-show-page,
+.dark-mode .deliveries-show-page {
+
+  .delivery-summary-card {
+
+    .card-header,
+    .card-body,
+    .card-body p,
+    .card-body p strong,
+    .card-body p i,
+    .card-body p a,
+    .card-body p span,
+    .card-body .badge,
+    .card-body .text-muted,
+    .card-body small {
+      color: #FFFFFF !important;
+      /* blanco puro para máxima legibilidad */
+    }
+
+    // Asegurar que cualquier badge tenga texto blanco (sin cambiar fondo)
+    .card-header .badge,
+    .card-body .badge {
+      color: #FFFFFF !important;
+    }
+  }
+
+  // Estilos para la tarjeta de historial en modo oscuro
+  .delivery-history-card {
+    background: $dark-surface !important;
+    border-color: $dark-border-subtle !important;
+    box-shadow: $dark-shadow-medium;
+
+    .card-header {
+      background: $dark-surface-elevated !important;
+      color: $dark-text-primary !important;
+      border-bottom-color: $dark-border-medium !important;
+
+      i {
+        color: $dark-accent-orange !important;
+      }
+    }
+
+    .card-body {
+      background: $dark-surface !important;
+      color: $dark-text-primary !important;
+    }
+
+    .accordion-item {
+      background: transparent !important;
+      border-color: $dark-border-medium !important;
+    }
+
+    .accordion-button {
+      background: $dark-surface-elevated !important;
+      color: $dark-text-primary !important;
+
+      &::after {
+        filter: brightness(0) invert(1) !important;
+      }
+
+      &:not(.collapsed) {
+        background: $dark-surface-elevated !important;
+        color: $dark-text-primary !important;
+        box-shadow: inset 0 -1px 0 $dark-border-medium !important;
+      }
+    }
+
+    .accordion-body {
+      background: $dark-surface !important;
+      color: $dark-text-primary !important;
+
+      .text-muted {
+        color: $dark-text-secondary !important;
+      }
+    }
+
+    .list-group-item {
+      background: $dark-surface !important;
+      border-color: $dark-border-medium !important;
+      color: $dark-text-primary !important;
+
+      strong {
+        color: $dark-text-primary !important;
+      }
+
+      .text-muted {
+        color: $dark-text-secondary !important;
+      }
+
+      &:hover {
+        background: $dark-surface-elevated !important;
+        color: $dark-text-primary !important;
+      }
+    }
+  }
+}

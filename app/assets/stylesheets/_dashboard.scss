@@ -344,8 +344,7 @@ small, .small, label, .form-label, .text-muted, .text-secondary {
   transform: translateZ(0);
 }
 
-.rescheduled-card .table tbody tr { @include hover-border-left($nalakalu-laurel-green, rgba(137, 152, 123, 0.08)); }
-.unplanned-deliveries-card .delivery-item-animated { @include hover-border-left($nalakalu-craft-orange, rgba(165, 78, 30, 0.08)); }
+// Hover de tablas ahora manejado por _tables_hover.scss
 .reschedule-notifications-card .list-group-item { @include hover-border-left($nalakalu-craft-orange, rgba(165, 78, 30, 0.1)); }
 .recent-notifications-card .list-group-item { @include hover-border-left($nalakalu-pale-rose, rgba(196, 157, 144, 0.1)); }
 
@@ -377,7 +376,13 @@ small, .small, label, .form-label, .text-muted, .text-secondary {
   &.bg-success { background: $nalakalu-laurel-green !important; color: $nalakalu-dark-coffee !important; }
   &.bg-warning, &.bg-info { background: $nalakalu-craft-orange !important; color: $nalakalu-dark-coffee !important; }
   &.bg-secondary { background: $nalakalu-beige !important; color: $nalakalu-dark-coffee !important; }
-  &.bg-light { color: $nalakalu-dark-coffee !important; }
+  &.bg-light { 
+    color: #000 !important;
+    
+    h5, h6, .h5, .h6 {
+      color: #000 !important;
+    }
+  }
   
   .badge.bg-info { 
     color: white !important; 
@@ -439,6 +444,94 @@ small, .small, label, .form-label, .text-muted, .text-secondary {
   border-radius: $radius-md;
 }
 
+// Paginación personalizada Na Lakalú - Con mayor especificidad
+.pagination {
+  margin: $space-lg 0 !important;
+  justify-content: center !important;
+  
+  .page-item {
+    margin: 0 0.125rem !important;
+    
+    .page-link {
+      border: 2px solid transparent !important;
+      background-color: $nalakalu-beige !important;
+      color: $nalakalu-dark-coffee !important;
+      font-family: $font-body !important;
+      font-weight: 500 !important;
+      padding: 0.75rem 1rem !important;
+      border-radius: $radius-sm !important;
+      transition: all $transition-normal !important;
+      box-shadow: $shadow-soft !important;
+      
+      &:hover {
+        background-color: $nalakalu-pale-rose !important;
+        color: $nalakalu-dark-coffee !important;
+        border-color: $nalakalu-craft-orange !important;
+        transform: translateY(-2px) !important;
+        box-shadow: $shadow-medium !important;
+        text-decoration: none !important;
+      }
+      
+      &:focus {
+        box-shadow: 0 0 0 0.25rem rgba(165, 78, 30, 0.25) !important;
+        border-color: $nalakalu-craft-orange !important;
+        background-color: $nalakalu-beige !important;
+        color: $nalakalu-dark-coffee !important;
+      }
+    }
+    
+    &.active .page-link {
+      background-color: $nalakalu-craft-orange !important;
+      border-color: $nalakalu-craft-orange !important;
+      color: $nalakalu-warm-white !important;
+      font-weight: 600 !important;
+      transform: scale(1.05) !important;
+      box-shadow: $shadow-strong !important;
+      
+      &:hover {
+        background-color: darken($nalakalu-craft-orange, 10%) !important;
+        border-color: darken($nalakalu-craft-orange, 10%) !important;
+        color: $nalakalu-warm-white !important;
+        transform: scale(1.05) translateY(-1px) !important;
+      }
+      
+      &:focus {
+        background-color: $nalakalu-craft-orange !important;
+        border-color: $nalakalu-craft-orange !important;
+        color: $nalakalu-warm-white !important;
+      }
+    }
+    
+    &.disabled .page-link {
+      background-color: lighten($nalakalu-beige, 5%) !important;
+      color: lighten($nalakalu-dark-coffee, 40%) !important;
+      border-color: transparent !important;
+      opacity: 0.6 !important;
+      box-shadow: none !important;
+      
+      &:hover {
+        background-color: lighten($nalakalu-beige, 5%) !important;
+        color: lighten($nalakalu-dark-coffee, 40%) !important;
+        transform: none !important;
+        box-shadow: none !important;
+        border-color: transparent !important;
+      }
+    }
+  }
+  
+  // Botones First, Previous, Next, Last con iconos
+  .page-item:first-child .page-link,
+  .page-item:last-child .page-link {
+    font-weight: 600 !important;
+    
+    &:hover {
+      background-color: $nalakalu-laurel-green !important;
+      border-color: $nalakalu-laurel-green !important;
+      color: $nalakalu-warm-white !important;
+    }
+  }
+}
+
 // Responsive
 @media (max-width: 768px) {
   .dashboard-icon { width: 60px; height: 60px; }
@@ -446,5 +539,13 @@ small, .small, label, .form-label, .text-muted, .text-secondary {
     flex-direction: column;
     text-align: center;
     .task-action { margin-top: 0.5rem; }
+  }
+  
+  // Paginación responsive
+  .pagination {
+    .page-item .page-link {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+    }
   }
 }
