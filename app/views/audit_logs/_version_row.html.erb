@@ -1,72 +1,133 @@
-<tr>
+<%# app/views/audit_logs/_version_row.html.erb %>
+<tr class="audit-row" data-version-id="<%= version.id %>">
+  <!-- Fecha y hora -->
   <td class="text-nowrap">
-    <%= format_datetime_cr(version.created_at) %>
+    <div class="d-flex flex-column">
+      <span class="fw-semibold"><%= version.created_at.strftime('%d/%m/%Y') %></span>
+      <small class="text-muted"><%= version.created_at.strftime('%H:%M:%S') %></small>
+    </div>
   </td>
+  <!-- Usuario -->
   <td>
-    <i class="bi bi-person-circle me-1"></i>
-    <%= user_name_for(version, users_by_id) %>
+    <div class="d-flex align-items-center">
+      <div class="avatar-circle bg-primary bg-opacity-10 text-primary me-2">
+        <i class="bi bi-person-fill"></i>
+      </div>
+      <div>
+        <div class="fw-semibold"><%= user_name_for(version, users_by_id) %></div>
+        <small class="text-muted">ID: <%= version.whodunnit || 'N/A' %></small>
+      </div>
+    </div>
   </td>
+  <!-- Recurso -->
   <td>
-    <% label = item_label(version) %>
     <% record = safe_find_item(version) %>
-    <% if record.present? %>
-      <%# Enlace al recurso si existe ruta show conocida %>
-      <%# Ajustá rutas específicas si querés deep-links (ejemplo para algunos recursos): %>
-      <% path =
-          case version.item_type
-          when 'Order' then (respond_to?(:order_path) ? order_path(record) : nil)
-          when 'Delivery' then (respond_to?(:delivery_path) ? delivery_path(record) : nil)
-          when 'DeliveryPlan' then (respond_to?(:delivery_plan_path) ? delivery_plan_path(record) : nil)
-          when 'Client' then (respond_to?(:client_path) ? client_path(record) : nil)
-          when 'Seller' then (respond_to?(:seller_path) ? seller_path(record) : nil)
-          else nil
-          end %>
-      <% if path.present? %>
-        <a href="<%= path %>" class="text-decoration-none">
-          <i class="bi bi-link-45deg"></i> <%= label %>
-        </a>
-      <% else %>
-        <%= label %>
-      <% end %>
-    <% else %>
-      <span class="text-muted"><%= label %> (eliminado)</span>
-    <% end %>
+    <div class="d-flex align-items-center">
+      <i class="<%= resource_icon(version.item_type) %> fs-5 me-2 text-secondary"></i>
+      <div>
+        <% if record.present? %>
+          <% path = polymorphic_path(record) rescue nil %>
+          <% if path %>
+            <%= link_to path, class: 'text-decoration-none fw-semibold' do %>
+              <%= item_label(version) %>
+              <i class="bi bi-box-arrow-up-right ms-1 small"></i>
+            <% end %>
+          <% else %>
+            <span class="fw-semibold"><%= item_label(version) %></span>
+          <% end %>
+        <% else %>
+          <span class="text-muted">
+            <%= item_label(version) %>
+            <span class="badge bg-secondary">eliminado</span>
+          </span>
+        <% end %>
+        <div>
+          <small class="text-muted"><%= version.item_type %></small>
+        </div>
+      </div>
+    </div>
   </td>
-  <td>
+  <!-- Evento -->
+  <td class="text-center">
     <%= event_badge(version.event) %>
   </td>
+  <!-- Cambios -->
   <td>
-    <% changes = summarize_changes(version, max_keys: 5) %>
+    <% changes = summarize_changes(version, max_keys: 3) %>
     <% if changes.blank? %>
-      <span class="text-muted">Sin detalles</span>
+      <span class="text-muted fst-italic">Sin cambios detectados</span>
     <% else %>
-      <ul class="list-unstyled mb-0">
+      <div class="changes-summary">
         <% changes.each do |attr, (before, after)| %>
-          <li class="text-wrap">
-            <code><%= attr %></code>:
-            <span class="text-muted"><%= before.inspect %></span>
-            <span class="mx-1"><%= change_arrow %></span>
-            <span><%= after.inspect %></span>
-          </li>
+          <div class="change-item mb-2">
+            <span class="badge bg-<%= change_severity(attr) %> bg-opacity-10 text-<%= change_severity(attr) %>">
+              <%= attr.humanize %>
+            </span>
+            <div class="d-flex align-items-center gap-2 mt-1 small">
+              <code class="bg-light px-2 py-1 rounded"><%= truncate(before.to_s, length: 40) %></code>
+              <%= change_arrow %>
+              <code class="bg-light px-2 py-1 rounded"><%= truncate(after.to_s, length: 40) %></code>
+            </div>
+          </div>
         <% end %>
-      </ul>
-      <%# Botón expandir (opcional simple toggle con Bootstrap collapse) %>
-      <details class="mt-1">
-        <summary class="text-primary" style="cursor:pointer;">
-          Ver todos los cambios
-        </summary>
-        <% full_changes = summarize_changes(version, max_keys: 1000) %>
-        <ul class="list-unstyled mt-2">
-          <% full_changes.each do |attr, (before, after)| %>
-            <li class="text-wrap">
-              <code><%= attr %></code>:
-              <span class="text-muted"><%= before.inspect %></span>
-              <span class="mx-1"><%= change_arrow %></span>
-              <span><%= after.inspect %></span>
-            </li>
-          <% end %>
-        </ul>
-      </details>
+        <!-- Ver todos los cambios -->
+        <% full_changes = summarize_changes(version, max_keys: 100) %>
+        <% if full_changes.size > 3 %>
+          <button class="btn btn-sm btn-outline-secondary mt-2" 
+                  type="button" 
+                  data-bs-toggle="collapse" 
+                  data-bs-target="#changes-<%= version.id %>">
+            <i class="bi bi-chevron-down me-1"></i>
+            Ver <%= full_changes.size - 3 %> cambios más
+          </button>
+          <div class="collapse mt-2" id="changes-<%= version.id %>">
+            <% full_changes.drop(3).each do |attr, (before, after)| %>
+              <div class="change-item mb-2">
+                <span class="badge bg-<%= change_severity(attr) %> bg-opacity-10 text-<%= change_severity(attr) %>">
+                  <%= attr.humanize %>
+                </span>
+                <div class="d-flex align-items-center gap-2 mt-1 small">
+                  <code class="bg-light px-2 py-1 rounded"><%= truncate(before.to_s, length: 40) %></code>
+                  <%= change_arrow %>
+                  <code class="bg-light px-2 py-1 rounded"><%= truncate(after.to_s, length: 40) %></code>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
     <% end %>
   </td>
+  <!-- Acciones -->
+  <td class="text-center">
+    <div class="btn-group btn-group-sm" role="group">
+      <%= link_to resource_history_audit_logs_path(item_type: version.item_type, item_id: version.item_id), 
+          class: 'btn btn-outline-primary', 
+          title: 'Ver historial completo',
+          data: { bs_toggle: 'tooltip' } do %>
+        <i class="bi bi-clock-history"></i>
+      <% end %>
+    </div>
+  </td>
 </tr>
+<style>
+  .avatar-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .change-item {
+    padding: 8px;
+    border-left: 3px solid #dee2e6;
+    background: #f8f9fa;
+    border-radius: 4px;
+  }
+
+  .audit-row:hover {
+    background-color: #f8f9fa;
+  }
+</style>

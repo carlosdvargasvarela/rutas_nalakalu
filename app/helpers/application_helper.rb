@@ -169,4 +169,10 @@ module ApplicationHelper
       icon_html + label
     end
   end
+
+  # Formato de fecha/hora estándar para Costa Rica
+  def format_datetime_cr(datetime)
+    return '' if datetime.blank?
+    datetime.in_time_zone('America/Costa_Rica').strftime('%d/%m/%Y %H:%M')
+  end
 end

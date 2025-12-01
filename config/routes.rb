@@ -222,5 +222,10 @@ Rails.application.routes.draw do
 
   get "/offline", to: "pages#offline"
 
-  resources :audit_logs, only: [:index]
+  resources :audit_logs, only: [:index] do
+    collection do
+      get :resource_history
+      get :compare
+    end
+  end
 end

@@ -1,0 +1,361 @@
+<%# app/views/audit_logs/resource_history.html.erb %>
+<% content_for :title, "Historial de #{@item_type} ##{@item_id}" %>
+
+<div class="container-fluid py-4">
+  <!-- Header con breadcrumb y título -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <%= link_to audit_logs_path do %>
+          <i class="bi bi-clock-history me-1"></i> Log de cambios
+        <% end %>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        Historial de <%= @item_type %> #<%= @item_id %>
+      </li>
+    </ol>
+  </nav>
+
+  <div class="row">
+    <!-- Columna principal: Timeline -->
+    <div class="col-12 col-lg-8">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between">
+          <h4 class="mb-0">
+            <i class="<%= resource_icon(@item_type) %> me-2 text-primary"></i>
+            Historial completo
+          </h4>
+          <span class="badge bg-primary bg-opacity-10 text-primary fs-6">
+            <%= @versions.total_count %> cambios
+          </span>
+        </div>
+
+        <div class="card-body">
+          <% if @versions.any? %>
+            <!-- Timeline vertical -->
+            <div class="timeline">
+              <% @versions.each_with_index do |version, index| %>
+                <div class="timeline-item <%= 'timeline-item-last' if index == @versions.size - 1 %>">
+                  <!-- Punto del timeline -->
+                  <div class="timeline-marker">
+                    <div class="timeline-dot bg-<%= event_color(version.event) %>">
+                      <i class="bi <%= event_icon(version.event) %> text-white"></i>
+                    </div>
+                  </div>
+
+                  <!-- Contenido del cambio -->
+                  <div class="timeline-content">
+                    <div class="card mb-3 shadow-sm">
+                      <div class="card-body">
+                        <!-- Header del cambio -->
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                          <div class="d-flex align-items-center">
+                            <%= event_badge(version.event) %>
+                            <span class="ms-2 text-muted small">
+                              por <strong><%= user_name_for(version, @users_by_id) %></strong>
+                            </span>
+                          </div>
+                          <div class="text-end">
+                            <div class="fw-semibold text-primary">
+                              <%= version.created_at.strftime('%d/%m/%Y') %>
+                            </div>
+                            <small class="text-muted">
+                              <%= version.created_at.strftime('%H:%M:%S') %>
+                            </small>
+                          </div>
+                        </div>
+
+                        <!-- Detalles de los cambios -->
+                        <% if version.event == 'create' %>
+                          <div class="alert alert-success mb-0">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            <strong>Registro creado</strong>
+                          </div>
+                        <% elsif version.event == 'destroy' %>
+                          <div class="alert alert-danger mb-0">
+                            <i class="bi bi-trash me-2"></i>
+                            <strong>Registro eliminado</strong>
+                          </div>
+                        <% else %>
+                          <% changes = summarize_changes(version, max_keys: 100) %>
+                          <% if changes.any? %>
+                            <div class="changes-list">
+                              <h6 class="text-muted mb-3">
+                                <i class="bi bi-pencil me-1"></i>
+                                Cambios realizados (<%= changes.size %>)
+                              </h6>
+                              
+                              <% changes.each do |attr, (before, after)| %>
+                                <div class="change-detail mb-3 p-3 border rounded bg-light">
+                                  <div class="d-flex align-items-center mb-2">
+                                    <span class="badge bg-<%= change_severity(attr) %> me-2">
+                                      <%= attr.humanize %>
+                                    </span>
+                                    <small class="text-muted">
+                                      <code><%= attr %></code>
+                                    </small>
+                                  </div>
+                                  
+                                  <div class="row g-2">
+                                    <div class="col-12 col-md-5">
+                                      <div class="p-2 bg-white border rounded">
+                                        <small class="text-muted d-block mb-1">
+                                          <i class="bi bi-arrow-left-circle me-1"></i> Antes
+                                        </small>
+                                        <code class="text-danger">
+                                          <%= format_value_detailed(before) %>
+                                        </code>
+                                      </div>
+                                    </div>
+                                    
+                                    <div class="col-12 col-md-2 d-flex align-items-center justify-content-center">
+                                      <i class="bi bi-arrow-right fs-4 text-muted"></i>
+                                    </div>
+                                    
+                                    <div class="col-12 col-md-5">
+                                      <div class="p-2 bg-white border rounded">
+                                        <small class="text-muted d-block mb-1">
+                                          <i class="bi bi-arrow-right-circle me-1"></i> Después
+                                        </small>
+                                        <code class="text-success">
+                                          <%= format_value_detailed(after) %>
+                                        </code>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              <% end %>
+                            </div>
+                          <% else %>
+                            <p class="text-muted mb-0 fst-italic">
+                              <i class="bi bi-info-circle me-1"></i>
+                              No se detectaron cambios en los atributos
+                            </p>
+                          <% end %>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+
+            <!-- Paginación -->
+            <div class="d-flex justify-content-center mt-4">
+              <%= paginate @versions %>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
+              <p class="text-muted">No hay historial de cambios para este registro</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna lateral: Info del recurso -->
+    <div class="col-12 col-lg-4">
+      <div class="card shadow-sm sticky-top" style="top: 20px;">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-info-circle me-2"></i>
+            Información del recurso
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if @resource.present? %>
+            <dl class="row mb-0">
+              <dt class="col-sm-4">Tipo:</dt>
+              <dd class="col-sm-8">
+                <span class="badge bg-secondary"><%= @item_type %></span>
+              </dd>
+
+              <dt class="col-sm-4">ID:</dt>
+              <dd class="col-sm-8">
+                <code>#<%= @item_id %></code>
+              </dd>
+
+              <dt class="col-sm-4">Estado:</dt>
+              <dd class="col-sm-8">
+                <span class="badge bg-success">
+                  <i class="bi bi-check-circle me-1"></i> Activo
+                </span>
+              </dd>
+
+              <% if @resource.respond_to?(:created_at) %>
+                <dt class="col-sm-4">Creado:</dt>
+                <dd class="col-sm-8">
+                  <%= format_datetime_cr(@resource.created_at) %>
+                </dd>
+              <% end %>
+
+              <% if @resource.respond_to?(:updated_at) %>
+                <dt class="col-sm-4">Actualizado:</dt>
+                <dd class="col-sm-8">
+                  <%= format_datetime_cr(@resource.updated_at) %>
+                </dd>
+              <% end %>
+            </dl>
+
+            <hr>
+
+            <div class="d-grid gap-2">
+              <%= link_to polymorphic_path(@resource), class: 'btn btn-outline-primary' do %>
+                <i class="bi bi-eye me-1"></i> Ver registro
+              <% end %>
+              
+              <%= link_to audit_logs_path, class: 'btn btn-outline-secondary' do %>
+                <i class="bi bi-arrow-left me-1"></i> Volver al log
+              <% end %>
+            </div>
+          <% else %>
+            <div class="alert alert-warning mb-0">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              <strong>Registro eliminado</strong>
+              <p class="mb-0 small mt-2">
+                Este registro ya no existe en el sistema, pero su historial se mantiene para auditoría.
+              </p>
+            </div>
+
+            <hr>
+
+            <div class="d-grid">
+              <%= link_to audit_logs_path, class: 'btn btn-outline-secondary' do %>
+                <i class="bi bi-arrow-left me-1"></i> Volver al log
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Estadísticas del recurso -->
+      <div class="card shadow-sm mt-3">
+        <div class="card-header bg-white">
+          <h6 class="mb-0">
+            <i class="bi bi-bar-chart me-2"></i>
+            Estadísticas
+          </h6>
+        </div>
+        <div class="card-body">
+          <% events_count = @versions.group(:event).count %>
+          
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="text-success">
+                <i class="bi bi-plus-circle me-1"></i> Creaciones
+              </span>
+              <strong><%= events_count['create'] || 0 %></strong>
+            </div>
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar bg-success" 
+                   style="width: <%= (events_count['create'] || 0) * 100.0 / @versions.total_count %>%">
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="text-primary">
+                <i class="bi bi-pencil me-1"></i> Actualizaciones
+              </span>
+              <strong><%= events_count['update'] || 0 %></strong>
+            </div>
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar bg-primary" 
+                   style="width: <%= (events_count['update'] || 0) * 100.0 / @versions.total_count %>%">
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-0">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="text-danger">
+                <i class="bi bi-trash me-1"></i> Eliminaciones
+              </span>
+              <strong><%= events_count['destroy'] || 0 %></strong>
+            </div>
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar bg-danger" 
+                   style="width: <%= (events_count['destroy'] || 0) * 100.0 / @versions.total_count %>%">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Estilos del Timeline -->
+<style>
+  .timeline {
+    position: relative;
+    padding: 0;
+    list-style: none;
+  }
+
+  .timeline-item {
+    position: relative;
+    padding-left: 60px;
+    padding-bottom: 30px;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 40px;
+    bottom: -10px;
+    width: 2px;
+    background: linear-gradient(to bottom, #dee2e6 0%, #dee2e6 100%);
+  }
+
+  .timeline-item-last::before {
+    display: none;
+  }
+
+  .timeline-marker {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+
+  .timeline-dot {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 4px #fff, 0 0 0 6px #dee2e6;
+  }
+
+  .timeline-content {
+    flex: 1;
+  }
+
+  .change-detail {
+    transition: all 0.2s ease;
+  }
+
+  .change-detail:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transform: translateX(5px);
+  }
+
+  @media (max-width: 768px) {
+    .timeline-item {
+      padding-left: 50px;
+    }
+
+    .timeline-item::before {
+      left: 15px;
+    }
+
+    .timeline-dot {
+      width: 32px;
+      height: 32px;
+    }
+  }
+</style>
