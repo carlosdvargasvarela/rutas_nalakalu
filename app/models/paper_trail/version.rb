@@ -4,7 +4,6 @@ module PaperTrail
     include PaperTrail::VersionConcern
     self.table_name = "versions"
 
-    # IMPORTANTE: Lista explícita de atributos que Ransack puede usar
     def self.ransackable_attributes(_auth_object = nil)
       %w[
         id
@@ -14,13 +13,30 @@ module PaperTrail
         whodunnit
         object
         created_at
-        # object_changes # descomenta si tu versions table lo tiene y querés permitirlo
       ]
     end
 
-    # Opcional: si quisieras permitir búsquedas por asociaciones (no aplican aquí)
     def self.ransackable_associations(_auth_object = nil)
       []
+    end
+
+    # Scope para buscar por texto de recurso
+    scope :by_resource_text, ->(text) {
+      return all if text.blank?
+      
+      # Si contiene #, separar tipo e ID
+      if text.include?('#')
+        type, id = text.split('#', 2)
+        where(item_type: type.strip, item_id: id.strip)
+      else
+        # Solo buscar por tipo
+        where("item_type LIKE ?", "%#{text}%")
+      end
+    }
+
+    # Hacer el scope disponible para Ransack
+    def self.ransackable_scopes(_auth_object = nil)
+      [:by_resource_text]
     end
   end
 end

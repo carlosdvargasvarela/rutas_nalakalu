@@ -39,6 +39,19 @@
     <div class="card-body">
       <%= search_form_for @q, url: audit_logs_path, method: :get, 
           html: { class: 'row g-3', data: { controller: 'audit-filters' } } do |f| %>
+        <!-- Búsqueda por texto de recurso -->
+        <div class="col-12 col-md-6 col-lg-4">
+          <%= f.label :by_resource_text, class: 'form-label fw-semibold' do %>
+            <i class="bi bi-search me-1"></i>
+            Buscar recurso
+            <span class="text-muted small d-block fw-normal">
+              Escribe, por ejemplo: <code>Delivery#2323</code>, <code>Order#1001</code>, <code>Delivery</code>
+            </span>
+          <% end %>
+          <%= f.text_field :by_resource_text,
+              class: 'form-control',
+              placeholder: 'Ej: Delivery#2323 o Delivery, Order, Client…' %>
+        </div>
         <!-- Tipo de recurso -->
         <div class="col-12 col-md-6 col-lg-3">
           <%= f.label :item_type_eq, class: 'form-label fw-semibold' do %>
