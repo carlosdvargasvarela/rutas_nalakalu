@@ -1,58 +1,106 @@
+<%# app/views/deliveries/index_partials/_filters.html.erb %>
 <div class="card shadow-sm mb-4">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <div>
+      <h5 class="mb-0">
+        <i class="bi bi-funnel me-2 text-primary"></i>
+        Filtros de entregas
+      </h5>
+      <small class="text-muted">
+        Filtra por cliente, vendedor, estado, fechas y casos de servicio
+      </small>
+    </div>
+    <% if q.present? && q.object.present? && (params[:q].present? || params[:show_rescheduled].present? || params[:only_service_cases].present?) %>
+      <span class="badge bg-primary bg-opacity-10 text-primary">
+        <i class="bi bi-funnel me-1"></i> Filtros activos
+      </span>
+    <% end %>
+  </div>
   <div class="card-body">
-    <%= search_form_for q, url: deliveries_path, method: :get, 
-        html: { class: "row gy-2 gx-2 align-items-end" } do |f| %>
+    <%= search_form_for q, url: deliveries_path, method: :get,
+        html: { class: "row gy-3 gx-3 align-items-end" } do |f| %>
       <!-- Filtros principales -->
-      <div class="col-md-3">
-        <%= f.search_field :order_client_name_cont, class: "form-control", 
-              placeholder: "Cliente", "aria-label": "Cliente" %>
+      <div class="col-12 col-md-4 col-lg-3">
+        <%= f.label :order_client_name_cont, "Cliente", class: "form-label fw-semibold" %>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-person"></i></span>
+          <%= f.search_field :order_client_name_cont, class: "form-control",
+                placeholder: "Nombre del cliente", "aria-label": "Cliente" %>
+        </div>
       </div>
-      <div class="col-md-3">
-        <%= f.search_field :order_seller_seller_code_cont, class: "form-control", 
-              placeholder: "Vendedor", "aria-label": "Vendedor" %>
+      <div class="col-12 col-md-4 col-lg-3">
+        <%= f.label :order_seller_seller_code_cont, "Vendedor", class: "form-label fw-semibold" %>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-tag"></i></span>
+          <%= f.search_field :order_seller_seller_code_cont, class: "form-control",
+                placeholder: "Código vendedor", "aria-label": "Vendedor" %>
+        </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-12 col-md-4 col-lg-3">
+        <%= f.label :status_eq, "Estado de la entrega", class: "form-label fw-semibold" %>
         <%= f.select :status_eq,
-            options_for_select(Delivery.status_options_for_select, @q.status_eq),
-            { include_blank: '-- Estado de la entrega --' },
+            options_for_select(Delivery.status_options_for_select, q.status_eq),
+            { include_blank: '-- Todos los estados --' },
             class: "form-select" %>
       </div>
-      <div class="col-md-3 d-flex gap-2">
-        <%= f.submit "Buscar", class: "btn btn-primary flex-fill" %>
-        <%= link_to "Quitar filtros", deliveries_path, class: "btn btn-outline-secondary flex-fill" %>
+      <div class="col-12 col-lg-3 d-flex gap-2">
+        <div class="flex-grow-1">
+          <label class="form-label fw-semibold d-none d-lg-block">&nbsp;</label>
+          <div class="d-flex gap-2">
+            <%= f.submit "Buscar", class: "btn btn-primary flex-fill" %>
+            <%= link_to "Quitar filtros", deliveries_path, class: "btn btn-outline-secondary flex-fill" %>
+          </div>
+        </div>
       </div>
       <!-- Filtros Avanzados (acordeón colapsable) -->
-      <div class="col-12 mt-3">
+      <div class="col-12 mt-2">
         <a class="small text-muted" data-bs-toggle="collapse" href="#advancedFilters" role="button">
-          <i class="bi bi-sliders"></i> Filtros avanzados
+          <i class="bi bi-sliders"></i>
+          Filtros avanzados
         </a>
-        <div class="collapse mt-2" id="advancedFilters">
-          <div class="row g-2">
-            <div class="col-md-3">
-              <%= f.search_field :delivery_address_address_cont, class: "form-control", placeholder: "Dirección" %>
+        <div class="collapse mt-3" id="advancedFilters">
+          <div class="row g-3">
+            <div class="col-12 col-md-4 col-lg-3">
+              <%= f.label :delivery_address_address_cont, "Dirección", class: "form-label fw-semibold" %>
+              <%= f.search_field :delivery_address_address_cont, class: "form-control",
+                    placeholder: "Calle, barrio, referencia…" %>
             </div>
-            <div class="col-md-2">
-              <%= f.search_field :order_number_cont, class: "form-control", placeholder: "N° Orden" %>
+            <div class="col-6 col-md-2">
+              <%= f.label :order_number_cont, "N° Orden", class: "form-label fw-semibold" %>
+              <%= f.search_field :order_number_cont, class: "form-control",
+                    placeholder: "Ej: 12345" %>
             </div>
-            <div class="col-md-2">
-              <%= f.date_field :delivery_date_gteq, class: "form-control", placeholder: "Desde" %>
+            <div class="col-6 col-md-2">
+              <%= f.label :delivery_date_gteq, "Desde", class: "form-label fw-semibold" %>
+              <%= f.date_field :delivery_date_gteq, class: "form-control" %>
             </div>
-            <div class="col-md-2">
-              <%= f.date_field :delivery_date_lteq, class: "form-control", placeholder: "Hasta" %>
+            <div class="col-6 col-md-2">
+              <%= f.label :delivery_date_lteq, "Hasta", class: "form-label fw-semibold" %>
+              <%= f.date_field :delivery_date_lteq, class: "form-control" %>
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-4 col-lg-3">
+              <%= f.label :order_notes_status_eq, "Notas", class: "form-label fw-semibold" %>
               <%= f.select :order_notes_status_eq,
                 options_for_select([
-                  ['-- Notas --', nil],
+                  ['-- Todas --', nil],
                   ['Con notas', 'with'],
                   ['Con notas abiertas', 'open'],
                   ['Con notas cerradas', 'closed']
                 ], params.dig(:q, :order_notes_status_eq)),
                 {}, class: "form-select" %>
             </div>
-            <div class="col-md-3">
-              <div class="form-check mt-2">
-                <%= check_box_tag :show_rescheduled, "1", params[:show_rescheduled] == "1",
+            <!-- 🔹 Solo casos de servicio -->
+            <div class="col-12 col-md-4 col-lg-3">
+              <label class="form-label fw-semibold d-block">Tipos especiales</label>
+              <div class="form-check mb-1">
+                <%= check_box_tag :only_service_cases, "1",
+                      params[:only_service_cases] == "1",
+                      class: "form-check-input", id: "only_service_cases" %>
+                <%= label_tag :only_service_cases, "Solo casos de servicio", class: "form-check-label" %>
+              </div>
+              <div class="form-check">
+                <%= check_box_tag :show_rescheduled, "1",
+                      params[:show_rescheduled] == "1",
                       class: "form-check-input", id: "show_rescheduled" %>
                 <%= label_tag :show_rescheduled, "Mostrar reagendadas", class: "form-check-label" %>
               </div>

@@ -20,6 +20,11 @@ class DeliveriesController < ApplicationController
     excluded_statuses = %i[delivered rescheduled cancelled archived failed]
     base_scope = base_scope.where.not(status: excluded_statuses) if params[:no_plan].present?
 
+    # 🔹 Filtrar solo casos de servicio
+    if params[:only_service_cases].present?
+      base_scope = base_scope.service_cases
+    end
+
     @q = base_scope.ransack(params[:q])
     deliveries_scope = @q.result.includes(order: [ :client, :seller ], delivery_address: :client)
 
