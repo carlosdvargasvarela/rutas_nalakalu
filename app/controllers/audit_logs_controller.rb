@@ -30,8 +30,14 @@ class AuditLogsController < ApplicationController
     @item_type = params[:item_type]
     @item_id   = params[:item_id]
 
-    @versions = PaperTrail::Version
-                  .where(item_type: @item_type, item_id: @item_id)
+    # 🔹 Scope base sin paginación para estadísticas
+    base_scope = PaperTrail::Version.where(item_type: @item_type, item_id: @item_id)
+
+    # 🔹 Calcular estadísticas sin ORDER BY ni paginación
+    @events_count = base_scope.group(:event).count
+
+    # 🔹 Versiones paginadas y ordenadas para el timeline
+    @versions = base_scope
                   .order(created_at: :desc)
                   .page(params[:page])
                   .per(20)

@@ -1,6 +1,5 @@
 <%# app/views/audit_logs/resource_history.html.erb %>
 <% content_for :title, "Historial de #{@item_type} ##{@item_id}" %>
-
 <div class="container-fluid py-4">
   <!-- Header con breadcrumb y título -->
   <nav aria-label="breadcrumb" class="mb-3">
@@ -15,7 +14,6 @@
       </li>
     </ol>
   </nav>
-
   <div class="row">
     <!-- Columna principal: Timeline -->
     <div class="col-12 col-lg-8">
@@ -29,7 +27,6 @@
             <%= @versions.total_count %> cambios
           </span>
         </div>
-
         <div class="card-body">
           <% if @versions.any? %>
             <!-- Timeline vertical -->
@@ -42,7 +39,6 @@
                       <i class="bi <%= event_icon(version.event) %> text-white"></i>
                     </div>
                   </div>
-
                   <!-- Contenido del cambio -->
                   <div class="timeline-content">
                     <div class="card mb-3 shadow-sm">
@@ -64,7 +60,6 @@
                             </small>
                           </div>
                         </div>
-
                         <!-- Detalles de los cambios -->
                         <% if version.event == 'create' %>
                           <div class="alert alert-success mb-0">
@@ -84,7 +79,6 @@
                                 <i class="bi bi-pencil me-1"></i>
                                 Cambios realizados (<%= changes.size %>)
                               </h6>
-                              
                               <% changes.each do |attr, (before, after)| %>
                                 <div class="change-detail mb-3 p-3 border rounded bg-light">
                                   <div class="d-flex align-items-center mb-2">
@@ -95,7 +89,6 @@
                                       <code><%= attr %></code>
                                     </small>
                                   </div>
-                                  
                                   <div class="row g-2">
                                     <div class="col-12 col-md-5">
                                       <div class="p-2 bg-white border rounded">
@@ -107,11 +100,9 @@
                                         </code>
                                       </div>
                                     </div>
-                                    
                                     <div class="col-12 col-md-2 d-flex align-items-center justify-content-center">
                                       <i class="bi bi-arrow-right fs-4 text-muted"></i>
                                     </div>
-                                    
                                     <div class="col-12 col-md-5">
                                       <div class="p-2 bg-white border rounded">
                                         <small class="text-muted d-block mb-1">
@@ -139,7 +130,6 @@
                 </div>
               <% end %>
             </div>
-
             <!-- Paginación -->
             <div class="d-flex justify-content-center mt-4">
               <%= paginate @versions %>
@@ -153,7 +143,6 @@
         </div>
       </div>
     </div>
-
     <!-- Columna lateral: Info del recurso -->
     <div class="col-12 col-lg-4">
       <div class="card shadow-sm sticky-top" style="top: 20px;">
@@ -170,26 +159,22 @@
               <dd class="col-sm-8">
                 <span class="badge bg-secondary"><%= @item_type %></span>
               </dd>
-
               <dt class="col-sm-4">ID:</dt>
               <dd class="col-sm-8">
                 <code>#<%= @item_id %></code>
               </dd>
-
               <dt class="col-sm-4">Estado:</dt>
               <dd class="col-sm-8">
                 <span class="badge bg-success">
                   <i class="bi bi-check-circle me-1"></i> Activo
                 </span>
               </dd>
-
               <% if @resource.respond_to?(:created_at) %>
                 <dt class="col-sm-4">Creado:</dt>
                 <dd class="col-sm-8">
                   <%= format_datetime_cr(@resource.created_at) %>
                 </dd>
               <% end %>
-
               <% if @resource.respond_to?(:updated_at) %>
                 <dt class="col-sm-4">Actualizado:</dt>
                 <dd class="col-sm-8">
@@ -197,14 +182,11 @@
                 </dd>
               <% end %>
             </dl>
-
             <hr>
-
             <div class="d-grid gap-2">
               <%= link_to polymorphic_path(@resource), class: 'btn btn-outline-primary' do %>
                 <i class="bi bi-eye me-1"></i> Ver registro
               <% end %>
-              
               <%= link_to audit_logs_path, class: 'btn btn-outline-secondary' do %>
                 <i class="bi bi-arrow-left me-1"></i> Volver al log
               <% end %>
@@ -217,9 +199,7 @@
                 Este registro ya no existe en el sistema, pero su historial se mantiene para auditoría.
               </p>
             </div>
-
             <hr>
-
             <div class="d-grid">
               <%= link_to audit_logs_path, class: 'btn btn-outline-secondary' do %>
                 <i class="bi bi-arrow-left me-1"></i> Volver al log
@@ -228,7 +208,6 @@
           <% end %>
         </div>
       </div>
-
       <!-- Estadísticas del recurso -->
       <div class="card shadow-sm mt-3">
         <div class="card-header bg-white">
@@ -238,8 +217,9 @@
           </h6>
         </div>
         <div class="card-body">
-          <% events_count = @versions.group(:event).count %>
-          
+          <%# 🔹 Usar @events_count calculado en el controlador %>
+          <% events_count = @events_count || {} %>
+          <% total = @versions.total_count %>
           <div class="mb-3">
             <div class="d-flex justify-content-between align-items-center mb-1">
               <span class="text-success">
@@ -249,11 +229,10 @@
             </div>
             <div class="progress" style="height: 8px;">
               <div class="progress-bar bg-success" 
-                   style="width: <%= (events_count['create'] || 0) * 100.0 / @versions.total_count %>%">
+                   style="width: <%= total.zero? ? 0 : ((events_count['create'] || 0) * 100.0 / total) %>%">
               </div>
             </div>
           </div>
-
           <div class="mb-3">
             <div class="d-flex justify-content-between align-items-center mb-1">
               <span class="text-primary">
@@ -263,11 +242,10 @@
             </div>
             <div class="progress" style="height: 8px;">
               <div class="progress-bar bg-primary" 
-                   style="width: <%= (events_count['update'] || 0) * 100.0 / @versions.total_count %>%">
+                   style="width: <%= total.zero? ? 0 : ((events_count['update'] || 0) * 100.0 / total) %>%">
               </div>
             </div>
           </div>
-
           <div class="mb-0">
             <div class="d-flex justify-content-between align-items-center mb-1">
               <span class="text-danger">
@@ -277,7 +255,7 @@
             </div>
             <div class="progress" style="height: 8px;">
               <div class="progress-bar bg-danger" 
-                   style="width: <%= (events_count['destroy'] || 0) * 100.0 / @versions.total_count %>%">
+                   style="width: <%= total.zero? ? 0 : ((events_count['destroy'] || 0) * 100.0 / total) %>%">
               </div>
             </div>
           </div>
@@ -286,7 +264,6 @@
     </div>
   </div>
 </div>
-
 <!-- Estilos del Timeline -->
 <style>
   .timeline {
