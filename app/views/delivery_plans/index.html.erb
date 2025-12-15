@@ -22,11 +22,11 @@
       <div class="d-flex align-items-center gap-3">
         <span>
           <i class="bi bi-info-circle me-1"></i>
-          Se encontraron <strong><%= @delivery_plans.to_a.size %></strong> planes de entrega
+          Se encontraron <strong><%= @delivery_plans.size %></strong> planes de entrega
         </span>
         <span class="badge bg-white text-primary">
           <i class="bi bi-truck me-1"></i>
-          <%= @delivery_plans.sum { |plan| plan.deliveries.size } %> entregas totales
+          <%= @delivery_plans.sum { |plan| plan.deliveries_count.to_i } %> entregas totales
         </span>
       </div>
       <div class="d-flex gap-2">
@@ -56,16 +56,16 @@
         </div>
         <div class="col-12 col-md-2">
           <%= f.label :status_eq, "Estado", class: "form-label fw-bold" %>
-          <%= f.select :status_eq, 
-                options_for_select(DeliveryPlan.statuses.keys.map { |s| [s.humanize, s] }, params.dig(:q, :status_eq)), 
-                { include_blank: "Todos los estados" }, 
+          <%= f.select :status_eq,
+                options_for_select(DeliveryPlan.statuses.keys.map { |s| [s.humanize, s] }, params.dig(:q, :status_eq)),
+                { include_blank: "Todos los estados" },
                 { class: "form-select" } %>
         </div>
         <div class="col-12 col-md-2">
           <%= f.label :truck_eq, "Camión", class: "form-label fw-bold" %>
-          <%= f.select :truck_eq, 
-                options_for_select(DeliveryPlan.distinct.pluck(:truck).compact.map { |t| [t, t] }, params.dig(:q, :truck_eq)), 
-                { include_blank: "Todos los camiones" }, 
+          <%= f.select :truck_eq,
+                options_for_select(@available_trucks.map { |t| [t, t] }, params.dig(:q, :truck_eq)),
+                { include_blank: "Todos los camiones" },
                 { class: "form-select" } %>
         </div>
         <div class="col-12 col-md-2">
@@ -99,24 +99,25 @@
           </thead>
           <tbody>
             <% @delivery_plans.each do |plan| %>
-              <% 
-                # Validar fechas antes de usar Date.commercial
+              <%
+                # Rango de semana
                 if plan.year.present? && plan.week.present?
                   begin
                     start_date = Date.commercial(plan.year.to_i, plan.week.to_i, 1)
-                    end_date = Date.commercial(plan.year.to_i, plan.week.to_i, 5)
+                    end_date   = Date.commercial(plan.year.to_i, plan.week.to_i, 5)
                   rescue ArgumentError
-                    start_date = nil
-                    end_date = nil
+                    start_date = end_date = nil
                   end
                 else
-                  start_date = nil
-                  end_date = nil
+                  start_date = end_date = nil
                 end
-                
-                delivered_count = plan.deliveries.where(status: :delivered).count
-                total_count = plan.deliveries.count
+
+                total_count        = plan.deliveries_count.to_i
+                delivered_count    = plan.delivered_count.to_i
                 progress_percentage = total_count > 0 ? (delivered_count.to_f / total_count * 100).round : 0
+
+                first_date = plan.first_delivery_date
+                last_date  = plan.last_delivery_date
               %>
               <tr>
                 <td>
@@ -133,15 +134,13 @@
                   <% end %>
                 </td>
                 <td>
-                  <% if plan.deliveries.any? %>
-                    <% first_date = plan.deliveries.minimum(:delivery_date) %>
-                    <% last_date  = plan.deliveries.maximum(:delivery_date) %>
+                  <% if total_count > 0 && first_date.present? && last_date.present? %>
                     <% if first_date == last_date %>
-                      <span class="fw-bold"><%= l first_date, format: :short %></span>
+                      <span class="fw-bold"><%= l first_date.to_date, format: :short %></span>
                     <% else %>
                       <div class="d-flex flex-column">
-                        <span class="fw-bold"><%= l first_date, format: :short %></span>
-                        <small class="text-muted">al <%= l last_date, format: :short %></small>
+                        <span class="fw-bold"><%= l first_date.to_date, format: :short %></span>
+                        <small class="text-muted">al <%= l last_date.to_date, format: :short %></small>
                       </div>
                     <% end %>
                   <% else %>
@@ -196,7 +195,7 @@
                 <td>
                   <div class="d-flex align-items-center gap-2">
                     <div class="progress" style="width: 60px; height: 8px;">
-                      <div class="progress-bar bg-success" 
+                      <div class="progress-bar bg-success"
                            style="width: <%= progress_percentage %>%"></div>
                     </div>
                     <small class="text-muted"><%= delivered_count %>/<%= total_count %></small>
@@ -204,38 +203,38 @@
                 </td>
                 <td class="text-center">
                   <div class="btn-group">
-                    <%= link_to delivery_plan_path(plan), 
-                          class: "btn btn-sm btn-outline-primary", 
+                    <%= link_to delivery_plan_path(plan),
+                          class: "btn btn-sm btn-outline-primary",
                           title: "Ver detalles" do %>
                       <i class="bi bi-eye"></i>
                     <% end %>
-                    <%= link_to edit_delivery_plan_path(plan), 
-                          class: "btn btn-sm btn-outline-secondary", 
+                    <%= link_to edit_delivery_plan_path(plan),
+                          class: "btn btn-sm btn-outline-secondary",
                           title: "Editar plan" do %>
                       <i class="bi bi-pencil"></i>
                     <% end %>
-                    <button class="btn btn-sm btn-outline-dark dropdown-toggle dropdown-toggle-split" 
+                    <button class="btn btn-sm btn-outline-dark dropdown-toggle dropdown-toggle-split"
                             data-bs-toggle="dropdown" aria-expanded="false">
                       <span class="visually-hidden">Más opciones</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                       <li>
-                        <%= link_to delivery_plan_path(plan, format: :pdf), 
+                        <%= link_to delivery_plan_path(plan, format: :pdf),
                               class: "dropdown-item", target: "_blank" do %>
                           <i class="bi bi-file-earmark-pdf me-2"></i>Descargar PDF
                         <% end %>
                       </li>
                       <li>
-                        <%= link_to delivery_plan_path(plan, format: :xlsx), 
+                        <%= link_to delivery_plan_path(plan, format: :xlsx),
                               class: "dropdown-item" do %>
                           <i class="bi bi-file-earmark-spreadsheet me-2"></i>Exportar Excel
                         <% end %>
                       </li>
                       <li><hr class="dropdown-divider"></li>
                       <li>
-                        <%= link_to plan, method: :delete, 
-                              class: "dropdown-item text-danger", 
-                              data: { 
+                        <%= link_to plan, method: :delete,
+                              class: "dropdown-item text-danger",
+                              data: {
                                 confirm: "¿Estás seguro de eliminar este plan de entrega?",
                                 turbo_method: :delete
                               } do %>
@@ -270,24 +269,24 @@
   <div class="d-block d-md-none">
     <div class="row g-3">
       <% @delivery_plans.each do |plan| %>
-        <% 
-          # Validar fechas antes de usar Date.commercial (móvil)
+        <%
           if plan.year.present? && plan.week.present?
             begin
               start_date = Date.commercial(plan.year.to_i, plan.week.to_i, 1)
-              end_date = Date.commercial(plan.year.to_i, plan.week.to_i, 5)
+              end_date   = Date.commercial(plan.year.to_i, plan.week.to_i, 5)
             rescue ArgumentError
-              start_date = nil
-              end_date = nil
+              start_date = end_date = nil
             end
           else
-            start_date = nil
-            end_date = nil
+            start_date = end_date = nil
           end
-          
-          delivered_count = plan.deliveries.where(status: :delivered).count
-          total_count = plan.deliveries.count
+
+          total_count        = plan.deliveries_count.to_i
+          delivered_count    = plan.delivered_count.to_i
           progress_percentage = total_count > 0 ? (delivered_count.to_f / total_count * 100).round : 0
+
+          first_date = plan.first_delivery_date
+          last_date  = plan.last_delivery_date
         %>
         <div class="col-12">
           <div class="card shadow-sm">
@@ -315,13 +314,11 @@
                     <% end %>
                   </small>
                   <small class="text-muted d-block">
-                    <% if plan.deliveries.any? %>
-                      <% first_date = plan.deliveries.minimum(:delivery_date) %>
-                      <% last_date  = plan.deliveries.maximum(:delivery_date) %>
+                    <% if total_count > 0 && first_date.present? && last_date.present? %>
                       <% if first_date == last_date %>
-                        Entrega: <%= l first_date, format: :short %>
+                        Entrega: <%= l first_date.to_date, format: :short %>
                       <% else %>
-                        Entregas: <%= l first_date, format: :short %> – <%= l last_date, format: :short %>
+                        Entregas: <%= l first_date.to_date, format: :short %> – <%= l last_date.to_date, format: :short %>
                       <% end %>
                     <% else %>
                       Sin entregas programadas
@@ -360,44 +357,44 @@
                 </div>
                 <div class="d-flex align-items-center gap-2">
                   <div class="progress" style="width: 80px; height: 8px;">
-                    <div class="progress-bar bg-success" 
+                    <div class="progress-bar bg-success"
                          style="width: <%= progress_percentage %>%"></div>
                   </div>
                   <small class="text-muted"><%= delivered_count %>/<%= total_count %></small>
                 </div>
               </div>
               <div class="d-flex gap-2">
-                <%= link_to delivery_plan_path(plan), 
+                <%= link_to delivery_plan_path(plan),
                       class: "btn btn-sm btn-outline-primary flex-fill" do %>
                   <i class="bi bi-eye me-1"></i>Ver
                 <% end %>
-                <%= link_to edit_delivery_plan_path(plan), 
+                <%= link_to edit_delivery_plan_path(plan),
                       class: "btn btn-sm btn-outline-secondary flex-fill" do %>
                   <i class="bi bi-pencil me-1"></i>Editar
                 <% end %>
                 <div class="dropdown">
-                  <button class="btn btn-sm btn-outline-dark dropdown-toggle" 
+                  <button class="btn btn-sm btn-outline-dark dropdown-toggle"
                           data-bs-toggle="dropdown">
                     <i class="bi bi-three-dots"></i>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                      <%= link_to delivery_plan_path(plan, format: :pdf), 
+                      <%= link_to delivery_plan_path(plan, format: :pdf),
                             class: "dropdown-item", target: "_blank" do %>
                         <i class="bi bi-file-earmark-pdf me-2"></i>PDF
                       <% end %>
                     </li>
                     <li>
-                      <%= link_to delivery_plan_path(plan, format: :xlsx), 
+                      <%= link_to delivery_plan_path(plan, format: :xlsx),
                             class: "dropdown-item" do %>
                         <i class="bi bi-file-earmark-spreadsheet me-2"></i>Excel
                       <% end %>
                     </li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
-                      <%= link_to plan, method: :delete, 
-                            class: "dropdown-item text-danger", 
-                            data: { 
+                      <%= link_to plan, method: :delete,
+                            class: "dropdown-item text-danger",
+                            data: {
                               confirm: "¿Eliminar este plan?",
                               turbo_method: :delete
                             } do %>

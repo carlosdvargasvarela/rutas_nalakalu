@@ -12,11 +12,8 @@ class Delivery < ApplicationRecord
 
   # Delegar coordenadas directamente al delivery_address
   delegate :latitude, :longitude, :address, :plus_code, to: :delivery_address, allow_nil: true
-
-  # Si quieres también el nombre del cliente:
   delegate :client, to: :delivery_address, allow_nil: true
 
-  # Ejemplo de helper útil para Google Maps/JSON APIs
   def location
     {lat: latitude.to_f, lng: longitude.to_f}
   end
@@ -34,7 +31,8 @@ class Delivery < ApplicationRecord
     rescheduled: 5,
     cancelled: 6,
     archived: 7,
-    failed: 8
+    failed: 8,
+    loaded_on_truck: 9
   }
 
   enum delivery_type: {
@@ -74,10 +72,10 @@ class Delivery < ApplicationRecord
   scope :pending, -> { where(status: [:scheduled, :ready_to_deliver, :in_route]) }
   scope :overdue, -> {
     where("delivery_date < ?", Date.current)
-      .where.not(status: [statuses[:delivered], statuses[:rescheduled], statuses[:cancelled]])
+      .where.not(status: [statuses[:delivered], statuses[:rescheduled], statuses[:cancelled], statuses[:loaded_on_truck]])
   }
   scope :eligible_for_plan, -> {
-    where.not(status: [:delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived, :failed])
+    where.not(status: [:delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived, :failed, :loaded_on_truck])
   }
   scope :not_assigned_to_plan, -> { where.not(id: DeliveryPlanAssignment.select(:delivery_id)) }
   scope :available_for_plan, -> { eligible_for_plan.not_assigned_to_plan }
@@ -133,6 +131,7 @@ class Delivery < ApplicationRecord
     when "cancelled" then "Cancelada"
     when "archived" then "Archivada"
     when "failed" then "Entrega fracasada"
+    when "loaded_on_truck" then "Cargada en camión"
     else status.to_s.humanize
     end
   end
@@ -169,14 +168,28 @@ class Delivery < ApplicationRecord
     end
 
     update_column(:load_status, Delivery.load_statuses[new_status])
+
+    if new_status == :all_loaded
+      update_column(:status, Delivery.statuses[:loaded_on_truck])
+    end
+
+    # Si pertenece a un plan, que el plan recalcule su propio load_status
+    if (plan = delivery_plan)
+      plan.recalculate_load_status!
+    end
   end
 
   # Marcar toda la entrega como cargada
   def mark_all_loaded!
     transaction do
-      delivery_items.where.not(load_status: DeliveryItem.load_statuses[:missing])
-        .update_all(load_status: DeliveryItem.load_statuses[:loaded], updated_at: Time.current)
+      delivery_items
+        .where.not(load_status: DeliveryItem.load_statuses[:missing])
+        .find_each do |item|
+          item.update!(load_status: :loaded, status: :loaded_on_truck)
+        end
+
       recalculate_load_status!
+      update_status_based_on_items
     end
   end
 
@@ -208,25 +221,19 @@ class Delivery < ApplicationRecord
   end
 
   # Recalcula el estado de la entrega basándose en los estados de sus items
-  # Debe invocarse explícitamente desde servicios/controladores tras cambios masivos
   def update_status_based_on_items
     statuses = delivery_items.pluck(:status).map(&:to_s)
 
-    # Casos donde NO debemos actualizar
     return if archived?
     return if statuses.empty?
 
-    # Si está en plan/ruta y todos los items están OK (no cancelados/reprogramados/fallidos),
-    # solo actualizar si TODOS están entregados
     if (in_plan? || in_route?) && delivery_plans.exists?
       has_problems = statuses.any? { |s| %w[cancelled rescheduled failed].include?(s) }
       all_delivered = statuses.all? { |s| s == "delivered" }
 
-      # Solo actualizar si hay problemas O si todo está entregado
       return unless has_problems || all_delivered
     end
 
-    # Actualización de estado según prioridad
     new_status = calculate_delivery_status(statuses)
     update_column(:status, Delivery.statuses[new_status]) if new_status
   end
@@ -249,13 +256,10 @@ class Delivery < ApplicationRecord
 
   def mark_as_delivered!
     transaction do
-      # Solo marcar como entregados los no terminales
-      delivery_items.where(status: [:pending, :confirmed, :in_plan, :in_route]).find_each(&:mark_as_delivered!)
+      delivery_items.where(status: [:pending, :confirmed, :in_plan, :in_route, :loaded_on_truck]).find_each(&:mark_as_delivered!)
 
-      # Recalcular el estado con la lógica nueva (no forzar a delivered siempre)
       update_status_based_on_items
 
-      # Si tras el recálculo todos los items quedaron delivered, aseguramos el estado
       if delivery_items.where.not(status: :delivered).none?
         update_column(:status, Delivery.statuses[:delivered])
       end
@@ -357,7 +361,6 @@ class Delivery < ApplicationRecord
     Rails.logger.info "[Delivery##{id}] Confirmación de vendedor removida"
   end
 
-  # Scope para reportes
   def self.unconfirmed_by_vendor
     where(confirmed_by_vendor: false)
   end
@@ -371,7 +374,7 @@ class Delivery < ApplicationRecord
   def calculate_delivery_status(statuses)
     statuses = statuses.map(&:to_s)
 
-    terminal = %w[delivered cancelled rescheduled failed]
+    terminal = %w[delivered cancelled rescheduled failed loaded_on_truck]
     non_terminal = %w[pending confirmed in_plan in_route]
 
     # 1) Uniformidad terminal
@@ -380,23 +383,24 @@ class Delivery < ApplicationRecord
     return :rescheduled if statuses.all? { |s| s == "rescheduled" }
     return :failed if statuses.all? { |s| s == "failed" }
 
-    # 2) Caso mixto: separar terminales vs no terminales
     non_terminal_statuses = statuses.select { |s| non_terminal.include?(s) }
     terminal_statuses = statuses.select { |s| terminal.include?(s) }
 
-    # 2.a) Si NO hay no terminales (todos son terminales pero mixtos):
-    # Regla especial: si hay al menos un delivered entre los terminales, la entrega debe ser delivered.
     if non_terminal_statuses.empty?
       return :delivered if terminal_statuses.any? { |s| s == "delivered" }
-      # Si no hay delivered, no cambiar (porque no son uniformes para cancelled/rescheduled/failed)
       return nil
     end
 
-    # 2.b) Sí hay no terminales → decidir SOLO con no terminales
-    # Prioridad: in_route si alguno
+    # 1) Si hay al menos un loaded_on_truck y no hay delivered ⇒ mostramos loaded_on_truck
+    if non_terminal_statuses.any? { |s| s == "loaded_on_truck" } &&
+        terminal_statuses.none? { |s| s == "delivered" }
+      return :loaded_on_truck
+    end
+
+    # 2) in_route si alguno
     return :in_route if non_terminal_statuses.any? { |s| s == "in_route" }
 
-    # Todos los no terminales confirmed → confirmado para entregar
+    # 3) Todos confirmed → ready_to_deliver / in_plan
     if non_terminal_statuses.all? { |s| s == "confirmed" }
       unless delivery_plans.exists?
         mark_as_confirmed_by_vendor!
@@ -404,10 +408,9 @@ class Delivery < ApplicationRecord
       return delivery_plans.exists? ? :in_plan : :ready_to_deliver
     end
 
-    # Todos los no terminales pending → scheduled
+    # 4) Todos pending → scheduled
     return :scheduled if non_terminal_statuses.all? { |s| s == "pending" }
 
-    # Cualquier otra mezcla de no terminales → no cambiar
     nil
   end
 end

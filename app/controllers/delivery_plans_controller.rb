@@ -3,18 +3,36 @@ class DeliveryPlansController < ApplicationController
   def index
     @q = DeliveryPlan.ransack(params[:q])
 
+    # Usamos agregados en SQL para evitar COUNT/MIN/MAX por cada plan en la vista
+    delivered_status = Delivery.statuses[:delivered]
+
     base_result = @q.result
       .left_joins(:deliveries)
-      .select("delivery_plans.*, MIN(deliveries.delivery_date) AS first_delivery_date")
+      .select(<<~SQL)
+        delivery_plans.*,
+        MIN(deliveries.delivery_date) AS first_delivery_date,
+        MAX(deliveries.delivery_date) AS last_delivery_date,
+        COUNT(deliveries.id)          AS deliveries_count,
+        COUNT(
+          CASE
+            WHEN deliveries.status = #{delivered_status} THEN 1
+          END
+        ) AS delivered_count
+      SQL
       .group("delivery_plans.id")
       .order("MIN(deliveries.delivery_date) DESC")
 
     respond_to do |format|
       format.html do
-        @delivery_plans = base_result.preload(:driver, :deliveries)
+        # Solo necesitamos el driver en el index; los datos de entregas vienen por agregados
+        @delivery_plans = base_result.includes(:driver)
+
+        # Para el filtro de camión en la vista (en lugar de DeliveryPlan.distinct.pluck(:truck))
+        @available_trucks = @delivery_plans.map(&:truck).compact.uniq
       end
 
       format.xlsx do
+        # Para Excel seguimos cargando toda la estructura completa
         @delivery_plans = base_result
           .includes(
             :driver,
@@ -29,7 +47,8 @@ class DeliveryPlansController < ApplicationController
           .distinct
           .to_a
 
-        response.headers["Content-Disposition"] = 'attachment; filename="planes_entrega.xlsx"'
+        response.headers["Content-Disposition"] =
+          'attachment; filename="planes_entrega.xlsx"'
       end
     end
   end
@@ -48,7 +67,10 @@ class DeliveryPlansController < ApplicationController
       .available_for_plan
 
     @q = base_scope.ransack(params[:q])
-    @deliveries = @q.result.includes(:order, :delivery_address, order: :client).order(:delivery_date)
+    @deliveries = @q.result
+      .includes(:delivery_address, order: :client)
+      .order(:delivery_date)
+
     @delivery_plan = DeliveryPlan.new
     @from = from
     @to = to
@@ -66,14 +88,13 @@ class DeliveryPlansController < ApplicationController
       existing_stop = grouper.find_stop_for_location(delivery)
 
       if existing_stop
-        # NO usar create! directamente porque dispara acts_as_list
         # Crear sin callbacks y luego asignar stop_order manualmente
         assignment = DeliveryPlanAssignment.new(
           delivery_plan: @delivery_plan,
           delivery_id: delivery.id
         )
-        assignment.save(validate: false) # Guarda sin callbacks
-        assignment.update_column(:stop_order, existing_stop) # Asigna stop_order sin disparar callbacks
+        assignment.save(validate: false)
+        assignment.update_column(:stop_order, existing_stop)
 
         redirect_to edit_delivery_plan_path(@delivery_plan),
           notice: "Entrega agregada al plan en la parada ##{existing_stop} (misma ubicación)."
@@ -103,12 +124,18 @@ class DeliveryPlansController < ApplicationController
     stop_orders = params[:stop_orders] || {}
 
     ActiveRecord::Base.transaction do
+      # Evitar N+1 al buscar assignments uno por uno
+      assignments = @delivery_plan.delivery_plan_assignments
+        .where(id: stop_orders.keys)
+        .index_by { |a| a.id.to_s }
+
       stop_orders.each do |assignment_id, stop_order|
-        assignment = @delivery_plan.delivery_plan_assignments.find(assignment_id)
-        assignment.update!(stop_order: stop_order.to_i)
+        if (assignment = assignments[assignment_id.to_s])
+          assignment.update!(stop_order: stop_order.to_i)
+        end
       end
 
-      # 🔁 Reagrupar después de reordenar manualmente
+      # Reagrupar después de reordenar manualmente
       DeliveryPlanStopGrouper.new(@delivery_plan).call
     end
 
@@ -141,14 +168,19 @@ class DeliveryPlansController < ApplicationController
     @delivery_plan.year = first_date.cwyear
 
     if @delivery_plan.save
+      # Evitar N+1 al volver a buscar cada Delivery
+      deliveries_by_id = deliveries.index_by { |d| d.id.to_s }
+
       delivery_ids.each_with_index do |delivery_id, index|
         DeliveryPlanAssignment.create!(
           delivery_plan: @delivery_plan,
           delivery_id: delivery_id,
           stop_order: index + 1
         )
-        delivery = Delivery.find(delivery_id)
-        delivery.update_status_based_on_items
+
+        if (delivery = deliveries_by_id[delivery_id.to_s])
+          delivery.update_status_based_on_items
+        end
       end
 
       # Agrupar paradas por ubicación
@@ -165,14 +197,19 @@ class DeliveryPlansController < ApplicationController
   def show
     @delivery_plan = DeliveryPlan.find(params[:id])
     authorize @delivery_plan
-    @deliveries = @delivery_plan.deliveries.includes(:order, :delivery_address, order: :client)
-    @assignments = @delivery_plan.delivery_plan_assignments.includes(
-      delivery: [
-        :delivery_items,
-        order: [:client, :seller],
-        delivery_address: :client
-      ]
-    ).order(:stop_order)
+
+    @deliveries = @delivery_plan.deliveries
+      .includes(:delivery_address, order: :client)
+
+    @assignments = @delivery_plan.delivery_plan_assignments
+      .includes(
+        delivery: [
+          :delivery_items,
+          {order: [:client, :seller]},
+          {delivery_address: :client}
+        ]
+      )
+      .order(:stop_order)
 
     delivery_dates = @deliveries.pluck(:delivery_date)
     @from_date = delivery_dates.min
@@ -273,7 +310,10 @@ class DeliveryPlansController < ApplicationController
   def edit
     @delivery_plan = DeliveryPlan.find(params[:id])
     authorize @delivery_plan
-    @assignments = @delivery_plan.delivery_plan_assignments.includes(delivery: [:order, :delivery_address, order: :client]).order(:stop_order)
+
+    @assignments = @delivery_plan.delivery_plan_assignments
+      .includes(delivery: [:delivery_address, {order: :client}])
+      .order(:stop_order)
 
     delivery_date = @assignments.first&.delivery&.delivery_date
 
@@ -281,6 +321,7 @@ class DeliveryPlansController < ApplicationController
       Delivery
         .where(delivery_date: delivery_date)
         .available_for_plan
+        .includes(:delivery_address, order: :client)
     else
       []
     end
@@ -309,14 +350,15 @@ class DeliveryPlansController < ApplicationController
       flash.now[:alert] = @delivery_plan.errors.full_messages.to_sentence.presence ||
         "No se pudo actualizar el plan de ruta."
 
-      # Necesario para volver a renderizar :edit con lo mismo que usas ahí
       @assignments = @delivery_plan.delivery_plan_assignments
-        .includes(delivery: [:order, :delivery_address, order: :client])
+        .includes(delivery: [:delivery_address, {order: :client}])
         .order(:stop_order)
 
       delivery_date = @assignments.first&.delivery&.delivery_date
       @available_deliveries = if delivery_date
-        Delivery.where(delivery_date: delivery_date).available_for_plan
+        Delivery.where(delivery_date: delivery_date)
+          .available_for_plan
+          .includes(:delivery_address, order: :client)
       else
         []
       end
@@ -356,7 +398,10 @@ class DeliveryPlansController < ApplicationController
       .where.not(id: DeliveryPlanAssignment.select(:delivery_id))
 
     @q = base_scope.ransack(params[:q])
-    @deliveries = @q.result.includes(:order, :delivery_address, order: :client).order(:delivery_date)
+    @deliveries = @q.result
+      .includes(:delivery_address, order: :client)
+      .order(:delivery_date)
+
     @from = from
     @to = to
     @selected_delivery_ids = selected_ids.map(&:to_i)

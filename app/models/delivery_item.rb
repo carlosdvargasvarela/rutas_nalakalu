@@ -22,7 +22,8 @@ class DeliveryItem < ApplicationRecord
     delivered: 4,
     rescheduled: 5,
     cancelled: 6,
-    failed: 7
+    failed: 7,
+    loaded_on_truck: 8
   }
 
   enum load_status: {
@@ -36,7 +37,7 @@ class DeliveryItem < ApplicationRecord
   # ============================================================================
 
   scope :service_cases, -> { where(service_case: true) }
-  scope :eligible_for_plan, -> { where.not(status: [:delivered, :cancelled, :rescheduled]) }
+  scope :eligible_for_plan, -> { where.not(status: [:delivered, :cancelled, :rescheduled, :loaded_on_truck]) }
   scope :eligible_for_plan_for_others, -> { where.not(status: [:rescheduled]) }
   scope :loaded_items, -> { where(load_status: :loaded) }
   scope :unloaded_items, -> { where(load_status: :unloaded) }
@@ -53,11 +54,10 @@ class DeliveryItem < ApplicationRecord
   # CALLBACKS
   # ============================================================================
 
-  # Solo actualizamos el OrderItem tras cambios individuales
-  # El estado del Delivery se recalcula explícitamente desde servicios
   after_update :update_order_item_status
   after_update :notify_reschedule, if: :saved_change_to_delivery_id?
   after_commit :recalculate_delivery_status, on: [:create, :update]
+  after_update :trigger_delivery_recalculation, if: :saved_change_to_load_status?
 
   # ============================================================================
   # MÉTODOS PÚBLICOS
@@ -73,23 +73,32 @@ class DeliveryItem < ApplicationRecord
     when "rescheduled" then "Reprogramado"
     when "cancelled" then "Cancelado"
     when "failed" then "Entrega fracasada"
+    when "loaded_on_truck" then "Cargado en camión"
     else status.to_s.humanize
     end
   end
 
   def mark_loaded!
-    update!(load_status: :loaded)
-    delivery.recalculate_load_status!
+    transaction do
+      # Para logística: cargado en camión (no es "entregado" todavía)
+      update!(load_status: :loaded, status: :loaded_on_truck)
+
+      delivery.recalculate_load_status!
+    end
   end
 
   def mark_unloaded!
-    update!(load_status: :unloaded)
-    delivery.recalculate_load_status!
+    transaction do
+      update!(load_status: :unloaded, status: :pending)
+      delivery.recalculate_load_status!
+    end
   end
 
   def mark_missing!
-    update!(load_status: :missing)
-    delivery.recalculate_load_status!
+    transaction do
+      update!(load_status: :missing)
+      delivery.recalculate_load_status!
+    end
   end
 
   def display_load_status
@@ -111,7 +120,7 @@ class DeliveryItem < ApplicationRecord
     order_item.update_status_based_on_deliveries if order_item.present?
   end
 
-  # Marca como entregado y actualiza el delivery
+  # Marca como entregado (esto lo usará la PWA del conductor en el futuro)
   def mark_as_delivered!
     transaction do
       update!(status: :delivered)
@@ -159,6 +168,11 @@ class DeliveryItem < ApplicationRecord
     users << delivery.delivery_plan.driver if delivery.delivery_plan&.driver
     message = "El item '#{order_item.product}' del pedido #{order_item.order.number} fue reagendado para #{delivery.delivery_date.strftime("%d/%m/%Y")}."
     NotificationService.create_for_users(users.compact.uniq, self, message)
+  end
+
+  def trigger_delivery_recalculation
+    return unless delivery.present?
+    delivery.recalculate_load_status!
   end
 
   def recalculate_delivery_status

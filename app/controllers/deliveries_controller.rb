@@ -44,12 +44,31 @@ class DeliveriesController < ApplicationController
   end
 
   def show
+    # 🔥 OPTIMIZACIÓN: Precargar todas las asociaciones necesarias
+    @delivery = Delivery.includes(
+      :order,
+      :delivery_address,
+      delivery_items: {order_item: [:order, :order_item_notes]},
+      order: [:client, :seller],
+      delivery_address: :client,
+      delivery_plan_assignments: {delivery_plan: :driver}
+    ).find(params[:id])
+
+    # 🔥 OPTIMIZACIÓN: Precargar asociaciones para entregas futuras
     @future_deliveries = Delivery
+      .includes(order: :client, delivery_address: :client)
       .where(order_id: @delivery.order_id, delivery_address_id: @delivery.delivery_address_id)
       .where.not(id: @delivery.id)
       .where(status: [:scheduled, :ready_to_deliver, :in_plan, :in_route])
 
-    @delivery_history = @delivery.delivery_history
+    # 🔥 OPTIMIZACIÓN: Precargar asociaciones para historial
+    @delivery_history = @delivery.order.deliveries
+      .includes(
+        delivery_items: {order_item: [:order, :order_item_notes]},
+        delivery_address: :client
+      )
+      .where(delivery_address_id: @delivery.delivery_address_id)
+      .order(:delivery_date)
   end
 
   def new
@@ -279,7 +298,12 @@ class DeliveriesController < ApplicationController
   private
 
   def set_delivery
-    @delivery = Delivery.find(params[:id])
+    # 🔥 OPTIMIZACIÓN: Precargar asociaciones básicas en set_delivery
+    @delivery = Delivery.includes(
+      order: [:client, :seller],
+      delivery_address: :client,
+      delivery_items: {order_item: :order}
+    ).find(params[:id])
   end
 
   def set_addresses

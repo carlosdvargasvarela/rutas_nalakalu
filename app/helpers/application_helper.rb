@@ -19,7 +19,8 @@ module ApplicationHelper
     "rescheduled" => "info",
     "cancelled" => "danger",
     "archived" => "light",
-    "failed" => "danger"
+    "failed" => "danger",
+    "loaded_on_truck" => "dark"      # 👈 CAMBIO: Ahora es 'dark'
   }.freeze
 
   # DeliveryItem: estados típicos en tu app
@@ -31,7 +32,8 @@ module ApplicationHelper
     "delivered" => "success",
     "rescheduled" => "info",
     "cancelled" => "danger",
-    "failed" => "danger"
+    "failed" => "danger",
+    "loaded_on_truck" => "dark"       # 👈 CAMBIO: Ahora es 'dark'
   }.freeze
 
   ORDER_STATUS_COLORS = {
@@ -53,7 +55,10 @@ module ApplicationHelper
   DELIVERY_PLAN_STATUS_COLORS = {
     "draft" => "secondary",
     "sent_to_logistics" => "info",
-    "routes_created" => "primary"
+    "routes_created" => "primary",
+    "in_progress" => "warning",
+    "completed" => "success",
+    "aborted" => "danger"
   }.freeze
 
   STATUS_ICONS = {
@@ -67,6 +72,7 @@ module ApplicationHelper
     "cancelled" => "bi-x-circle",
     "archived" => "bi-archive",
     "failed" => "bi-exclamation-octagon",
+    "loaded_on_truck" => "bi-box-seam", # Icono para “cargado en camión”
 
     # Order / OrderItem
     "in_production" => "bi-gear",
@@ -77,10 +83,13 @@ module ApplicationHelper
     # DeliveryPlan
     "draft" => "bi-journal",
     "sent_to_logistics" => "bi-send",
-    "routes_created" => "bi-diagram-3"
+    "routes_created" => "bi-diagram-3",
+    "in_progress" => "bi-play-circle",
+    "completed" => "bi-flag",
+    "aborted" => "bi-slash-circle"
   }.freeze
 
-  # Métodos utilitarios de fecha/hora (ASEGURAR QUE EXISTAN)
+  # Métodos utilitarios de fecha/hora
   def format_date_dd_mm_yyyy(date)
     return "" if date.blank?
     date.strftime("%d/%m/%Y")
@@ -92,11 +101,20 @@ module ApplicationHelper
   end
 
   # Métodos de color por entidad
-  def delivery_status_color(status) = normalize_badge_color(DELIVERY_STATUS_COLORS[status.to_s] || "secondary")
-  def delivery_item_status_color(status) = normalize_badge_color(DELIVERY_ITEM_STATUS_COLORS[status.to_s] || "secondary")
-  def order_status_color(status) = normalize_badge_color(ORDER_STATUS_COLORS[status.to_s] || "secondary")
-  def order_item_status_color(status) = normalize_badge_color(ORDER_ITEM_STATUS_COLORS[status.to_s] || "secondary")
-  def delivery_plan_status_color(status) = normalize_badge_color(DELIVERY_PLAN_STATUS_COLORS[status.to_s] || "secondary")
+  def delivery_status_color(status) =
+    normalize_badge_color(DELIVERY_STATUS_COLORS[status.to_s] || "secondary")
+
+  def delivery_item_status_color(status) =
+    normalize_badge_color(DELIVERY_ITEM_STATUS_COLORS[status.to_s] || "secondary")
+
+  def order_status_color(status) =
+    normalize_badge_color(ORDER_STATUS_COLORS[status.to_s] || "secondary")
+
+  def order_item_status_color(status) =
+    normalize_badge_color(ORDER_ITEM_STATUS_COLORS[status.to_s] || "secondary")
+
+  def delivery_plan_status_color(status) =
+    normalize_badge_color(DELIVERY_PLAN_STATUS_COLORS[status.to_s] || "secondary")
 
   # Deducción automática de tipo según objeto AR o símbolo
   def infer_status_type(record_or_type)
@@ -162,6 +180,7 @@ module ApplicationHelper
     end
 
     css_classes = ["badge", "bg-#{color}"]
+    # El color 'dark' ya tiene texto blanco por defecto en Bootstrap, no necesita 'text-dark'
     css_classes << "text-dark" if needs_text_dark?(color)
     css_classes << classes if classes.present?
 

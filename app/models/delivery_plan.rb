@@ -38,8 +38,7 @@ class DeliveryPlan < ApplicationRecord
     some_missing: 3
   }, _prefix: :load
 
-  # 2) Aliases de compatibilidad SIN prefijo (para no tocar vistas existentes)
-  #    Esto habilita draft?, sent_to_logistics?, routes_created?, etc.
+  # Aliases de compatibilidad SIN prefijo
   def draft? = status_draft?
   def sent_to_logistics? = status_sent_to_logistics?
   def routes_created? = status_routes_created?
@@ -47,7 +46,6 @@ class DeliveryPlan < ApplicationRecord
   def completed? = status_completed?
   def aborted? = status_aborted?
 
-  # 3) Aliases para setters de estado si en algún lugar se usan sin prefijo
   def draft! = status_draft!
   def sent_to_logistics! = status_sent_to_logistics!
   def routes_created! = status_routes_created!
@@ -59,7 +57,6 @@ class DeliveryPlan < ApplicationRecord
   validates :week, presence: true, numericality: {only_integer: true, greater_than: 0, less_than_or_equal_to: 54}
   validates :status, presence: true
 
-  # Scope para estadisticas rapidas para el dashboard
   scope :upcoming, -> {
     where("year > ? OR (year = ? AND week >= ?)", Date.current.year, Date.current.year, Date.current.cweek)
   }
@@ -84,20 +81,13 @@ class DeliveryPlan < ApplicationRecord
 
   def display_status
     case status
-    when "draft"
-      "Borrador"
-    when "sent_to_logistics"
-      "Enviado a logística"
-    when "routes_created"
-      "Ruta creada"
-    when "in_progress"
-      "En progreso"
-    when "completed"
-      "Completado"
-    when "aborted"
-      "Abortado"
-    else
-      "Desconocido"
+    when "draft" then "Borrador"
+    when "sent_to_logistics" then "Enviado a logística"
+    when "routes_created" then "Ruta creada"
+    when "in_progress" then "En progreso"
+    when "completed" then "Completado"
+    when "aborted" then "Abortado"
+    else "Desconocido"
     end
   end
 
@@ -123,6 +113,10 @@ class DeliveryPlan < ApplicationRecord
     end
 
     update_column(:load_status, DeliveryPlan.load_statuses[new_status])
+
+    if new_status == :all_loaded && !status_completed?
+      status_completed!
+    end
   end
 
   # Marcar todo el plan como cargado
@@ -172,7 +166,6 @@ class DeliveryPlan < ApplicationRecord
     deliveries.minimum(:delivery_date)
   end
 
-  # Ransacker para filtrar por el rango de fechas de la primera entrega
   ransacker :first_delivery_date do |parent|
     Arel.sql("(SELECT MIN(deliveries.delivery_date)
                FROM deliveries
@@ -181,56 +174,46 @@ class DeliveryPlan < ApplicationRecord
                WHERE dpa.delivery_plan_id = delivery_plans.id)")
   end
 
-  # Nombre completo del plan
   def full_name
     "Plan de entregas semana #{week} - #{year}"
   end
 
-  # Total de entregas en el plan
   def total_deliveries
     deliveries.count
   end
 
-  # Entregas con casos de servicio
   def service_case_deliveries
     deliveries.with_service_cases
   end
 
-  # Entregas normales
   def normal_deliveries
     deliveries.normal_deliveries
   end
 
-  # Agregar entrega al plan
   def add_delivery(delivery)
     delivery_plan_assignments.create!(delivery: delivery)
   end
 
-  # Enviar a logística
   def send_to_logistics!
     update!(status: :routes_created)
   end
 
   def ensure_deletable
-    # Evitamos borrar planes que ya están en progreso, completados o abortados
     if status_in_progress? || status_completed? || status_aborted?
       errors.add(:base, "No se puede eliminar un plan en progreso, completado o abortado.")
       throw(:abort)
     end
   end
 
-  # NUEVO: Fallar todas las asignaciones pendientes o en ruta del plan
   def fail_all_pending_assignments!(reason:, failed_by:)
     transaction do
       delivery_plan_assignments.where(status: [:pending, :in_route]).find_each do |assignment|
         assignment.mark_as_failed!(reason: reason, failed_by: failed_by)
       end
-      # Opcional: marcar el plan como abortado
       abort! unless status_completed?
     end
   end
 
-  # Estadísticas del plan
   def statistics
     {
       total_deliveries: total_deliveries,
@@ -263,7 +246,6 @@ class DeliveryPlan < ApplicationRecord
 
   def finish!
     return if status_completed?
-    # Solo completar si todos los assignments están completed o cancelled
     all_done = delivery_plan_assignments.all? { |a| a.completed? || a.cancelled? }
     update!(status: :completed) if all_done
   end
@@ -281,7 +263,6 @@ class DeliveryPlan < ApplicationRecord
     delivery_plan_assignments.includes(:delivery)
   end
 
-  # Progreso del plan (porcentaje de assignments completados)
   def progress
     total = delivery_plan_assignments.count
     return 0 if total.zero?
@@ -304,7 +285,6 @@ class DeliveryPlan < ApplicationRecord
         errors.add(:base, "No puedes asignar a logística mientras existan entregas sin confirmar")
       end
 
-      # si hay alguna entrega scheduled, siempre obligamos a draft
       self.status = :draft unless all_deliveries_confirmed?
     elsif status_sent_to_logistics?
       update_column(:status, DeliveryPlan.statuses[:draft])
