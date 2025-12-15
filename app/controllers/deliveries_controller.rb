@@ -1,4 +1,3 @@
-# app/controllers/deliveries_controller.rb
 class DeliveriesController < ApplicationController
   before_action :set_delivery, only: [:show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing]
   before_action :set_addresses, only: [:new, :edit, :create, :update]
@@ -264,12 +263,13 @@ class DeliveriesController < ApplicationController
 
   def addresses_for_client
     client = Client.find(params[:client_id])
-    render json: client.delivery_addresses.select(:id, :address)
+    render json: client.delivery_addresses.select(:id, :address, :description, :latitude, :longitude, :plus_code)
   end
 
   def orders_for_client
     client = Client.find(params[:client_id])
-    render json: client.orders.select(:id, :number)
+    orders = client.orders.select(:id, :number).order(created_at: :desc)
+    render json: orders.map { |o| {id: o.id, number: o.number, text: o.number} }
   end
 
   def note
@@ -344,7 +344,8 @@ class DeliveriesController < ApplicationController
 
     @client = find_or_initialize_client_from_params
     @order = find_or_initialize_order_from_params(@client)
-    @addresses = @client.delivery_addresses.to_a
+    @addresses = @client.persisted? ? @client.delivery_addresses.to_a : []
+    @orders = @client.persisted? ? @client.orders.to_a : []
     @clients = Client.all.order(:name)
 
     flash.now[:alert] = "Error al crear la entrega: #{e.message}"
@@ -368,7 +369,10 @@ class DeliveriesController < ApplicationController
 
     @order = @delivery.order
     @client = @order.client
-    @addresses = @client.delivery_addresses.order(:description)
+    @addresses = @client.delivery_addresses.order(:description).to_a
+    @orders = @client.orders.to_a
+    @clients = [@client]
+
     flash.now[:alert] = "Error al actualizar la entrega: #{e.message}"
     render :edit, status: :unprocessable_entity
   end

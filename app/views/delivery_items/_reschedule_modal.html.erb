@@ -1,4 +1,3 @@
-
 <!-- Modal -->
 <div class="modal fade" id="rescheduleModal<%= item.id %>" tabindex="-1" aria-labelledby="rescheduleModalLabel<%= item.id %>" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -34,17 +33,19 @@
             <label class="form-label">Nueva fecha de entrega</label>
             <%= date_field_tag "new_date", nil, class: "form-control" %>
           </div>
-          <!-- Campos para agregar a entrega existente -->
-          <div id="existing-delivery-fields-<%= item.id %>" class="d-none mt-3">
-            <label class="form-label">Entrega existente</label>
-            <%= select_tag "target_delivery_id",
+          <%unless future_deliveries.nil? %>
+            <!-- Campos para agregar a entrega existente -->
+            <div id="existing-delivery-fields-<%= item.id %>" class="d-none mt-3">
+              <label class="form-label">Entrega existente</label>
+              <%= select_tag "target_delivery_id",
                   options_for_select([["Selecciona una entrega existente", ""]] +
                     future_deliveries.map { |d| ["Entrega ##{d.id} - #{l d.delivery_date, format: :long}", d.id] }),
                   class: "form-select" %>
-            <% if future_deliveries.empty? %>
-              <small class="text-muted">No hay entregas existentes</small>
-            <% end %>
-          </div>
+              <% if future_deliveries.empty? %>
+                <small class="text-muted">No hay entregas existentes</small>
+              <% end %>
+            </div>
+          <% end %>
           <div class="text-end mt-3">
             <%= f.button :submit, "Guardar cambios", class: "btn btn-warning" %>
           </div>

@@ -7,20 +7,7 @@
           action: "submit->address-validator#validateBeforeSubmit"
         }
       } do |f| %>
-  <% if delivery.errors.any? %>
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-      <h4 class="alert-heading">Se encontraron <%= pluralize(delivery.errors.count, "error", "errores") %>:</h4>
-      <ul class="mb-0">
-        <% delivery.errors.full_messages.each do |message| %>
-          <li><%= message %></li>
-        <% end %>
-      </ul>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-  <% end %>
-
   <div class="accordion" id="deliveryFormAccordion">
-    
     <!-- SECCIÓN 1: CLIENTE -->
     <div class="accordion-item">
       <h2 class="accordion-header" id="headingClient">
@@ -36,7 +23,6 @@
         </div>
       </div>
     </div>
-
     <!-- SECCIÓN 2: PEDIDO -->
     <div class="accordion-item">
       <h2 class="accordion-header" id="headingOrder">
@@ -52,7 +38,6 @@
         </div>
       </div>
     </div>
-
     <!-- SECCIÓN 3: DIRECCIÓN DE ENTREGA -->
     <div class="accordion-item">
       <h2 class="accordion-header" id="headingAddress">
@@ -68,7 +53,6 @@
         </div>
       </div>
     </div>
-
     <!-- SECCIÓN 4: DATOS DE ENTREGA -->
     <div class="accordion-item">
       <h2 class="accordion-header" id="headingDeliveryData">
@@ -84,7 +68,6 @@
         </div>
       </div>
     </div>
-
     <!-- SECCIÓN 5: PRODUCTOS -->
     <div class="accordion-item">
       <h2 class="accordion-header" id="headingProducts">
@@ -100,9 +83,7 @@
         </div>
       </div>
     </div>
-
   </div>
-
   <!-- BOTONES DE ACCIÓN -->
   <div class="card mt-4">
     <div class="card-body">

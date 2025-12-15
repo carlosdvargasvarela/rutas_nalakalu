@@ -14,7 +14,6 @@
     Busca una dirección en Google Maps o escribe una dirección informal
   </div>
 </div>
-
 <!-- Info dirección seleccionada -->
 <div data-address-autocomplete-target="selectedAddressInfo" 
      class="alert alert-info mb-3" 
@@ -27,12 +26,10 @@
     </div>
   </div>
 </div>
-
 <!-- Mapa pequeño para preview -->
 <div data-address-autocomplete-target="map"
      style="height: 250px;"
      class="mb-3 border rounded"></div>
-
 <!-- Hidden fields -->
 <%= hidden_field_tag "delivery_address[client_id]", (client&.id || delivery.order&.client&.id), 
     data: { "delivery-form-target": "newAddressClientId" } %>
@@ -51,7 +48,6 @@
       "address-autocomplete-target": "plus",
       "delivery-form-target": "newAddressPlusCode"
     } %>
-
 <!-- Referencia adicional -->
 <div class="mb-3">
   <%= label_tag "delivery_address[description]", "Referencia adicional", class: "form-label" %>

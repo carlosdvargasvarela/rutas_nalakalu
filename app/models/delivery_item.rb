@@ -48,6 +48,7 @@ class DeliveryItem < ApplicationRecord
   # El estado del Delivery se recalcula explícitamente desde servicios
   after_update :update_order_item_status
   after_update :notify_reschedule, if: :saved_change_to_delivery_id?
+  after_commit :recalculate_delivery_status, on: [:create, :update]
 
   # ============================================================================
   # MÉTODOS PÚBLICOS
@@ -125,5 +126,10 @@ class DeliveryItem < ApplicationRecord
     users << delivery.delivery_plan.driver if delivery.delivery_plan&.driver
     message = "El item '#{order_item.product}' del pedido #{order_item.order.number} fue reagendado para #{delivery.delivery_date.strftime("%d/%m/%Y")}."
     NotificationService.create_for_users(users.compact.uniq, self, message)
+  end
+
+  def recalculate_delivery_status
+    return unless delivery.present?
+    delivery.update_status_based_on_items
   end
 end

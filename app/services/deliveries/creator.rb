@@ -12,16 +12,19 @@ module Deliveries
         address = find_or_create_address(client)
         order = find_or_create_order(client)
 
-        existing_delivery = Delivery.find_by(
-          order: order,
-          delivery_date: delivery_params[:delivery_date],
-          delivery_address: address
-        )
-
-        return existing_delivery if existing_delivery.present?
-
+        # 1) Procesar items de la entrega (todavía no guardados)
         processed_items = process_delivery_items(order)
 
+        # 2) Validar que no existan OTRAS entregas con estos productos,
+        #    mismo pedido, dirección y fecha
+        validate_no_duplicate_products!(
+          order: order,
+          address: address,
+          date: delivery_params[:delivery_date],
+          delivery_items: processed_items
+        )
+
+        # 3) Crear la entrega
         @delivery = Delivery.new(
           delivery_params.except(:delivery_items_attributes, :delivery_address_id, :order_id).merge(
             order: order,
@@ -73,32 +76,26 @@ module Deliveries
     end
 
     def find_or_create_client
-      # 1) Si viene un client_id (seleccionado desde combo), usar ese
       if params[:client_id].present?
         return Client.find(params[:client_id])
       end
 
-      # 2) Si vienen datos de cliente en el formulario
       if params[:client].present?
         attrs = params.require(:client).permit(:name, :phone, :email)
 
-        # Solo validación fuerte: que haya al menos nombre
         if attrs[:name].to_s.strip.blank?
           raise ActiveRecord::RecordInvalid.new(Client.new), "Debe indicarse el nombre del cliente."
         end
 
-        # Intentar reutilizar por email/teléfono si existen
         existing = nil
         existing = Client.find_by(email: attrs[:email]) if attrs[:email].present?
         existing ||= Client.find_by(phone: attrs[:phone]) if attrs[:phone].present?
 
         return existing if existing
 
-        # Si no existe, crear con lo que haya (nombre obligatorio, email/phone opcionales)
         return Client.create!(attrs)
       end
 
-      # 3) Si no viene ni client_id ni params[:client], error
       raise ActiveRecord::RecordInvalid.new(Client.new), "Debe seleccionarse o crearse un cliente."
     end
 
@@ -113,24 +110,20 @@ module Deliveries
       if params[:delivery_address].present?
         addr_attrs = params.require(:delivery_address).permit(:address, :description, :latitude, :longitude, :plus_code)
 
-        # Priorizar coordenadas: si vienen lat/lng, usarlas primero
         lat = addr_attrs[:latitude].to_s.strip
         lng = addr_attrs[:longitude].to_s.strip
         address_text = addr_attrs[:address].to_s.strip
 
-        # Si hay coordenadas pero no hay dirección, error
         if lat.present? && lng.present? && address_text.blank?
           raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new),
             "Debe proporcionar una dirección junto con las coordenadas."
         end
 
-        # Si no hay dirección en absoluto, error
         if address_text.blank?
           raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new),
             "Debe seleccionarse o crearse una dirección."
         end
 
-        # Buscar dirección existente por coordenadas primero (si están presentes)
         if lat.present? && lng.present?
           existing = client.delivery_addresses.find_by(
             latitude: lat.to_f.round(6),
@@ -139,11 +132,9 @@ module Deliveries
           return existing if existing
         end
 
-        # Buscar por dirección
         existing = client.delivery_addresses.find_by(address: address_text)
         return existing if existing
 
-        # Crear nueva dirección con prioridad a coordenadas
         return client.delivery_addresses.create!(addr_attrs)
       end
 
@@ -206,6 +197,38 @@ module Deliveries
           status: :pending
         )
       end.compact
+    end
+
+    # ==========================
+    # VALIDACIÓN DE DUPLICADOS
+    # ==========================
+
+    def validate_no_duplicate_products!(order:, address:, date:, delivery_items:)
+      order_item_ids = delivery_items.map(&:order_item_id).compact.uniq
+      return if order_item_ids.empty?
+
+      # Consideramos como "activas" todas las entregas excepto rescheduled / cancelled / archived
+      blocked_statuses = %w[rescheduled cancelled archived]
+      active_status_ids = Delivery.statuses.reject { |k, _| blocked_statuses.include?(k) }.values
+
+      conflict_scope = DeliveryItem.joins(:delivery)
+        .where(order_item_id: order_item_ids)
+        .where(
+          deliveries: {
+            order_id: order.id,
+            delivery_address_id: address.id,
+            delivery_date: date,
+            status: active_status_ids
+          }
+        )
+
+      return unless conflict_scope.exists?
+
+      conflicting_order_item_ids = conflict_scope.select(:order_item_id).distinct.pluck(:order_item_id)
+      product_names = OrderItem.where(id: conflicting_order_item_ids).pluck(:product).uniq
+
+      message = "Ya existe una entrega para este pedido, dirección y fecha con los siguientes productos: #{product_names.join(", ")}."
+      raise ActiveRecord::RecordInvalid.new(Delivery.new), message
     end
   end
 end

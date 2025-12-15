@@ -13,11 +13,25 @@ module Deliveries
         @client = @order.client
         @address = find_or_create_address(@client)
 
-        prevent_duplicates!
-
+        # Aplicar la nueva dirección a la entrega antes de validar
         @delivery.delivery_address = @address
+
+        # Actualizar / reconstruir los delivery_items si vienen en params
         update_delivery_items if delivery_params[:delivery_items_attributes].present?
 
+        # Fecha "nueva" que se quiere para la entrega
+        new_date = delivery_params[:delivery_date].presence || @delivery.delivery_date
+
+        # Validar que no se dupliquen productos respecto a OTRAS entregas
+        validate_no_duplicate_products!(
+          order: @order,
+          address: @address,
+          date: new_date,
+          delivery_items: @delivery.delivery_items,
+          excluding_delivery: @delivery
+        )
+
+        # Finalmente, actualizar los demás atributos de la entrega
         @delivery.update!(delivery_params.except(:delivery_items_attributes, :delivery_address_id, :order_id))
       end
 
@@ -26,6 +40,7 @@ module Deliveries
       Rails.logger.error("❌ Error en Deliveries::Updater: #{e.message}")
       raise e
     rescue ActiveRecord::RecordNotUnique
+      # Por si aún existe el índice viejo en DB
       raise StandardError, "Ya existe otra entrega con esa combinación de pedido, fecha y dirección."
     end
 
@@ -68,21 +83,17 @@ module Deliveries
       if addr_id.present?
         addr = DeliveryAddress.find(addr_id)
 
-        # Si vienen nuevos datos de dirección, actualizarlos
         if params[:delivery_address].present? && address_params.values.any?(&:present?)
-          # Priorizar coordenadas si vienen
           update_attrs = address_params.dup
 
           lat = update_attrs[:latitude].to_s.strip
           lng = update_attrs[:longitude].to_s.strip
 
-          # Si hay coordenadas, asegurarse de que se actualicen primero
           if lat.present? && lng.present?
             addr.latitude = lat.to_f
             addr.longitude = lng.to_f
           end
 
-          # Actualizar el resto de atributos
           addr.assign_attributes(update_attrs.except(:latitude, :longitude))
           addr.save!
         end
@@ -95,7 +106,6 @@ module Deliveries
         lat = addr_attrs[:latitude].to_s.strip
         lng = addr_attrs[:longitude].to_s.strip
 
-        # Buscar por coordenadas primero si están presentes
         if lat.present? && lng.present?
           existing = client.delivery_addresses.find_by(
             latitude: lat.to_f.round(6),
@@ -104,17 +114,14 @@ module Deliveries
           return existing if existing
         end
 
-        # Buscar por dirección
         existing = client.delivery_addresses.find_by(address: address_text)
         if existing
-          # Actualizar coordenadas si vienen nuevas
           if lat.present? && lng.present?
             existing.update!(latitude: lat.to_f, longitude: lng.to_f)
           end
           return existing
         end
 
-        # Crear nueva
         client.delivery_addresses.create!(addr_attrs)
       else
         raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debes seleccionar o ingresar una dirección."
@@ -125,20 +132,9 @@ module Deliveries
       params.require(:delivery_address).permit(:address, :description, :latitude, :longitude, :plus_code)
     end
 
-    def prevent_duplicates!
-      new_date = delivery_params[:delivery_date]
-      return unless new_date != delivery.delivery_date || @address != delivery.delivery_address
-
-      existing_delivery = Delivery.find_by(
-        order: @order,
-        delivery_date: new_date,
-        delivery_address: @address
-      )
-
-      if existing_delivery && existing_delivery != delivery
-        raise ActiveRecord::RecordNotUnique
-      end
-    end
+    # ==========================
+    # DELIVERY ITEMS
+    # ==========================
 
     def update_delivery_items
       processed_items = process_delivery_items_params(@order)
@@ -222,6 +218,41 @@ module Deliveries
           status: :in_production
         )
       end
+    end
+
+    # ==========================
+    # VALIDACIÓN DE DUPLICADOS
+    # ==========================
+
+    def validate_no_duplicate_products!(order:, address:, date:, delivery_items:, excluding_delivery: nil)
+      order_item_ids = delivery_items.map(&:order_item_id).compact.uniq
+      return if order_item_ids.empty?
+
+      blocked_statuses = %w[rescheduled cancelled archived]
+      active_status_ids = Delivery.statuses.reject { |k, _| blocked_statuses.include?(k) }.values
+
+      conflict_scope = DeliveryItem.joins(:delivery)
+        .where(order_item_id: order_item_ids)
+        .where(
+          deliveries: {
+            order_id: order.id,
+            delivery_address_id: address.id,
+            delivery_date: date,
+            status: active_status_ids
+          }
+        )
+
+      if excluding_delivery
+        conflict_scope = conflict_scope.where.not(deliveries: {id: excluding_delivery.id})
+      end
+
+      return unless conflict_scope.exists?
+
+      conflicting_order_item_ids = conflict_scope.select(:order_item_id).distinct.pluck(:order_item_id)
+      product_names = OrderItem.where(id: conflicting_order_item_ids).pluck(:product).uniq
+
+      message = "Ya existe otra entrega para este pedido, dirección y fecha con los siguientes productos: #{product_names.join(", ")}."
+      raise ActiveRecord::RecordInvalid.new(delivery), message
     end
   end
 end
