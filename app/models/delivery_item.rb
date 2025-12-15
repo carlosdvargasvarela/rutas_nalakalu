@@ -25,6 +25,12 @@ class DeliveryItem < ApplicationRecord
     failed: 7
   }
 
+  enum load_status: {
+    unloaded: 0,
+    loaded: 1,
+    missing: 2
+  }, _prefix: :load
+
   # ============================================================================
   # SCOPES
   # ============================================================================
@@ -32,6 +38,9 @@ class DeliveryItem < ApplicationRecord
   scope :service_cases, -> { where(service_case: true) }
   scope :eligible_for_plan, -> { where.not(status: [:delivered, :cancelled, :rescheduled]) }
   scope :eligible_for_plan_for_others, -> { where.not(status: [:rescheduled]) }
+  scope :loaded_items, -> { where(load_status: :loaded) }
+  scope :unloaded_items, -> { where(load_status: :unloaded) }
+  scope :missing_items, -> { where(load_status: :missing) }
 
   # ============================================================================
   # VALIDACIONES
@@ -65,6 +74,30 @@ class DeliveryItem < ApplicationRecord
     when "cancelled" then "Cancelado"
     when "failed" then "Entrega fracasada"
     else status.to_s.humanize
+    end
+  end
+
+  def mark_loaded!
+    update!(load_status: :loaded)
+    delivery.recalculate_load_status!
+  end
+
+  def mark_unloaded!
+    update!(load_status: :unloaded)
+    delivery.recalculate_load_status!
+  end
+
+  def mark_missing!
+    update!(load_status: :missing)
+    delivery.recalculate_load_status!
+  end
+
+  def display_load_status
+    case load_status
+    when "unloaded" then "Sin cargar"
+    when "loaded" then "Cargado"
+    when "missing" then "Faltante"
+    else load_status.to_s.humanize
     end
   end
 

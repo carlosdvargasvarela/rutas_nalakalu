@@ -46,6 +46,13 @@ class Delivery < ApplicationRecord
     only_pickup: 5
   }
 
+  enum load_status: {
+    empty: 0,
+    partial: 1,
+    all_loaded: 2,
+    some_missing: 3
+  }, _prefix: :load
+
   # ============================================================================
   # CONSTANTES
   # ============================================================================
@@ -140,6 +147,64 @@ class Delivery < ApplicationRecord
     when "internal_delivery" then "Mandado Interno"
     else delivery_type.to_s.humanize
     end
+  end
+
+  # Método para recalcular estado de carga basado en items
+  def recalculate_load_status!
+    items = delivery_items.reload
+    return if items.empty?
+
+    loaded_count = items.load_loaded.count
+    missing_count = items.load_missing.count
+    total_count = items.count
+
+    new_status = if missing_count > 0
+      :some_missing
+    elsif loaded_count == total_count
+      :all_loaded
+    elsif loaded_count > 0
+      :partial
+    else
+      :empty
+    end
+
+    update_column(:load_status, Delivery.load_statuses[new_status])
+  end
+
+  # Marcar toda la entrega como cargada
+  def mark_all_loaded!
+    transaction do
+      delivery_items.where.not(load_status: DeliveryItem.load_statuses[:missing])
+        .update_all(load_status: DeliveryItem.load_statuses[:loaded], updated_at: Time.current)
+      recalculate_load_status!
+    end
+  end
+
+  # Resetear carga de la entrega
+  def reset_load_status!
+    transaction do
+      delivery_items.update_all(load_status: DeliveryItem.load_statuses[:unloaded], updated_at: Time.current)
+      recalculate_load_status!
+    end
+  end
+
+  def display_load_status
+    case load_status
+    when "empty" then "Sin cargar"
+    when "partial" then "Parcialmente cargado"
+    when "all_loaded" then "Completamente cargado"
+    when "some_missing" then "Con faltantes"
+    else load_status.to_s.humanize
+    end
+  end
+
+  # Porcentaje de carga
+  def load_percentage
+    total = delivery_items.count
+    return 0 if total.zero?
+
+    loaded = delivery_items.load_loaded.count
+    ((loaded.to_f / total) * 100).round
   end
 
   # Recalcula el estado de la entrega basándose en los estados de sus items

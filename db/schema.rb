@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_12_15_084610) do
+ActiveRecord::Schema[7.2].define(version: 2025_12_15_112031) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -74,6 +74,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_15_084610) do
     t.boolean "archived", default: false, null: false
     t.boolean "confirmed_by_vendor", default: false, null: false
     t.datetime "confirmed_by_vendor_at"
+    t.integer "load_status", default: 0, null: false
     t.index ["approved"], name: "index_deliveries_on_approved"
     t.index ["archived"], name: "index_deliveries_on_archived"
     t.index ["confirmed_by_vendor"], name: "index_deliveries_on_confirmed_by_vendor"
@@ -81,6 +82,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_15_084610) do
     t.index ["delivery_address_id"], name: "index_deliveries_on_delivery_address_id"
     t.index ["delivery_date"], name: "index_deliveries_on_delivery_date"
     t.index ["delivery_type"], name: "index_deliveries_on_delivery_type"
+    t.index ["load_status"], name: "index_deliveries_on_load_status"
     t.index ["order_id"], name: "index_deliveries_on_order_id"
   end
 
@@ -128,8 +130,11 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_15_084610) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "notes"
+    t.integer "load_status", default: 0, null: false
+    t.integer "loaded_quantity"
     t.index ["delivery_id", "order_item_id"], name: "index_delivery_items_on_delivery_and_order_item_unique", unique: true
     t.index ["delivery_id"], name: "index_delivery_items_on_delivery_id"
+    t.index ["load_status"], name: "index_delivery_items_on_load_status"
     t.index ["order_item_id"], name: "index_delivery_items_on_order_item_id"
   end
 
@@ -179,8 +184,10 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_15_084610) do
     t.decimal "current_heading", precision: 5, scale: 2
     t.decimal "current_accuracy", precision: 6, scale: 2
     t.integer "lock_version", default: 0, null: false
+    t.integer "load_status", default: 0, null: false
     t.index ["driver_id"], name: "index_delivery_plans_on_driver_id"
     t.index ["last_seen_at"], name: "index_delivery_plans_on_last_seen_at"
+    t.index ["load_status"], name: "index_delivery_plans_on_load_status"
   end
 
   create_table "notifications", force: :cascade do |t|

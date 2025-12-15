@@ -1,0 +1,67 @@
+<%# app/views/production/delivery_plans/loading.html.erb %>
+<div class="container-fluid mt-3 px-2 px-md-4" data-controller="loading">
+  <%# Header %>
+  <div id="plan_header">
+    <%= render "plan_header", delivery_plan: @delivery_plan, load_stats: @load_stats %>
+  </div>
+  <%# Resumen de Carga %>
+  <div id="load_summary" class="mb-3">
+    <%= render "load_summary", delivery_plan: @delivery_plan, load_stats: @load_stats %>
+  </div>
+  <%# Modal de Filtros %>
+  <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="filterModalLabel">Filtrar Bitácora</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <%= form_with url: loading_production_delivery_plan_path(@delivery_plan), method: :get do %>
+          <div class="modal-body">
+            <div class="mb-3">
+              <%= label_tag :load_status, "Estado de Carga", class: "form-label" %>
+              <%= select_tag :load_status, 
+                  options_for_select([
+                    ["Todos", ""], 
+                    ["Sin cargar", "empty"], 
+                    ["Parcialmente cargado", "partial"], 
+                    ["Completamente cargado", "all_loaded"], 
+                    ["Con faltantes", "some_missing"]
+                  ], @filter_load_status), 
+                  class: "form-select" %>
+            </div>
+            <div class="mb-3">
+              <%= label_tag :search, "Buscar por Cliente o Pedido", class: "form-label" %>
+              <%= text_field_tag :search, @filter_search, class: "form-control", placeholder: "Ej: Cliente A, P-1234" %>
+            </div>
+            <div class="mb-3">
+              <%= label_tag :view_mode, "Modo de Vista", class: "form-label" %>
+              <%= select_tag :view_mode, 
+                  options_for_select([
+                    ["Por Entrega", "by_delivery"], 
+                    ["Por Producto", "by_product"]
+                  ], @view_mode), 
+                  class: "form-select" %>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <%= submit_tag "Aplicar Filtros", class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <%# Lista de Entregas %>
+  <% if @view_mode == "by_delivery" %>
+    <% @assignments.each do |assignment| %>
+      <% delivery = assignment.delivery %>
+      <%= render "production/deliveries/delivery_card", delivery: delivery, assignment: assignment %>
+    <% end %>
+  <% else %>
+    <div class="alert alert-info text-center" role="alert">
+      <i class="bi bi-info-circle me-2"></i>
+      La vista por producto está en desarrollo. Por favor, use la vista "Por Entrega".
+    </div>
+  <% end %>
+</div>

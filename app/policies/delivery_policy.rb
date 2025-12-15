@@ -46,6 +46,14 @@ class DeliveryPolicy < ApplicationPolicy
     new_internal_delivery?
   end
 
+  def mark_all_loaded?
+    user.admin? || user.production_manager? || user.logistics?
+  end
+
+  def reset_load_status?
+    user.admin? || user.production_manager? || user.logistics?
+  end
+
   class Scope < Scope
     def resolve
       if user.admin? || user.production_manager? || user.logistics?

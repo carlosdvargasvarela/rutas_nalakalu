@@ -1,0 +1,48 @@
+<%# app/views/production/delivery_items/_delivery_item_row.html.erb %>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2"
+     data-controller="delivery-item"
+     data-delivery-item-item-id-value="<%= item.id %>"
+     data-delivery-item-delivery-id-value="<%= item.delivery_id %>"
+     data-delivery-item-status-value="<%= item.load_status %>">
+  <div class="flex-grow-1">
+    <strong><%= item.order_item&.product_name || "Producto sin nombre" %></strong>
+    <div class="small text-muted">
+      Cantidad: <strong><%= item.quantity %></strong>
+      <% if item.notes.present? %>
+        <br>
+        <i class="bi bi-chat-left-text me-1"></i><%= item.notes %>
+      <% end %>
+    </div>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <span data-delivery-item-target="badge">
+      <%= load_status_badge(item.load_status) %>
+    </span>
+    <div class="btn-group btn-group-sm" role="group" aria-label="Acciones de Carga" data-delivery-item-target="buttons">
+      <% if policy(item).mark_loaded? %>
+        <%= link_to mark_loaded_production_delivery_item_path(item), 
+            class: "btn btn-outline-success", 
+            title: "Marcar cargado",
+            data: { action: "click->delivery-item#markLoaded" } do %>
+          <i class="bi bi-check-lg"></i>
+        <% end %>
+      <% end %>
+      <% if policy(item).mark_unloaded? %>
+        <%= link_to mark_unloaded_production_delivery_item_path(item), 
+            class: "btn btn-outline-secondary", 
+            title: "Marcar sin cargar",
+            data: { action: "click->delivery-item#markUnloaded" } do %>
+          <i class="bi bi-arrow-counterclockwise"></i>
+        <% end %>
+      <% end %>
+      <% if policy(item).mark_missing? %>
+        <%= link_to mark_missing_production_delivery_item_path(item), 
+            class: "btn btn-outline-danger", 
+            title: "Marcar faltante",
+            data: { action: "click->delivery-item#markMissing" } do %>
+          <i class="bi bi-x-lg"></i>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,58 @@
+<%# app/views/production/deliveries/_delivery_card.html.erb %>
+<div id="delivery_<%= delivery.id %>" class="mb-3">
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-light d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 py-2">
+      <div class="flex-grow-1">
+        <h6 class="mb-1">
+          <i class="bi bi-geo-alt text-primary me-1"></i>
+          Parada #<%= assignment&.stop_order || "N/A" %> - Entrega #<%= delivery.id %>
+        </h6>
+        <div class="small text-muted">
+          <strong><%= delivery.client&.name %></strong><br>
+          <%= delivery.delivery_address&.address&.truncate(50) %><br>
+          Pedido: <strong><%= delivery.order&.number %></strong>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-2 align-items-center">
+        <%= load_status_badge(delivery.load_status) %>
+        <div class="progress" style="height: 20px; min-width: 100px;">
+          <div class="progress-bar bg-success" 
+               role="progressbar" 
+               style="width: <%= delivery.load_percentage %>%" 
+               aria-valuenow="<%= delivery.load_percentage %>" 
+               aria-valuemin="0" 
+               aria-valuemax="100">
+            <%= delivery.load_percentage %>%
+          </div>
+        </div>
+        <div class="btn-group btn-group-sm" role="group">
+          <% if policy(delivery).mark_all_loaded? %>
+            <%= button_to mark_all_loaded_production_delivery_path(delivery), 
+                method: :post, 
+                class: "btn btn-outline-success", 
+                title: "Marcar todo cargado",
+                data: { turbo_confirm: "¿Marcar todos los productos de esta entrega como cargados?" } do %>
+              <i class="bi bi-check-all"></i>
+            <% end %>
+          <% end %>
+          <% if policy(delivery).reset_load_status? %>
+            <%= button_to reset_load_status_production_delivery_path(delivery), 
+                method: :post, 
+                class: "btn btn-outline-warning", 
+                title: "Resetear carga",
+                data: { turbo_confirm: "¿Resetear estado de carga de esta entrega?" } do %>
+              <i class="bi bi-arrow-counterclockwise"></i>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <ul class="list-group list-group-flush">
+      <% delivery.delivery_items.each do |item| %>
+        <li id="delivery_item_<%= item.id %>" class="list-group-item">
+          <%= render "production/delivery_items/delivery_item_row", item: item %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+</div>

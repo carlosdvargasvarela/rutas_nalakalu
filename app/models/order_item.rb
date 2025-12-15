@@ -84,6 +84,10 @@ class OrderItem < ApplicationRecord
     delivery_items.last.status
   end
 
+  def product_name
+    product
+  end
+
   def self.ransackable_associations(auth_object = nil)
     ["order", "delivery_items", "order_item_notes"]
   end

@@ -22,7 +22,7 @@ Rails.application.routes.draw do
   # =============================================================================
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
-  get "up" => "rails/health#show", as: :rails_health_check
+  get "up" => "rails/health#show", :as => :rails_health_check
 
   # Render dynamic PWA files from app/views/pwa/*
   # Rutas PWA
@@ -46,13 +46,13 @@ Rails.application.routes.draw do
   # DASHBOARD
   # =============================================================================
   # Panel principal con métricas y resumen
-  resources :dashboard, only: [ :index ]
+  resources :dashboard, only: [:index]
 
   # =============================================================================
   # ENTREGAS (DELIVERIES)
   # =============================================================================
   # Gestión completa de entregas de muebles
-  resources :deliveries, only: [ :index, :show, :new, :create, :edit, :update ] do
+  resources :deliveries, only: [:index, :show, :new, :create, :edit, :update] do
     collection do
       get :by_week
       get :service_cases
@@ -60,11 +60,11 @@ Rails.application.routes.draw do
       get :orders_for_client
 
       # Mandados internos
-      get  :new_internal_delivery
+      get :new_internal_delivery
       post :create_internal_delivery
 
       # Casos de servicio "nuevos", globales
-      get  :new_service_case
+      get :new_service_case
       post :create_service_case
     end
 
@@ -80,7 +80,7 @@ Rails.application.routes.draw do
       patch :archive
 
       # ✅ Casos de servicio derivados de una entrega existente
-      get  :new_service_case_for_existing
+      get :new_service_case_for_existing
       post :create_service_case_for_existing
     end
   end
@@ -95,7 +95,7 @@ Rails.application.routes.draw do
       patch :unconfirm
     end
 
-    resources :order_item_notes, except: [ :index, :show ] do
+    resources :order_item_notes, except: [:index, :show] do
       member do
         patch :close
         patch :reopen
@@ -107,7 +107,7 @@ Rails.application.routes.draw do
   # ITEMS DE ENTREGA (DELIVERY ITEMS)
   # =============================================================================
   # Gestión del estado de items individuales en entregas
-  resources :delivery_items, only: [ :show ] do
+  resources :delivery_items, only: [:show] do
     member do
       patch :confirm
       patch :mark_delivered
@@ -124,20 +124,20 @@ Rails.application.routes.draw do
   # PLANES DE ENTREGA (DELIVERY PLANS)
   # =============================================================================
   # Planificación semanal de rutas de entrega
-  resources :delivery_plans, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
+  resources :delivery_plans, only: [:index, :show, :new, :create, :edit, :update, :destroy] do
     member do
       patch :add_delivery_to_plan
       patch :send_to_logistics
       patch :update_order
     end
-    resources :delivery_plan_assignments, only: [ :destroy ]
+    resources :delivery_plan_assignments, only: [:destroy]
   end
 
   # =============================================================================
   # IMPORTACIÓN DE ENTREGAS
   # =============================================================================
   # Importar entregas desde archivos Excel
-  resources :delivery_imports, only: [ :new, :create, :show ] do
+  resources :delivery_imports, only: [:new, :create, :show] do
     member do
       patch :update_rows    # guardar ediciones en las filas
       post :process_import  # lanzar import final
@@ -151,8 +151,8 @@ Rails.application.routes.draw do
   # NOTIFICACIONES
   # =============================================================================
   # Sistema de notificaciones para usuarios
-  resources :notifications, only: [ :index ] do
-  member do
+  resources :notifications, only: [:index] do
+    member do
       patch :mark_as_read
     end
     collection do
@@ -165,7 +165,7 @@ Rails.application.routes.draw do
   # PEDIDOS (ORDERS)
   # =============================================================================
   # Visualización y gestión de pedidos
-  resources :orders, only: [ :index, :show, :destroy ] do
+  resources :orders, only: [:index, :show, :destroy] do
     member do
       patch :confirm_all_items_ready
     end
@@ -175,21 +175,21 @@ Rails.application.routes.draw do
   # CLIENTES Y VENDEDORES
   # =============================================================================
   # Información de clientes y vendedores (solo lectura)
-  resources :clients, only: [ :index, :show, :edit, :update, :new, :create ]
-  resources :sellers, only: [ :index, :show ]
+  resources :clients, only: [:index, :show, :edit, :update, :new, :create]
+  resources :sellers, only: [:index, :show]
 
   # =============================================================================
   # DIRECCIONES DE ENTREGA
   # =============================================================================
   # Creación de nuevas direcciones de entrega
-  resources :delivery_addresses, only: [ :create ] do 
+  resources :delivery_addresses, only: [:create] do
     member do
-      get :show, defaults: { format: :json }
+      get :show, defaults: {format: :json}
     end
   end
 
   namespace :admin do
-    resources :users, only: [ :index, :new, :create, :edit, :update ] do
+    resources :users, only: [:index, :new, :create, :edit, :update] do
       member do
         post :send_reset_password
         patch :unlock
@@ -214,7 +214,7 @@ Rails.application.routes.draw do
         member do
           patch :start
           patch :complete
-          patch :mark_failed   # ✅ renombrado (antes :mark_as_failed)
+          patch :mark_failed
         end
       end
     end
@@ -222,10 +222,40 @@ Rails.application.routes.draw do
 
   get "/offline", to: "pages#offline"
 
+  # =============================================================================
+  # LOGS DE AUDITORÍA
+  # =============================================================================
   resources :audit_logs, only: [:index] do
     collection do
       get :resource_history
       get :compare
+    end
+  end
+
+  # =============================================================================
+  # RUTAS DE PRODUCCIÓN
+  # =============================================================================
+  namespace :production do
+    resources :delivery_plans, only: [:index] do
+      member do
+        get :loading # Vista de bitácora de carga
+        post :mark_all_loaded # Marcar todo el plan como cargado
+      end
+    end
+
+    resources :deliveries, only: [] do
+      member do
+        post :mark_all_loaded # Marcar toda la entrega como cargada
+        post :reset_load_status # Resetear carga de la entrega
+      end
+    end
+
+    resources :delivery_items, only: [] do
+      member do
+        post :mark_loaded
+        post :mark_unloaded
+        post :mark_missing
+      end
     end
   end
 end

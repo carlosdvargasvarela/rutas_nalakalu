@@ -12,7 +12,6 @@ class DeliveryPlanPolicy < ApplicationPolicy
     show?
   end
 
-  # CORRECCIÓN: el método debe terminar en ?
   def destroy?
     # Permite a admin o logística/production manager borrar
     return false unless admin_or_manager_or_logistic?
@@ -48,6 +47,14 @@ class DeliveryPlanPolicy < ApplicationPolicy
   end
 
   def add_delivery_to_plan?
+    admin_or_manager_or_logistic?
+  end
+
+  def loading?
+    show?
+  end
+
+  def mark_all_loaded?
     admin_or_manager_or_logistic?
   end
 

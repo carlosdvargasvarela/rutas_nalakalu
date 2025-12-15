@@ -1,21 +1,14 @@
 <%= render "delivery_plans/show_partials/alerts", delivery_plan: @delivery_plan %>
-
 <%= render "delivery_plans/show_partials/header", delivery_plan: @delivery_plan, from_date: @from_date %>
-
 <div class="row mb-4">
   <div class="col-lg-6">
     <%= render "delivery_plans/show_partials/general_info", delivery_plan: @delivery_plan %>
   </div>
 </div>
 <%= render "delivery_plans/show_partials/crew", delivery_plan: @delivery_plan %>
-
 <%= render "delivery_plans/show_partials/deliveries_table", delivery_plan: @delivery_plan %>
 <%= render "delivery_plans/show_partials/deliveries_cards", delivery_plan: @delivery_plan %>
-
 <%= render "delivery_plans/show_partials/map", assignments: @assignments %>
-
 <%= render "delivery_plans/show_partials/driver", assignments: @assignments %>
-
 <%= render "delivery_plans/show_partials/back_button" %>
-
 <%= render "delivery_plans/show_partials/notes_modal" %>

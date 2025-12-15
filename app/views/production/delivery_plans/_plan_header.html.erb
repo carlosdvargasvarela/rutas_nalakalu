@@ -1,0 +1,26 @@
+<%# app/views/production/delivery_plans/_plan_header.html.erb %>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
+  <div>
+    <%= link_to production_delivery_plans_path(date: delivery_plan.delivery_date), class: "btn btn-outline-secondary btn-sm mb-2" do %>
+      <i class="bi bi-arrow-left"></i> Volver
+    <% end %>
+    <h3 class="mb-1">Plan #<%= delivery_plan.id %> - <%= delivery_plan.driver&.full_name || "Sin Asignar" %></h3>
+    <p class="text-muted mb-0">
+      <i class="bi bi-calendar-check me-1"></i><%= l delivery_plan.delivery_date, format: :long %> | 
+      <i class="bi bi-truck ms-2 me-1"></i><%= delivery_plan.truck&.humanize || "N/A" %>
+    </p>
+  </div>
+  <div class="text-md-end">
+    <%= load_status_badge(delivery_plan.load_status) %>
+    <div class="progress mt-2" style="height: 24px; min-width: 200px;">
+      <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" 
+           role="progressbar" 
+           style="width: <%= delivery_plan.load_percentage %>%" 
+           aria-valuenow="<%= delivery_plan.load_percentage %>" 
+           aria-valuemin="0" 
+           aria-valuemax="100">
+        <strong><%= delivery_plan.load_percentage %>%</strong>
+      </div>
+    </div>
+  </div>
+</div>

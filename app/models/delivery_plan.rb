@@ -11,7 +11,6 @@ class DeliveryPlan < ApplicationRecord
   after_update :update_status_on_driver_change, if: :saved_change_to_driver_id?
   before_destroy :flush_assignments
 
-  # 1) Enums con sintaxis posicional y prefix para evitar colisiones
   enum :status, {
     draft: 0,
     sent_to_logistics: 1,
@@ -31,6 +30,13 @@ class DeliveryPlan < ApplicationRecord
     PickUp_Ruben: 6,
     Recoje_Sala: 7
   }
+
+  enum load_status: {
+    empty: 0,
+    partial: 1,
+    all_loaded: 2,
+    some_missing: 3
+  }, _prefix: :load
 
   # 2) Aliases de compatibilidad SIN prefijo (para no tocar vistas existentes)
   #    Esto habilita draft?, sent_to_logistics?, routes_created?, etc.
@@ -92,6 +98,73 @@ class DeliveryPlan < ApplicationRecord
       "Abortado"
     else
       "Desconocido"
+    end
+  end
+
+  # Recalcular estado de carga del plan
+  def recalculate_load_status!
+    all_items = DeliveryItem.joins(:delivery)
+      .where(deliveries: {id: delivery_ids})
+
+    return if all_items.empty?
+
+    loaded_count = all_items.where(load_status: DeliveryItem.load_statuses[:loaded]).count
+    missing_count = all_items.where(load_status: DeliveryItem.load_statuses[:missing]).count
+    total_count = all_items.count
+
+    new_status = if missing_count > 0
+      :some_missing
+    elsif loaded_count == total_count
+      :all_loaded
+    elsif loaded_count > 0
+      :partial
+    else
+      :empty
+    end
+
+    update_column(:load_status, DeliveryPlan.load_statuses[new_status])
+  end
+
+  # Marcar todo el plan como cargado
+  def mark_all_loaded!
+    transaction do
+      deliveries.each(&:mark_all_loaded!)
+      recalculate_load_status!
+    end
+  end
+
+  # Porcentaje de carga del plan
+  def load_percentage
+    all_items = DeliveryItem.joins(:delivery).where(deliveries: {id: delivery_ids})
+    total = all_items.count
+    return 0 if total.zero?
+
+    loaded = all_items.where(load_status: DeliveryItem.load_statuses[:loaded]).count
+    ((loaded.to_f / total) * 100).round
+  end
+
+  # Estadísticas de carga
+  def load_stats
+    all_items = DeliveryItem.joins(:delivery).where(deliveries: {id: delivery_ids})
+
+    {
+      total_items: all_items.count,
+      loaded_items: all_items.load_loaded.count,
+      unloaded_items: all_items.load_unloaded.count,
+      missing_items: all_items.load_missing.count,
+      deliveries_all_loaded: deliveries.load_all_loaded.count,
+      deliveries_with_missing: deliveries.load_some_missing.count,
+      load_percentage: load_percentage
+    }
+  end
+
+  def display_load_status
+    case load_status
+    when "empty" then "Sin cargar"
+    when "partial" then "Parcialmente cargado"
+    when "all_loaded" then "Completamente cargado"
+    when "some_missing" then "Con faltantes"
+    else load_status.to_s.humanize
     end
   end
 
