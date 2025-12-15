@@ -4,7 +4,7 @@
     <%= link_to production_delivery_plans_path(date: delivery_plan.delivery_date), class: "btn btn-outline-secondary btn-sm mb-2" do %>
       <i class="bi bi-arrow-left"></i> Volver
     <% end %>
-    <h3 class="mb-1">Plan #<%= delivery_plan.id %> - <%= delivery_plan.driver&.full_name || "Sin Asignar" %></h3>
+    <h3 class="mb-1">Plan #<%= delivery_plan.id %> - <%= delivery_plan.driver&.name || "Sin Asignar" %></h3>
     <p class="text-muted mb-0">
       <i class="bi bi-calendar-check me-1"></i><%= l delivery_plan.delivery_date, format: :long %> | 
       <i class="bi bi-truck ms-2 me-1"></i><%= delivery_plan.truck&.humanize || "N/A" %>
