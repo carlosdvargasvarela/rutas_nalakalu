@@ -10,20 +10,18 @@ class RouteExcelImportService
   def import_routes
     raise "No se proporcionó archivo para importación masiva" unless @spreadsheet
 
-    results = { success: 0, errors: [] }
+    results = {success: 0, errors: []}
     (2..@spreadsheet.last_row).each do |row|
-      begin
-        data = extract_row_data(row)
-        validation_errors = validate_row(data)
-        if validation_errors.any?
-          results[:errors] << "Fila #{row}: #{validation_errors.join(', ')}"
-          next
-        end
-        process_row(data)
-        results[:success] += 1
-      rescue => e
-        results[:errors] << "Fila #{row}: #{e.message}"
+      data = extract_row_data(row)
+      validation_errors = validate_row(data)
+      if validation_errors.any?
+        results[:errors] << "Fila #{row}: #{validation_errors.join(", ")}"
+        next
       end
+      process_row(data)
+      results[:success] += 1
+    rescue => e
+      results[:errors] << "Fila #{row}: #{e.message}"
     end
     results
   end
@@ -44,13 +42,13 @@ class RouteExcelImportService
   # Procesa una fila (hash de datos), creando o actualizando registros según sea necesario
   def process_row(data)
     # Normaliza strings para evitar nil.strip en cualquier parte del flujo
-    order_number   = safe_str(data[:order_number])
-    client_name    = safe_str(data[:client_name])
-    product_name   = safe_str(data[:product])
-    seller_code    = safe_str(data[:seller_code])
-    place_text     = safe_str(data[:place])
-    contact_text   = safe_str(data[:contact])
-    notes_text     = safe_str(data[:notes])
+    order_number = safe_str(data[:order_number])
+    client_name = safe_str(data[:client_name])
+    product_name = safe_str(data[:product])
+    seller_code = safe_str(data[:seller_code])
+    place_text = safe_str(data[:place])
+    contact_text = safe_str(data[:contact])
+    notes_text = safe_str(data[:notes])
     time_pref_text = safe_str(data[:time_preference])
 
     quantity = data[:quantity].to_i
@@ -64,7 +62,7 @@ class RouteExcelImportService
 
     # Mejora de geocoding: si la dirección es nueva o no tiene coords, pasamos description con referencias
     if address.saved_change_to_id? || address.latitude.blank? || address.longitude.blank?
-      refs = [ contact_text, time_pref_text, notes_text ].map { |v| v.presence }.compact.join(", ").presence
+      refs = [contact_text, time_pref_text, notes_text].map { |v| v.presence }.compact.join(", ").presence
       if refs.present?
         # Solo actualizar description si aporta algo y no dispara geocoding de nuevo innecesariamente
         address.update(description: refs)
@@ -92,7 +90,7 @@ class RouteExcelImportService
 
     combined_notes =
       if order_item.persisted? && notes_text.present? && notes_text != safe_str(order_item.notes)
-        [ safe_str(order_item.notes), notes_text ].reject(&:blank?).uniq.join("; ")
+        [safe_str(order_item.notes), notes_text].reject(&:blank?).uniq.join("; ")
       else
         notes_text.presence || order_item.notes
       end
@@ -136,16 +134,16 @@ class RouteExcelImportService
   # Extrae los datos de una fila del Excel (para importación masiva)
   def extract_row_data(row)
     {
-      delivery_date:   @spreadsheet.cell(row, "A"),
-      team:            @spreadsheet.cell(row, "B"),
-      order_number:    @spreadsheet.cell(row, "C")&.to_s&.strip,
-      client_name:     @spreadsheet.cell(row, "D")&.to_s&.strip,
-      product:         @spreadsheet.cell(row, "E")&.to_s&.strip,
-      quantity:        @spreadsheet.cell(row, "F").to_i,
-      seller_code:     @spreadsheet.cell(row, "G")&.to_s&.strip,
-      place:           @spreadsheet.cell(row, "H")&.to_s&.strip,
-      contact:         @spreadsheet.cell(row, "I")&.to_s&.strip,
-      notes:           @spreadsheet.cell(row, "J")&.to_s&.strip,
+      delivery_date: @spreadsheet.cell(row, "A"),
+      team: @spreadsheet.cell(row, "B"),
+      order_number: @spreadsheet.cell(row, "C")&.to_s&.strip,
+      client_name: @spreadsheet.cell(row, "D")&.to_s&.strip,
+      product: @spreadsheet.cell(row, "E")&.to_s&.strip,
+      quantity: @spreadsheet.cell(row, "F").to_i,
+      seller_code: @spreadsheet.cell(row, "G")&.to_s&.strip,
+      place: @spreadsheet.cell(row, "H")&.to_s&.strip,
+      contact: @spreadsheet.cell(row, "I")&.to_s&.strip,
+      notes: @spreadsheet.cell(row, "J")&.to_s&.strip,
       time_preference: @spreadsheet.cell(row, "K")&.to_s&.strip
     }
   end
@@ -155,12 +153,12 @@ class RouteExcelImportService
     s = safe_str(contact_str)
     if s.include?("/")
       parts = s.split("/")
-      [ safe_str(parts[0]).presence, safe_str(parts[1]).presence ]
+      [safe_str(parts[0]).presence, safe_str(parts[1]).presence]
     elsif s.include?("-")
       parts = s.split("-")
-      [ safe_str(parts[0]).presence, safe_str(parts[1]).presence ]
+      [safe_str(parts[0]).presence, safe_str(parts[1]).presence]
     else
-      [ s.presence, nil ]
+      [s.presence, nil]
     end
   end
 

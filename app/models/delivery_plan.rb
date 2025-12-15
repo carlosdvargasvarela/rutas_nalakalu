@@ -34,23 +34,23 @@ class DeliveryPlan < ApplicationRecord
 
   # 2) Aliases de compatibilidad SIN prefijo (para no tocar vistas existentes)
   #    Esto habilita draft?, sent_to_logistics?, routes_created?, etc.
-  def draft?            = status_draft?
+  def draft? = status_draft?
   def sent_to_logistics? = status_sent_to_logistics?
-  def routes_created?   = status_routes_created?
-  def in_progress?      = status_in_progress?
-  def completed?        = status_completed?
-  def aborted?          = status_aborted?
+  def routes_created? = status_routes_created?
+  def in_progress? = status_in_progress?
+  def completed? = status_completed?
+  def aborted? = status_aborted?
 
   # 3) Aliases para setters de estado si en algún lugar se usan sin prefijo
-  def draft!            = status_draft!
+  def draft! = status_draft!
   def sent_to_logistics! = status_sent_to_logistics!
-  def routes_created!   = status_routes_created!
-  def in_progress!      = status_in_progress!
-  def completed!        = status_completed!
-  def aborted!          = status_aborted!
+  def routes_created! = status_routes_created!
+  def in_progress! = status_in_progress!
+  def completed! = status_completed!
+  def aborted! = status_aborted!
 
-  validates :year, presence: true, numericality: { only_integer: true, greater_than: 2000 }
-  validates :week, presence: true, numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: 54 }
+  validates :year, presence: true, numericality: {only_integer: true, greater_than: 2000}
+  validates :week, presence: true, numericality: {only_integer: true, greater_than: 0, less_than_or_equal_to: 54}
   validates :status, presence: true
 
   # Scope para estadisticas rapidas para el dashboard
@@ -65,14 +65,14 @@ class DeliveryPlan < ApplicationRecord
   }
 
   scope :for_driver, ->(driver_id) { where(driver_id: driver_id) }
-  scope :active, -> { where(status: [ :routes_created, :in_progress ]) }
+  scope :active, -> { where(status: [:routes_created, :in_progress]) }
 
   def stats
     {
       total_deliveries: deliveries.count,
       total_items: deliveries.joins(:delivery_items).count,
-      service_cases: deliveries.joins(:delivery_items).where(delivery_items: { service_case: true }).count,
-      confirmed_items: deliveries.joins(delivery_items: :order_item).where(order_items: { confirmed: true }).count
+      service_cases: deliveries.joins(:delivery_items).where(delivery_items: {service_case: true}).count,
+      confirmed_items: deliveries.joins(delivery_items: :order_item).where(order_items: {confirmed: true}).count
     }
   end
 
@@ -149,7 +149,7 @@ class DeliveryPlan < ApplicationRecord
   # NUEVO: Fallar todas las asignaciones pendientes o en ruta del plan
   def fail_all_pending_assignments!(reason:, failed_by:)
     transaction do
-      delivery_plan_assignments.where(status: [ :pending, :in_route ]).find_each do |assignment|
+      delivery_plan_assignments.where(status: [:pending, :in_route]).find_each do |assignment|
         assignment.mark_as_failed!(reason: reason, failed_by: failed_by)
       end
       # Opcional: marcar el plan como abortado
@@ -233,8 +233,8 @@ class DeliveryPlan < ApplicationRecord
 
       # si hay alguna entrega scheduled, siempre obligamos a draft
       self.status = :draft unless all_deliveries_confirmed?
-    else
-      update_column(:status, DeliveryPlan.statuses[:draft]) if status_sent_to_logistics?
+    elsif status_sent_to_logistics?
+      update_column(:status, DeliveryPlan.statuses[:draft])
     end
   end
 

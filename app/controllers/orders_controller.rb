@@ -1,18 +1,18 @@
 # app/controllers/orders_controller.rb
 class OrdersController < ApplicationController
-  before_action :set_order, only: [ :show, :destroy, :confirm_all_items_ready ]
+  before_action :set_order, only: [:show, :destroy, :confirm_all_items_ready]
 
   def index
     # Incluir las asociaciones necesarias para el filtro de notas
     @q = Order.left_joins(:deliveries, order_items: :order_item_notes)
-             .ransack(params[:q])
+      .ransack(params[:q])
 
     # Usar distinct porque un pedido puede tener varias deliveries/notas
     @orders = @q.result
-                .includes(:client, :seller, :deliveries, order_items: :order_item_notes)
-                .distinct
-                .order(created_at: :desc)
-                .page(params[:page])
+      .includes(:client, :seller, :deliveries, order_items: :order_item_notes)
+      .distinct
+      .order(created_at: :desc)
+      .page(params[:page])
     authorize @orders
   end
 

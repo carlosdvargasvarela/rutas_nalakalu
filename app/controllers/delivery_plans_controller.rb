@@ -4,10 +4,10 @@ class DeliveryPlansController < ApplicationController
     @q = DeliveryPlan.ransack(params[:q])
 
     base_result = @q.result
-                    .left_joins(:deliveries)
-                    .select("delivery_plans.*, MIN(deliveries.delivery_date) AS first_delivery_date")
-                    .group("delivery_plans.id")
-                    .order("MIN(deliveries.delivery_date) DESC")
+      .left_joins(:deliveries)
+      .select("delivery_plans.*, MIN(deliveries.delivery_date) AS first_delivery_date")
+      .group("delivery_plans.id")
+      .order("MIN(deliveries.delivery_date) DESC")
 
     respond_to do |format|
       format.html do
@@ -16,18 +16,18 @@ class DeliveryPlansController < ApplicationController
 
       format.xlsx do
         @delivery_plans = base_result
-                            .includes(
-                              :driver,
-                              delivery_plan_assignments: {
-                                delivery: [
-                                  { order: [ :client, :seller ] },
-                                  :delivery_address,
-                                  { delivery_items: :order_item }
-                                ]
-                              }
-                            )
-                            .distinct
-                            .to_a
+          .includes(
+            :driver,
+            delivery_plan_assignments: {
+              delivery: [
+                {order: [:client, :seller]},
+                :delivery_address,
+                {delivery_items: :order_item}
+              ]
+            }
+          )
+          .distinct
+          .to_a
 
         response.headers["Content-Disposition"] = 'attachment; filename="planes_entrega.xlsx"'
       end
@@ -60,7 +60,7 @@ class DeliveryPlansController < ApplicationController
     delivery = Delivery.find(params[:delivery_id])
 
     if delivery.delivery_date == @delivery_plan.deliveries.first.delivery_date &&
-      !DeliveryPlanAssignment.exists?(delivery_id: delivery.id)
+        !DeliveryPlanAssignment.exists?(delivery_id: delivery.id)
 
       grouper = DeliveryPlanStopGrouper.new(@delivery_plan)
       existing_stop = grouper.find_stop_for_location(delivery)
@@ -76,7 +76,7 @@ class DeliveryPlansController < ApplicationController
         assignment.update_column(:stop_order, existing_stop) # Asigna stop_order sin disparar callbacks
 
         redirect_to edit_delivery_plan_path(@delivery_plan),
-                    notice: "Entrega agregada al plan en la parada ##{existing_stop} (misma ubicación)."
+          notice: "Entrega agregada al plan en la parada ##{existing_stop} (misma ubicación)."
       else
         last_order = @delivery_plan.delivery_plan_assignments.maximum(:stop_order) || 0
 
@@ -88,11 +88,11 @@ class DeliveryPlansController < ApplicationController
         assignment.update_column(:stop_order, last_order + 1)
 
         redirect_to edit_delivery_plan_path(@delivery_plan),
-                    notice: "Entrega agregada al plan como nueva parada."
+          notice: "Entrega agregada al plan como nueva parada."
       end
     else
       redirect_to edit_delivery_plan_path(@delivery_plan),
-                  alert: "No se pudo agregar la entrega."
+        alert: "No se pudo agregar la entrega."
     end
   end
 
@@ -112,10 +112,10 @@ class DeliveryPlansController < ApplicationController
       DeliveryPlanStopGrouper.new(@delivery_plan).call
     end
 
-    render json: { status: "success" }
+    render json: {status: "success"}
   rescue => e
     Rails.logger.error("[DeliveryPlansController#update_order] #{e.class}: #{e.message}")
-    render json: { status: "error", message: e.message }, status: :unprocessable_entity
+    render json: {status: "error", message: e.message}, status: :unprocessable_entity
   end
 
   def create
@@ -155,7 +155,7 @@ class DeliveryPlansController < ApplicationController
       DeliveryPlanStopGrouper.new(@delivery_plan).call
 
       redirect_to edit_delivery_plan_path(@delivery_plan),
-                  notice: "Plan de ruta creado exitosamente. Las paradas fueron agrupadas por ubicación."
+        notice: "Plan de ruta creado exitosamente. Las paradas fueron agrupadas por ubicación."
     else
       flash.now[:alert] = "Error al crear el plan de ruta."
       render_new_with_selection(delivery_ids)
@@ -169,23 +169,23 @@ class DeliveryPlansController < ApplicationController
     @assignments = @delivery_plan.delivery_plan_assignments.includes(
       delivery: [
         :delivery_items,
-        order: [ :client, :seller ],
+        order: [:client, :seller],
         delivery_address: :client
       ]
     ).order(:stop_order)
 
     delivery_dates = @deliveries.pluck(:delivery_date)
     @from_date = delivery_dates.min
-    @to_date   = delivery_dates.max
+    @to_date = delivery_dates.max
 
     respond_to do |format|
       format.html
       format.xlsx do
         response.headers["Content-Disposition"] =
-          "attachment; filename=Hoja_Ruta_#{@from_date&.strftime('%d_%m_%Y')}_#{@delivery_plan.truck.presence || 'Sin_Camion'}.xlsx"
+          "attachment; filename=Hoja_Ruta_#{@from_date&.strftime("%d_%m_%Y")}_#{@delivery_plan.truck.presence || "Sin_Camion"}.xlsx"
       end
       format.pdf do
-        pdf_title = "Hoja_Ruta_#{@from_date&.strftime('%d_%m_%Y')}_#{@delivery_plan.truck.presence || 'Sin_Camion'}"
+        pdf_title = "Hoja_Ruta_#{@from_date&.strftime("%d_%m_%Y")}_#{@delivery_plan.truck.presence || "Sin_Camion"}"
         pdf = Prawn::Document.new(page_size: "A2", page_layout: :landscape)
         pdf.text pdf_title, size: 16, style: :bold, align: :center
         pdf.move_down 20
@@ -195,9 +195,9 @@ class DeliveryPlansController < ApplicationController
         ]
         rows = @assignments.flat_map do |assignment|
           delivery = assignment.delivery
-          address  = delivery.delivery_address
+          address = delivery.delivery_address
           delivery.active_items_for_plan_for(current_user).map do |item|
-            address_text = [ address.address, address.description ].compact.join(" - ")
+            address_text = [address.address, address.description].compact.join(" - ")
             map_link =
               if address.latitude.present? && address.longitude.present?
                 " (Waze: https://waze.com/ul?ll=#{address.latitude},#{address.longitude}&navigate=yes)"
@@ -228,14 +228,14 @@ class DeliveryPlansController < ApplicationController
             ]
           end
         end
-        pdf.table([ headers ] + rows, header: true,
-                  row_colors: %w[F0F0F0 FFFFFF],
-                  position: :center,
-                  cell_style: { inline_format: true })
+        pdf.table([headers] + rows, header: true,
+          row_colors: %w[F0F0F0 FFFFFF],
+          position: :center,
+          cell_style: {inline_format: true})
         send_data pdf.render,
-                  filename: "#{pdf_title}.pdf",
-                  type: "application/pdf",
-                  disposition: "attachment"
+          filename: "#{pdf_title}.pdf",
+          type: "application/pdf",
+          disposition: "attachment"
       end
 
       format.json do
@@ -273,7 +273,7 @@ class DeliveryPlansController < ApplicationController
   def edit
     @delivery_plan = DeliveryPlan.find(params[:id])
     authorize @delivery_plan
-    @assignments = @delivery_plan.delivery_plan_assignments.includes(delivery: [ :order, :delivery_address, order: :client ]).order(:stop_order)
+    @assignments = @delivery_plan.delivery_plan_assignments.includes(delivery: [:order, :delivery_address, order: :client]).order(:stop_order)
 
     delivery_date = @assignments.first&.delivery&.delivery_date
 
@@ -293,7 +293,7 @@ class DeliveryPlansController < ApplicationController
     if @delivery_plan.destroy
       redirect_to delivery_plans_path, notice: "Plan de ruta eliminado correctamente."
     else
-      alert_message = @delivery_plan.errors.full_messages.presence || [ "No se pudo eliminar el plan de ruta." ]
+      alert_message = @delivery_plan.errors.full_messages.presence || ["No se pudo eliminar el plan de ruta."]
       redirect_back fallback_location: delivery_plans_path, alert: alert_message.join(". ")
     end
   end
@@ -304,15 +304,15 @@ class DeliveryPlansController < ApplicationController
 
     if @delivery_plan.update(delivery_plan_params)
       redirect_to edit_delivery_plan_path(@delivery_plan),
-                  notice: "Plan de ruta actualizado correctamente."
+        notice: "Plan de ruta actualizado correctamente."
     else
       flash.now[:alert] = @delivery_plan.errors.full_messages.to_sentence.presence ||
-                          "No se pudo actualizar el plan de ruta."
+        "No se pudo actualizar el plan de ruta."
 
       # Necesario para volver a renderizar :edit con lo mismo que usas ahí
       @assignments = @delivery_plan.delivery_plan_assignments
-                                  .includes(delivery: [ :order, :delivery_address, order: :client ])
-                                  .order(:stop_order)
+        .includes(delivery: [:order, :delivery_address, order: :client])
+        .order(:stop_order)
 
       delivery_date = @assignments.first&.delivery&.delivery_date
       @available_deliveries = if delivery_date
@@ -352,7 +352,7 @@ class DeliveryPlansController < ApplicationController
 
     base_scope = Delivery
       .where(delivery_date: from..to)
-      .where(status: [ :scheduled, :ready_to_deliver ])
+      .where(status: [:scheduled, :ready_to_deliver])
       .where.not(id: DeliveryPlanAssignment.select(:delivery_id))
 
     @q = base_scope.ransack(params[:q])

@@ -1,17 +1,17 @@
 module DeliveryImportsHelper
   def humanize_column_name(col)
     translations = {
-      'delivery_date' => 'Fecha Entrega',
-      'team' => 'Equipo',
-      'order_number' => 'Número Pedido',
-      'client_name' => 'Cliente',
-      'product' => 'Producto',
-      'quantity' => 'Cantidad',
-      'seller_code' => 'Código Vendedor',
-      'place' => 'Lugar',
-      'contact' => 'Contacto',
-      'notes' => 'Notas',
-      'time_preference' => 'Preferencia Horaria'
+      "delivery_date" => "Fecha Entrega",
+      "team" => "Equipo",
+      "order_number" => "Número Pedido",
+      "client_name" => "Cliente",
+      "product" => "Producto",
+      "quantity" => "Cantidad",
+      "seller_code" => "Código Vendedor",
+      "place" => "Lugar",
+      "contact" => "Contacto",
+      "notes" => "Notas",
+      "time_preference" => "Preferencia Horaria"
     }
     translations[col.to_s] || col.to_s.humanize
   end
@@ -24,13 +24,13 @@ module DeliveryImportsHelper
     return false unless row_errors
 
     field_error_keywords = {
-      'delivery_date' => ['fecha'],
-      'order_number' => ['número', 'pedido'],
-      'client_name' => ['cliente'],
-      'product' => ['producto'],
-      'quantity' => ['cantidad'],
-      'seller_code' => ['código', 'vendedor'],
-      'place' => ['lugar']
+      "delivery_date" => ["fecha"],
+      "order_number" => ["número", "pedido"],
+      "client_name" => ["cliente"],
+      "product" => ["producto"],
+      "quantity" => ["cantidad"],
+      "seller_code" => ["código", "vendedor"],
+      "place" => ["lugar"]
     }
 
     keywords = field_error_keywords[field.to_s] || []
@@ -41,13 +41,13 @@ module DeliveryImportsHelper
     return "" unless row_errors
 
     field_error_keywords = {
-      'delivery_date' => ['fecha'],
-      'order_number' => ['número', 'pedido'],
-      'client_name' => ['cliente'],
-      'product' => ['producto'],
-      'quantity' => ['cantidad'],
-      'seller_code' => ['código', 'vendedor'],
-      'place' => ['lugar']
+      "delivery_date" => ["fecha"],
+      "order_number" => ["número", "pedido"],
+      "client_name" => ["cliente"],
+      "product" => ["producto"],
+      "quantity" => ["cantidad"],
+      "seller_code" => ["código", "vendedor"],
+      "place" => ["lugar"]
     }
 
     keywords = field_error_keywords[field.to_s] || []

@@ -8,7 +8,7 @@ module IsoWeekHelper
     # Fin de esa semana (domingo)
     next_sunday = next_monday + 6.days
 
-    [ next_monday, next_sunday ]
+    [next_monday, next_sunday]
   end
 
   # Retorna el rango [start_date, end_date] de la semana ISO actual
@@ -16,7 +16,7 @@ module IsoWeekHelper
     start_of_week = from_date.beginning_of_week(:monday)
     end_of_week = from_date.end_of_week(:monday)
 
-    [ start_of_week, end_of_week ]
+    [start_of_week, end_of_week]
   end
 
   # Verifica si una fecha está en la semana ISO actual

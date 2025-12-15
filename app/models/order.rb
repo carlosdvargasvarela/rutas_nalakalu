@@ -44,7 +44,7 @@ class Order < ApplicationRecord
   scope :ready_for_week, ->(start_date, end_date) {
     joins(:deliveries)
       .where(status: :ready_for_delivery)
-      .where(deliveries: { delivery_date: start_date..end_date })
+      .where(deliveries: {delivery_date: start_date..end_date})
       .distinct
   }
 
@@ -52,10 +52,10 @@ class Order < ApplicationRecord
   scope :by_seller, ->(seller) { where(seller: seller) }
 
   # Filtrar por código de vendedor
-  scope :by_seller_code, ->(code) { joins(:seller).where(sellers: { seller_code: code }) }
+  scope :by_seller_code, ->(code) { joins(:seller).where(sellers: {seller_code: code}) }
 
   # Pedidos activos
-  scope :active, -> { where(status: [ :pending, :in_production, :ready_for_delivery, :rescheduled ]) }
+  scope :active, -> { where(status: [:pending, :in_production, :ready_for_delivery, :rescheduled]) }
 
   scope :in_production, -> { where(status: :in_production) }
 
@@ -100,11 +100,11 @@ class Order < ApplicationRecord
 
   def display_status
     case status
-    when "in_production"     then "En producción"
+    when "in_production" then "En producción"
     when "ready_for_delivery" then "Listo para entrega"
-    when "delivered"         then "Entregado"
-    when "rescheduled"       then "Reprogramado"
-    when "cancelled"         then "Cancelado"
+    when "delivered" then "Entregado"
+    when "rescheduled" then "Reprogramado"
+    when "cancelled" then "Cancelado"
     else status.to_s.humanize
     end
   end
@@ -119,11 +119,11 @@ class Order < ApplicationRecord
       update!(status: :delivered)
     elsif statuses.all? { |s| s == "cancelled" }
       update!(status: :cancelled)
-    elsif statuses.all? { |s| [ "ready", "delivered" ].include?(s) }
+    elsif statuses.all? { |s| ["ready", "delivered"].include?(s) }
       update!(status: :ready_for_delivery)
     elsif statuses.all? { |s| s == "rescheduled" }
       update!(status: :rescheduled)
-    elsif statuses.any? { |s| [ "in_production", "missing" ].include?(s) }
+    elsif statuses.any? { |s| ["in_production", "missing"].include?(s) }
       update!(status: :in_production)
     else
       update!(status: :in_production)
@@ -137,8 +137,8 @@ class Order < ApplicationRecord
         # Obtener todos los delivery_items de este order_item
         # excluyendo los que pertenecen a deliveries rescheduled
         valid_delivery_items = DeliveryItem.joins(:delivery)
-                                          .where(order_item: order_item)
-                                          .where.not(deliveries: { status: [ :rescheduled, :archived ] })
+          .where(order_item: order_item)
+          .where.not(deliveries: {status: [:rescheduled, :archived]})
 
         # Sumar todas las cantidades entregadas reales
         total_delivered_quantity = valid_delivery_items.sum(:quantity_delivered)
@@ -158,15 +158,13 @@ class Order < ApplicationRecord
     error_count = 0
 
     Order.includes(:order_items).find_each do |order|
-      begin
-        order.fix_order_item_quantities!
-        corrected_count += 1
-        print "." # Progreso visual
-      rescue => e
-        Rails.logger.error "Error corrigiendo Order #{order.number}: #{e.message}"
-        error_count += 1
-        print "X"
-      end
+      order.fix_order_item_quantities!
+      corrected_count += 1
+      print "." # Progreso visual
+    rescue => e
+      Rails.logger.error "Error corrigiendo Order #{order.number}: #{e.message}"
+      error_count += 1
+      print "X"
     end
   end
 
@@ -177,8 +175,8 @@ class Order < ApplicationRecord
     Order.includes(:order_items).find_each do |order|
       order.order_items.each do |order_item|
         valid_delivery_items = DeliveryItem.joins(:delivery)
-                                          .where(order_item: order_item)
-                                          .where.not(deliveries: { status: :rescheduled })
+          .where(order_item: order_item)
+          .where.not(deliveries: {status: :rescheduled})
 
         total_delivered = valid_delivery_items.sum(:quantity_delivered)
 
@@ -283,8 +281,6 @@ class Order < ApplicationRecord
             AND order_item_notes.closed = 1
           )
         SQL
-      else
-        nil
       end
     } do |_parent|
     Arel.sql("TRUE") # dummy, solo para que ransack lo acepte
@@ -295,11 +291,17 @@ class Order < ApplicationRecord
   end
 
   def self.ransackable_associations(auth_object = nil)
-    [ "client", "seller", "order_items", "deliveries", "order_item_notes" ]
+    ["client", "seller", "order_items", "deliveries", "order_item_notes"]
   end
 
   def self.human_enum_name(enum_name, value)
     I18n.t("activerecord.attributes.#{model_name.i18n_key}.#{enum_name.to_s.pluralize}.#{value}")
+  end
+
+  def self.status_options_for_select
+    statuses.keys.map do |s|
+      [Order.new(status: s).display_status, s]
+    end
   end
 
   # ============================================================================
@@ -319,11 +321,5 @@ class Order < ApplicationRecord
   # Setea el estado por defecto al crear un pedido
   def set_default_status
     self.status ||= :in_production
-  end
-
-  def self.status_options_for_select
-    statuses.keys.map do |s|
-      [ Order.new(status: s).display_status, s ]
-    end
   end
 end

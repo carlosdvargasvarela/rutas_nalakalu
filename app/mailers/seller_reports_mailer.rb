@@ -11,17 +11,17 @@ class SellerReportsMailer < ApplicationMailer
     @recipient = recipient
 
     deliveries = Delivery
-                   .where(id: delivery_ids)
-                   .includes(order: [:client, :seller], delivery_address: :client)
+      .where(id: delivery_ids)
+      .includes(order: [:client, :seller], delivery_address: :client)
 
     excel_stream = generate_address_errors_excel(deliveries)
-    filename = "errores_direccion_semana_actual_#{report_data[:week_start].strftime('%Y%m%d')}_#{seller.seller_code}.xlsx"
+    filename = "errores_direccion_semana_actual_#{report_data[:week_start].strftime("%Y%m%d")}_#{seller.seller_code}.xlsx"
 
     attachments[filename] = excel_stream.string
 
     mail(
       to: recipient,
-      subject: "⚠️ Tus entregas con errores de dirección - Semana actual (#{report_data[:week_start].strftime('%d/%m')} - #{report_data[:week_end].strftime('%d/%m/%Y')})"
+      subject: "⚠️ Tus entregas con errores de dirección - Semana actual (#{report_data[:week_start].strftime("%d/%m")} - #{report_data[:week_end].strftime("%d/%m/%Y")})"
     )
   end
 
@@ -33,7 +33,7 @@ class SellerReportsMailer < ApplicationMailer
 
     mail(
       to: recipient,
-      subject: "✅ Sin errores de dirección en tus entregas - Semana actual (#{week_start.strftime('%d/%m')} - #{week_end.strftime('%d/%m/%Y')})"
+      subject: "✅ Sin errores de dirección en tus entregas - Semana actual (#{week_start.strftime("%d/%m")} - #{week_end.strftime("%d/%m/%Y")})"
     )
   end
 
@@ -46,17 +46,17 @@ class SellerReportsMailer < ApplicationMailer
     @recipient = recipient
 
     deliveries = Delivery
-                   .where(id: delivery_ids)
-                   .includes(order: [:client, :seller], delivery_address: :client)
+      .where(id: delivery_ids)
+      .includes(order: [:client, :seller], delivery_address: :client)
 
     excel_stream = generate_address_errors_excel(deliveries)
-    filename = "errores_direccion_semana_siguiente_#{report_data[:week_start].strftime('%Y%m%d')}_#{seller.seller_code}.xlsx"
+    filename = "errores_direccion_semana_siguiente_#{report_data[:week_start].strftime("%Y%m%d")}_#{seller.seller_code}.xlsx"
 
     attachments[filename] = excel_stream.string
 
     mail(
       to: recipient,
-      subject: "⚠️ Revisa direcciones de tus entregas - Semana siguiente (#{report_data[:week_start].strftime('%d/%m')} - #{report_data[:week_end].strftime('%d/%m/%Y')})"
+      subject: "⚠️ Revisa direcciones de tus entregas - Semana siguiente (#{report_data[:week_start].strftime("%d/%m")} - #{report_data[:week_end].strftime("%d/%m/%Y")})"
     )
   end
 
@@ -68,7 +68,7 @@ class SellerReportsMailer < ApplicationMailer
 
     mail(
       to: recipient,
-      subject: "✅ Sin errores de dirección en tus entregas - Semana siguiente (#{week_start.strftime('%d/%m')} - #{week_end.strftime('%d/%m/%Y')})"
+      subject: "✅ Sin errores de dirección en tus entregas - Semana siguiente (#{week_start.strftime("%d/%m")} - #{week_end.strftime("%d/%m/%Y")})"
     )
   end
 
@@ -84,7 +84,7 @@ class SellerReportsMailer < ApplicationMailer
       bg_color: "CC0000",
       fg_color: "FFFFFF",
       b: true,
-      alignment: { horizontal: :center, vertical: :center, wrap_text: true }
+      alignment: {horizontal: :center, vertical: :center, wrap_text: true}
     )
 
     date_style = workbook.styles.add_style(

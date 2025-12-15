@@ -15,7 +15,7 @@ class ProductionReminderJob < ApplicationJob
       message = build_production_message(stats)
 
       NotificationService.create_for_users(
-        [ manager ],
+        [manager],
         manager,
         message,
         type: "production_reminder",
@@ -45,19 +45,19 @@ class ProductionReminderJob < ApplicationJob
     # Pedidos que deberían estar listos pero aún están en producción
     # (asumiendo que tienen más de 7 días en producción)
     Order.where(status: :in_production)
-         .where("updated_at < ?", 7.days.ago)
-         .count
+      .where("updated_at < ?", 7.days.ago)
+      .count
   end
 
   def get_this_week_deliveries_count
     current_week = Date.current.beginning_of_week
     Delivery.where(delivery_date: current_week..current_week.end_of_week)
-            .where(status: [ :pending, :in_transit ])
-            .count
+      .where(status: [:pending, :in_transit])
+      .count
   end
 
   def build_production_message(stats)
-    message = "📊 Resumen de Producción - Semana del #{Date.current.beginning_of_week.strftime('%d/%m')}\n\n"
+    message = "📊 Resumen de Producción - Semana del #{Date.current.beginning_of_week.strftime("%d/%m")}\n\n"
     message += "🔄 Pedidos pendientes: #{stats[:pending_orders]}\n"
     message += "🏭 En producción: #{stats[:in_production]}\n"
     message += "✅ Listos para entrega: #{stats[:ready_for_delivery]}\n"
@@ -82,11 +82,11 @@ class ProductionReminderJob < ApplicationJob
   def notify_urgent_orders
     # Notificar sobre pedidos muy urgentes (más de 10 días en producción)
     urgent_orders = Order.where(status: :in_production)
-                        .where("updated_at < ?", 10.days.ago)
+      .where("updated_at < ?", 10.days.ago)
 
     if urgent_orders.any?
       # Notificar a todos los gerentes de producción y admins
-      urgent_users = User.where(role: [ :production_manager, :admin ])
+      urgent_users = User.where(role: [:production_manager, :admin])
 
       # Usar el primer pedido urgente como notifiable (o podrías crear un objeto específico)
       first_urgent_order = urgent_orders.first

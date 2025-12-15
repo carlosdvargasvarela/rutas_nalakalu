@@ -5,9 +5,6 @@ class DeliveryPlanAssignmentsController < ApplicationController
     delivery_plan = assignment.delivery_plan
     authorize delivery_plan, :update?
 
-    # Guardar el stop_order antes de eliminar
-    deleted_stop_order = assignment.stop_order
-
     # Eliminar sin callbacks para evitar que acts_as_list haga cosas raras
     assignment.delete
     delivery = assignment.delivery
@@ -43,9 +40,9 @@ class DeliveryPlanAssignmentsController < ApplicationController
   def compact_stop_orders(delivery_plan)
     # Obtener todos los stop_order únicos ordenados
     unique_stops = delivery_plan.delivery_plan_assignments
-                                .pluck(:stop_order)
-                                .uniq
-                                .sort
+      .pluck(:stop_order)
+      .uniq
+      .sort
 
     # Crear un mapeo de stop_order viejo => nuevo
     stop_mapping = {}

@@ -7,13 +7,12 @@ class OrderItem < ApplicationRecord
   has_many :delivery_items, dependent: :destroy
   has_many :order_item_notes, dependent: :destroy
 
-  # ✅ BLINDAJE: Validaciones de unicidad
   validates :product, presence: true
-  validates :product, uniqueness: { scope: :order_id, message: "ya existe en este pedido" }
-  validates :quantity, presence: true, numericality: { greater_than: 0 }
+  validates :product, uniqueness: {scope: :order_id, message: "ya existe en este pedido"}
+  validates :quantity, presence: true, numericality: {greater_than: 0}
 
   # Scopes
-  scope :to_be_confirmed, -> { where(confirmed: [ nil, false ]) }
+  scope :to_be_confirmed, -> { where(confirmed: [nil, false]) }
   scope :confirmed, -> { where(confirmed: true) }
 
   # Enum para el estado del order_item
@@ -28,7 +27,6 @@ class OrderItem < ApplicationRecord
   # Callbacks
   after_save :update_status_based_on_deliveries
   after_update :update_order_status
-  after_update :notify_ready, if: :saved_change_to_status?
 
   # ✅ MÉTODOS DE AYUDA PARA CLARIDAD (Capa 2)
   def delivered_quantity
@@ -46,10 +44,10 @@ class OrderItem < ApplicationRecord
   def display_status
     case status
     when "in_production" then "En producción"
-    when "ready"         then "Listo"
-    when "delivered"     then "Entregado"
-    when "cancelled"     then "Cancelado"
-    when "missing"       then "Faltante"
+    when "ready" then "Listo"
+    when "delivered" then "Entregado"
+    when "cancelled" then "Cancelado"
+    when "missing" then "Faltante"
     else status.to_s.humanize
     end
   end
@@ -87,20 +85,10 @@ class OrderItem < ApplicationRecord
   end
 
   def self.ransackable_associations(auth_object = nil)
-    [ "order", "delivery_items", "order_item_notes" ]
+    ["order", "delivery_items", "order_item_notes"]
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    [ "product", "quantity", "status", "confirmed", "created_at", "updated_at" ]
-  end
-
-  private
-
-  def notify_ready
-    if status == "ready"
-      seller_user = order.seller.user
-      message = "El producto '#{product}' del pedido #{order.number} está listo para confirmar con el cliente."
-      # NotificationService.create_for_users([ seller_user ], self, message)
-    end
+    ["product", "quantity", "status", "confirmed", "created_at", "updated_at"]
   end
 end

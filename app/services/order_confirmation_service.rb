@@ -18,9 +18,9 @@ class OrderConfirmationService
         )
       end
 
-      { success: true, delivery: delivery }
+      {success: true, delivery: delivery}
     else
-      { success: false, errors: delivery.errors }
+      {success: false, errors: delivery.errors}
     end
   end
 
@@ -34,7 +34,7 @@ class OrderConfirmationService
       notes: "Reprogramado para #{new_date}. Razón: #{reason}"
     )
 
-    { success: true, message: "Pedido reprogramado exitosamente" }
+    {success: true, message: "Pedido reprogramado exitosamente"}
   end
 
   def mark_items_as_ready(item_ids)
@@ -44,6 +44,6 @@ class OrderConfirmationService
     # Verificar si el pedido completo está listo
     @order.check_and_update_status!
 
-    { success: true, ready_items: items.count }
+    {success: true, ready_items: items.count}
   end
 end

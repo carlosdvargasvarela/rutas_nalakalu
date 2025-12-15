@@ -33,8 +33,8 @@ module AdminReports
 
     def calculate_current_week
       week_start = @reference_date.beginning_of_week(:monday)
-      week_end   = week_start + 6.days
-      [ week_start, week_end ]
+      week_end = week_start + 6.days
+      [week_start, week_end]
     end
 
     def fetch_unconfirmed_deliveries
@@ -44,12 +44,12 @@ module AdminReports
         .where(approved: true)
         .where(archived: false)
         # Excluir estados que ya no requieren confirmación
-        .where.not(status: [ :delivered, :rescheduled, :archived, :cancelled, :ready_to_deliver ])
+        .where.not(status: [:delivered, :rescheduled, :archived, :cancelled, :ready_to_deliver])
         # Excluir entregas internas
         .where.not(delivery_type: :internal_delivery)
         # Excluir entregas de tienda / pickup (ajusta el símbolo al enum real)
         .where.not(delivery_type: :store_pickup)
-        .includes(order: [ :client, :seller ], delivery_address: :client, delivery_items: { order_item: :order })
+        .includes(order: [:client, :seller], delivery_address: :client, delivery_items: {order_item: :order})
         .order(:delivery_date, "orders.number")
     end
 

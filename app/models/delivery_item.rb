@@ -30,15 +30,15 @@ class DeliveryItem < ApplicationRecord
   # ============================================================================
 
   scope :service_cases, -> { where(service_case: true) }
-  scope :eligible_for_plan, -> { where.not(status: [ :delivered, :cancelled, :rescheduled ]) }
-  scope :eligible_for_plan_for_others, -> { where.not(status: [ :rescheduled ]) }
+  scope :eligible_for_plan, -> { where.not(status: [:delivered, :cancelled, :rescheduled]) }
+  scope :eligible_for_plan_for_others, -> { where.not(status: [:rescheduled]) }
 
   # ============================================================================
   # VALIDACIONES
   # ============================================================================
 
   validate :order_item_must_be_ready_to_confirm, if: -> { status_changed?(from: "pending", to: "confirmed") }
-  validates :order_item_id, uniqueness: { scope: :delivery_id, message: "ya existe en esta entrega" }
+  validates :order_item_id, uniqueness: {scope: :delivery_id, message: "ya existe en esta entrega"}
 
   # ============================================================================
   # CALLBACKS
@@ -48,8 +48,6 @@ class DeliveryItem < ApplicationRecord
   # El estado del Delivery se recalcula explícitamente desde servicios
   after_update :update_order_item_status
   after_update :notify_reschedule, if: :saved_change_to_delivery_id?
-  after_update :notify_all_confirmed, if: :saved_change_to_status?
-  after_update :notify_all_order_items_ready, if: :saved_change_to_status?
 
   # ============================================================================
   # MÉTODOS PÚBLICOS
@@ -57,14 +55,14 @@ class DeliveryItem < ApplicationRecord
 
   def display_status
     case status
-    when "pending"     then "Pendiente de confirmar"
-    when "confirmed"   then "Confirmado"
-    when "in_plan"     then "En plan de entregas"
-    when "in_route"    then "En ruta"
-    when "delivered"   then "Entregado"
+    when "pending" then "Pendiente de confirmar"
+    when "confirmed" then "Confirmado"
+    when "in_plan" then "En plan de entregas"
+    when "in_route" then "En ruta"
+    when "delivered" then "Entregado"
     when "rescheduled" then "Reprogramado"
-    when "cancelled"   then "Cancelado"
-    when "failed"      then "Entrega fracasada"
+    when "cancelled" then "Cancelado"
+    when "failed" then "Entrega fracasada"
     else status.to_s.humanize
     end
   end
@@ -121,29 +119,11 @@ class DeliveryItem < ApplicationRecord
 
   private
 
-  # Notifica cuando todos los productos de una entrega están confirmados
-  def notify_all_confirmed
-    delivery.notify_all_confirmed
-  end
-
   # Notifica cuando un item es movido a otra entrega (reagendado)
   def notify_reschedule
-    users = User.where(role: [ :logistics, :admin ]).to_a
+    users = User.where(role: [:logistics, :admin]).to_a
     users << delivery.delivery_plan.driver if delivery.delivery_plan&.driver
-    message = "El item '#{order_item.product}' del pedido #{order_item.order.number} fue reagendado para #{delivery.delivery_date.strftime('%d/%m/%Y')}."
+    message = "El item '#{order_item.product}' del pedido #{order_item.order.number} fue reagendado para #{delivery.delivery_date.strftime("%d/%m/%Y")}."
     NotificationService.create_for_users(users.compact.uniq, self, message)
-  end
-
-  # Notifica al vendedor cuando todos los order_items de la entrega están listos
-  def notify_all_order_items_ready
-    return unless status == "confirmed"
-
-    all_ready = delivery.delivery_items.all? { |di| di.order_item.status == "ready" }
-
-    if all_ready
-      seller_user = delivery.order.seller.user
-      message = "Todos los productos del pedido #{delivery.order.number} para la entrega del #{delivery.delivery_date.strftime('%d/%m/%Y')} están listos para entrega."
-      # NotificationService.create_for_users([ seller_user ], delivery, message)
-    end
   end
 end

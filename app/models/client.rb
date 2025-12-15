@@ -7,10 +7,10 @@ class Client < ApplicationRecord
   validates :name, presence: true
 
   def self.ransackable_attributes(auth_object = nil)
-    [ "name", "phone", "email", "created_at", "updated_at" ]
+    ["name", "phone", "email", "created_at", "updated_at"]
   end
 
   def self.ransackable_associations(auth_object = nil)
-    [ "delivery_addresses", "orders", "versions" ]
+    ["delivery_addresses", "orders", "versions"]
   end
 end

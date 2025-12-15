@@ -1,7 +1,7 @@
 # app/services/delivery_items/notes_updater.rb
 module DeliveryItems
   class NotesUpdater
-    def initialize(delivery_item: nil, delivery: nil, note_text:, target: nil, current_user:)
+    def initialize(note_text:, current_user:, delivery_item: nil, delivery: nil, target: nil)
       @delivery_item = delivery_item
       @delivery = delivery
       @note_text = note_text

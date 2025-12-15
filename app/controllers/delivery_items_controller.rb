@@ -1,6 +1,6 @@
 # app/controllers/delivery_items_controller.rb
 class DeliveryItemsController < ApplicationController
-  before_action :set_delivery_item, only: [ :show, :confirm, :mark_delivered, :reschedule, :cancel, :update_notes ]
+  before_action :set_delivery_item, only: [:show, :confirm, :mark_delivered, :reschedule, :cancel, :update_notes]
 
   def show
     @delivery = @delivery_item.delivery
@@ -14,7 +14,7 @@ class DeliveryItemsController < ApplicationController
     ).call
 
     redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-                  notice: "Producto confirmado para entrega."
+      notice: "Producto confirmado para entrega."
   rescue => e
     handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
   end
@@ -27,7 +27,7 @@ class DeliveryItemsController < ApplicationController
     ).call
 
     redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-                  notice: "Producto marcado como entregado."
+      notice: "Producto marcado como entregado."
   rescue => e
     handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
   end
@@ -39,7 +39,7 @@ class DeliveryItemsController < ApplicationController
       current_user: current_user
     ).call
 
-    notice = params[:new_delivery] == "true" ?
+    notice = (params[:new_delivery] == "true") ?
       "Producto reagendado en una nueva entrega." :
       "Producto reagendado en una entrega existente."
 
@@ -56,7 +56,7 @@ class DeliveryItemsController < ApplicationController
     ).call
 
     redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-                  notice: "Producto cancelado."
+      notice: "Producto cancelado."
   rescue => e
     handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
   end
@@ -71,10 +71,10 @@ class DeliveryItemsController < ApplicationController
     ).call
 
     redirect_back fallback_location: delivery_plan_path(@delivery_item.delivery.delivery_plan),
-                  notice: "Nota actualizada correctamente."
+      notice: "Nota actualizada correctamente."
   rescue => e
     handle_item_error(e, fallback: delivery_plan_path(@delivery_item.delivery.delivery_plan),
-                         prefix: "Error al actualizar la nota")
+      prefix: "Error al actualizar la nota")
   end
 
   def bulk_add_notes
@@ -89,18 +89,18 @@ class DeliveryItemsController < ApplicationController
       current_user: current_user
     ).call
 
-    notice = params[:target] == "all" ?
+    notice = (params[:target] == "all") ?
       "Nota agregada a todos los productos de la entrega." :
       "Nota agregada al producto."
 
-    if delivery_plan != nil
+    if !delivery_plan.nil?
       redirect_back fallback_location: delivery_plan_path(delivery.delivery_plan), notice: notice
     else
       redirect_back fallback_location: delivery_path(delivery), notice: notice
     end
   rescue ActiveRecord::RecordNotFound
     redirect_back fallback_location: delivery_plans_path,
-                  alert: "Entrega o producto no encontrado."
+      alert: "Entrega o producto no encontrado."
   rescue => e
     handle_item_error(e, fallback: delivery_plan_path(delivery.delivery_plan))
   end

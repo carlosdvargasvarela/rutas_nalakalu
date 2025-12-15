@@ -9,7 +9,7 @@ class DeliveryAddress < ApplicationRecord
   before_validation :geocode_enriched, if: :should_geocode?
 
   def full_address
-    [ address, description ].compact.join(" - ")
+    [address, description].compact.join(" - ")
   end
 
   def to_s
@@ -53,6 +53,13 @@ class DeliveryAddress < ApplicationRecord
     address_errors.join("; ")
   end
 
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[
+      address description client_id created_at updated_at latitude longitude
+      place_id normalized_address geocode_quality plus_code
+    ]
+  end
+
   private
 
   def missing_coordinates?
@@ -92,8 +99,6 @@ class DeliveryAddress < ApplicationRecord
     lat < CR_LAT_MIN || lat > CR_LAT_MAX || lon < CR_LON_MIN || lon > CR_LON_MAX
   end
 
-  private
-
   def should_geocode?
     # Solo geocodificar si:
     # 1. La dirección cambió
@@ -103,14 +108,14 @@ class DeliveryAddress < ApplicationRecord
 
   def has_manual_coordinates?
     # Si hay coordenadas Y cambiaron, significa que son manuales
-    (latitude.present? && longitude.present?) &&
-    (will_save_change_to_latitude? || will_save_change_to_longitude?)
+    latitude.present? && longitude.present? &&
+      (will_save_change_to_latitude? || will_save_change_to_longitude?)
   end
 
   def build_query_for_geocode
     base = address.to_s.strip
     desc = description.to_s.strip
-    parts = [ base, desc ].reject(&:blank?)
+    parts = [base, desc].reject(&:blank?)
     parts.join(", ")
   end
 
@@ -147,18 +152,11 @@ class DeliveryAddress < ApplicationRecord
       # Calidad: parcial y tipo de localización (ROOFTOP, APPROXIMATE, etc.)
       partial = r.data["partial_match"] ? "partial" : nil
       loc_type = r.data.dig("geometry", "location_type")
-      self.geocode_quality = [ partial, loc_type ].compact.join(":")
+      self.geocode_quality = [partial, loc_type].compact.join(":")
 
     else
       # Sin match: marca calidad; no sobrescribas coords existentes
       self.geocode_quality = "no_match"
     end
-  end
-
-  def self.ransackable_attributes(_auth_object = nil)
-    %w[
-      address description client_id created_at updated_at latitude longitude
-      place_id normalized_address geocode_quality plus_code
-    ]
   end
 end

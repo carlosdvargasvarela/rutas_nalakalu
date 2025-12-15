@@ -19,7 +19,7 @@ class DeliveryPlanPolicy < ApplicationPolicy
 
     # Regla de negocio opcional: solo borrable si está en borrador o enviado a logística
     # (Ajusta según tus necesidades; el modelo además tiene ensure_deletable)
-    record.status_draft? || record.status_sent_to_logistics? || record.status == nil
+    record.status_draft? || record.status_sent_to_logistics? || record.status.nil?
   end
 
   # Solo roles especiales pueden administrar

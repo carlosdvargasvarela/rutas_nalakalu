@@ -3,9 +3,9 @@ class DeliveryPlanLocation < ApplicationRecord
   belongs_to :delivery_plan
 
   validates :latitude, :longitude, :captured_at, presence: true
-  validates :latitude, numericality: { greater_than_or_equal_to: -90, less_than_or_equal_to: 90 }
-  validates :longitude, numericality: { greater_than_or_equal_to: -180, less_than_or_equal_to: 180 }
-  validates :source, inclusion: { in: %w[live batch] }
+  validates :latitude, numericality: {greater_than_or_equal_to: -90, less_than_or_equal_to: 90}
+  validates :longitude, numericality: {greater_than_or_equal_to: -180, less_than_or_equal_to: 180}
+  validates :source, inclusion: {in: %w[live batch]}
 
   scope :ordered, -> { order(captured_at: :asc) }
   scope :recent, ->(limit = 100) { order(captured_at: :desc).limit(limit) }

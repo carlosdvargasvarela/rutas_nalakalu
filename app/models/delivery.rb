@@ -18,7 +18,7 @@ class Delivery < ApplicationRecord
 
   # Ejemplo de helper útil para Google Maps/JSON APIs
   def location
-    { lat: latitude.to_f, lng: longitude.to_f }
+    {lat: latitude.to_f, lng: longitude.to_f}
   end
 
   # ============================================================================
@@ -64,13 +64,13 @@ class Delivery < ApplicationRecord
 
   scope :service_cases, -> { where(delivery_type: SERVICE_CASE_TYPES) }
   scope :normal_deliveries, -> { where(delivery_type: :normal) }
-  scope :pending, -> { where(status: [ :scheduled, :ready_to_deliver, :in_route ]) }
+  scope :pending, -> { where(status: [:scheduled, :ready_to_deliver, :in_route]) }
   scope :overdue, -> {
     where("delivery_date < ?", Date.current)
-      .where.not(status: [ statuses[:delivered], statuses[:rescheduled], statuses[:cancelled] ])
+      .where.not(status: [statuses[:delivered], statuses[:rescheduled], statuses[:cancelled]])
   }
   scope :eligible_for_plan, -> {
-    where.not(status: [ :delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived, :failed ])
+    where.not(status: [:delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived, :failed])
   }
   scope :not_assigned_to_plan, -> { where.not(id: DeliveryPlanAssignment.select(:delivery_id)) }
   scope :available_for_plan, -> { eligible_for_plan.not_assigned_to_plan }
@@ -88,7 +88,7 @@ class Delivery < ApplicationRecord
     where("EXTRACT(week FROM delivery_date) = ? AND EXTRACT(year FROM delivery_date) = ?", week, year)
   }
   scope :with_service_cases, -> {
-    joins(:delivery_items).where(delivery_items: { service_case: true }).distinct
+    joins(:delivery_items).where(delivery_items: {service_case: true}).distinct
   }
 
   # ============================================================================
@@ -117,27 +117,27 @@ class Delivery < ApplicationRecord
 
   def display_status
     case status
-    when "scheduled"        then "Pendiente de confirmar"
+    when "scheduled" then "Pendiente de confirmar"
     when "ready_to_deliver" then "Confirmada para entregar"
-    when "in_plan"          then "En plan"
-    when "in_route"         then "En ruta"
-    when "delivered"        then "Entregada"
-    when "rescheduled"      then "Reprogramada"
-    when "cancelled"        then "Cancelada"
-    when "archived"         then "Archivada"
-    when "failed"           then "Entrega fracasada"
+    when "in_plan" then "En plan"
+    when "in_route" then "En ruta"
+    when "delivered" then "Entregada"
+    when "rescheduled" then "Reprogramada"
+    when "cancelled" then "Cancelada"
+    when "archived" then "Archivada"
+    when "failed" then "Entrega fracasada"
     else status.to_s.humanize
     end
   end
 
   def display_type
     case delivery_type
-    when "normal"               then "Entrega normal"
-    when "pickup_with_return"   then "Recogida de producto y posteriormente entrega al cliente"
-    when "return_delivery"      then "Devolución de producto"
-    when "onsite_repair"        then "Reparación en sitio"
-    when "only_pickup"          then "Solo recogida de producto"
-    when "internal_delivery"    then "Mandado Interno"
+    when "normal" then "Entrega normal"
+    when "pickup_with_return" then "Recogida de producto y posteriormente entrega al cliente"
+    when "return_delivery" then "Devolución de producto"
+    when "onsite_repair" then "Reparación en sitio"
+    when "only_pickup" then "Solo recogida de producto"
+    when "internal_delivery" then "Mandado Interno"
     else delivery_type.to_s.humanize
     end
   end
@@ -185,7 +185,7 @@ class Delivery < ApplicationRecord
   def mark_as_delivered!
     transaction do
       # Solo marcar como entregados los no terminales
-      delivery_items.where(status: [ :pending, :confirmed, :in_plan, :in_route ]).find_each(&:mark_as_delivered!)
+      delivery_items.where(status: [:pending, :confirmed, :in_plan, :in_route]).find_each(&:mark_as_delivered!)
 
       # Recalcular el estado con la lógica nueva (no forzar a delivered siempre)
       update_status_based_on_items
@@ -207,9 +207,9 @@ class Delivery < ApplicationRecord
 
   def delivery_history
     order.deliveries
-        .where(delivery_address_id: delivery_address_id)
-        .includes(delivery_items: :order_item)
-        .order(:delivery_date)
+      .where(delivery_address_id: delivery_address_id)
+      .includes(delivery_items: :order_item)
+      .order(:delivery_date)
   end
 
   def client_info
@@ -241,30 +241,20 @@ class Delivery < ApplicationRecord
     end
   end
 
-  def notify_all_confirmed
-    return unless delivery_items.all? { |di| di.status == "confirmed" }
-
-    users = User.where(role: [ :logistics, :admin ]).to_a
-    users << delivery_plan.driver if delivery_plan&.driver
-
-    message = "Todos los productos del pedido #{order.number} para la entrega del #{delivery_date.strftime('%d/%m/%Y')} fueron confirmados por el vendedor."
-    # NotificationService.create_for_users(users.compact.uniq, self, message)
-  end
-
   # ============================================================================
   # MÉTODOS DE CLASE
   # ============================================================================
 
   def self.status_options_for_select
     statuses.keys.map do |s|
-      [ Delivery.new(status: s).display_status, s.to_s ]
+      [Delivery.new(status: s).display_status, s.to_s]
     end
   end
 
   def self.to_csv(scope = all)
     CSV.generate(headers: true) do |csv|
-      csv << [ "Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo" ]
-      scope.includes(order: [ :client, :seller ], delivery_address: :client, delivery_items: { order_item: :order }).find_each do |delivery|
+      csv << ["Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo"]
+      scope.includes(order: [:client, :seller], delivery_address: :client, delivery_items: {order_item: :order}).find_each do |delivery|
         delivery.delivery_items.each do |delivery_item|
           csv << [
             delivery.delivery_date.strftime("%d/%m/%Y"),
@@ -291,7 +281,7 @@ class Delivery < ApplicationRecord
       confirmed_by_vendor: true,
       confirmed_by_vendor_at: Time.current
     )
-    Rails.logger.info "[Delivery##{id}] Confirmada por vendedor#{user ? " (#{user.email})" : ""}"
+    Rails.logger.info "[Delivery##{id}] Confirmada por vendedor#{" (#{user.email})" if user}"
   end
 
   def unconfirm_by_vendor!
@@ -312,21 +302,22 @@ class Delivery < ApplicationRecord
   # ============================================================================
 
   private
+
   def calculate_delivery_status(statuses)
     statuses = statuses.map(&:to_s)
 
-    terminal     = %w[delivered cancelled rescheduled failed]
+    terminal = %w[delivered cancelled rescheduled failed]
     non_terminal = %w[pending confirmed in_plan in_route]
 
     # 1) Uniformidad terminal
-    return :delivered   if statuses.all? { |s| s == "delivered" }
-    return :cancelled   if statuses.all? { |s| s == "cancelled" }
+    return :delivered if statuses.all? { |s| s == "delivered" }
+    return :cancelled if statuses.all? { |s| s == "cancelled" }
     return :rescheduled if statuses.all? { |s| s == "rescheduled" }
-    return :failed      if statuses.all? { |s| s == "failed" }
+    return :failed if statuses.all? { |s| s == "failed" }
 
     # 2) Caso mixto: separar terminales vs no terminales
     non_terminal_statuses = statuses.select { |s| non_terminal.include?(s) }
-    terminal_statuses     = statuses.select { |s| terminal.include?(s) }
+    terminal_statuses = statuses.select { |s| terminal.include?(s) }
 
     # 2.a) Si NO hay no terminales (todos son terminales pero mixtos):
     # Regla especial: si hay al menos un delivered entre los terminales, la entrega debe ser delivered.

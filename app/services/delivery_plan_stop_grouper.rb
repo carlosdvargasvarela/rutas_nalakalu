@@ -8,8 +8,8 @@ class DeliveryPlanStopGrouper
 
   def call
     assignments = @delivery_plan.delivery_plan_assignments
-                    .includes(delivery: :delivery_address)
-                    .order(:stop_order)
+      .includes(delivery: :delivery_address)
+      .order(:stop_order)
 
     return if assignments.empty?
 
@@ -22,8 +22,8 @@ class DeliveryPlanStopGrouper
     return nil if target_loc.nil?
 
     @delivery_plan.delivery_plan_assignments
-                 .includes(delivery: :delivery_address)
-                 .each do |assignment|
+      .includes(delivery: :delivery_address)
+      .each do |assignment|
       existing_loc = extract_location(assignment.delivery)
       next if existing_loc.nil?
 
@@ -45,12 +45,12 @@ class DeliveryPlanStopGrouper
       loc = extract_location(assignment.delivery)
 
       if loc.nil?
-        groups << [ assignment ]
+        groups << [assignment]
         processed.add(assignment.id)
         next
       end
 
-      group = [ assignment ]
+      group = [assignment]
       processed.add(assignment.id)
 
       assignments.each do |other|
@@ -91,7 +91,7 @@ class DeliveryPlanStopGrouper
 
     return nil if lat.blank? || lng.blank?
 
-    { lat: lat.to_f, lng: lng.to_f }
+    {lat: lat.to_f, lng: lng.to_f}
   end
 
   def same_location?(loc1, loc2)
@@ -110,7 +110,7 @@ class DeliveryPlanStopGrouper
     lat2_rad = lat2 * rad
 
     a = Math.sin(dlat / 2)**2 +
-        Math.cos(lat1_rad) * Math.cos(lat2_rad) * Math.sin(dlon / 2)**2
+      Math.cos(lat1_rad) * Math.cos(lat2_rad) * Math.sin(dlon / 2)**2
 
     c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 

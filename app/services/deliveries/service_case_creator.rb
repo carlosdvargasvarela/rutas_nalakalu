@@ -10,30 +10,30 @@ module Deliveries
 
     def call
       ActiveRecord::Base.transaction do
-        client  = find_or_create_client
+        client = find_or_create_client
         address = find_or_create_address(client)
-        order   = find_or_create_order(client)
+        order = find_or_create_order(client)
 
         base_date = safe_date(delivery_params[:delivery_date]) || Date.current
-        dtype     = (delivery_params[:delivery_type].presence || :pickup).to_s
+        dtype = (delivery_params[:delivery_type].presence || :pickup).to_s
 
         case dtype
         when "pickup_with_return"
-          pickup_delivery  = build_service_delivery(order, address, base_date, "pickup_with_return")
+          pickup_delivery = build_service_delivery(order, address, base_date, "pickup_with_return")
           pickup_delivery.delivery_items = process_service_items(order, "pickup_with_return")
           pickup_delivery.save!
 
-          return_date     = base_date + 15.days
+          return_date = base_date + 15.days
           return_delivery = build_service_delivery(order, address, return_date, "return_delivery")
           return_delivery.delivery_items = clone_items_with_type(pickup_delivery, "return_delivery")
           return_delivery.save!
 
-          [ pickup_delivery, return_delivery ]
+          [pickup_delivery, return_delivery]
         else
           single_delivery = build_service_delivery(order, address, base_date, dtype)
           single_delivery.delivery_items = process_service_items(order, dtype)
           single_delivery.save!
-          [ single_delivery ]
+          [single_delivery]
         end
       end
     rescue ActiveRecord::RecordInvalid => e
@@ -58,7 +58,7 @@ module Deliveries
         :delivery_time_preference,
         delivery_items_attributes: [
           :id, :order_item_id, :quantity_delivered, :status, :notes, :_destroy,
-          order_item_attributes: [ :id, :product, :quantity, :notes ]
+          order_item_attributes: [:id, :product, :quantity, :notes]
         ]
       )
     end
@@ -166,7 +166,7 @@ module Deliveries
         # Si viene un nuevo producto por atributos, crear uno asociado al order
         else
           oi_attrs = item_params[:order_item_attributes] || {}
-          product  = oi_attrs[:product].to_s.strip
+          product = oi_attrs[:product].to_s.strip
           next if product.blank?
 
           order_item = build_order_item_with_prefix(order, oi_attrs, delivery_type)

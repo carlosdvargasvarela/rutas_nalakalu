@@ -71,13 +71,13 @@ class DeliveryImportsController < ApplicationController
     package = Axlsx::Package.new
     wb = package.workbook
     wb.add_worksheet(name: "Entregas") do |sheet|
-      sheet.add_row [ "Fecha de entrega", "Equipo", "Número de pedido", "Cliente",
-                     "Producto", "Cantidad", "Código de vendedor", "Dirección",
-                     "Contacto" ]
+      sheet.add_row ["Fecha de entrega", "Equipo", "Número de pedido", "Cliente",
+        "Producto", "Cantidad", "Código de vendedor", "Dirección",
+        "Contacto"]
     end
     send_data package.to_stream.read,
-              filename: "plantilla_entregas.xlsx",
-              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      filename: "plantilla_entregas.xlsx",
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   end
 
   private

@@ -21,22 +21,22 @@ class SalesReminderJob < ApplicationJob
     Seller.includes(:user, orders: :deliveries).find_each do |seller|
       # Contar pedidos pendientes del vendedor
       pending_orders = Order.where(seller_id: seller.id)
-                           .where(status: [ :pending, :in_production ])
-                           .count
+        .where(status: [:pending, :in_production])
+        .count
 
       # Contar entregas programadas para esta semana
       current_week = Date.current.beginning_of_week
       deliveries_this_week = Delivery.joins(:order)
-                                   .where(orders: { seller_id: seller.id })
-                                   .where(delivery_date: current_week..current_week.end_of_week)
-                                   .where(status: [ :scheduled, :ready_to_deliver, :in_route ])
-                                   .count
+        .where(orders: {seller_id: seller.id})
+        .where(delivery_date: current_week..current_week.end_of_week)
+        .where(status: [:scheduled, :ready_to_deliver, :in_route])
+        .count
 
       # Crear notificación semanal usando NotificationService
       message = build_weekly_message(seller, pending_orders, deliveries_this_week)
 
       NotificationService.create_for_users(
-        [ seller.user ],
+        [seller.user],
         seller,
         message,
         type: "weekly_reminder",
@@ -53,9 +53,9 @@ class SalesReminderJob < ApplicationJob
     Seller.includes(:user, orders: :deliveries).find_each do |seller|
       # Pedidos de este seller con entregas para hoy y en estado correcto
       deliveries_today = Delivery.joins(:order)
-        .where(orders: { seller_id: seller.id })
+        .where(orders: {seller_id: seller.id})
         .where(delivery_date: today)
-        .where(status: [ :scheduled, :ready_to_deliver, :in_route ])
+        .where(status: [:scheduled, :ready_to_deliver, :in_route])
 
       next if deliveries_today.empty?
 
@@ -64,7 +64,7 @@ class SalesReminderJob < ApplicationJob
 
       # Notifica usando NotificationService
       NotificationService.create_for_users(
-        [ seller.user ],
+        [seller.user],
         seller,
         message,
         type: "daily_reminder",
@@ -102,9 +102,9 @@ class SalesReminderJob < ApplicationJob
     Seller.includes(:user, orders: :deliveries).find_each do |seller|
       # Buscar entregas de la próxima semana asociadas al vendedor
       deliveries_next_week = Delivery.joins(:order)
-        .where(orders: { seller_id: seller.id })
+        .where(orders: {seller_id: seller.id})
         .where(delivery_date: next_monday..next_saturday)
-        .where(status: [ :scheduled, :ready_to_deliver ])
+        .where(status: [:scheduled, :ready_to_deliver])
         .includes(:delivery_items)
 
       # Filtrar solo las entregas con delivery_items NO confirmados
@@ -115,7 +115,7 @@ class SalesReminderJob < ApplicationJob
       next if pending_deliveries.empty?
 
       # Construir mensaje
-      message = "🔔 Entregas pendientes de confirmar para la próxima semana (#{next_monday.strftime('%d/%m')} - #{next_saturday.strftime('%d/%m')}):\n\n"
+      message = "🔔 Entregas pendientes de confirmar para la próxima semana (#{next_monday.strftime("%d/%m")} - #{next_saturday.strftime("%d/%m")}):\n\n"
       pending_deliveries.each do |delivery|
         day = I18n.l(delivery.delivery_date, format: "%A %d/%m")
         order_number = delivery.order.number
@@ -126,7 +126,7 @@ class SalesReminderJob < ApplicationJob
 
       # Crear notificación usando NotificationService
       NotificationService.create_for_users(
-        [ seller.user ],
+        [seller.user],
         seller,
         message,
         type: "next_week_pending_confirmation",

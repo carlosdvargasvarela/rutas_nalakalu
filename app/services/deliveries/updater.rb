@@ -45,7 +45,7 @@ module Deliveries
         :delivery_time_preference,
         delivery_items_attributes: [
           :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
-          { order_item_attributes: [ :id, :product, :quantity, :notes ] }
+          {order_item_attributes: [:id, :product, :quantity, :notes]}
         ]
       )
     end
@@ -211,7 +211,7 @@ module Deliveries
       if existing_item
         existing_item.update!(
           quantity: oi_params[:quantity] || existing_item.quantity,
-          notes: [ existing_item.notes, oi_params[:notes] ].compact.reject(&:blank?).join("; ")
+          notes: [existing_item.notes, oi_params[:notes]].compact.reject(&:blank?).join("; ")
         )
         existing_item
       else

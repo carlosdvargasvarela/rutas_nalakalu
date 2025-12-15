@@ -2,7 +2,6 @@
   <h1>✅ Informe Semanal de Entregas No Confirmadas</h1>
   <p>Semana del <%= l(@week_start, format: :long) %> al <%= l(@week_end, format: :long) %></p>
 </div>
-
 <div class="content">
   <div class="success-box">
     <h2 style="margin: 0; font-size: 20px;">🎉 ¡Excelente trabajo!</h2>
@@ -10,12 +9,10 @@
       No se encontraron entregas sin confirmar durante la semana pasada.
     </p>
   </div>
-
   <p style="color: #666; text-align: center; margin-top: 30px;">
     Todos los vendedores confirmaron sus entregas a tiempo. Esto permite una mejor planificación logística.
   </p>
 </div>
-
 <div class="footer">
   <p>Este es un informe automático generado por el Sistema de Rutas NaLakalu</p>
   <p>Generado el <%= l(Time.current, format: :long) %></p>

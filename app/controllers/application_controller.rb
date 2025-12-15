@@ -28,15 +28,15 @@ class ApplicationController < ActionController::Base
   end
 
   def configure_permitted_parameters
-    devise_parameter_sanitizer.permit(:sign_up, keys: [ :name, :role ])
-    devise_parameter_sanitizer.permit(:account_update, keys: [ :name, :role ])
+    devise_parameter_sanitizer.permit(:sign_up, keys: [:name, :role])
+    devise_parameter_sanitizer.permit(:account_update, keys: [:name, :role])
   end
 
   def check_password_change
     return unless current_user&.force_password_change?
 
     # Evita bucles infinitos / permitir acciones de cerrar sesión, actualizar perfil, etc.
-    unless devise_controller? && (action_name.in?(%w[edit update destroy]))
+    unless devise_controller? && action_name.in?(%w[edit update destroy])
       redirect_to edit_user_registration_path, alert: "Debes cambiar tu contraseña antes de continuar."
     end
   end

@@ -103,7 +103,7 @@ module DeliveryItems
         order_id: original_delivery.order_id,
         delivery_address_id: original_delivery.delivery_address_id,
         delivery_date: new_date
-      ).where.not(status: [ :rescheduled, :cancelled, :archived, :delivered ]).first
+      ).where.not(status: [:rescheduled, :cancelled, :archived, :delivered]).first
 
       return active_delivery if active_delivery.present?
 
@@ -140,7 +140,7 @@ module DeliveryItems
         if existing_item.status.in?(%w[pending confirmed in_plan])
           # Consolidar SOLO si el existente está "vivo"
           existing_qty = existing_item.quantity_delivered.to_i
-          moving_qty   = delivery_item.quantity_delivered.to_i
+          moving_qty = delivery_item.quantity_delivered.to_i
 
           existing_item.update!(
             quantity_delivered: existing_qty + moving_qty,
@@ -156,36 +156,36 @@ module DeliveryItems
         else
           # Terminal: crear un nuevo item sin tocar el histórico
           DeliveryItem.create!(
-            delivery:           target_delivery,
-            order_item:         delivery_item.order_item,
+            delivery: target_delivery,
+            order_item: delivery_item.order_item,
             quantity_delivered: delivery_item.quantity_delivered.to_i,
-            status:             :pending,
-            service_case:       delivery_item.service_case,
-            notes:              delivery_item.notes
+            status: :pending,
+            service_case: delivery_item.service_case,
+            notes: delivery_item.notes
           )
         end
       else
         DeliveryItem.create!(
-          delivery:           target_delivery,
-          order_item:         delivery_item.order_item,
+          delivery: target_delivery,
+          order_item: delivery_item.order_item,
           quantity_delivered: delivery_item.quantity_delivered.to_i,
-          status:             :pending,
-          service_case:       delivery_item.service_case,
-          notes:              delivery_item.notes
+          status: :pending,
+          service_case: delivery_item.service_case,
+          notes: delivery_item.notes
         )
       end
     end
 
     def validate_target_delivery_compatibility!
       unless target_delivery.order_id == original_delivery.order_id &&
-             target_delivery.delivery_address_id == original_delivery.delivery_address_id
+          target_delivery.delivery_address_id == original_delivery.delivery_address_id
         raise StandardError, "La entrega destino debe pertenecer al mismo pedido y dirección."
       end
     end
 
     def cleanup_original_delivery_if_empty
       # Si el delivery original no tiene items activos, remover assignments y marcar como rescheduled
-      active_items = original_delivery.delivery_items.where.not(status: [ :delivered, :cancelled, :rescheduled ])
+      active_items = original_delivery.delivery_items.where.not(status: [:delivered, :cancelled, :rescheduled])
 
       if active_items.empty?
         original_delivery.delivery_plan_assignments.destroy_all

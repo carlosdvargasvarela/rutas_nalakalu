@@ -5,7 +5,7 @@ class User < ApplicationRecord
   devise :database_authenticatable, :recoverable, :rememberable, :validatable, :trackable, :lockable, :registerable
 
   # Definir los roles como un enum
-  enum role: { admin: 0, production_manager: 1, seller: 2, logistics: 3, driver: 4 }
+  enum role: {admin: 0, production_manager: 1, seller: 2, logistics: 3, driver: 4}
 
   attr_accessor :seller_code
 
@@ -86,23 +86,19 @@ class User < ApplicationRecord
   # Si quieres asegurar que solo drivers tengan tripulación, puedes validar:
   validate :crew_only_for_drivers
 
-  private
-
-  def set_default_role
-    self.role ||= :seller
-  end
-
   # Ransack: permitir solo atributos seguros
   def self.ransackable_attributes(auth_object = nil)
     %w[email name role created_at updated_at]
   end
 
-  def self.ransackable_associations(auth_object = nil)
-    [] # no exponemos asociaciones desde User para búsqueda
+  def self.ransackable_associations(_ = nil)
+    ["orders", "user", "versions"]
   end
 
-  def self.ransackable_associations(_ = nil)
-    [ "orders", "user", "versions" ]
+  private
+
+  def set_default_role
+    self.role ||= :seller
   end
 
   def crew_only_for_drivers

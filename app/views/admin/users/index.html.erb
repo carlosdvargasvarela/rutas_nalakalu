@@ -88,7 +88,6 @@
                   data: { bs_toggle: "tooltip" } do %>
                 <i class="bi bi-pencil-square"></i>
               <% end %>
-
               <%= button_to toggle_notifications_admin_user_path(user),
                   method: :patch,
                   class: "btn btn-sm #{user.send_notifications? ? 'btn-outline-primary' : 'btn-outline-secondary'}",

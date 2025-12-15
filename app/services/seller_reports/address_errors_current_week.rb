@@ -46,8 +46,8 @@ module SellerReports
 
     def calculate_current_week
       week_start = @reference_date.beginning_of_week(:monday)
-      week_end   = week_start + 6.days
-      [ week_start, week_end ]
+      week_end = week_start + 6.days
+      [week_start, week_end]
     end
 
     def fetch_deliveries_with_address_errors
@@ -56,7 +56,7 @@ module SellerReports
         .where(approved: true)
         .where(archived: false)
         .where.not(delivery_type: :internal_delivery)
-        .includes(order: [ :client, :seller ], delivery_address: :client)
+        .includes(order: [:client, :seller], delivery_address: :client)
         .order(:delivery_date, "orders.number")
 
       all_deliveries.select do |delivery|
@@ -82,8 +82,8 @@ module SellerReports
     def send_empty_reports_to_sellers_with_notifications
       Seller
         .includes(:user)
-        .where.not(user: { id: nil })
-        .where(users: { send_notifications: true })
+        .where.not(user: {id: nil})
+        .where(users: {send_notifications: true})
         .find_each do |seller|
           user = seller.user
           next if user.email.blank?

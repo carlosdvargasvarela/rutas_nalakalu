@@ -16,7 +16,7 @@ class WeeklyPlanGenerator
 
     # Buscar entregas programadas para esa semana
     deliveries = Delivery.for_week(@start_date, @end_date)
-                        .where(status: :scheduled)
+      .where(status: :scheduled)
 
     # Agregar entregas al plan
     deliveries.each do |delivery|
@@ -30,10 +30,10 @@ class WeeklyPlanGenerator
     # Generar planes separados por vendedor
     plans = {}
 
-    Seller.joins(orders: { deliveries: :delivery_items })
-          .where(orders: { deliveries: { delivery_date: @start_date..@end_date } })
-          .distinct
-          .each do |seller|
+    Seller.joins(orders: {deliveries: :delivery_items})
+      .where(orders: {deliveries: {delivery_date: @start_date..@end_date}})
+      .distinct
+      .each do |seller|
       plan = DeliveryPlan.create!(
         week: "#{@week}-#{seller.seller_code}",
         year: @year,
@@ -41,10 +41,10 @@ class WeeklyPlanGenerator
       )
 
       seller_deliveries = seller.orders
-                                .joins(:deliveries)
-                                .where(deliveries: { delivery_date: @start_date..@end_date })
-                                .map(&:deliveries)
-                                .flatten
+        .joins(:deliveries)
+        .where(deliveries: {delivery_date: @start_date..@end_date})
+        .map(&:deliveries)
+        .flatten
 
       seller_deliveries.each { |delivery| plan.add_delivery(delivery) }
       plans[seller.seller_code] = plan

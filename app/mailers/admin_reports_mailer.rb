@@ -9,17 +9,17 @@ class AdminReportsMailer < ApplicationMailer
     @recipient = recipient
 
     deliveries = Delivery
-                   .where(id: delivery_ids)
-                   .includes(order: [ :client, :seller ], delivery_address: :client, delivery_items: { order_item: :order })
+      .where(id: delivery_ids)
+      .includes(order: [:client, :seller], delivery_address: :client, delivery_items: {order_item: :order})
 
     excel_stream = generate_unconfirmed_deliveries_excel(deliveries)
-    filename = "entregas_no_confirmadas_#{report_data[:week_start].strftime('%Y%m%d')}.xlsx"
+    filename = "entregas_no_confirmadas_#{report_data[:week_start].strftime("%Y%m%d")}.xlsx"
 
     attachments[filename] = excel_stream.string
 
     mail(
       to: recipient,
-      subject: "📊 Informe Semanal: Entregas No Confirmadas (#{report_data[:week_start].strftime('%d/%m')} - #{report_data[:week_end].strftime('%d/%m/%Y')})"
+      subject: "📊 Informe Semanal: Entregas No Confirmadas (#{report_data[:week_start].strftime("%d/%m")} - #{report_data[:week_end].strftime("%d/%m/%Y")})"
     )
   end
 
@@ -30,7 +30,7 @@ class AdminReportsMailer < ApplicationMailer
 
     mail(
       to: recipient,
-      subject: "✅ Informe Semanal: Sin Entregas Pendientes de Confirmar (#{week_start.strftime('%d/%m')} - #{week_end.strftime('%d/%m/%Y')})"
+      subject: "✅ Informe Semanal: Sin Entregas Pendientes de Confirmar (#{week_start.strftime("%d/%m")} - #{week_end.strftime("%d/%m/%Y")})"
     )
   end
 
@@ -39,17 +39,17 @@ class AdminReportsMailer < ApplicationMailer
     @recipient = recipient
 
     deliveries = Delivery
-                   .where(id: delivery_ids)
-                   .includes(order: [ :client, :seller ], delivery_address: :client)
+      .where(id: delivery_ids)
+      .includes(order: [:client, :seller], delivery_address: :client)
 
     excel_stream = generate_address_errors_excel(deliveries)
-    filename = "errores_direccion_#{report_data[:week_start].strftime('%Y%m%d')}.xlsx"
+    filename = "errores_direccion_#{report_data[:week_start].strftime("%Y%m%d")}.xlsx"
 
     attachments[filename] = excel_stream.string
 
     mail(
       to: recipient,
-      subject: "⚠️ Informe Semanal: Errores en Direcciones (#{report_data[:week_start].strftime('%d/%m')} - #{report_data[:week_end].strftime('%d/%m/%Y')})"
+      subject: "⚠️ Informe Semanal: Errores en Direcciones (#{report_data[:week_start].strftime("%d/%m")} - #{report_data[:week_end].strftime("%d/%m/%Y")})"
     )
   end
 
@@ -60,7 +60,7 @@ class AdminReportsMailer < ApplicationMailer
 
     mail(
       to: recipient,
-      subject: "✅ Informe Semanal: Sin Errores de Dirección (#{week_start.strftime('%d/%m')} - #{week_end.strftime('%d/%m/%Y')})"
+      subject: "✅ Informe Semanal: Sin Errores de Dirección (#{week_start.strftime("%d/%m")} - #{week_end.strftime("%d/%m/%Y")})"
     )
   end
 
@@ -73,17 +73,17 @@ class AdminReportsMailer < ApplicationMailer
     @recipient = recipient
 
     deliveries = Delivery
-                   .where(id: delivery_ids)
-                   .includes(order: [:client, :seller], delivery_address: :client, delivery_items: { order_item: :order })
+      .where(id: delivery_ids)
+      .includes(order: [:client, :seller], delivery_address: :client, delivery_items: {order_item: :order})
 
     excel_stream = generate_unconfirmed_deliveries_excel(deliveries)
-    filename = "entregas_no_confirmadas_semana_actual_#{report_data[:week_start].strftime('%Y%m%d')}.xlsx"
+    filename = "entregas_no_confirmadas_semana_actual_#{report_data[:week_start].strftime("%Y%m%d")}.xlsx"
 
     attachments[filename] = excel_stream.string
 
     mail(
       to: recipient,
-      subject: "📊 Informe Semanal: Entregas No Confirmadas Semana Actual (#{report_data[:week_start].strftime('%d/%m')} - #{report_data[:week_end].strftime('%d/%m/%Y')})"
+      subject: "📊 Informe Semanal: Entregas No Confirmadas Semana Actual (#{report_data[:week_start].strftime("%d/%m")} - #{report_data[:week_end].strftime("%d/%m/%Y")})"
     )
   end
 
@@ -94,7 +94,7 @@ class AdminReportsMailer < ApplicationMailer
 
     mail(
       to: recipient,
-      subject: "✅ Informe Semanal: Sin Entregas Pendientes de Confirmar Esta Semana (#{week_start.strftime('%d/%m')} - #{week_end.strftime('%d/%m/%Y')})"
+      subject: "✅ Informe Semanal: Sin Entregas Pendientes de Confirmar Esta Semana (#{week_start.strftime("%d/%m")} - #{week_end.strftime("%d/%m/%Y")})"
     )
   end
 
@@ -108,7 +108,7 @@ class AdminReportsMailer < ApplicationMailer
       bg_color: "0066CC",
       fg_color: "FFFFFF",
       b: true,
-      alignment: { horizontal: :center, vertical: :center, wrap_text: true }
+      alignment: {horizontal: :center, vertical: :center, wrap_text: true}
     )
 
     date_style = workbook.styles.add_style(
@@ -148,7 +148,7 @@ class AdminReportsMailer < ApplicationMailer
           delivery.display_status,
           in_plan,
           delivery.delivery_notes
-        ], style: [ date_style, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil ])
+        ], style: [date_style, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil])
       end
 
       sheet.column_widths(12, 15, 25, 20, 15, 25, 35, 25, 20, 18, 12, 30)
@@ -165,7 +165,7 @@ class AdminReportsMailer < ApplicationMailer
       bg_color: "CC0000",
       fg_color: "FFFFFF",
       b: true,
-      alignment: { horizontal: :center, vertical: :center, wrap_text: true }
+      alignment: {horizontal: :center, vertical: :center, wrap_text: true}
     )
 
     date_style = workbook.styles.add_style(
@@ -213,7 +213,7 @@ class AdminReportsMailer < ApplicationMailer
           errors,
           address.geocode_quality,
           delivery.display_status
-        ], style: [ date_style, nil, nil, nil, nil, nil, nil, nil, nil, nil, error_style, nil, nil ])
+        ], style: [date_style, nil, nil, nil, nil, nil, nil, nil, nil, nil, error_style, nil, nil])
       end
 
       sheet.column_widths(12, 15, 25, 20, 15, 25, 35, 25, 12, 12, 40, 20, 18)

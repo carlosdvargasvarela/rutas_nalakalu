@@ -13,7 +13,7 @@ class WeeklyAdminReportsJob < ApplicationJob
       AdminReports::AddressErrorsReport.generate_and_send!
 
       Rails.logger.info "[WeeklyAdminReportsJob] Informes semanales generados y enviados exitosamente"
-    rescue StandardError => e
+    rescue => e
       Rails.logger.error "[WeeklyAdminReportsJob] Error durante la generación de informes: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
       raise e

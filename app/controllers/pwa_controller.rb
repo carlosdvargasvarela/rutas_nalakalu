@@ -5,7 +5,6 @@ class PwaController < ActionController::Base
     render template: "pwa/service-worker", layout: false
   end
 
-
   def manifest
     render template: "pwa/manifest", layout: false
   end

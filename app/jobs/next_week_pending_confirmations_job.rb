@@ -8,7 +8,7 @@ class NextWeekPendingConfirmationsJob < ApplicationJob
     begin
       NotificationService.send_daily_next_week_pending_confirmations!
       Rails.logger.info "[NextWeekPendingConfirmationsJob] Ejecución completada exitosamente"
-    rescue StandardError => e
+    rescue => e
       Rails.logger.error "[NextWeekPendingConfirmationsJob] Error durante la ejecución: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
       raise e

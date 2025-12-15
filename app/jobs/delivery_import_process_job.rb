@@ -25,7 +25,6 @@ class DeliveryImportProcessJob
       status: :finished,
       success_count: success_count
     )
-
   rescue => e
     Rails.logger.error "DeliveryImportProcessJob failed for import #{import_id}: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")

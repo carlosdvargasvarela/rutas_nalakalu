@@ -8,9 +8,9 @@ module Deliveries
 
     def call
       ActiveRecord::Base.transaction do
-        client  = find_or_create_client
+        client = find_or_create_client
         address = find_or_create_address(client)
-        order   = find_or_create_order(client)
+        order = find_or_create_order(client)
 
         existing_delivery = Delivery.find_by(
           order: order,
@@ -57,7 +57,7 @@ module Deliveries
         :delivery_time_preference,
         delivery_items_attributes: [
           :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
-          { order_item_attributes: [ :id, :product, :quantity, :notes ] }
+          {order_item_attributes: [:id, :product, :quantity, :notes]}
         ]
       )
     end
@@ -121,12 +121,14 @@ module Deliveries
         # Si hay coordenadas pero no hay dirección, error
         if lat.present? && lng.present? && address_text.blank?
           raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new),
-                "Debe proporcionar una dirección junto con las coordenadas."
+            "Debe proporcionar una dirección junto con las coordenadas."
         end
 
         # Si no hay dirección en absoluto, error
-        raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new),
-              "Debe seleccionarse o crearse una dirección." if address_text.blank?
+        if address_text.blank?
+          raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new),
+            "Debe seleccionarse o crearse una dirección."
+        end
 
         # Buscar dirección existente por coordenadas primero (si están presentes)
         if lat.present? && lng.present?
@@ -189,16 +191,12 @@ module Deliveries
             notes = item_params.dig(:order_item_attributes, :notes)
 
             existing_order_item = order.order_items.find_by(product: product_name)
-            if existing_order_item
-              existing_order_item
-            else
-              order.order_items.create!(
-                product: product_name,
-                quantity: quantity,
-                notes: notes,
-                status: :in_production
-              )
-            end
+            existing_order_item || order.order_items.create!(
+              product: product_name,
+              quantity: quantity,
+              notes: notes,
+              status: :in_production
+            )
           end
 
         DeliveryItem.new(

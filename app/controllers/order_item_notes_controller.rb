@@ -1,8 +1,8 @@
 class OrderItemNotesController < ApplicationController
   include ActionView::RecordIdentifier  # Para usar dom_id en el controller
 
-  before_action :set_order_item, only: [ :new, :create ]
-  before_action :set_order_item_note, only: [ :edit, :update, :destroy, :close, :reopen ]
+  before_action :set_order_item, only: [:new, :create]
+  before_action :set_order_item_note, only: [:edit, :update, :destroy, :close, :reopen]
   before_action :authorize_note_action
 
   def new
@@ -26,7 +26,7 @@ class OrderItemNotesController < ApplicationController
             turbo_stream.replace(
               dom_id(@order_item, :notes),
               partial: "order_item_notes/list",
-              locals: { item: @order_item }
+              locals: {item: @order_item}
             ),
             # Limpiar el modal
             turbo_stream.update("note_modal", "")
@@ -57,7 +57,7 @@ class OrderItemNotesController < ApplicationController
             turbo_stream.replace(
               dom_id(@order_item_note.order_item, :notes),
               partial: "order_item_notes/list",
-              locals: { item: @order_item_note.order_item }
+              locals: {item: @order_item_note.order_item}
             ),
             # Limpiar el modal
             turbo_stream.update("note_modal", "")
@@ -82,7 +82,7 @@ class OrderItemNotesController < ApplicationController
           render turbo_stream: turbo_stream.replace(
             dom_id(@order_item_note.order_item, :notes),
             partial: "order_item_notes/list",
-            locals: { item: @order_item_note.order_item }
+            locals: {item: @order_item_note.order_item}
           )
         end
         format.html { redirect_to order_path(@order_item_note.order_item.order), notice: "Nota cerrada correctamente." }
@@ -101,7 +101,7 @@ class OrderItemNotesController < ApplicationController
           render turbo_stream: turbo_stream.replace(
             dom_id(@order_item_note.order_item, :notes),
             partial: "order_item_notes/list",
-            locals: { item: @order_item_note.order_item }
+            locals: {item: @order_item_note.order_item}
           )
         end
         format.html { redirect_to order_path(@order_item_note.order_item.order), notice: "Nota reabierta correctamente." }
@@ -121,7 +121,7 @@ class OrderItemNotesController < ApplicationController
           render turbo_stream: turbo_stream.replace(
             dom_id(order_item, :notes),
             partial: "order_item_notes/list",
-            locals: { item: order_item }
+            locals: {item: order_item}
           )
         end
         format.html { redirect_to order_path(order_item.order), notice: "Nota eliminada correctamente." }
@@ -158,7 +158,7 @@ class OrderItemNotesController < ApplicationController
     if action_name.in?(%w[edit update destroy close reopen])
       unless @order_item_note.user == current_user || current_user.admin?
         redirect_to order_path(@order_item_note.order_item.order),
-                    alert: "Solo puedes editar tus propias notas."
+          alert: "Solo puedes editar tus propias notas."
         nil
       end
     end

@@ -14,7 +14,7 @@ class DeliveryPlanAssignment < ApplicationRecord
   after_destroy :revert_statuses
 
   # Validaciones
-  validates :stop_order, numericality: { only_integer: true, allow_nil: true }
+  validates :stop_order, numericality: {only_integer: true, allow_nil: true}
 
   # Ordenamiento
   acts_as_list scope: :delivery_plan, column: :stop_order
@@ -48,7 +48,7 @@ class DeliveryPlanAssignment < ApplicationRecord
 
       # Cambiar items de in_plan a in_route
       delivery.delivery_items.where(status: DeliveryItem.statuses[:in_plan])
-              .update_all(status: DeliveryItem.statuses[:in_route], updated_at: Time.current)
+        .update_all(status: DeliveryItem.statuses[:in_route], updated_at: Time.current)
 
       # Recalcular estado del delivery explícitamente
       delivery.update_status_based_on_items
@@ -94,7 +94,7 @@ class DeliveryPlanAssignment < ApplicationRecord
     timestamp = Time.current.strftime("%Y-%m-%d %H:%M")
     new_note = "[#{timestamp}] #{note}"
 
-    current = self.driver_notes.to_s.strip
+    current = driver_notes.to_s.strip
     updated =
       if current.blank?
         new_note
@@ -108,8 +108,8 @@ class DeliveryPlanAssignment < ApplicationRecord
   # Etiqueta legible del estado
   def display_status
     case status
-    when "pending"   then "Pendiente"
-    when "in_route"  then "En ruta"
+    when "pending" then "Pendiente"
+    when "in_route" then "En ruta"
     when "completed" then "Completado"
     when "cancelled" then "Cancelado"
     else status.to_s.humanize
@@ -130,7 +130,7 @@ class DeliveryPlanAssignment < ApplicationRecord
     transaction do
       # Cambiar items confirmados a in_plan
       delivery.delivery_items.where(status: DeliveryItem.statuses[:confirmed])
-              .update_all(status: DeliveryItem.statuses[:in_plan], updated_at: Time.current)
+        .update_all(status: DeliveryItem.statuses[:in_plan], updated_at: Time.current)
 
       # Cambiar delivery a in_plan
       delivery.update_column(:status, Delivery.statuses[:in_plan])
@@ -145,7 +145,7 @@ class DeliveryPlanAssignment < ApplicationRecord
     transaction do
       # Revertir items de in_plan a confirmed
       delivery.delivery_items.where(status: DeliveryItem.statuses[:in_plan])
-              .update_all(status: DeliveryItem.statuses[:confirmed], updated_at: Time.current)
+        .update_all(status: DeliveryItem.statuses[:confirmed], updated_at: Time.current)
 
       # Recalcular estado del delivery explícitamente
       delivery.update_status_based_on_items

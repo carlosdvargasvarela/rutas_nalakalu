@@ -5,6 +5,7 @@ class NotificationsController < ApplicationController
     @grouped_notifications = @notifications.group_by(&:notification_type)
     @unread_count = current_user.notifications.unread.count
   end
+
   def mark_as_read
     notification = current_user.notifications.find(params[:id])
     notification.mark_as_read!
@@ -20,8 +21,8 @@ class NotificationsController < ApplicationController
     notification_type = params[:notification_type]
 
     current_user.notifications
-                .where(notification_type: notification_type, read: false)
-                .update_all(read: true)
+      .where(notification_type: notification_type, read: false)
+      .update_all(read: true)
 
     redirect_to notifications_path, notice: "Todas las notificaciones de tipo '#{helpers.notification_type_label(notification_type)}' fueron marcadas como leídas"
   end

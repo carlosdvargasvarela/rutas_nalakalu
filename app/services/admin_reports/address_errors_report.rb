@@ -35,7 +35,7 @@ module AdminReports
       current_week_start = @reference_date.beginning_of_week(:monday)
       prev_week_start = current_week_start - 1.week
       prev_week_end = prev_week_start + 6.days
-      [ prev_week_start, prev_week_end ]
+      [prev_week_start, prev_week_end]
     end
 
     def fetch_deliveries_with_address_errors
@@ -44,7 +44,7 @@ module AdminReports
         .where(approved: true)
         .where(archived: false)
         .where.not(delivery_type: :internal_delivery)
-        .includes(order: [ :client, :seller ], delivery_address: :client)
+        .includes(order: [:client, :seller], delivery_address: :client)
         .order(:delivery_date, "orders.number")
 
       # Filtrar solo las que tienen errores

@@ -2,17 +2,15 @@
   <h1>⚠️ Informe Semanal de Errores en Direcciones</h1>
   <p>Semana del <%= l(@report_data[:week_start], format: :long) %> al <%= l(@report_data[:week_end], format: :long) %></p>
 </div>
-
 <div class="content">
   <div class="highlight-box" style="border-left-color: #dc3545;">
     <h2 style="margin-top: 0; color: #dc3545;">Resumen Ejecutivo</h2>
     <p>
-      Durante la semana pasada se identificaron <strong><%= @report_data[:total_count] %></strong> 
+      Durante la semana pasada se identificaron <strong><%= @report_data[:total_count] %></strong>
       entrega(s) con <strong>errores en sus direcciones</strong>, afectando a 
       <strong><%= @report_data[:affected_sellers_count] %></strong> vendedor(es).
     </p>
   </div>
-
   <div class="stats">
     <div class="stat-item">
       <span class="stat-number" style="color: #dc3545;"><%= @report_data[:total_count] %></span>
@@ -23,9 +21,7 @@
       <span class="stat-label">Vendedores afectados</span>
     </div>
   </div>
-
   <h3 style="color: #dc3545; margin-top: 30px;">Tipos de Errores Detectados</h3>
-  
   <table>
     <thead>
       <tr>
@@ -44,9 +40,7 @@
       <% end %>
     </tbody>
   </table>
-
   <h3 style="color: #dc3545; margin-top: 30px;">Top 5 Vendedores con Más Errores</h3>
-  
   <table>
     <thead>
       <tr>
@@ -69,19 +63,16 @@
       <% end %>
     </tbody>
   </table>
-
   <div class="attachment-notice">
     📎 <strong>Archivo Excel adjunto</strong><br>
     Se adjunta un archivo Excel con el detalle completo de todas las entregas con errores de dirección, 
     incluyendo coordenadas, tipo de error específico y responsable.
   </div>
-
   <p style="margin-top: 30px; color: #666; font-size: 14px;">
     <strong>Acción requerida:</strong> Coordinar con los vendedores para corregir estas direcciones 
     lo antes posible. Direcciones incorrectas generan retrasos, costos adicionales y afectan la experiencia del cliente.
   </p>
 </div>
-
 <div class="footer">
   <p>Este es un informe automático generado por el Sistema de Rutas NaLakalu</p>
   <p>Generado el <%= l(Time.current, format: :long) %></p>

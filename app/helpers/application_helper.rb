@@ -11,73 +11,73 @@ module ApplicationHelper
 
   # Delivery: usa EXACTAMENTE tus enums
   DELIVERY_STATUS_COLORS = {
-    "scheduled"         => "warning",
-    "ready_to_deliver"  => "primary",
-    "in_plan"           => "primary",
-    "in_route"          => "dark",
-    "delivered"         => "success",
-    "rescheduled"       => "info",
-    "cancelled"         => "danger",
-    "archived"          => "light",
-    "failed"            => "danger"
+    "scheduled" => "warning",
+    "ready_to_deliver" => "primary",
+    "in_plan" => "primary",
+    "in_route" => "dark",
+    "delivered" => "success",
+    "rescheduled" => "info",
+    "cancelled" => "danger",
+    "archived" => "light",
+    "failed" => "danger"
   }.freeze
 
   # DeliveryItem: estados típicos en tu app
   DELIVERY_ITEM_STATUS_COLORS = {
-    "pending"     => "warning",
-    "confirmed"   => "primary",
-    "in_plan"     => "primary",
-    "in_route"    => "dark",
-    "delivered"   => "success",
+    "pending" => "warning",
+    "confirmed" => "primary",
+    "in_plan" => "primary",
+    "in_route" => "dark",
+    "delivered" => "success",
     "rescheduled" => "info",
-    "cancelled"   => "danger",
-    "failed"      => "danger"
+    "cancelled" => "danger",
+    "failed" => "danger"
   }.freeze
 
   ORDER_STATUS_COLORS = {
-    "in_production"      => "secondary",
+    "in_production" => "secondary",
     "ready_for_delivery" => "info",
-    "delivered"          => "success",
-    "rescheduled"        => "dark",
-    "cancelled"          => "danger"
+    "delivered" => "success",
+    "rescheduled" => "dark",
+    "cancelled" => "danger"
   }.freeze
 
   ORDER_ITEM_STATUS_COLORS = {
     "in_production" => "secondary",
-    "ready"         => "info",
-    "delivered"     => "success",
-    "cancelled"     => "danger",
-    "missing"       => "warning"
+    "ready" => "info",
+    "delivered" => "success",
+    "cancelled" => "danger",
+    "missing" => "warning"
   }.freeze
 
   DELIVERY_PLAN_STATUS_COLORS = {
-    "draft"             => "secondary",
+    "draft" => "secondary",
     "sent_to_logistics" => "info",
-    "routes_created"    => "primary"
+    "routes_created" => "primary"
   }.freeze
 
   STATUS_ICONS = {
     # Delivery / DeliveryItem
-    "scheduled"         => "bi-clock",
-    "ready_to_deliver"  => "bi-check2-square",
-    "in_plan"           => "bi-map",
-    "in_route"          => "bi-truck",
-    "delivered"         => "bi-check-circle",
-    "rescheduled"       => "bi-arrow-repeat",
-    "cancelled"         => "bi-x-circle",
-    "archived"          => "bi-archive",
-    "failed"            => "bi-exclamation-octagon",
+    "scheduled" => "bi-clock",
+    "ready_to_deliver" => "bi-check2-square",
+    "in_plan" => "bi-map",
+    "in_route" => "bi-truck",
+    "delivered" => "bi-check-circle",
+    "rescheduled" => "bi-arrow-repeat",
+    "cancelled" => "bi-x-circle",
+    "archived" => "bi-archive",
+    "failed" => "bi-exclamation-octagon",
 
     # Order / OrderItem
-    "in_production"     => "bi-gear",
-    "ready_for_delivery"=> "bi-box-seam",
-    "ready"             => "bi-check2-circle",
-    "missing"           => "bi-exclamation-triangle",
+    "in_production" => "bi-gear",
+    "ready_for_delivery" => "bi-box-seam",
+    "ready" => "bi-check2-circle",
+    "missing" => "bi-exclamation-triangle",
 
     # DeliveryPlan
-    "draft"             => "bi-journal",
+    "draft" => "bi-journal",
     "sent_to_logistics" => "bi-send",
-    "routes_created"    => "bi-diagram-3"
+    "routes_created" => "bi-diagram-3"
   }.freeze
 
   # Métodos utilitarios de fecha/hora (ASEGURAR QUE EXISTAN)
@@ -92,20 +92,20 @@ module ApplicationHelper
   end
 
   # Métodos de color por entidad
-  def delivery_status_color(status)        = normalize_badge_color(DELIVERY_STATUS_COLORS[status.to_s] || "secondary")
-  def delivery_item_status_color(status)   = normalize_badge_color(DELIVERY_ITEM_STATUS_COLORS[status.to_s] || "secondary")
-  def order_status_color(status)           = normalize_badge_color(ORDER_STATUS_COLORS[status.to_s] || "secondary")
-  def order_item_status_color(status)      = normalize_badge_color(ORDER_ITEM_STATUS_COLORS[status.to_s] || "secondary")
-  def delivery_plan_status_color(status)   = normalize_badge_color(DELIVERY_PLAN_STATUS_COLORS[status.to_s] || "secondary")
+  def delivery_status_color(status) = normalize_badge_color(DELIVERY_STATUS_COLORS[status.to_s] || "secondary")
+  def delivery_item_status_color(status) = normalize_badge_color(DELIVERY_ITEM_STATUS_COLORS[status.to_s] || "secondary")
+  def order_status_color(status) = normalize_badge_color(ORDER_STATUS_COLORS[status.to_s] || "secondary")
+  def order_item_status_color(status) = normalize_badge_color(ORDER_ITEM_STATUS_COLORS[status.to_s] || "secondary")
+  def delivery_plan_status_color(status) = normalize_badge_color(DELIVERY_PLAN_STATUS_COLORS[status.to_s] || "secondary")
 
   # Deducción automática de tipo según objeto AR o símbolo
   def infer_status_type(record_or_type)
     case record_or_type
-    when Delivery       then :delivery
-    when DeliveryItem   then :delivery_item
-    when Order          then :order
-    when OrderItem      then :order_item
-    when DeliveryPlan   then :delivery_plan
+    when Delivery then :delivery
+    when DeliveryItem then :delivery_item
+    when Order then :order
+    when OrderItem then :order_item
+    when DeliveryPlan then :delivery_plan
     when Symbol, String then record_or_type.to_sym
     else
       :delivery
@@ -115,10 +115,10 @@ module ApplicationHelper
   # Obtiene el color según tipo y status string
   def color_for_status_by_type(status_str, type_sym)
     case type_sym
-    when :delivery      then delivery_status_color(status_str)
+    when :delivery then delivery_status_color(status_str)
     when :delivery_item then delivery_item_status_color(status_str)
-    when :order         then order_status_color(status_str)
-    when :order_item    then order_item_status_color(status_str)
+    when :order then order_status_color(status_str)
+    when :order_item then order_item_status_color(status_str)
     when :delivery_plan then delivery_plan_status_color(status_str)
     else "secondary"
     end
@@ -145,10 +145,10 @@ module ApplicationHelper
   def status_badge(status_or_record, type = nil, with_icon: false, classes: "")
     if status_or_record.respond_to?(:status)
       status_str = status_or_record.status.to_s
-      type_sym   = infer_status_type(status_or_record)
+      type_sym = infer_status_type(status_or_record)
     else
       status_str = status_or_record.to_s
-      type_sym   = infer_status_type(type || :delivery)
+      type_sym = infer_status_type(type || :delivery)
     end
 
     color = color_for_status_by_type(status_str, type_sym)
@@ -156,12 +156,12 @@ module ApplicationHelper
 
     icon_html = if with_icon
       icon_class = STATUS_ICONS[status_str]
-      icon_class.present? ? content_tag(:i, "", class: "bi #{icon_class} me-1", aria: { hidden: true }) : "".html_safe
+      icon_class.present? ? content_tag(:i, "", class: "bi #{icon_class} me-1", aria: {hidden: true}) : "".html_safe
     else
       "".html_safe
     end
 
-    css_classes = [ "badge", "bg-#{color}" ]
+    css_classes = ["badge", "bg-#{color}"]
     css_classes << "text-dark" if needs_text_dark?(color)
     css_classes << classes if classes.present?
 
@@ -172,7 +172,7 @@ module ApplicationHelper
 
   # Formato de fecha/hora estándar para Costa Rica
   def format_datetime_cr(datetime)
-    return '' if datetime.blank?
-    datetime.in_time_zone('America/Costa_Rica').strftime('%d/%m/%Y %H:%M')
+    return "" if datetime.blank?
+    datetime.in_time_zone("America/Costa_Rica").strftime("%d/%m/%Y %H:%M")
   end
 end

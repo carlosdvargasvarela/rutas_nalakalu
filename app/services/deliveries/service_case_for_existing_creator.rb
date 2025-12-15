@@ -12,10 +12,10 @@ module Deliveries
     def call
       ActiveRecord::Base.transaction do
         base_date = safe_date(params.dig(:delivery, :delivery_date)) || Date.current
-        dtype     = (params.dig(:delivery, :delivery_type).presence || :pickup).to_s
+        dtype = (params.dig(:delivery, :delivery_type).presence || :pickup).to_s
 
         raw_id = params.dig(:delivery, :delivery_address_id).to_s
-        normalized = raw_id.present? && raw_id != "__new__" ? raw_id : nil
+        normalized = (raw_id.present? && raw_id != "__new__") ? raw_id : nil
 
         address = if normalized.present?
           DeliveryAddress.find(normalized)
@@ -34,14 +34,14 @@ module Deliveries
           return_delivery.delivery_items = clone_items_with_type(pickup_delivery, "return_delivery")
           return_delivery.save!
 
-          @created_deliveries = [ pickup_delivery, return_delivery ]
+          @created_deliveries = [pickup_delivery, return_delivery]
           pickup_delivery
         else
           single_delivery = build_service_delivery(address, base_date, dtype)
           single_delivery.delivery_items = build_service_items(dtype)
           single_delivery.save!
 
-          @created_deliveries = [ single_delivery ]
+          @created_deliveries = [single_delivery]
           single_delivery
         end
       end
@@ -72,7 +72,7 @@ module Deliveries
           :status,
           :notes,
           :_destroy,
-          order_item_attributes: [ :id, :product, :quantity, :notes ]
+          order_item_attributes: [:id, :product, :quantity, :notes]
         ]
       )
     end

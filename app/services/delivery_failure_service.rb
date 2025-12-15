@@ -32,8 +32,8 @@ class DeliveryFailureService
     )
 
     # Marcar todos los delivery_items como failed
-    @delivery.delivery_items.where.not(status: [ :delivered, :cancelled ])
-             .update_all(status: DeliveryItem.statuses[:failed], updated_at: Time.current)
+    @delivery.delivery_items.where.not(status: [:delivered, :cancelled])
+      .update_all(status: DeliveryItem.statuses[:failed], updated_at: Time.current)
   end
 
   def clone_delivery!
@@ -48,14 +48,14 @@ class DeliveryFailureService
       contact_phone: @delivery.contact_phone,
       contact_id: @delivery.contact_id,
       delivery_time_preference: @delivery.delivery_time_preference,
-      delivery_notes: "Reagendada por entrega fracasada del #{@delivery.delivery_date.strftime('%d/%m/%Y')}. Motivo: #{@reason}",
+      delivery_notes: "Reagendada por entrega fracasada del #{@delivery.delivery_date.strftime("%d/%m/%Y")}. Motivo: #{@reason}",
       delivery_type: @delivery.delivery_type,
       status: :scheduled,
       approved: true
     )
 
     # Clonar delivery_items que no fueron entregados
-    @delivery.delivery_items.where.not(status: [ :delivered, :cancelled ]).each do |item|
+    @delivery.delivery_items.where.not(status: [:delivered, :cancelled]).each do |item|
       DeliveryItem.create!(
         delivery: new_delivery,
         order_item: item.order_item,
@@ -72,7 +72,7 @@ class DeliveryFailureService
   def notify_failure(new_delivery)
     users = []
     # Logística y producción
-    users += User.where(role: [ :logistics, :production_manager ])
+    users += User.where(role: [:logistics, :production_manager])
     # Vendedor del pedido
     users << @delivery.order.seller.user if @delivery.order.seller&.user.present?
 

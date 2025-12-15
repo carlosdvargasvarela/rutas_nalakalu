@@ -15,5 +15,4 @@ class Seller < ApplicationRecord
   def self.ransackable_associations(auth_object = nil)
     ["orders", "user", "versions"]
   end
-
 end

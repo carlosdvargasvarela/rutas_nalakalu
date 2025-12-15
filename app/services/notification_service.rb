@@ -55,7 +55,7 @@ class NotificationService
     simple_message = "La entrega del pedido #{delivery.order.number} fue reagendada del #{formatted_old} al #{formatted_new}."
 
     # Notificación interna (solo una vez!)
-    create_for_users([ seller ], delivery, simple_message, type: "reschedule_delivery", send_email: false)
+    create_for_users([seller], delivery, simple_message, type: "reschedule_delivery", send_email: false)
 
     # Mensaje detallado para correos externos
     detailed_message = <<~MSG.strip
@@ -85,7 +85,7 @@ class NotificationService
   def self.notify_route_assigned(delivery_plan)
     if delivery_plan.driver
       message = "Se te asignó una nueva ruta para la semana #{delivery_plan.week}/#{delivery_plan.year}"
-      create_for_users([ delivery_plan.driver ], delivery_plan, message)
+      create_for_users([delivery_plan.driver], delivery_plan, message)
     end
   end
 
@@ -153,7 +153,7 @@ class NotificationService
       .where(archived: false)
       .where(delivery_date: next_week_start..next_week_end)
       .where.not(delivery_type: :internal_delivery)
-      .includes(order: [ :client, :seller ], delivery_address: :client, delivery_items: { order_item: :order })
+      .includes(order: [:client, :seller], delivery_address: :client, delivery_items: {order_item: :order})
 
     return if pending_deliveries.empty?
 
@@ -211,7 +211,7 @@ class NotificationService
     fecha = I18n.l(delivery.delivery_date, format: :long)
     productos = delivery.delivery_items.includes(order_item: :order).map do |di|
       prod = di.order_item&.product || "-"
-      qty  = di.quantity_delivered || 1
+      qty = di.quantity_delivered || 1
       "- #{prod} x #{qty}"
     end.join("\n")
 
@@ -220,7 +220,7 @@ class NotificationService
       "📅 Fecha: #{fecha}",
       "📦 Pedido: #{delivery.order.number}",
       "👤 Cliente: #{delivery.order.client.name}",
-      "📍 Dirección: #{delivery.delivery_address.address}#{delivery.delivery_address.description.present? ? " (#{delivery.delivery_address.description})" : ""}",
+      "📍 Dirección: #{delivery.delivery_address.address}#{" (#{delivery.delivery_address.description})" if delivery.delivery_address.description.present?}",
       "🏷️ Tipo: #{delivery.display_type}",
       "👨‍💼 Vendedor: #{delivery.order.seller.name} (#{delivery.order.seller.seller_code})",
       (created_by.present? ? "✍️ Creada por: #{created_by}" : nil),
@@ -235,7 +235,7 @@ class NotificationService
     new_f = I18n.l(delivery.delivery_date, format: :long)
     productos = delivery.delivery_items.includes(order_item: :order).map do |di|
       prod = di.order_item&.product || "-"
-      qty  = di.quantity_delivered || 1
+      qty = di.quantity_delivered || 1
       "- #{prod} x #{qty}"
     end.join("\n")
 
@@ -245,7 +245,7 @@ class NotificationService
       "📅 Del: #{old_f}",
       "📅 Al:  #{new_f}",
       "👤 Cliente: #{delivery.order.client.name}",
-      "📍 Dirección: #{delivery.delivery_address.address}#{delivery.delivery_address.description.present? ? " (#{delivery.delivery_address.description})" : ""}",
+      "📍 Dirección: #{delivery.delivery_address.address}#{" (#{delivery.delivery_address.description})" if delivery.delivery_address.description.present?}",
       "🏷️ Tipo: #{delivery.display_type}",
       "👨‍💼 Vendedor: #{delivery.order.seller.name} (#{delivery.order.seller.seller_code})",
       (reason.present? ? "📝 Motivo: #{reason}" : nil),

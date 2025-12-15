@@ -46,8 +46,8 @@ module SellerReports
 
     def calculate_next_week
       current_week_start = @reference_date.beginning_of_week(:monday)
-      next_week_start    = current_week_start + 1.week
-      next_week_end      = next_week_start + 6.days
+      next_week_start = current_week_start + 1.week
+      next_week_end = next_week_start + 6.days
       [next_week_start, next_week_end]
     end
 
@@ -80,8 +80,8 @@ module SellerReports
     def send_empty_reports_to_sellers_with_notifications
       Seller
         .includes(:user)
-        .where.not(user: { id: nil })
-        .where(users: { send_notifications: true })
+        .where.not(user: {id: nil})
+        .where(users: {send_notifications: true})
         .find_each do |seller|
           user = seller.user
           next if user.email.blank?

@@ -1,20 +1,24 @@
 # app/controllers/deliveries_controller.rb
 class DeliveriesController < ApplicationController
-  before_action :set_delivery, only: [ :show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing ]
-  before_action :set_addresses, only: [ :new, :edit, :create, :update ]
+  before_action :set_delivery, only: [:show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing]
+  before_action :set_addresses, only: [:new, :edit, :create, :update]
 
   # GET /deliveries
   def index
     session[:deliveries_return_to] = request.fullpath
 
-    base_scope = params[:show_rescheduled] == "1" ? Delivery.all : Delivery.where.not(status: :rescheduled)
+    base_scope = (params[:show_rescheduled] == "1") ? Delivery.all : Delivery.where.not(status: :rescheduled)
 
     if params[:no_plan].present?
       base_scope = base_scope.where.not(id: DeliveryPlanAssignment.select(:delivery_id))
     end
 
     if (dq = params.dig(:q, :delivery_date_lt)).present?
-      base_scope = base_scope.where("delivery_date < ?", dq.to_date) rescue base_scope
+      base_scope = begin
+        base_scope.where("delivery_date < ?", dq.to_date)
+      rescue
+        base_scope
+      end
     end
 
     excluded_statuses = %i[delivered rescheduled cancelled archived failed]
@@ -26,17 +30,17 @@ class DeliveriesController < ApplicationController
     end
 
     @q = base_scope.ransack(params[:q])
-    deliveries_scope = @q.result.includes(order: [ :client, :seller ], delivery_address: :client)
+    deliveries_scope = @q.result.includes(order: [:client, :seller], delivery_address: :client)
 
     @deliveries = deliveries_scope.order(delivery_date: :asc).page(params[:page])
-    @all_deliveries = deliveries_scope.includes(delivery_items: { order_item: :order }).order(delivery_date: :asc)
+    @all_deliveries = deliveries_scope.includes(delivery_items: {order_item: :order}).order(delivery_date: :asc)
 
     authorize Delivery
 
     respond_to do |format|
       format.html
-      format.xlsx { response.headers["Content-Disposition"] = "attachment; filename=entregas_#{Date.today.strftime('%Y%m%d')}.xlsx" }
-      format.csv  { send_data @all_deliveries.to_csv, filename: "entregas_#{Date.today.strftime('%Y%m%d')}.csv" }
+      format.xlsx { response.headers["Content-Disposition"] = "attachment; filename=entregas_#{Date.today.strftime("%Y%m%d")}.xlsx" }
+      format.csv { send_data @all_deliveries.to_csv, filename: "entregas_#{Date.today.strftime("%Y%m%d")}.csv" }
     end
   end
 
@@ -44,7 +48,7 @@ class DeliveriesController < ApplicationController
     @future_deliveries = Delivery
       .where(order_id: @delivery.order_id, delivery_address_id: @delivery.delivery_address_id)
       .where.not(id: @delivery.id)
-      .where(status: [ :scheduled, :ready_to_deliver, :in_plan, :in_route ])
+      .where(status: [:scheduled, :ready_to_deliver, :in_plan, :in_route])
 
     @delivery_history = @delivery.delivery_history
   end
@@ -69,11 +73,11 @@ class DeliveriesController < ApplicationController
 
   def edit
     @client = @delivery.order.client
-    @order  = @delivery.order
+    @order = @delivery.order
 
     @addresses = @client.delivery_addresses.to_a
     @orders = @client.orders.to_a
-    @clients = [ @client ]
+    @clients = [@client]
 
     @delivery.delivery_items.build.build_order_item if @delivery.delivery_items.empty?
   end
@@ -113,7 +117,7 @@ class DeliveriesController < ApplicationController
 
     redirect_to(
       session.delete(:deliveries_return_to) || delivery_path(target_delivery),
-      notice: "Entrega reagendada para el #{target_delivery.delivery_date.strftime('%d/%m/%Y')}."
+      notice: "Entrega reagendada para el #{target_delivery.delivery_date.strftime("%d/%m/%Y")}."
     )
   rescue => e
     redirect_to(session[:deliveries_return_to] || deliveries_path, alert: "Error al reagendar: #{e.message}")
@@ -246,7 +250,7 @@ class DeliveriesController < ApplicationController
   def by_week
     session[:deliveries_return_to] = request.fullpath
     @week = (1..53).cover?(params[:week].to_i) ? params[:week].to_i : Date.today.cweek
-    @year = params[:year].to_i >= 2000 ? params[:year].to_i : Date.today.cwyear
+    @year = (params[:year].to_i >= 2000) ? params[:year].to_i : Date.today.cwyear
     start_date = Date.commercial(@year, @week, 1)
     @deliveries = Delivery.for_week(start_date).includes(order: :client, delivery_address: {}, delivery_items: {}).order("deliveries.delivery_date ASC").page(params[:page])
     render :index
@@ -269,7 +273,7 @@ class DeliveriesController < ApplicationController
   end
 
   def note
-    render partial: "delivery_items/form_note", locals: { delivery: @delivery }
+    render partial: "delivery_items/form_note", locals: {delivery: @delivery}
   end
 
   private
@@ -330,7 +334,7 @@ class DeliveriesController < ApplicationController
         :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
         delivery_items_attributes: [
           :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
-          { order_item_attributes: [ :id, :product, :quantity, :notes ] }
+          {order_item_attributes: [:id, :product, :quantity, :notes]}
         ]
       )
       permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
@@ -339,7 +343,7 @@ class DeliveriesController < ApplicationController
     end
 
     @client = find_or_initialize_client_from_params
-    @order  = find_or_initialize_order_from_params(@client)
+    @order = find_or_initialize_order_from_params(@client)
     @addresses = @client.delivery_addresses.to_a
     @clients = Client.all.order(:name)
 
@@ -354,7 +358,7 @@ class DeliveriesController < ApplicationController
         :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
         delivery_items_attributes: [
           :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
-          { order_item_attributes: [ :id, :product, :quantity, :notes ] }
+          {order_item_attributes: [:id, :product, :quantity, :notes]}
         ]
       )
       permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
@@ -362,7 +366,7 @@ class DeliveriesController < ApplicationController
       @delivery.assign_attributes(permitted)
     end
 
-    @order  = @delivery.order
+    @order = @delivery.order
     @client = @order.client
     @addresses = @client.delivery_addresses.order(:description)
     flash.now[:alert] = "Error al actualizar la entrega: #{e.message}"
@@ -371,7 +375,7 @@ class DeliveriesController < ApplicationController
 
   def handle_service_case_error(e)
     @delivery ||= Delivery.new
-    @delivery.delivery_type ||= (params.dig(:delivery, :delivery_type) || :pickup)
+    @delivery.delivery_type ||= params.dig(:delivery, :delivery_type) || :pickup
     @delivery.status ||= :scheduled
 
     if params[:delivery].present?
@@ -380,7 +384,7 @@ class DeliveriesController < ApplicationController
         :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
         delivery_items_attributes: [
           :id, :order_item_id, :quantity_delivered, :status, :notes, :_destroy,
-          { order_item_attributes: [ :id, :product, :quantity, :notes ] }
+          {order_item_attributes: [:id, :product, :quantity, :notes]}
         ]
       )
       permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
@@ -388,12 +392,12 @@ class DeliveriesController < ApplicationController
       @delivery.assign_attributes(permitted)
     end
 
-    if params[:client_id].present?
-      @client = Client.find_by(id: params[:client_id])
+    @client = if params[:client_id].present?
+      Client.find_by(id: params[:client_id])
     elsif params[:client].present?
-      @client = Client.new(params.require(:client).permit(:name, :phone, :email))
+      Client.new(params.require(:client).permit(:name, :phone, :email))
     else
-      @client = @delivery.order&.client || Client.new
+      @delivery.order&.client || Client.new
     end
 
     raw_order_id = @delivery.order_id.to_s.strip
@@ -406,7 +410,7 @@ class DeliveriesController < ApplicationController
       @order = @delivery.order || Order.new
     end
 
-    @clients  = Client.all.order(:name)
+    @clients = Client.all.order(:name)
     @addresses = @client.present? ? @client.delivery_addresses.to_a : []
     @order ||= @delivery.order
 
@@ -428,17 +432,21 @@ class DeliveriesController < ApplicationController
         :delivery_date, :delivery_type, :delivery_address_id,
         delivery_items_attributes: [
           :id, :order_item_id, :quantity_delivered, :_destroy,
-          { order_item_attributes: [ :id, :product, :quantity, :notes ] }
+          {order_item_attributes: [:id, :product, :quantity, :notes]}
         ]
       )
       permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
       @service_case.assign_attributes(permitted)
 
       if @service_case.delivery_type.is_a?(String)
-        @service_case.delivery_type = @service_case.delivery_type
+        @service_case.delivery_type = @service_case.delivery_type.to_sym
       end
       if (dd = params.dig(:delivery, :delivery_date)).present?
-        @service_case.delivery_date = Date.parse(dd) rescue @service_case.delivery_date
+        @service_case.delivery_date = begin
+          Date.parse(dd)
+        rescue
+          @service_case.delivery_date
+        end
       end
     else
       @service_case.delivery_type ||= :pickup_with_return

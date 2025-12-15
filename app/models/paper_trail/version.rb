@@ -2,6 +2,7 @@
 module PaperTrail
   class Version < ::ActiveRecord::Base
     include PaperTrail::VersionConcern
+
     self.table_name = "versions"
 
     def self.ransackable_attributes(_auth_object = nil)
@@ -23,10 +24,10 @@ module PaperTrail
     # Scope para buscar por texto de recurso
     scope :by_resource_text, ->(text) {
       return all if text.blank?
-      
+
       # Si contiene #, separar tipo e ID
-      if text.include?('#')
-        type, id = text.split('#', 2)
+      if text.include?("#")
+        type, id = text.split("#", 2)
         where(item_type: type.strip, item_id: id.strip)
       else
         # Solo buscar por tipo

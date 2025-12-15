@@ -7,8 +7,8 @@ module DeliveryPlansHelper
     week = week.to_i
 
     first_day = Date.commercial(year, week, 1)
-    last_day  = Date.commercial(year, week, 7)
-    label = "#{l(first_day, format: '%d %b')} - #{l(last_day, format: '%d %b')}"
+    last_day = Date.commercial(year, week, 7)
+    label = "#{l(first_day, format: "%d %b")} - #{l(last_day, format: "%d %b")}"
     show_year ? "#{label} #{year}" : label
   rescue ArgumentError
     "-"
@@ -20,7 +20,7 @@ module DeliveryPlansHelper
 
   def stop_badge_class(is_first, group_size)
     if is_first
-      group_size > 1 ? "bg-primary" : "bg-primary"
+      "bg-primary"
     else
       "bg-secondary"
     end

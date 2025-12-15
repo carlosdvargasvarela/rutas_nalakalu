@@ -70,7 +70,7 @@ module Deliveries
         order_id: delivery.order_id,
         delivery_address_id: delivery.delivery_address_id,
         delivery_date: new_date
-      ).where.not(status: [ :rescheduled, :cancelled, :archived, :delivered ]).first
+      ).where.not(status: [:rescheduled, :cancelled, :archived, :delivered]).first
 
       return active_delivery if active_delivery.present?
 
@@ -119,7 +119,7 @@ module Deliveries
           if existing_item.status.in?(%w[pending confirmed in_plan])
             # Consolidar SOLO si el existente está "vivo"
             existing_qty = existing_item.quantity_delivered.to_i
-            moving_qty   = item.quantity_delivered.to_i
+            moving_qty = item.quantity_delivered.to_i
 
             existing_item.update!(
               quantity_delivered: existing_qty + moving_qty,
@@ -137,23 +137,23 @@ module Deliveries
             # Si es terminal (delivered/cancelled/failed) no sumamos nunca.
             # Creamos un NUEVO item en destino para no tocar históricos.
             DeliveryItem.create!(
-              delivery:           target_delivery,
-              order_item:         item.order_item,
+              delivery: target_delivery,
+              order_item: item.order_item,
               quantity_delivered: item.quantity_delivered.to_i,
-              status:             :pending,
-              service_case:       item.service_case,
-              notes:              item.notes
+              status: :pending,
+              service_case: item.service_case,
+              notes: item.notes
             )
           end
         else
           # No existe en destino: crear uno nuevo "vivo"
           DeliveryItem.create!(
-            delivery:           target_delivery,
-            order_item:         item.order_item,
+            delivery: target_delivery,
+            order_item: item.order_item,
             quantity_delivered: item.quantity_delivered.to_i,
-            status:             :pending,
-            service_case:       item.service_case,
-            notes:              item.notes
+            status: :pending,
+            service_case: item.service_case,
+            notes: item.notes
           )
         end
 
@@ -169,7 +169,7 @@ module Deliveries
     def cleanup_original_delivery_assignments
       # Si el delivery original no tiene items activos (todos rescheduled/cancelled/delivered),
       # remover sus assignments de planes
-      active_items = delivery.delivery_items.where.not(status: [ :delivered, :cancelled, :rescheduled ])
+      active_items = delivery.delivery_items.where.not(status: [:delivered, :cancelled, :rescheduled])
 
       if active_items.empty?
         # Remover assignments
