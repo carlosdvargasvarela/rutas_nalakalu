@@ -115,6 +115,9 @@ group :development do
 
   # i18n_generators for internationalization
   gem "i18n_generators"
+
+  # Use standard for code formatting
+  gem "standard"
 end
 
 group :test do
