@@ -24,6 +24,13 @@
   </li>
   <% if current_user.admin? || current_user.production_manager? %>
     <li class="nav-item">
+      <%= link_to production_delivery_plans_path, class: "nav-link" do %>
+        <i class="bi bi-truck-front me-1"></i> Carga a camiones
+      <% end %>
+    </li>
+  <% end %>
+  <% if current_user.admin? || current_user.production_manager? %>
+    <li class="nav-item">
       <%= link_to new_delivery_import_path, class: "nav-link" do %>
         <i class="bi bi-file-earmark-arrow-up me-1"></i> Importar Excel
       <% end %>
