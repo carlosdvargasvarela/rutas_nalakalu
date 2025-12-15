@@ -348,7 +348,8 @@ class Delivery < ApplicationRecord
   def mark_as_confirmed_by_vendor!(user = nil)
     update!(
       confirmed_by_vendor: true,
-      confirmed_by_vendor_at: Time.current
+      confirmed_by_vendor_at: Time.current,
+      status: :ready_to_deliver
     )
     Rails.logger.info "[Delivery##{id}] Confirmada por vendedor#{" (#{user.email})" if user}"
   end
