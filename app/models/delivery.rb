@@ -348,7 +348,6 @@ class Delivery < ApplicationRecord
       confirmed_by_vendor_at: Time.current,
       status: :ready_to_deliver
     )
-    Rails.logger.info "[Delivery##{id}] Confirmada por vendedor#{" (#{user.email})" if user}"
   end
 
   def unconfirm_by_vendor!
