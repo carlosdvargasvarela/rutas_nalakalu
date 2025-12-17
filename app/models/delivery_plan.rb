@@ -1,4 +1,3 @@
-# app/models/delivery_plan.rb
 class DeliveryPlan < ApplicationRecord
   has_paper_trail
   has_many :delivery_plan_assignments, -> { order(:stop_order) }, dependent: :destroy
@@ -91,7 +90,7 @@ class DeliveryPlan < ApplicationRecord
     end
   end
 
-  # Recalcular estado de carga del plan
+  # Recalcular estado de carga del plan (basado en items)
   def recalculate_load_status!
     all_items = DeliveryItem.joins(:delivery)
       .where(deliveries: {id: delivery_ids})
@@ -120,9 +119,27 @@ class DeliveryPlan < ApplicationRecord
   end
 
   # Marcar todo el plan como cargado
+  # Usa update_all para eficiencia y solo recalcula el plan UNA vez al final
   def mark_all_loaded!
     transaction do
-      deliveries.each(&:mark_all_loaded!)
+      # 1. Actualizar todos los delivery_items de todas las deliveries del plan
+      DeliveryItem
+        .joins(:delivery)
+        .where(deliveries: {id: delivery_ids})
+        .where.not(load_status: DeliveryItem.load_statuses[:missing])
+        .update_all(
+          load_status: DeliveryItem.load_statuses[:loaded],
+          status: DeliveryItem.statuses[:loaded_on_truck],
+          updated_at: Time.current
+        )
+
+      # 2. Recalcular load_status y status de cada delivery (en memoria)
+      deliveries.each do |delivery|
+        delivery.recalculate_load_status!
+        delivery.update_status_based_on_items
+      end
+
+      # 3. Recalcular el estado de carga del plan una sola vez
       recalculate_load_status!
     end
   end

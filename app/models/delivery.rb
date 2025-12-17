@@ -1,4 +1,3 @@
-# app/models/delivery.rb
 class Delivery < ApplicationRecord
   has_paper_trail
   belongs_to :order
@@ -172,21 +171,19 @@ class Delivery < ApplicationRecord
     if new_status == :all_loaded
       update_column(:status, Delivery.statuses[:loaded_on_truck])
     end
-
-    # Si pertenece a un plan, que el plan recalcule su propio load_status
-    if (plan = delivery_plan)
-      plan.recalculate_load_status!
-    end
   end
 
   # Marcar toda la entrega como cargada
+  # (el recalculo del plan se hace a nivel de DeliveryPlan, no aquí)
   def mark_all_loaded!
     transaction do
       delivery_items
         .where.not(load_status: DeliveryItem.load_statuses[:missing])
-        .find_each do |item|
-          item.update!(load_status: :loaded, status: :loaded_on_truck)
-        end
+        .update_all(
+          load_status: DeliveryItem.load_statuses[:loaded],
+          status: DeliveryItem.statuses[:loaded_on_truck],
+          updated_at: Time.current
+        )
 
       recalculate_load_status!
       update_status_based_on_items
