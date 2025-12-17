@@ -68,8 +68,9 @@ class DeliveryPlansController < ApplicationController
 
     @q = base_scope.ransack(params[:q])
     @deliveries = @q.result
+      .joins(order: :client)
       .includes(:delivery_address, order: :client)
-      .order(:delivery_date)
+      .order(:delivery_date, "clients.name": :asc)
 
     @delivery_plan = DeliveryPlan.new
     @from = from

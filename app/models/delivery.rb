@@ -115,6 +115,10 @@ class Delivery < ApplicationRecord
   # MÉTODOS PÚBLICOS
   # ============================================================================
 
+  def client_name
+    order.client.name
+  end
+  
   def service_case?
     delivery_type.in?(SERVICE_CASE_TYPES)
   end
