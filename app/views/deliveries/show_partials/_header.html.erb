@@ -7,6 +7,11 @@
     </span>
   </h1>
   <% if policy(delivery).edit? %>
+    <%= button_to update_status_delivery_path(delivery), method: :patch, class: "btn btn-sm btn-outline-info", title: "Actualizar estado" do %>
+      <i class="bi bi-arrow-clockwise"></i> Actualizar estado
+    <% end %>
+  <% end %>
+  <% if policy(delivery).edit? %>
     <%= link_to edit_delivery_path(delivery), class: "btn btn-sm btn-outline-secondary", title: "Editar" do %>
       <i class="bi bi-pencil-square"></i> Editar
     <% end %>

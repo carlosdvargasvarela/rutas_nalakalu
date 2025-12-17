@@ -1,5 +1,5 @@
 class DeliveriesController < ApplicationController
-  before_action :set_delivery, only: [:show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing]
+  before_action :set_delivery, only: [:show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing, :update_status]
   before_action :set_addresses, only: [:new, :edit, :create, :update]
 
   # GET /deliveries
@@ -296,10 +296,15 @@ class DeliveriesController < ApplicationController
     render partial: "delivery_items/form_note", locals: {delivery: @delivery}
   end
 
+  def update_status
+    authorize @delivery, :edit?
+    @delivery.update_status_based_on_items
+    redirect_to @delivery, notice: "El estado de la entrega ha sido actualizado."
+  end
+
   private
 
   def set_delivery
-    # 🔥 OPTIMIZACIÓN: Precargar asociaciones básicas en set_delivery
     @delivery = Delivery.includes(
       order: [:client, :seller],
       delivery_address: :client,
