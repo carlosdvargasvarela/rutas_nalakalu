@@ -1,0 +1,11 @@
+// app/assets/stylesheets/_dashboard_empty_state.scss
+// Estilos para estados vacíos en el dashboard
+
+.empty-state {
+    animation: fadeInScale 0.6s ease-in;
+}
+
+.empty-icon {
+    animation: bounce-soft 2s ease-in-out infinite;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}

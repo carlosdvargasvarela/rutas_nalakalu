@@ -1,0 +1,19 @@
+// app/assets/stylesheets/_dashboard_buttons.scss
+// Estilos para botones en el dashboard
+
+/* Botones de acción con efecto elevación */
+.delivery-btn-group .btn {
+    @include ripple-effect(rgba(255, 255, 255, 0.3));
+    @include hover-lift(-4px, 1.05, 0 6px 16px rgba(0, 0, 0, 0.2));
+    @include box-shadow(0, 3px, 8px, rgba(0, 0, 0, 0.12));
+    
+    &::before {
+        transition: width 0.5s ease, height 0.5s ease;
+    }
+
+    &:active {
+        transform: translateY(-1px) scale(1.02);
+        @include box-shadow(0, 2px, 6px, rgba(0, 0, 0, 0.15));
+    }
+}
+

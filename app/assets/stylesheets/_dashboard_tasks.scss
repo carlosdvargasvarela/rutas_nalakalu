@@ -1,0 +1,23 @@
+// app/assets/stylesheets/_dashboard_tasks.scss
+// Estilos para tareas en el dashboard
+
+.task-item {
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.task-item:hover {
+    border-color: #dee2e6;
+    background-color: #ffffff !important;
+}
+
+@media (max-width: 768px) {
+    .task-item {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .task-action {
+        margin-top: 0.5rem;
+    }
+}
