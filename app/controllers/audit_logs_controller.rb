@@ -30,13 +30,10 @@ class AuditLogsController < ApplicationController
     @item_type = params[:item_type]
     @item_id = params[:item_id]
 
-    # 🔹 Scope base sin paginación para estadísticas
     base_scope = PaperTrail::Version.where(item_type: @item_type, item_id: @item_id)
 
-    # 🔹 Calcular estadísticas sin ORDER BY ni paginación
     @events_count = base_scope.group(:event).count
 
-    # 🔹 Versiones paginadas y ordenadas para el timeline
     @versions = base_scope
       .order(created_at: :desc)
       .page(params[:page])
@@ -48,6 +45,16 @@ class AuditLogsController < ApplicationController
     @users_by_id = User.where(id: user_ids).index_by { |u| u.id.to_s }
 
     @items_cache = preload_items(@versions)
+
+    # versiones relacionadas (Delivery, Order, DeliveryPlan)
+    @related_versions = related_versions_for(@resource)
+
+    # Usuarios también de versiones relacionadas
+    if @related_versions.present?
+      related_user_ids = @related_versions.pluck(:whodunnit).compact.uniq
+      related_users = User.where(id: related_user_ids).index_by { |u| u.id.to_s }
+      @users_by_id.merge!(related_users)
+    end
   end
 
   def compare
@@ -65,9 +72,8 @@ class AuditLogsController < ApplicationController
     end
   end
 
-  # ========================================================================
-  # 🔹 MÉTODO ACTUALIZADO: Comparar estados históricos reales
-  # ========================================================================
+  # ==================== DIFF ENTRE VERSIONES ======================
+
   def calculate_diff(version_from, version_to)
     from_state = state_after_version(version_from)
     to_state = state_after_version(version_to)
@@ -99,6 +105,8 @@ class AuditLogsController < ApplicationController
     obj&.attributes || {}
   end
 
+  # ==================== PRECARGA DE ITEMS =========================
+
   def preload_items(versions)
     items_cache = {}
     versions_by_type = versions.group_by(&:item_type)
@@ -115,5 +123,61 @@ class AuditLogsController < ApplicationController
     end
 
     items_cache
+  end
+
+  # ==================== VERSIONES RELACIONADAS ====================
+
+  def related_versions_for(resource)
+    return PaperTrail::Version.none if resource.blank?
+
+    case resource
+    when Delivery
+      related_versions_for_delivery(resource)
+    when Order
+      related_versions_for_order(resource)
+    when DeliveryPlan
+      related_versions_for_delivery_plan(resource)
+    else
+      PaperTrail::Version.none
+    end
+  end
+
+  # Cambios en DeliveryItem de esta entrega
+  def related_versions_for_delivery(delivery)
+    item_ids = delivery.delivery_items.pluck(:id)
+    return PaperTrail::Version.none if item_ids.empty?
+
+    PaperTrail::Version
+      .where(item_type: "DeliveryItem", item_id: item_ids)
+      .order(created_at: :desc)
+      .limit(50)
+  end
+
+  # Cambios en OrderItem y Delivery de este pedido
+  def related_versions_for_order(order)
+    order_item_ids = order.order_items.pluck(:id)
+    delivery_ids = order.deliveries.pluck(:id)
+
+    conditions = []
+    conditions << {item_type: "OrderItem", item_id: order_item_ids} if order_item_ids.any?
+    conditions << {item_type: "Delivery", item_id: delivery_ids} if delivery_ids.any?
+
+    return PaperTrail::Version.none if conditions.empty?
+
+    query = PaperTrail::Version.where(conditions.shift)
+    conditions.each { |cond| query = query.or(PaperTrail::Version.where(cond)) }
+
+    query.order(created_at: :desc).limit(50)
+  end
+
+  # Cambios en DeliveryPlanAssignment de este plan
+  def related_versions_for_delivery_plan(plan)
+    assignment_ids = plan.delivery_plan_assignments.pluck(:id)
+    return PaperTrail::Version.none if assignment_ids.empty?
+
+    PaperTrail::Version
+      .where(item_type: "DeliveryPlanAssignment", item_id: assignment_ids)
+      .order(created_at: :desc)
+      .limit(50)
   end
 end

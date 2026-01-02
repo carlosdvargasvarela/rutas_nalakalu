@@ -184,8 +184,15 @@
             </dl>
             <hr>
             <div class="d-grid gap-2">
-              <%= link_to polymorphic_path(@resource), class: 'btn btn-outline-primary' do %>
-                <i class="bi bi-eye me-1"></i> Ver registro
+              <% if Rails.application.routes.url_helpers.respond_to?(:"#{@resource.model_name.singular_route_key}_path") %>
+                <%= link_to polymorphic_path(@resource), class: 'btn btn-outline-primary' do %>
+                  <i class="bi bi-eye me-1"></i> Ver registro
+                <% end %>
+              <% else %>
+                <button class="btn btn-outline-secondary" disabled>
+                  <i class="bi bi-eye-slash me-1"></i>
+                  Sin vista directa
+                </button>
               <% end %>
               <%= link_to audit_logs_path, class: 'btn btn-outline-secondary' do %>
                 <i class="bi bi-arrow-left me-1"></i> Volver al log
@@ -217,7 +224,6 @@
           </h6>
         </div>
         <div class="card-body">
-          <%# 🔹 Usar @events_count calculado en el controlador %>
           <% events_count = @events_count || {} %>
           <% total = @versions.total_count %>
           <div class="mb-3">
@@ -261,6 +267,33 @@
           </div>
         </div>
       </div>
+      <%# 🔹 NUEVA TARJETA: Cambios relacionados %>
+      <% if @related_versions.present? %>
+        <div class="card shadow-sm mt-3">
+          <div class="card-header bg-white">
+            <h6 class="mb-0">
+              <i class="bi bi-link-45deg me-2"></i>
+              Cambios en registros relacionados
+            </h6>
+            <small class="text-muted d-block mt-1">
+              <%= related_context_description(@resource) %>
+            </small>
+          </div>
+          <div class="card-body p-0">
+            <div class="related-versions-list">
+              <%= render partial: 'related_version_compact', 
+                         collection: @related_versions, 
+                         as: :version,
+                         locals: { users_by_id: @users_by_id } %>
+            </div>
+          </div>
+          <div class="card-footer bg-white text-center">
+            <small class="text-muted">
+              Mostrando últimos <%= @related_versions.size %> cambios relacionados
+            </small>
+          </div>
+        </div>
+      <% end %>
     </div>
   </div>
 </div>
@@ -319,6 +352,11 @@
   .change-detail:hover {
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     transform: translateX(5px);
+  }
+
+  .related-versions-list {
+    max-height: 500px;
+    overflow-y: auto;
   }
 
   @media (max-width: 768px) {

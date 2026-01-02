@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_12_15_112031) do
+ActiveRecord::Schema[7.2].define(version: 2026_01_02_201420) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -282,6 +282,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_15_112031) do
     t.string "item_type", null: false
     t.string "event", null: false
     t.text "object", limit: 1073741823
+    t.text "object_changes", limit: 1073741823
     t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
   end
 
