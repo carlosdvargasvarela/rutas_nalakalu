@@ -68,33 +68,64 @@ module AuditLogsHelper
     content_tag(:i, "", class: "bi bi-arrow-right text-muted")
   end
 
-  # Resumir cambios con límite de atributos
+  # ========================================================================
+  # 🔹 MÉTODO CLAVE: Resumir cambios usando estados históricos reales
+  # ========================================================================
   def summarize_changes(version, max_keys: 5)
-    return {} if version.object.blank?
-
-    begin
-      old_attrs = YAML.safe_load(version.object, permitted_classes: [Time, Date, Symbol, ActiveSupport::TimeWithZone, ActiveSupport::TimeZone])
-      current_item = safe_find_item(version)
-
-      return {} unless current_item
-
-      new_attrs = current_item.attributes
-      changes = {}
-
-      old_attrs.each do |key, old_value|
-        new_value = new_attrs[key]
-        next if old_value == new_value
-        next if skip_attribute?(key)
-
-        changes[key] = [format_value(old_value), format_value(new_value)]
-        break if changes.size >= max_keys
+    before_attrs =
+      case version.event
+      when "create"
+        {} # no existía antes
+      else
+        version.reify&.attributes || {}
       end
 
-      changes
-    rescue => e
-      Rails.logger.error "Error al procesar cambios: #{e.message}"
-      {}
+    after_attrs =
+      case version.event
+      when "destroy"
+        {} # después del destroy ya no hay registro
+      else
+        state_after(version)
+      end
+
+    ignored = %w[id created_at updated_at lock_version]
+    keys = (before_attrs.keys + after_attrs.keys).uniq - ignored
+
+    diffs = keys.each_with_object({}) do |attr, h|
+      before = before_attrs[attr]
+      after = after_attrs[attr]
+      next if before == after
+      h[attr] = [format_value(before), format_value(after)]
     end
+
+    diffs.first(max_keys).to_h
+  rescue => e
+    Rails.logger.error "Error al procesar cambios en version #{version.id}: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    {}
+  end
+
+  # ========================================================================
+  # 🔹 Estado "después de este cambio" (histórico real)
+  # ========================================================================
+  def state_after(version)
+    return {} if version.event == "destroy"
+
+    next_version = version.next
+
+    obj =
+      if next_version
+        # Estado justo antes del siguiente cambio = después de este
+        next_version.reify
+      else
+        # Esta es la última versión → usamos el modelo vivo
+        version.item
+      end
+
+    obj&.attributes || {}
+  rescue => e
+    Rails.logger.error "Error al obtener state_after para version #{version.id}: #{e.message}"
+    {}
   end
 
   # Atributos que no queremos mostrar

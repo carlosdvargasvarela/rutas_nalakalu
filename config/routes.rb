@@ -79,10 +79,11 @@ Rails.application.routes.draw do
       get :note
 
       patch :archive
-
-      # ✅ Casos de servicio derivados de una entrega existente
       get :new_service_case_for_existing
       post :create_service_case_for_existing
+
+      patch :reassign_seller
+      patch :take_order
     end
   end
 

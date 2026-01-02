@@ -1,5 +1,10 @@
+# app/controllers/deliveries_controller.rb
 class DeliveriesController < ApplicationController
-  before_action :set_delivery, only: [:show, :edit, :update, :mark_as_delivered, :confirm_all_items, :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing, :update_status]
+  before_action :set_delivery, only: [
+    :show, :edit, :update, :mark_as_delivered, :confirm_all_items,
+    :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing,
+    :update_status, :reassign_seller, :take_order
+  ]
   before_action :set_addresses, only: [:new, :edit, :create, :update]
 
   # GET /deliveries
@@ -300,6 +305,40 @@ class DeliveriesController < ApplicationController
     authorize @delivery, :edit?
     @delivery.update_status_based_on_items
     redirect_to @delivery, notice: "El estado de la entrega ha sido actualizado."
+  end
+
+  # PATCH /deliveries/:id/reassign_seller
+  # Permite a admin/logística/producción cambiar el vendedor del pedido
+  def reassign_seller
+    authorize @delivery, :reassign_seller?
+
+    seller_id = params[:seller_id].presence
+    unless seller_id
+      redirect_to delivery_path(@delivery), alert: "Debes seleccionar un vendedor."
+      return
+    end
+
+    seller = Seller.find(seller_id)
+    @delivery.order.reassign_to_seller!(seller)
+
+    redirect_to delivery_path(@delivery),
+      notice: "El pedido #{@delivery.order.number} fue reasignado al vendedor #{seller.name} (#{seller.seller_code})."
+  rescue => e
+    redirect_to delivery_path(@delivery),
+      alert: "No se pudo reasignar el pedido: #{e.message}"
+  end
+
+  # PATCH /deliveries/:id/take_order
+  # Permite a un vendedor tomar el pedido para sí mismo
+  def take_order
+    authorize @delivery, :take_order?
+
+    @delivery.order.take_by_user!(current_user)
+
+    redirect_to @delivery,
+      notice: "Tomaste el pedido #{@delivery.order.number}. Ahora está asignado a ti."
+  rescue => e
+    redirect_to @delivery, alert: "No se pudo tomar el pedido: #{e.message}"
   end
 
   private

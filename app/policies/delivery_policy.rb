@@ -54,6 +54,14 @@ class DeliveryPolicy < ApplicationPolicy
     user.admin? || user.production_manager? || user.logistics?
   end
 
+  def reassign_seller?
+    user.admin? || user.logistics? || user.production_manager?
+  end
+
+  def take_order?
+    user.seller?
+  end
+
   class Scope < Scope
     def resolve
       if user.admin? || user.production_manager? || user.logistics?

@@ -65,17 +65,38 @@ class AuditLogsController < ApplicationController
     end
   end
 
+  # ========================================================================
+  # 🔹 MÉTODO ACTUALIZADO: Comparar estados históricos reales
+  # ========================================================================
   def calculate_diff(version_from, version_to)
-    obj_from = version_from.reify || {}
-    obj_to = version_to.reify || {}
+    from_state = state_after_version(version_from)
+    to_state = state_after_version(version_to)
 
-    all_keys = (obj_from.attributes.keys + obj_to.attributes.keys).uniq
+    all_keys = (from_state.keys + to_state.keys).uniq
 
     all_keys.each_with_object({}) do |key, diff|
-      val_from = obj_from.try(:[], key)
-      val_to = obj_to.try(:[], key)
+      val_from = from_state[key]
+      val_to = to_state[key]
       diff[key] = {from: val_from, to: val_to} if val_from != val_to
     end
+  end
+
+  # Estado "después de este cambio" (histórico real)
+  def state_after_version(version)
+    return {} if version.event == "destroy"
+
+    next_version = version.next
+
+    obj =
+      if next_version
+        # Estado justo antes del siguiente cambio = después de este
+        next_version.reify
+      else
+        # Esta es la última versión → usamos el modelo vivo
+        version.item
+      end
+
+    obj&.attributes || {}
   end
 
   def preload_items(versions)

@@ -195,6 +195,17 @@ class Order < ApplicationRecord
     discrepancies
   end
 
+  def reassign_to_seller!(seller)
+    update!(seller: seller)
+  end
+
+  def take_by_user!(user)
+    seller_record = user.seller
+    raise "El usuario no tiene vendedor asociado" unless seller_record
+
+    update!(seller: seller_record)
+  end
+
   # Verifica si todos los items están listos
   def all_items_ready?
     order_items.all? { |item| item.ready? }
