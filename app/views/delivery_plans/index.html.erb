@@ -16,85 +16,139 @@
       <% end %>
     </div>
   </div>
-  <%# ================== RESUMEN ================== %>
-  <% if @delivery_plans.any? %>
-    <div class="alert alert-primary d-flex justify-content-between align-items-center mb-4">
-      <div class="d-flex align-items-center gap-3">
-        <span>
-          <i class="bi bi-info-circle me-1"></i>
-          Se encontraron <strong><%= @delivery_plans.size %></strong> planes de entrega
-        </span>
-        <span class="badge bg-white text-primary">
-          <i class="bi bi-truck me-1"></i>
-          <%= @delivery_plans.sum { |plan| plan.deliveries_count.to_i } %> entregas totales
-        </span>
+  <%# ================== RESUMEN MEJORADO ================== %>
+  <% if @stats && @stats[:total_plans] > 0 %>
+    <div class="row g-3 mb-4">
+      <%# Card: Total de planes %>
+      <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
+          <div class="card-body text-white" style="background: transparent !important;">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="mb-1 text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; color: rgba(255, 255, 255, 0.8) !important;">Total de Planes</h6>
+                <h2 class="mb-0 fw-bold" style="color: #ffffff !important;"><%= @stats[:total_plans] %></h2>
+              </div>
+              <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; background-color: rgba(255, 255, 255, 0.25) !important;">
+                <i class="bi bi-calendar-week fs-3" style="color: #ffffff !important;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="d-flex gap-2">
-        <% @delivery_plans.group_by(&:status).each do |status, plans| %>
-          <% label = status.present? ? status.to_s.humanize : "Sin estado" %>
-          <span class="badge bg-<%= delivery_plan_status_color(status || "pending") %>">
-            <%= label %>: <%= plans.size %>
-          </span>
-        <% end %>
+      <%# Card: Total de entregas %>
+      <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;">
+          <div class="card-body text-white" style="background: transparent !important;">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="mb-1 text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; color: rgba(255, 255, 255, 0.8) !important;">Total de Entregas</h6>
+                <h2 class="mb-0 fw-bold" style="color: #ffffff !important;"><%= @stats[:total_deliveries] %></h2>
+              </div>
+              <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; background-color: rgba(255, 255, 255, 0.25) !important;">
+                <i class="bi bi-box-seam fs-3" style="color: #ffffff !important;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <%# Card: Estados %>
+      <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-0 h-100" style="background-color: #ffffff !important;">
+          <div class="card-body" style="background: transparent !important;">
+            <h6 class="text-muted mb-3 text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+              <i class="bi bi-pie-chart me-1"></i>Por Estado
+            </h6>
+            <div class="d-flex flex-wrap gap-2">
+              <% @stats[:by_status].sort_by { |status, _| DeliveryPlan.statuses[status.to_s] || 999 }.each do |status, count| %>
+                <span class="badge bg-<%= delivery_plan_status_color(status) %> d-flex align-items-center gap-1 px-3 py-2" style="font-size: 0.85rem;">
+                  <i class="<%= delivery_plan_status_icon(status) %>"></i>
+                  <%= delivery_plan_status_label(status) %>
+                  <span class="badge bg-white text-dark ms-1"><%= count %></span>
+                </span>
+              <% end %>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   <% end %>
   <%# ================== FILTROS ================== %>
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-light fw-bold">
-      <i class="bi bi-funnel me-2"></i> Filtros de búsqueda
+  <div class="card shadow-sm mb-4 border-0">
+    <div class="card-header bg-white border-bottom">
+      <div class="d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold text-dark">
+          <i class="bi bi-funnel me-2"></i>Filtros de búsqueda
+        </h6>
+        <% if params[:q].present? %>
+          <%= link_to delivery_plans_path, class: "btn btn-sm btn-outline-secondary" do %>
+            <i class="bi bi-x-circle me-1"></i>Limpiar filtros
+          <% end %>
+        <% end %>
+      </div>
     </div>
     <div class="card-body">
       <%= search_form_for @q, url: delivery_plans_path, method: :get, html: { class: "row g-3 align-items-end" } do |f| %>
         <div class="col-12 col-md-2">
-          <%= f.label :first_delivery_date_gteq, "Desde", class: "form-label fw-bold" %>
+          <%= f.label :first_delivery_date_gteq, class: "form-label fw-semibold small text-muted" do %>
+            <i class="bi bi-calendar-event me-1"></i>Desde
+          <% end %>
           <%= f.date_field :first_delivery_date_gteq, class: "form-control" %>
         </div>
         <div class="col-12 col-md-2">
-          <%= f.label :first_delivery_date_lteq, "Hasta", class: "form-label fw-bold" %>
+          <%= f.label :first_delivery_date_lteq, class: "form-label fw-semibold small text-muted" do %>
+            <i class="bi bi-calendar-event me-1"></i>Hasta
+          <% end %>
           <%= f.date_field :first_delivery_date_lteq, class: "form-control" %>
         </div>
         <div class="col-12 col-md-2">
-          <%= f.label :status_eq, "Estado", class: "form-label fw-bold" %>
+          <%= f.label :status_eq, class: "form-label fw-semibold small text-muted" do %>
+            <i class="bi bi-flag me-1"></i>Estado
+          <% end %>
           <%= f.select :status_eq,
-                options_for_select(DeliveryPlan.statuses.keys.map { |s| [s.humanize, s] }, params.dig(:q, :status_eq)),
+                options_for_select(
+                  DeliveryPlan.statuses.keys.map { |s| [delivery_plan_status_label(s), s] },
+                  params.dig(:q, :status_eq)
+                ),
                 { include_blank: "Todos los estados" },
                 { class: "form-select" } %>
         </div>
         <div class="col-12 col-md-2">
-          <%= f.label :truck_eq, "Camión", class: "form-label fw-bold" %>
+          <%= f.label :truck_eq, class: "form-label fw-semibold small text-muted" do %>
+            <i class="bi bi-truck me-1"></i>Camión
+          <% end %>
           <%= f.select :truck_eq,
                 options_for_select(@available_trucks.map { |t| [t, t] }, params.dig(:q, :truck_eq)),
                 { include_blank: "Todos los camiones" },
                 { class: "form-select" } %>
         </div>
         <div class="col-12 col-md-2">
-          <%= f.label :driver_name_cont, "Conductor", class: "form-label fw-bold" %>
-          <%= f.text_field :driver_name_cont, class: "form-control", placeholder: "Buscar conductor..." %>
+          <%= f.label :driver_name_cont, class: "form-label fw-semibold small text-muted" do %>
+            <i class="bi bi-person me-1"></i>Conductor
+          <% end %>
+          <%= f.text_field :driver_name_cont, class: "form-control", placeholder: "Buscar..." %>
         </div>
-        <div class="col-12 col-md-2 d-flex gap-2">
-          <%= f.submit "Buscar", class: "btn btn-primary btn-sm flex-fill" %>
-          <%= link_to "Limpiar", delivery_plans_path, class: "btn btn-outline-secondary btn-sm flex-fill" %>
+        <div class="col-12 col-md-2">
+          <%= f.submit "Buscar", class: "btn btn-primary w-100" %>
         </div>
       <% end %>
     </div>
   </div>
   <%# ================== TABLA EN DESKTOP ================== %>
-  <div class="card shadow-sm d-none d-md-block">
+  <div class="card shadow-sm d-none d-md-block border-0">
     <div class="card-body p-0">
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
-              <th>Semana</th>
-              <th>Fechas</th>
-              <th>Período</th>
-              <th>Estado</th>
-              <th>Conductor</th>
-              <th>Camión</th>
-              <th>Entregas</th>
-              <th>Progreso</th>
-              <th class="text-center">Acciones</th>
+              <th class="fw-semibold">Semana</th>
+              <th class="fw-semibold">Fechas de Entrega</th>
+              <th class="fw-semibold">Período Semanal</th>
+              <th class="fw-semibold">Estado</th>
+              <th class="fw-semibold">Conductor</th>
+              <th class="fw-semibold">Camión</th>
+              <th class="fw-semibold">Entregas</th>
+              <th class="fw-semibold">Progreso</th>
+              <th class="text-center fw-semibold">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -122,53 +176,58 @@
               <tr>
                 <td>
                   <% if plan.year.present? && plan.week.present? %>
-                    <span class="badge bg-primary fs-6">
-                      <i class="bi bi-calendar-week me-1"></i>
-                      <%= plan.week %> / <%= plan.year %>
-                    </span>
+                    <div class="d-flex flex-column">
+                      <span class="fw-bold text-dark">Semana <%= plan.week %></span>
+                      <small class="text-muted"><%= plan.year %></small>
+                    </div>
                   <% else %>
                     <span class="badge bg-secondary">
-                      <i class="bi bi-question-circle me-1"></i>
-                      Sin definir
+                      <i class="bi bi-question-circle me-1"></i>Sin definir
                     </span>
                   <% end %>
                 </td>
                 <td>
                   <% if total_count > 0 && first_date.present? && last_date.present? %>
                     <% if first_date == last_date %>
-                      <span class="fw-bold"><%= l first_date.to_date, format: :short %></span>
+                      <div class="d-flex align-items-center">
+                        <i class="bi bi-calendar-check text-primary me-2"></i>
+                        <span class="fw-semibold"><%= l first_date.to_date, format: :short %></span>
+                      </div>
                     <% else %>
                       <div class="d-flex flex-column">
-                        <span class="fw-bold"><%= l first_date.to_date, format: :short %></span>
-                        <small class="text-muted">al <%= l last_date.to_date, format: :short %></small>
+                        <span class="fw-semibold"><%= l first_date.to_date, format: :short %></span>
+                        <small class="text-muted">hasta <%= l last_date.to_date, format: :short %></small>
                       </div>
                     <% end %>
                   <% else %>
-                    <span class="text-muted fst-italic">Sin entregas</span>
+                    <span class="text-muted fst-italic">
+                      <i class="bi bi-dash-circle me-1"></i>Sin entregas
+                    </span>
                   <% end %>
                 </td>
                 <td>
                   <% if start_date && end_date %>
                     <div class="d-flex flex-column">
-                      <span class="fw-bold"><%= l start_date, format: :short %></span>
+                      <small class="text-muted"><%= l start_date, format: :short %></small>
                       <small class="text-muted">al <%= l end_date, format: :short %></small>
                     </div>
                   <% else %>
-                    <span class="text-muted fst-italic">Fechas no definidas</span>
+                    <span class="text-muted fst-italic">—</span>
                   <% end %>
                 </td>
                 <td>
-                  <% status_label = plan.status.present? ? plan.display_status : "Sin estado" %>
-                  <span class="badge bg-<%= delivery_plan_status_color(plan.status || "pending") %> fs-6">
-                    <i class="bi bi-circle-fill small me-1"></i>
-                    <%= status_label %>
+                  <span class="badge bg-<%= delivery_plan_status_color(plan.status) %> d-flex align-items-center gap-1" style="width: fit-content;">
+                    <i class="<%= delivery_plan_status_icon(plan.status) %>"></i>
+                    <%= plan.display_status %>
                   </span>
                 </td>
                 <td>
                   <% if plan.driver.present? %>
                     <div class="d-flex align-items-center">
-                      <i class="bi bi-person-circle text-primary me-2"></i>
-                      <span><%= plan.driver.name %></span>
+                      <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                        <i class="bi bi-person-fill text-primary"></i>
+                      </div>
+                      <span class="fw-semibold"><%= plan.driver.name %></span>
                     </div>
                   <% else %>
                     <span class="text-muted fst-italic">
@@ -178,8 +237,8 @@
                 </td>
                 <td>
                   <% if plan.truck.present? %>
-                    <span class="badge bg-dark">
-                      <i class="bi bi-truck-front me-1"></i>
+                    <span class="badge bg-dark d-flex align-items-center gap-1" style="width: fit-content;">
+                      <i class="bi bi-truck-front"></i>
                       <%= plan.truck %>
                     </span>
                   <% else %>
@@ -187,52 +246,63 @@
                   <% end %>
                 </td>
                 <td>
-                  <span class="badge bg-info text-dark fs-6">
-                    <i class="bi bi-box-seam me-1"></i>
-                    <%= total_count %> entregas
-                  </span>
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="bg-info bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                      <i class="bi bi-box-seam text-info"></i>
+                    </div>
+                    <span class="fw-semibold"><%= total_count %></span>
+                  </div>
                 </td>
                 <td>
                   <div class="d-flex align-items-center gap-2">
-                    <div class="progress" style="width: 60px; height: 8px;">
+                    <div class="progress flex-grow-1" style="height: 8px; min-width: 80px;">
                       <div class="progress-bar bg-success"
-                           style="width: <%= progress_percentage %>%"></div>
+                           role="progressbar"
+                           style="width: <%= progress_percentage %>%"
+                           aria-valuenow="<%= progress_percentage %>"
+                           aria-valuemin="0"
+                           aria-valuemax="100"></div>
                     </div>
-                    <small class="text-muted"><%= delivered_count %>/<%= total_count %></small>
+                    <small class="text-muted fw-semibold" style="min-width: 45px;"><%= delivered_count %>/<%= total_count %></small>
                   </div>
                 </td>
                 <td class="text-center">
-                  <div class="btn-group">
+                  <div class="btn-group" role="group">
                     <%= link_to delivery_plan_path(plan),
                           class: "btn btn-sm btn-outline-primary",
-                          title: "Ver detalles" do %>
+                          title: "Ver detalles",
+                          data: { bs_toggle: "tooltip" } do %>
                       <i class="bi bi-eye"></i>
                     <% end %>
                     <%= link_to edit_delivery_plan_path(plan),
                           class: "btn btn-sm btn-outline-secondary",
-                          title: "Editar plan" do %>
+                          title: "Editar plan",
+                          data: { bs_toggle: "tooltip" } do %>
                       <i class="bi bi-pencil"></i>
                     <% end %>
                     <button class="btn btn-sm btn-outline-dark dropdown-toggle dropdown-toggle-split"
-                            data-bs-toggle="dropdown" aria-expanded="false">
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false">
                       <span class="visually-hidden">Más opciones</span>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
                       <li>
                         <%= link_to delivery_plan_path(plan, format: :pdf),
-                              class: "dropdown-item", target: "_blank" do %>
-                          <i class="bi bi-file-earmark-pdf me-2"></i>Descargar PDF
+                              class: "dropdown-item",
+                              target: "_blank" do %>
+                          <i class="bi bi-file-earmark-pdf me-2 text-danger"></i>Descargar PDF
                         <% end %>
                       </li>
                       <li>
                         <%= link_to delivery_plan_path(plan, format: :xlsx),
                               class: "dropdown-item" do %>
-                          <i class="bi bi-file-earmark-spreadsheet me-2"></i>Exportar Excel
+                          <i class="bi bi-file-earmark-spreadsheet me-2 text-success"></i>Exportar Excel
                         <% end %>
                       </li>
                       <li><hr class="dropdown-divider"></li>
                       <li>
-                        <%= link_to plan, method: :delete,
+                        <%= link_to plan,
+                              method: :delete,
                               class: "dropdown-item text-danger",
                               data: {
                                 confirm: "¿Estás seguro de eliminar este plan de entrega?",
@@ -248,13 +318,15 @@
             <% end %>
             <% if @delivery_plans.empty? %>
               <tr>
-                <td colspan="8" class="text-center text-muted py-5">
+                <td colspan="9" class="text-center text-muted py-5">
                   <div class="d-flex flex-column align-items-center">
-                    <i class="bi bi-calendar-x fs-1 text-muted mb-3"></i>
-                    <h5 class="text-muted">No hay planes de entrega</h5>
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                      <i class="bi bi-calendar-x fs-1 text-muted"></i>
+                    </div>
+                    <h5 class="text-muted mb-2">No hay planes de entrega</h5>
                     <p class="text-muted mb-3">No se encontraron planes que coincidan con los filtros aplicados.</p>
                     <%= link_to new_delivery_plan_path, class: "btn btn-primary" do %>
-                      <i class="bi bi-plus-circle me-1"></i>Crear primer plan
+                      <i class="bi bi-plus-circle me-2"></i>Crear primer plan
                     <% end %>
                   </div>
                 </td>
@@ -289,24 +361,19 @@
           last_date  = plan.last_delivery_date
         %>
         <div class="col-12">
-          <div class="card shadow-sm">
+          <div class="card shadow-sm border-0">
             <div class="card-body p-3">
               <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
                   <h6 class="fw-bold mb-1">
                     <% if plan.year.present? && plan.week.present? %>
-                      <span class="badge bg-primary">
-                        <i class="bi bi-calendar-week me-1"></i>
-                        Semana <%= plan.week %> / <%= plan.year %>
-                      </span>
+                      <span class="text-dark">Semana <%= plan.week %> / <%= plan.year %></span>
                     <% else %>
-                      <span class="badge bg-secondary">
-                        <i class="bi bi-question-circle me-1"></i>
-                        Sin definir
-                      </span>
+                      <span class="text-muted">Sin definir</span>
                     <% end %>
                   </h6>
-                  <small class="text-muted">
+                  <small class="text-muted d-block">
+                    <i class="bi bi-calendar3 me-1"></i>
                     <% if start_date && end_date %>
                       <%= l start_date, format: :short %> – <%= l end_date, format: :short %>
                     <% else %>
@@ -314,53 +381,51 @@
                     <% end %>
                   </small>
                   <small class="text-muted d-block">
+                    <i class="bi bi-truck me-1"></i>
                     <% if total_count > 0 && first_date.present? && last_date.present? %>
                       <% if first_date == last_date %>
-                        Entrega: <%= l first_date.to_date, format: :short %>
+                        <%= l first_date.to_date, format: :short %>
                       <% else %>
-                        Entregas: <%= l first_date.to_date, format: :short %> – <%= l last_date.to_date, format: :short %>
+                        <%= l first_date.to_date, format: :short %> – <%= l last_date.to_date, format: :short %>
                       <% end %>
                     <% else %>
-                      Sin entregas programadas
+                      Sin entregas
                     <% end %>
                   </small>
                 </div>
-                <% status_label = plan.status.present? ? plan.display_status : "Sin estado" %>
-                <span class="badge bg-<%= delivery_plan_status_color(plan.status || "pending") %>">
-                  <%= status_label %>
+                <span class="badge bg-<%= delivery_plan_status_color(plan.status) %> d-flex align-items-center gap-1">
+                  <i class="<%= delivery_plan_status_icon(plan.status) %>"></i>
+                  <%= plan.display_status %>
                 </span>
               </div>
               <div class="row g-2 mb-3">
                 <div class="col-6">
-                  <div class="d-flex align-items-center">
-                    <i class="bi bi-person-circle text-primary me-2"></i>
-                    <div>
-                      <small class="text-muted d-block">Conductor</small>
-                      <span class="fw-bold"><%= plan.driver&.name || "Sin asignar" %></span>
-                    </div>
+                  <div class="bg-light rounded p-2">
+                    <small class="text-muted d-block mb-1">
+                      <i class="bi bi-person-circle me-1"></i>Conductor
+                    </small>
+                    <span class="fw-semibold small"><%= plan.driver&.name || "Sin asignar" %></span>
                   </div>
                 </div>
                 <div class="col-6">
-                  <div class="d-flex align-items-center">
-                    <i class="bi bi-truck-front text-dark me-2"></i>
-                    <div>
-                      <small class="text-muted d-block">Camión</small>
-                      <span class="fw-bold"><%= plan.truck || "Sin asignar" %></span>
-                    </div>
+                  <div class="bg-light rounded p-2">
+                    <small class="text-muted d-block mb-1">
+                      <i class="bi bi-truck-front me-1"></i>Camión
+                    </small>
+                    <span class="fw-semibold small"><%= plan.truck || "Sin asignar" %></span>
                   </div>
                 </div>
               </div>
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="d-flex align-items-center">
-                  <i class="bi bi-box-seam text-info me-2"></i>
-                  <span><%= total_count %> entregas</span>
+              <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-box-seam text-info"></i>
+                  <span class="fw-semibold"><%= total_count %> entregas</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                  <div class="progress" style="width: 80px; height: 8px;">
-                    <div class="progress-bar bg-success"
-                         style="width: <%= progress_percentage %>%"></div>
+                  <div class="progress" style="width: 60px; height: 6px;">
+                    <div class="progress-bar bg-success" style="width: <%= progress_percentage %>%"></div>
                   </div>
-                  <small class="text-muted"><%= delivered_count %>/<%= total_count %></small>
+                  <small class="text-muted fw-semibold"><%= delivered_count %>/<%= total_count %></small>
                 </div>
               </div>
               <div class="d-flex gap-2">
@@ -373,26 +438,27 @@
                   <i class="bi bi-pencil me-1"></i>Editar
                 <% end %>
                 <div class="dropdown">
-                  <button class="btn btn-sm btn-outline-dark dropdown-toggle"
-                          data-bs-toggle="dropdown">
+                  <button class="btn btn-sm btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown">
                     <i class="bi bi-three-dots"></i>
                   </button>
-                  <ul class="dropdown-menu dropdown-menu-end">
+                  <ul class="dropdown-menu dropdown-menu-end shadow">
                     <li>
                       <%= link_to delivery_plan_path(plan, format: :pdf),
-                            class: "dropdown-item", target: "_blank" do %>
-                        <i class="bi bi-file-earmark-pdf me-2"></i>PDF
+                            class: "dropdown-item",
+                            target: "_blank" do %>
+                        <i class="bi bi-file-earmark-pdf me-2 text-danger"></i>PDF
                       <% end %>
                     </li>
                     <li>
                       <%= link_to delivery_plan_path(plan, format: :xlsx),
                             class: "dropdown-item" do %>
-                        <i class="bi bi-file-earmark-spreadsheet me-2"></i>Excel
+                        <i class="bi bi-file-earmark-spreadsheet me-2 text-success"></i>Excel
                       <% end %>
                     </li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
-                      <%= link_to plan, method: :delete,
+                      <%= link_to plan,
+                            method: :delete,
                             class: "dropdown-item text-danger",
                             data: {
                               confirm: "¿Eliminar este plan?",
@@ -411,11 +477,13 @@
       <% if @delivery_plans.empty? %>
         <div class="col-12 text-center py-5">
           <div class="d-flex flex-column align-items-center">
-            <i class="bi bi-calendar-x fs-1 text-muted mb-3"></i>
-            <h5 class="text-muted">No hay planes de entrega</h5>
+            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+              <i class="bi bi-calendar-x fs-1 text-muted"></i>
+            </div>
+            <h5 class="text-muted mb-2">No hay planes de entrega</h5>
             <p class="text-muted mb-3">No se encontraron planes que coincidan con los filtros.</p>
             <%= link_to new_delivery_plan_path, class: "btn btn-primary" do %>
-              <i class="bi bi-plus-circle me-1"></i>Crear primer plan
+              <i class="bi bi-plus-circle me-2"></i>Crear primer plan
             <% end %>
           </div>
         </div>
@@ -423,9 +491,9 @@
     </div>
   </div>
   <%# ================== PAGINACIÓN ================== %>
-  <% if respond_to?(:paginate) && @delivery_plans.respond_to?(:current_page) %>
+  <% if @delivery_plans.respond_to?(:current_page) && @delivery_plans.total_pages > 1 %>
     <div class="d-flex justify-content-center mt-4">
-      <%= paginate @delivery_plans, theme: 'twitter-bootstrap-4' %>
+      <%= paginate @delivery_plans%>
     </div>
   <% end %>
 </div>

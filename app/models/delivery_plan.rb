@@ -1,3 +1,4 @@
+# app/models/delivery_plan.rb
 class DeliveryPlan < ApplicationRecord
   has_paper_trail
   has_many :delivery_plan_assignments, -> { order(:stop_order) }, dependent: :destroy
@@ -183,11 +184,11 @@ class DeliveryPlan < ApplicationRecord
     deliveries.minimum(:delivery_date)
   end
 
-  ransacker :first_delivery_date do |parent|
-    Arel.sql("(SELECT MIN(deliveries.delivery_date)
-               FROM deliveries
-               INNER JOIN delivery_plan_assignments dpa
-               ON dpa.delivery_id = deliveries.id
+  # Ransacker mejorado para manejar casos donde no hay entregas
+  ransacker :first_delivery_date do
+    Arel.sql("(SELECT MIN(d.delivery_date)
+               FROM deliveries d
+               INNER JOIN delivery_plan_assignments dpa ON dpa.delivery_id = d.id
                WHERE dpa.delivery_plan_id = delivery_plans.id)")
   end
 

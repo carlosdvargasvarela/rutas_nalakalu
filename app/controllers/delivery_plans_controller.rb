@@ -1,11 +1,13 @@
 # app/controllers/delivery_plans_controller.rb
 class DeliveryPlansController < ApplicationController
   def index
+    # 1. Configurar Ransack con un orden por defecto si no hay uno
     @q = DeliveryPlan.ransack(params[:q])
+    @q.sorts = ["year desc", "week desc", "created_at desc"] if @q.sorts.empty?
 
-    # Usamos agregados en SQL para evitar COUNT/MIN/MAX por cada plan en la vista
     delivered_status = Delivery.statuses[:delivered]
 
+    # 2. Consulta base con agregados
     base_result = @q.result
       .left_joins(:deliveries)
       .select(<<~SQL)
@@ -20,20 +22,39 @@ class DeliveryPlansController < ApplicationController
         ) AS delivered_count
       SQL
       .group("delivery_plans.id")
-      .order("MIN(deliveries.delivery_date) DESC")
+      .order(Arel.sql("delivery_plans.year DESC, delivery_plans.week DESC, delivery_plans.created_at DESC"))
 
     respond_to do |format|
       format.html do
-        # Solo necesitamos el driver en el index; los datos de entregas vienen por agregados
-        @delivery_plans = base_result.includes(:driver)
+        # 🔹 NUEVO: Calcular estadísticas globales ANTES de paginar
+        all_plans = base_result.to_a
 
-        # Para el filtro de camión en la vista (en lugar de DeliveryPlan.distinct.pluck(:truck))
-        @available_trucks = @delivery_plans.map(&:truck).compact.uniq
+        @stats = {
+          total_plans: all_plans.size,
+          total_deliveries: all_plans.sum { |p| p.deliveries_count.to_i },
+          by_status: all_plans.group_by(&:status).transform_values(&:size)
+        }
+
+        # Paginación para HTML
+        @delivery_plans = Kaminari.paginate_array(all_plans)
+          .page(params[:page])
+          .per(15)
+
+        # Para el filtro de camión en la vista
+        @available_trucks = DeliveryPlan.distinct.pluck(:truck).compact.uniq
       end
 
       format.xlsx do
-        # Para Excel seguimos cargando toda la estructura completa
-        @delivery_plans = base_result
+        # Para Excel seguimos cargando toda la estructura completa sin paginar
+        @delivery_plans = @q.result
+          .left_joins(:deliveries)
+          .select(<<~SQL)
+            delivery_plans.*,
+            MIN(deliveries.delivery_date) AS first_delivery_date,
+            MAX(deliveries.delivery_date) AS last_delivery_date
+          SQL
+          .group("delivery_plans.id")
+          .order("delivery_plans.year DESC, delivery_plans.week DESC")
           .includes(
             :driver,
             delivery_plan_assignments: {
