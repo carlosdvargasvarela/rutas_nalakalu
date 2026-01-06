@@ -1,273 +1,319 @@
+<%# app/views/driver/delivery_plans/index.html.erb %>
 <div class="container-fluid py-3">
   <%# ================== ENCABEZADO ================== %>
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
       <h2 class="mb-1 text-dark fw-bold fs-4">
-        <i class="bi bi-truck text-primary me-2"></i>Mis Planes de Entrega
+        <i class="bi bi-truck text-primary me-2"></i>Rutas de Entrega
       </h2>
-      <small class="text-muted">Rutas asignadas</small>
+      <small class="text-muted">Listado general de planes de ruta</small>
     </div>
     <div class="d-flex gap-2">
       <%= link_to driver_delivery_plans_path(request.query_parameters.merge(format: :xlsx)),
             class: "btn btn-outline-success btn-sm d-flex align-items-center gap-2" do %>
         <i class="bi bi-file-earmark-spreadsheet"></i><span class="d-none d-sm-inline">Excel</span>
       <% end %>
-      <%= link_to driver_delivery_plans_path(request.query_parameters.merge(format: :pdf)),
-            class: "btn btn-outline-danger btn-sm d-flex align-items-center gap-2" do %>
-        <i class="bi bi-filetype-pdf"></i><span class="d-none d-sm-inline">PDF</span>
-      <% end %>
     </div>
   </div>
-  <%# ================== RESUMEN (forzado con inline bg para que no lo aplaste el tema) ================== %>
-  <% if @stats && @stats[:total_plans].to_i > 0 %>
+  <%# ================== RESUMEN VISUAL ================== %>
+  <% if @stats && @stats[:total_plans] > 0 %>
     <div class="row g-2 mb-3">
+      <%# Card 1: Total Planes %>
       <div class="col-12 col-md-6">
-        <div class="card border-0 shadow-sm"
-             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
+        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
           <div class="card-body text-white" style="background: transparent !important;">
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <div class="small" style="color: rgba(255,255,255,.85) !important;">Planes encontrados</div>
+                <div class="small text-uppercase" style="color: rgba(255,255,255,.75) !important; letter-spacing: 0.5px;">Total Planes</div>
                 <div class="fs-2 fw-bold" style="color: #fff !important;"><%= @stats[:total_plans] %></div>
               </div>
-              <div class="rounded-circle d-flex align-items-center justify-content-center"
-                   style="width: 52px; height: 52px; background: rgba(255,255,255,.25) !important;">
-                <i class="bi bi-calendar-week fs-3" style="color: #fff !important;"></i>
+              <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                   style="width: 52px; height: 52px; background: rgba(255,255,255,.2) !important;">
+                <i class="bi bi-map fs-3" style="color: #fff !important;"></i>
               </div>
             </div>
-            <%# Badges por estado (compacto, pensado para móvil) %>
-            <div class="d-flex flex-wrap gap-2 mt-3">
-              <% @stats[:by_status].each do |status, count| %>
-                <% label = status.present? ? status.to_s.humanize : "Sin estado" %>
-                <span class="badge bg-<%= delivery_plan_status_color(status || "pending") %>">
-                  <%= label %>: <%= count %>
+            <%# Badges por estado %>
+            <div class="d-flex flex-wrap gap-1 mt-3">
+              <% @stats[:by_status].sort_by { |status, _| DeliveryPlan.statuses[status.to_s] || 999 }.each do |status, count| %>
+                <span class="badge" style="background: rgba(255,255,255,.25) !important; color: #fff !important; font-size: 0.7rem;">
+                  <%= status.to_s.humanize %>: <%= count %>
                 </span>
               <% end %>
             </div>
           </div>
         </div>
       </div>
+      <%# Card 2: Total Entregas %>
       <div class="col-12 col-md-6">
-        <div class="card border-0 shadow-sm"
-             style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;">
+        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;">
           <div class="card-body text-white" style="background: transparent !important;">
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <div class="small" style="color: rgba(255,255,255,.85) !important;">Entregas totales</div>
+                <div class="small text-uppercase" style="color: rgba(255,255,255,.75) !important; letter-spacing: 0.5px;">Entregas Totales</div>
                 <div class="fs-2 fw-bold" style="color: #fff !important;"><%= @stats[:total_deliveries] %></div>
               </div>
-              <div class="rounded-circle d-flex align-items-center justify-content-center"
-                   style="width: 52px; height: 52px; background: rgba(255,255,255,.25) !important;">
+              <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                   style="width: 52px; height: 52px; background: rgba(255,255,255,.2) !important;">
                 <i class="bi bi-box-seam fs-3" style="color: #fff !important;"></i>
               </div>
             </div>
-            <div class="small mt-2" style="color: rgba(255,255,255,.85) !important;">
-              Tip: tocá “Ver” para abrir el mapa y la lista de paradas.
+            <div class="small mt-3" style="color: rgba(255,255,255,.9) !important;">
+              <i class="bi bi-info-circle me-1"></i> Selecciona una ruta para ver el mapa y las paradas.
             </div>
           </div>
         </div>
       </div>
     </div>
   <% end %>
-  <%# ================== FILTROS (colapsable para móvil) ================== %>
+  <%# ================== FILTROS ================== %>
   <div class="card shadow-sm mb-3 border-0">
-    <div class="card-header bg-white">
-      <button class="btn btn-link text-decoration-none p-0 w-100 d-flex justify-content-between align-items-center"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#driverFilters"
-              aria-expanded="<%= params[:q].present? ? 'true' : 'false' %>"
-              aria-controls="driverFilters">
-        <span class="fw-bold text-dark"><i class="bi bi-funnel me-2"></i>Filtros</span>
-        <span class="text-muted"><i class="bi bi-chevron-down"></i></span>
-      </button>
-    </div>
-    <div id="driverFilters" class="collapse <%= params[:q].present? ? 'show' : '' %>">
-      <div class="card-body">
-        <%= search_form_for @q, url: driver_delivery_plans_path, method: :get, html: { class: "row g-3 align-items-end" } do |f| %>
-          <div class="col-6 col-md-3">
-            <%= f.label :first_delivery_date_gteq, "Desde", class: "form-label fw-semibold small text-muted" %>
-            <%= f.date_field :first_delivery_date_gteq, class: "form-control" %>
-          </div>
-          <div class="col-6 col-md-3">
-            <%= f.label :first_delivery_date_lteq, "Hasta", class: "form-label fw-semibold small text-muted" %>
-            <%= f.date_field :first_delivery_date_lteq, class: "form-control" %>
-          </div>
-          <div class="col-6 col-md-3">
-            <%= f.label :status_eq, "Estado", class: "form-label fw-semibold small text-muted" %>
-            <%= f.select :status_eq,
-                  options_for_select(DeliveryPlan.statuses.keys.map { |s| [s.humanize, s] }, params.dig(:q, :status_eq)),
-                  { include_blank: "Todos" },
-                  { class: "form-select" } %>
-          </div>
-          <div class="col-6 col-md-3">
-            <%= f.label :truck_eq, "Camión", class: "form-label fw-semibold small text-muted" %>
-            <%= f.select :truck_eq,
-                  options_for_select(DeliveryPlan.where(driver_id: current_user.id).distinct.pluck(:truck).compact.map { |t| [t, t] }, params.dig(:q, :truck_eq)),
-                  { include_blank: "Todos" },
-                  { class: "form-select" } %>
-          </div>
-          <div class="col-12 d-flex gap-2">
-            <%= f.submit "Buscar", class: "btn btn-primary flex-fill" %>
-            <%= link_to "Limpiar", driver_delivery_plans_path, class: "btn btn-outline-secondary flex-fill" %>
-          </div>
+    <div class="card-header bg-white border-bottom">
+      <div class="d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold text-dark">
+          <i class="bi bi-funnel me-2"></i>Filtros de búsqueda
+        </h6>
+        <% if params[:q].present? %>
+          <%= link_to driver_delivery_plans_path, class: "btn btn-sm btn-outline-secondary" do %>
+            <i class="bi bi-x-circle me-1"></i>Limpiar
+          <% end %>
         <% end %>
       </div>
     </div>
-  </div>
-  <%# ================== LISTADO MOBILE (principal) ================== %>
-  <div class="d-block d-md-none">
-    <div class="row g-2">
-      <% @delivery_plans.each do |plan| %>
-        <%
-          total_count     = plan.deliveries_count.to_i
-          delivered_count = plan.delivered_count.to_i
-          pct             = total_count > 0 ? (delivered_count.to_f / total_count * 100).round : 0
-
-          first_date = plan.try(:first_delivery_date)
-          last_date  = plan.try(:last_delivery_date)
-
-          status_label = plan.status.present? ? plan.display_status : "Sin estado"
-          status_color = delivery_plan_status_color(plan.status || "pending")
-        %>
-        <div class="col-12">
-          <div class="card shadow-sm border-0">
-            <div class="card-body p-3">
-              <div class="d-flex justify-content-between align-items-start gap-2">
-                <div>
-                  <div class="fw-bold text-dark">
-                    <i class="bi bi-calendar-week text-primary me-1"></i>
-                    <% if plan.week.present? && plan.year.present? %>
-                      Semana <%= plan.week %> / <%= plan.year %>
-                    <% else %>
-                      Plan <%= plan.id %>
-                    <% end %>
-                  </div>
-                  <div class="small text-muted mt-1">
-                    <% if first_date.present? && last_date.present? %>
-                      <i class="bi bi-calendar3 me-1"></i>
-                      <%= l(first_date.to_date, format: :short) %> – <%= l(last_date.to_date, format: :short) %>
-                    <% elsif first_date.present? %>
-                      <i class="bi bi-calendar3 me-1"></i>
-                      <%= l(first_date.to_date, format: :short) %>
-                    <% else %>
-                      <i class="bi bi-calendar3 me-1"></i>
-                      Fechas no definidas
-                    <% end %>
-                  </div>
-                </div>
-                <span class="badge bg-<%= status_color %>">
-                  <%= status_label %>
-                </span>
-              </div>
-              <div class="mt-3 p-2 bg-light rounded">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <div class="small text-muted">
-                    <i class="bi bi-box-seam me-1"></i>Entregas
-                  </div>
-                  <div class="fw-semibold">
-                    <%= delivered_count %>/<%= total_count %>
-                  </div>
-                </div>
-                <div class="progress" style="height: 8px;">
-                  <div class="progress-bar bg-success" style="width: <%= pct %>%"></div>
-                </div>
-              </div>
-              <div class="d-flex gap-2 mt-3">
-                <%= link_to driver_delivery_plan_path(plan), class: "btn btn-primary flex-fill" do %>
-                  <i class="bi bi-geo-alt me-1"></i>Ver
-                <% end %>
-                <%= link_to driver_delivery_plan_path(plan, format: :json),
-                      class: "btn btn-outline-secondary",
-                      title: "JSON",
-                      data: { turbo: false } do %>
-                  <i class="bi bi-code-slash"></i>
-                <% end %>
-              </div>
-            </div>
-          </div>
+    <div class="card-body">
+      <%= search_form_for @q, url: driver_delivery_plans_path, method: :get, html: { class: "row g-3 align-items-end" } do |f| %>
+        <div class="col-6 col-md-2">
+          <%= f.label :first_delivery_date_gteq, class: "form-label fw-semibold small text-muted" do %>
+            <i class="bi bi-calendar-event me-1"></i>Desde
+          <% end %>
+          <%= f.date_field :first_delivery_date_gteq, class: "form-control" %>
         </div>
-      <% end %>
-      <% if @delivery_plans.empty? %>
-        <div class="col-12">
-          <div class="card border-0 shadow-sm">
-            <div class="card-body text-center py-5">
-              <i class="bi bi-calendar-x fs-1 text-muted mb-3"></i>
-              <h5 class="text-muted">No hay planes de entrega</h5>
-              <p class="text-muted mb-0">Probá ajustando los filtros.</p>
-            </div>
-          </div>
+        <div class="col-6 col-md-2">
+          <%= f.label :first_delivery_date_lteq, class: "form-label fw-semibold small text-muted" do %>
+            <i class="bi bi-calendar-event me-1"></i>Hasta
+          <% end %>
+          <%= f.date_field :first_delivery_date_lteq, class: "form-control" %>
+        </div>
+        <div class="col-6 col-md-3">
+          <%= f.label :status_eq, class: "form-label fw-semibold small text-muted" do %>
+            <i class="bi bi-flag me-1"></i>Estado
+          <% end %>
+          <%= f.select :status_eq,
+                options_for_select(
+                  DeliveryPlan.statuses.keys.map { |s| [s.humanize, s] },
+                  params.dig(:q, :status_eq)
+                ),
+                { include_blank: "Todos los estados" },
+                { class: "form-select" } %>
+        </div>
+        <div class="col-6 col-md-3">
+          <%= f.label :truck_eq, class: "form-label fw-semibold small text-muted" do %>
+            <i class="bi bi-truck me-1"></i>Camión
+          <% end %>
+          <%= f.select :truck_eq,
+                options_for_select(@available_trucks.map { |t| [t, t] }, params.dig(:q, :truck_eq)),
+                { include_blank: "Todos los camiones" },
+                { class: "form-select" } %>
+        </div>
+        <div class="col-12 col-md-2">
+          <%= f.submit "Buscar", class: "btn btn-primary w-100" %>
         </div>
       <% end %>
     </div>
   </div>
-  <%# ================== TABLA DESKTOP (secundaria) ================== %>
-  <div class="card shadow-sm d-none d-md-block border-0">
+  <%# ================== LISTADO MOBILE (principal) ================== %>
+  <div class="d-md-none">
+    <% if @delivery_plans.any? %>
+      <% @delivery_plans.each do |plan| %>
+        <%
+          total = plan.deliveries_count.to_i
+          done  = plan.delivered_count.to_i
+          pct   = total > 0 ? (done.to_f / total * 100).round : 0
+
+          first_date = plan.try(:first_delivery_date)
+          last_date  = plan.try(:last_delivery_date)
+        %>
+        <div class="card shadow-sm border-0 mb-2">
+          <div class="card-body p-3">
+            <%# Header %>
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <div class="fw-bold text-dark">
+                  <i class="bi bi-calendar-week text-primary me-1"></i>
+                  <% if plan.week.present? && plan.year.present? %>
+                    Semana <%= plan.week %> / <%= plan.year %>
+                  <% else %>
+                    Plan #<%= plan.id %>
+                  <% end %>
+                </div>
+                <div class="small text-muted mt-1">
+                  <i class="bi bi-person-circle me-1"></i>
+                  <%= plan.driver&.name || "Sin asignar" %>
+                </div>
+              </div>
+              <span class="badge bg-<%= delivery_plan_status_color(plan.status) %>">
+                <%= plan.display_status %>
+              </span>
+            </div>
+            <%# Info row %>
+            <div class="row g-2 mb-2 small text-muted">
+              <div class="col-6">
+                <i class="bi bi-truck me-1"></i><%= plan.truck.presence || "N/A" %>
+              </div>
+              <div class="col-6 text-end">
+                <i class="bi bi-calendar3 me-1"></i>
+                <% if first_date.present? %>
+                  <%= l(first_date.to_date, format: :short) %>
+                <% else %>
+                  S/D
+                <% end %>
+              </div>
+            </div>
+            <%# Progress %>
+            <div class="mb-2">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <small class="text-muted">Progreso</small>
+                <small class="fw-semibold"><%= done %>/<%= total %></small>
+              </div>
+              <div class="progress" style="height: 6px;">
+                <div class="progress-bar bg-success" style="width: <%= pct %>%"></div>
+              </div>
+            </div>
+            <%# Action button %>
+            <%= link_to driver_delivery_plan_path(plan), class: "btn btn-primary btn-sm w-100 py-2 fw-bold" do %>
+              <i class="bi bi-geo-alt-fill me-1"></i> VER RUTA
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+          <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+               style="width: 80px; height: 80px;">
+            <i class="bi bi-calendar-x fs-1 text-muted"></i>
+          </div>
+          <h5 class="text-muted mb-2">No hay planes de entrega</h5>
+          <p class="text-muted mb-0">Probá ajustando los filtros.</p>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  <%# ================== TABLA DESKTOP ================== %>
+  <div class="d-none d-md-block card shadow-sm border-0">
     <div class="card-body p-0">
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
-              <th>Semana</th>
-              <th>Fechas</th>
-              <th>Estado</th>
-              <th>Camión</th>
-              <th>Entregas</th>
-              <th>Progreso</th>
-              <th class="text-center">Acciones</th>
+              <th class="fw-semibold">Semana</th>
+              <th class="fw-semibold">Conductor</th>
+              <th class="fw-semibold">Fechas</th>
+              <th class="fw-semibold">Estado</th>
+              <th class="fw-semibold">Camión</th>
+              <th class="fw-semibold">Entregas</th>
+              <th class="fw-semibold">Progreso</th>
+              <th class="text-center fw-semibold">Acción</th>
             </tr>
           </thead>
           <tbody>
             <% @delivery_plans.each do |plan| %>
               <%
-                total_count     = plan.deliveries_count.to_i
-                delivered_count = plan.delivered_count.to_i
-                pct             = total_count > 0 ? (delivered_count.to_f / total_count * 100).round : 0
+                total = plan.deliveries_count.to_i
+                done  = plan.delivered_count.to_i
+                pct   = total > 0 ? (done.to_f / total * 100).round : 0
 
                 first_date = plan.try(:first_delivery_date)
                 last_date  = plan.try(:last_delivery_date)
-
-                status_label = plan.status.present? ? plan.display_status : "Sin estado"
-                status_color = delivery_plan_status_color(plan.status || "pending")
               %>
               <tr>
-                <td class="fw-semibold">
+                <td>
                   <% if plan.week.present? && plan.year.present? %>
-                    <%= plan.week %> / <%= plan.year %>
+                    <div class="d-flex flex-column">
+                      <span class="fw-bold text-dark">Semana <%= plan.week %></span>
+                      <small class="text-muted"><%= plan.year %></small>
+                    </div>
                   <% else %>
                     <span class="text-muted">—</span>
+                  <% end %>
+                </td>
+                <td>
+                  <% if plan.driver.present? %>
+                    <div class="d-flex align-items-center">
+                      <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2" 
+                           style="width: 32px; height: 32px;">
+                        <i class="bi bi-person-fill text-primary"></i>
+                      </div>
+                      <span class="fw-semibold"><%= plan.driver.name %></span>
+                    </div>
+                  <% else %>
+                    <span class="text-muted fst-italic">
+                      <i class="bi bi-person-dash me-1"></i>Sin asignar
+                    </span>
                   <% end %>
                 </td>
                 <td>
                   <% if first_date.present? && last_date.present? %>
-                    <%= l(first_date.to_date, format: :short) %> – <%= l(last_date.to_date, format: :short) %>
+                    <% if first_date == last_date %>
+                      <div class="d-flex align-items-center">
+                        <i class="bi bi-calendar-check text-primary me-2"></i>
+                        <span class="fw-semibold"><%= l(first_date.to_date, format: :short) %></span>
+                      </div>
+                    <% else %>
+                      <div class="d-flex flex-column">
+                        <span class="fw-semibold"><%= l(first_date.to_date, format: :short) %></span>
+                        <small class="text-muted">hasta <%= l(last_date.to_date, format: :short) %></small>
+                      </div>
+                    <% end %>
                   <% elsif first_date.present? %>
-                    <%= l(first_date.to_date, format: :short) %>
+                    <span class="fw-semibold"><%= l(first_date.to_date, format: :short) %></span>
                   <% else %>
                     <span class="text-muted">—</span>
                   <% end %>
                 </td>
                 <td>
-                  <span class="badge bg-<%= status_color %>"><%= status_label %></span>
-                </td>
-                <td>
-                  <%= plan.truck.presence || "—" %>
-                </td>
-                <td>
-                  <span class="badge bg-info text-dark">
-                    <%= total_count %>
+                  <span class="badge bg-<%= delivery_plan_status_color(plan.status) %> d-flex align-items-center gap-1" 
+                        style="width: fit-content;">
+                    <i class="bi bi-circle-fill small"></i>
+                    <%= plan.display_status %>
                   </span>
                 </td>
-                <td style="min-width: 160px;">
+                <td>
+                  <% if plan.truck.present? %>
+                    <span class="badge bg-dark d-flex align-items-center gap-1" style="width: fit-content;">
+                      <i class="bi bi-truck-front"></i>
+                      <%= plan.truck %>
+                    </span>
+                  <% else %>
+                    <span class="text-muted">—</span>
+                  <% end %>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="bg-info bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" 
+                         style="width: 32px; height: 32px;">
+                      <i class="bi bi-box-seam text-info"></i>
+                    </div>
+                    <span class="fw-semibold"><%= total %></span>
+                  </div>
+                </td>
+                <td style="min-width: 140px;">
                   <div class="d-flex align-items-center gap-2">
                     <div class="progress flex-grow-1" style="height: 8px;">
-                      <div class="progress-bar bg-success" style="width: <%= pct %>%"></div>
+                      <div class="progress-bar bg-success" 
+                           role="progressbar"
+                           style="width: <%= pct %>%"
+                           aria-valuenow="<%= pct %>"
+                           aria-valuemin="0"
+                           aria-valuemax="100"></div>
                     </div>
-                    <small class="text-muted"><%= delivered_count %>/<%= total_count %></small>
+                    <small class="text-muted fw-semibold" style="min-width: 45px;"><%= done %>/<%= total %></small>
                   </div>
                 </td>
                 <td class="text-center">
-                  <%= link_to driver_delivery_plan_path(plan), class: "btn btn-sm btn-outline-primary" do %>
+                  <%= link_to driver_delivery_plan_path(plan),
+                        class: "btn btn-sm btn-outline-primary",
+                        title: "Ver ruta",
+                        data: { bs_toggle: "tooltip" } do %>
                     <i class="bi bi-eye"></i>
                   <% end %>
                 </td>
@@ -275,9 +321,15 @@
             <% end %>
             <% if @delivery_plans.empty? %>
               <tr>
-                <td colspan="7" class="text-center text-muted py-5">
-                  <i class="bi bi-calendar-x fs-1 text-muted mb-3 d-block"></i>
-                  No se encontraron planes.
+                <td colspan="8" class="text-center text-muted py-5">
+                  <div class="d-flex flex-column align-items-center">
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mb-3" 
+                         style="width: 80px; height: 80px;">
+                      <i class="bi bi-calendar-x fs-1 text-muted"></i>
+                    </div>
+                    <h5 class="text-muted mb-2">No hay planes de entrega</h5>
+                    <p class="text-muted mb-0">No se encontraron planes que coincidan con los filtros aplicados.</p>
+                  </div>
                 </td>
               </tr>
             <% end %>

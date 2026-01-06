@@ -9,20 +9,19 @@ module Driver
     def index
       authorize DeliveryPlan, policy_class: Driver::DeliveryPlanPolicy
 
-      # Base: SOLO planes del conductor actual (muy importante)
-      base_scope = DeliveryPlan.where(driver_id: current_user.id)
+      # Base: TODOS los planes (sin restricción de driver)
+      base_scope = DeliveryPlan.all
 
-      # Extraemos filtros de fecha (no los dejamos en Ransack porque first_delivery_date es alias)
+      # Extraemos filtros de fecha manuales (porque first_delivery_date es un alias SQL)
       q_params = (params[:q] || {}).to_h
-
       from = q_params.delete("first_delivery_date_gteq").presence
       to = q_params.delete("first_delivery_date_lteq").presence
 
-      # Ransack SOLO para columnas reales del modelo
       @q = base_scope.ransack(q_params)
 
       delivered_status = Delivery.statuses[:delivered]
 
+      # Query con agregados SQL para performance y precisión
       scope = @q.result
         .left_joins(:deliveries)
         .select(<<~SQL)
@@ -36,7 +35,7 @@ module Driver
         SQL
         .group("delivery_plans.id")
 
-      # Filtro de fechas sobre deliveries.delivery_date (no sobre el alias)
+      # Aplicar filtros de fecha sobre la tabla de entregas
       if from
         scope = scope.where("deliveries.delivery_date >= ?", Date.parse(from))
       end
@@ -45,10 +44,10 @@ module Driver
         scope = scope.where("deliveries.delivery_date <= ?", Date.parse(to))
       end
 
-      # Orden estable: más recientes arriba (por última entrega), fallback por creación
+      # Orden: Más recientes primero
       scope = scope.order(Arel.sql("MAX(deliveries.delivery_date) DESC NULLS LAST, delivery_plans.created_at DESC"))
 
-      # Stats globales (antes de paginar)
+      # Estadísticas globales para el resumen
       all_plans = scope.to_a
       @stats = {
         total_plans: all_plans.size,
@@ -56,18 +55,20 @@ module Driver
         by_status: all_plans.group_by(&:status).transform_values(&:size)
       }
 
-      # Paginación (mobile-first)
+      # Paginación
       @delivery_plans = Kaminari.paginate_array(all_plans)
         .page(params[:page])
         .per(10)
+
+      # Camiones de todos los planes para el filtro
+      @available_trucks = DeliveryPlan.distinct.pluck(:truck).compact.sort
 
       respond_to do |format|
         format.html
         format.json { render json: @delivery_plans }
       end
     rescue ArgumentError
-      # Si Date.parse falla por algún valor raro
-      redirect_to driver_delivery_plans_path, alert: "Filtros de fecha inválidos"
+      redirect_to driver_delivery_plans_path, alert: "Formato de fecha inválido"
     end
 
     def show
@@ -168,6 +169,7 @@ module Driver
     def update_position_batch
       authorize @delivery_plan, policy_class: Driver::DeliveryPlanPolicy
 
+      # Rechazar si el plan ya está completado o abortado
       if @delivery_plan.completed? || @delivery_plan.aborted?
         render json: {ok: false, error: "Plan already finished"}, status: :forbidden
         return
@@ -216,8 +218,8 @@ module Driver
     private
 
     def set_delivery_plan
-      # Extra seguridad: no permitir abrir planes de otros drivers
-      @delivery_plan = DeliveryPlan.where(driver_id: current_user.id).find(params[:id])
+      # Sin restricción de driver_id
+      @delivery_plan = DeliveryPlan.find(params[:id])
     end
 
     def position_batch_params
