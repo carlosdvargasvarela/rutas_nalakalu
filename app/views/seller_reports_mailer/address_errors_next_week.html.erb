@@ -1,44 +1,111 @@
-<h2>Revisa direcciones de tus entregas - Semana siguiente</h2>
-
-<p>
-  Hola <%= @seller.name %>,
-</p>
-
-<p>
-  Hemos detectado entregas con <strong>errores de dirección</strong> programadas
-  para la semana del
-  <strong><%= @report_data[:week_start].strftime('%d/%m/%Y') %></strong> al
-  <strong><%= @report_data[:week_end].strftime('%d/%m/%Y') %></strong>.
-</p>
-
-<p>
-  Total de entregas con errores de dirección para la próxima semana:
-  <strong><%= @report_data[:total_count] %></strong>
-</p>
-
-<p>
-  Se adjunta un archivo Excel con el detalle de cada entrega para que puedas
-  corregir las direcciones antes de que se generen las rutas de reparto.
-</p>
-
-<h3>¿Qué significan estos errores?</h3>
-<p>
-  Estos errores indican que <strong>Google Maps no pudo encontrar o entender la dirección tal como fue escrita</strong> en el sistema.
-  Esto puede causar problemas al generar las rutas de entrega.
-</p>
-<ul>
-  <li><strong>"Sin coordenadas" o "Coordenadas cero"</strong>: Google Maps no pudo ubicar la dirección en el mapa, o la ubicó en un punto incorrecto (como el centro del océano).</li>
-  <li><strong>"Dirección vacía" o "Descripción vacía"</strong>: Faltan datos importantes en la dirección o en su descripción.</li>
-  <li><strong>"Texto de dirección inválido"</strong>: La dirección contiene palabras genéricas como "pendiente", "por definir", "N/A", o es demasiado corta para ser una dirección real.</li>
-  <li><strong>"Fuera de Costa Rica"</strong>: La dirección fue ubicada por Google Maps fuera de los límites de Costa Rica.</li>
-  <li><strong>"Geocodificación sin resultados" o "Geocodificación parcial"</strong>: Google Maps no encontró una coincidencia exacta para la dirección, o solo encontró una ubicación muy general (por ejemplo, solo el país o la provincia, no la dirección exacta).</li>
-</ul>
-<p>
-  <strong>¿Qué hacer?</strong> Te recomendamos revisar estas direcciones en el sistema y corregirlas para que Google Maps pueda entenderlas correctamente.
-  Asegúrate de que la dirección sea lo más específica posible y que no contenga abreviaturas o textos genéricos.
-</p>
-
-<p>
-  Saludos,<br>
-  Sistema de rutas NaLakalu
-</p>
+<!-- app/views/seller_reports_mailer/address_errors_next_week.html.erb -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: darkgray;
+        padding: 25px;
+        border-radius: 8px 8px 0 0;
+        text-align: center;
+      }
+      .content {
+        background: white;
+        padding: 25px;
+        border-radius: 0 0 8px 8px;
+      }
+      .alert-box {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      .info-box {
+        background: #e7f3ff;
+        border-left: 4px solid #0066cc;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      ul {
+        margin: 10px 0;
+        padding-left: 20px;
+      }
+      li {
+        margin: 8px 0;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 20px;
+        padding: 15px;
+        color: #666;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🔔 Revisa direcciones de tus entregas</h1>
+      <p>Semana siguiente: <%= @report_data[:week_start].strftime('%d/%m/%Y') %> - <%= @report_data[:week_end].strftime('%d/%m/%Y') %></p>
+    </div>
+    <div class="content">
+      <p>Hola <strong><%= @seller.name %></strong>,</p>
+      <div class="alert-box">
+        <p style="margin: 0;">
+          Hemos detectado <strong><%= @report_data[:total_count] %></strong> entrega(s) con problemas de dirección 
+          programadas para la <strong>semana siguiente</strong>.
+        </p>
+      </div>
+      <p>
+        <strong>¡Aún estás a tiempo de corregirlas!</strong> Revisar y corregir estas direcciones ahora evitará problemas 
+        al generar las rutas de reparto.
+      </p>
+      <h3>¿Qué significan estos problemas?</h3>
+      <p>
+        Estos problemas indican que <strong>Google Maps no pudo encontrar o entender la dirección</strong> tal como fue escrita en el sistema.
+      </p>
+      <h4>🚨 Errores Críticos (requieren corrección inmediata):</h4>
+      <ul>
+        <li><strong>"Sin coordenadas" o "Coordenadas cero"</strong>: Google Maps no pudo ubicar la dirección en el mapa.</li>
+        <li><strong>"Dirección vacía"</strong>: Faltan datos importantes en la dirección.</li>
+        <li><strong>"Texto de dirección inválido"</strong>: La dirección contiene palabras genéricas como "pendiente", "por definir", "N/A".</li>
+        <li><strong>"Fuera de Costa Rica"</strong>: La dirección fue ubicada fuera de los límites de Costa Rica.</li>
+        <li><strong>"Geocodificación sin resultados"</strong>: Google Maps no encontró ninguna coincidencia para la dirección.</li>
+      </ul>
+      <h4>💡 Recomendaciones de Mejora (opcional, pero mejora la precisión):</h4>
+      <ul>
+        <li><strong>"Geocodificación parcial"</strong>: Google Maps encontró una ubicación aproximada, pero no exacta. Revisar y confirmar en Google Maps mejorará la precisión de la ruta.</li>
+      </ul>
+      <div class="info-box">
+        <p style="margin: 0;">
+          📎 <strong>Archivo Excel adjunto</strong><br>
+          Se adjunta un archivo con el detalle de cada entrega para que puedas corregir las direcciones 
+          antes de que se generen las rutas de reparto.
+        </p>
+      </div>
+      <p>
+        <strong>¿Qué hacer?</strong> Te recomendamos revisar estas direcciones en el sistema y corregirlas para que Google Maps pueda entenderlas correctamente.
+        Asegúrate de que la dirección sea lo más específica posible y que no contenga abreviaturas o textos genéricos.
+      </p>
+      <p>
+        Saludos,<br>
+        <strong>Sistema de rutas NaLakalu</strong>
+      </p>
+    </div>
+    <div class="footer">
+      <p>Este es un correo automático. Por favor no responder.</p>
+    </div>
+  </body>
+</html>

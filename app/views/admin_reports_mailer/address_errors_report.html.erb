@@ -1,79 +1,234 @@
-<div class="header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-  <h1>⚠️ Informe Semanal de Errores en Direcciones</h1>
-  <p>Semana del <%= l(@report_data[:week_start], format: :long) %> al <%= l(@report_data[:week_end], format: :long) %></p>
-</div>
-<div class="content">
-  <div class="highlight-box" style="border-left-color: #dc3545;">
-    <h2 style="margin-top: 0; color: #dc3545;">Resumen Ejecutivo</h2>
-    <p>
-      Durante la semana pasada se identificaron <strong><%= @report_data[:total_count] %></strong>
-      entrega(s) con <strong>errores en sus direcciones</strong>, afectando a 
-      <strong><%= @report_data[:affected_sellers_count] %></strong> vendedor(es).
-    </p>
-  </div>
-  <div class="stats">
-    <div class="stat-item">
-      <span class="stat-number" style="color: #dc3545;"><%= @report_data[:total_count] %></span>
-      <span class="stat-label">Entregas con errores</span>
+<!-- app/views/admin_reports_mailer/address_errors_report.html.erb -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .header {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: darkgray;
+        padding: 30px;
+        border-radius: 8px 8px 0 0;
+        text-align: center;
+      }
+      .header h1 {
+        margin: 0 0 10px 0;
+        font-size: 24px;
+      }
+      .header p {
+        margin: 0;
+        opacity: 0.9;
+      }
+      .content {
+        background: white;
+        padding: 30px;
+        border-radius: 0 0 8px 8px;
+      }
+      .highlight-box {
+        background: #fff3cd;
+        border-left: 4px solid #dc3545;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      .stats {
+        display: flex;
+        justify-content: space-around;
+        margin: 30px 0;
+        gap: 20px;
+      }
+      .stat-item {
+        text-align: center;
+        flex: 1;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+      }
+      .stat-number {
+        display: block;
+        font-size: 36px;
+        font-weight: bold;
+        color: #dc3545;
+      }
+      .stat-label {
+        display: block;
+        font-size: 14px;
+        color: #666;
+        margin-top: 5px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+      }
+      th {
+        background: #f8f9fa;
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 2px solid #dee2e6;
+      }
+      td {
+        padding: 12px;
+        border-bottom: 1px solid #dee2e6;
+      }
+      .error-badge {
+        background: #dc3545;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-weight: bold;
+        font-size: 14px;
+      }
+      .recommendation-badge {
+        background: #FF8C00;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-weight: bold;
+        font-size: 14px;
+      }
+      .attachment-notice {
+        background: #e7f3ff;
+        border-left: 4px solid #0066cc;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 30px;
+        padding: 20px;
+        color: #666;
+        font-size: 12px;
+      }
+      h3 {
+        color: #dc3545;
+        margin-top: 30px;
+      }
+      .section-recommendations h3 {
+        color: #FF8C00;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>⚠️ Informe Semanal de Errores en Direcciones</h1>
+      <p>Semana del <%= l(@report_data[:week_start], format: :long) %> al <%= l(@report_data[:week_end], format: :long) %></p>
     </div>
-    <div class="stat-item">
-      <span class="stat-number" style="color: #dc3545;"><%= @report_data[:affected_sellers_count] %></span>
-      <span class="stat-label">Vendedores afectados</span>
+    <div class="content">
+      <div class="highlight-box">
+        <h2 style="margin-top: 0; color: #dc3545;">Resumen Ejecutivo</h2>
+        <p>
+          Durante la semana pasada se identificaron <strong><%= @report_data[:total_count] %></strong>
+          entrega(s) con <strong>errores en sus direcciones</strong>, afectando a 
+          <strong><%= @report_data[:affected_sellers_count] %></strong> vendedor(es).
+        </p>
+      </div>
+      <div class="stats">
+        <div class="stat-item">
+          <span class="stat-number"><%= @report_data[:total_count] %></span>
+          <span class="stat-label">Entregas con problemas</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number"><%= @report_data[:affected_sellers_count] %></span>
+          <span class="stat-label">Vendedores afectados</span>
+        </div>
+      </div>
+      <% if @report_data[:error_type_summary].to_a.any? %>
+        <h3>🚨 Errores Críticos Detectados</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo de Error</th>
+              <th style="text-align: center;">Cantidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @report_data[:error_type_summary].each do |error_type, count| %>
+              <tr>
+                <td><%= error_type %></td>
+                <td style="text-align: center;">
+                  <span class="error-badge"><%= count %></span>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+      <% if @report_data[:recommendation_type_summary].to_a.any? %>
+        <div class="section-recommendations">
+          <h3>💡 Recomendaciones de Mejora</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo de Recomendación</th>
+                <th style="text-align: center;">Cantidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @report_data[:recommendation_type_summary].each do |rec_type, count| %>
+                <tr>
+                  <td><%= rec_type %></td>
+                  <td style="text-align: center;">
+                    <span class="recommendation-badge"><%= count %></span>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+          <p style="color: #666; font-size: 14px; margin-top: 10px;">
+            <strong>Nota:</strong> Las recomendaciones no bloquean la entrega, pero mejorarlas aumenta la precisión de las rutas.
+          </p>
+        </div>
+      <% end %>
+      <% if @report_data[:top_sellers].to_a.any? %>
+        <h3>Top 5 Vendedores con Más Problemas</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Vendedor</th>
+              <th>Código</th>
+              <th style="text-align: center;">Problemas</th>
+              <th>Principales Tipos</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @report_data[:top_sellers].each do |seller| %>
+              <tr>
+                <td><strong><%= seller[:name] %></strong></td>
+                <td><%= seller[:code] %></td>
+                <td style="text-align: center;">
+                  <span class="error-badge"><%= seller[:count] %></span>
+                </td>
+                <td style="font-size: 12px;"><%= seller[:main_errors] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+      <div class="attachment-notice">
+        📎 <strong>Archivo Excel adjunto</strong><br>
+        Se adjunta un archivo Excel con el detalle completo de todas las entregas con problemas de dirección, 
+        incluyendo coordenadas, errores específicos, recomendaciones y responsable.
+      </div>
+      <p style="margin-top: 30px; color: #666; font-size: 14px;">
+        <strong>Acción requerida:</strong> Coordinar con los vendedores para corregir los <strong>errores críticos</strong>
+        lo antes posible. Las <strong>recomendaciones</strong> pueden mejorarse gradualmente para optimizar las rutas.
+      </p>
     </div>
-  </div>
-  <h3 style="color: #dc3545; margin-top: 30px;">Tipos de Errores Detectados</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Tipo de Error</th>
-        <th style="text-align: center;">Cantidad</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @report_data[:error_type_summary].each do |error_type, count| %>
-        <tr>
-          <td><%= error_type %></td>
-          <td style="text-align: center;">
-            <span class="error-badge"><%= count %></span>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <h3 style="color: #dc3545; margin-top: 30px;">Top 5 Vendedores con Más Errores</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Vendedor</th>
-        <th>Código</th>
-        <th style="text-align: center;">Errores</th>
-        <th>Principales Tipos</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @report_data[:top_sellers].each do |seller| %>
-        <tr>
-          <td><strong><%= seller[:name] %></strong></td>
-          <td><%= seller[:code] %></td>
-          <td style="text-align: center;">
-            <span class="error-badge"><%= seller[:count] %></span>
-          </td>
-          <td style="font-size: 12px;"><%= seller[:main_errors] %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <div class="attachment-notice">
-    📎 <strong>Archivo Excel adjunto</strong><br>
-    Se adjunta un archivo Excel con el detalle completo de todas las entregas con errores de dirección, 
-    incluyendo coordenadas, tipo de error específico y responsable.
-  </div>
-  <p style="margin-top: 30px; color: #666; font-size: 14px;">
-    <strong>Acción requerida:</strong> Coordinar con los vendedores para corregir estas direcciones 
-    lo antes posible. Direcciones incorrectas generan retrasos, costos adicionales y afectan la experiencia del cliente.
-  </p>
-</div>
-<div class="footer">
-  <p>Este es un informe automático generado por el Sistema de Rutas NaLakalu</p>
-  <p>Generado el <%= l(Time.current, format: :long) %></p>
-</div>
+    <div class="footer">
+      <p>Este es un informe automático generado por el Sistema de Rutas NaLakalu</p>
+      <p>Generado el <%= l(Time.current, format: :long) %></p>
+    </div>
+  </body>
+</html>

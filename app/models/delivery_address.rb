@@ -33,24 +33,49 @@ class DeliveryAddress < ApplicationRecord
   CR_LON_MIN = -86.0
   CR_LON_MAX = -82.0
 
-  def address_errors
+  # Método principal que devuelve errores y recomendaciones por separado
+  def address_findings(recipient_email: nil)
     errors = []
+    recommendations = []
+
     errors << "Sin coordenadas" if missing_coordinates?
     errors << "Coordenadas cero" if latitude.to_f.zero? && longitude.to_f.zero?
     errors << "Dirección vacía" if address.blank?
     errors << "Texto de dirección inválido" if invalid_address_text?
     errors << "Fuera de Costa Rica" if out_of_cr_bounds?
     errors << "Geocodificación sin resultados" if geocode_quality == "no_match"
-    errors << "Geocodificación parcial" if geocode_quality&.include?("partial")
-    errors
+
+    # Geocodificación parcial ahora es RECOMENDACIÓN, no error
+    if geocode_quality&.include?("partial")
+      # Regla especial: maraya@nalakalu.com NO debe ver esto
+      unless recipient_email.to_s.downcase.strip == "maraya@nalakalu.com"
+        recommendations << "Geocodificación parcial: revisar dirección y confirmar ubicación en Google Maps"
+      end
+    end
+
+    {errors: errors, recommendations: recommendations}
   end
 
-  def has_address_errors?
-    address_errors.any?
+  # Métodos de conveniencia
+  def address_errors(recipient_email: nil)
+    address_findings(recipient_email: recipient_email)[:errors]
   end
 
-  def error_summary
-    address_errors.join("; ")
+  def address_recommendations(recipient_email: nil)
+    address_findings(recipient_email: recipient_email)[:recommendations]
+  end
+
+  def error_summary(recipient_email: nil)
+    address_errors(recipient_email: recipient_email).join("; ")
+  end
+
+  def recommendations_summary(recipient_email: nil)
+    address_recommendations(recipient_email: recipient_email).join("; ")
+  end
+
+  # Ahora has_address_errors? solo cuenta errores reales (no recomendaciones)
+  def has_address_errors?(recipient_email: nil)
+    address_errors(recipient_email: recipient_email).any?
   end
 
   def self.ransackable_attributes(_auth_object = nil)

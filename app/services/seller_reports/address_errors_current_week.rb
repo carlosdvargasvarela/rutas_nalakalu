@@ -76,9 +76,6 @@ module SellerReports
       }
     end
 
-    # En caso de que quieras avisar a los vendedores incluso cuando NO tienen errores,
-    # podemos enviarles un correo "vacío". Si no lo deseas, puedes eliminar este método
-    # y la llamada desde generate_and_send!.
     def send_empty_reports_to_sellers_with_notifications
       Seller
         .includes(:user)

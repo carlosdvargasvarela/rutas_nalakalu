@@ -23,10 +23,20 @@ module AdminReports
 
       Rails.logger.info "[AddressErrorsReport] Encontradas #{deliveries_with_errors.count} entregas con errores de dirección"
 
-      report_data = build_report_data(deliveries_with_errors)
-      delivery_ids = deliveries_with_errors.map(&:id)
+      recipients = build_recipients_list
 
-      send_report(report_data, delivery_ids)
+      recipients.each do |recipient|
+        report_data = build_report_data(deliveries_with_errors, recipient)
+        delivery_ids = deliveries_with_errors.map(&:id)
+
+        AdminReportsMailer.address_errors_report(
+          recipient: recipient,
+          report_data: report_data,
+          delivery_ids: delivery_ids
+        ).deliver_later
+      end
+
+      Rails.logger.info "[AddressErrorsReport] Informe enviado a #{recipients.count} destinatarios"
     end
 
     private
@@ -47,15 +57,20 @@ module AdminReports
         .includes(order: [:client, :seller], delivery_address: :client)
         .order(:delivery_date, "orders.number")
 
-      # Filtrar solo las que tienen errores
+      # Filtrar solo las que tienen errores REALES (no recomendaciones)
+      # Nota: has_address_errors? ahora solo cuenta errores, no recomendaciones
       all_deliveries.select { |d| d.delivery_address.has_address_errors? }
     end
 
-    def build_report_data(deliveries)
+    def build_report_data(deliveries, recipient_email)
       by_seller = deliveries.group_by { |d| d.order.seller }
 
       seller_summary = by_seller.map do |seller, seller_deliveries|
-        error_types = seller_deliveries.flat_map { |d| d.delivery_address.address_errors }.uniq
+        # Calcular errores para este recipient específico
+        error_types = seller_deliveries.flat_map do |d|
+          d.delivery_address.address_errors(recipient_email: recipient_email)
+        end.uniq
+
         {
           name: seller&.name || "Sin vendedor",
           code: seller&.seller_code || "N/A",
@@ -65,9 +80,17 @@ module AdminReports
         }
       end.sort_by { |s| -s[:count] }
 
-      # Resumen por tipo de error
-      all_errors = deliveries.flat_map { |d| d.delivery_address.address_errors }
+      # Resumen por tipo de error (para este recipient)
+      all_errors = deliveries.flat_map do |d|
+        d.delivery_address.address_errors(recipient_email: recipient_email)
+      end
       error_type_summary = all_errors.group_by(&:itself).transform_values(&:count).sort_by { |_, v| -v }
+
+      # Resumen por tipo de recomendación (para este recipient)
+      all_recommendations = deliveries.flat_map do |d|
+        d.delivery_address.address_recommendations(recipient_email: recipient_email)
+      end
+      recommendation_type_summary = all_recommendations.group_by(&:itself).transform_values(&:count).sort_by { |_, v| -v }
 
       {
         week_start: @prev_week_start,
@@ -76,22 +99,9 @@ module AdminReports
         affected_sellers_count: by_seller.keys.count,
         seller_summary: seller_summary,
         top_sellers: seller_summary.first(5),
-        error_type_summary: error_type_summary
+        error_type_summary: error_type_summary,
+        recommendation_type_summary: recommendation_type_summary
       }
-    end
-
-    def send_report(report_data, delivery_ids)
-      recipients = build_recipients_list
-
-      recipients.each do |recipient|
-        AdminReportsMailer.address_errors_report(
-          recipient: recipient,
-          report_data: report_data,
-          delivery_ids: delivery_ids
-        ).deliver_later
-      end
-
-      Rails.logger.info "[AddressErrorsReport] Informe enviado a #{recipients.count} destinatarios"
     end
 
     def send_empty_report

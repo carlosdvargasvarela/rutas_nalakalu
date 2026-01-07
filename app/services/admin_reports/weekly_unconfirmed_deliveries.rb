@@ -49,8 +49,6 @@ module AdminReports
         .where.not(status: [:delivered, :rescheduled, :archived, :cancelled])
         # Excluir entregas internas
         .where.not(delivery_type: :internal_delivery)
-        # Excluir entregas de tienda (pickup/showroom) ya que no requieren confirmación
-        .where.not(delivery_type: :store_pickup) # ajusta el símbolo al nombre real de tu enum
         .includes(order: [:client, :seller], delivery_address: :client, delivery_items: {order_item: :order})
         .order(:delivery_date, "orders.number")
     end

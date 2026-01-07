@@ -12,7 +12,7 @@ class AdminReportsMailer < ApplicationMailer
       .where(id: delivery_ids)
       .includes(order: [:client, :seller], delivery_address: :client, delivery_items: {order_item: :order})
 
-    excel_stream = generate_unconfirmed_deliveries_excel(deliveries)
+    excel_stream = generate_unconfirmed_deliveries_excel(deliveries, recipient)
     filename = "entregas_no_confirmadas_#{report_data[:week_start].strftime("%Y%m%d")}.xlsx"
 
     attachments[filename] = excel_stream.string
@@ -42,7 +42,7 @@ class AdminReportsMailer < ApplicationMailer
       .where(id: delivery_ids)
       .includes(order: [:client, :seller], delivery_address: :client)
 
-    excel_stream = generate_address_errors_excel(deliveries)
+    excel_stream = generate_address_errors_excel(deliveries, recipient)
     filename = "errores_direccion_#{report_data[:week_start].strftime("%Y%m%d")}.xlsx"
 
     attachments[filename] = excel_stream.string
@@ -76,7 +76,7 @@ class AdminReportsMailer < ApplicationMailer
       .where(id: delivery_ids)
       .includes(order: [:client, :seller], delivery_address: :client, delivery_items: {order_item: :order})
 
-    excel_stream = generate_unconfirmed_deliveries_excel(deliveries)
+    excel_stream = generate_unconfirmed_deliveries_excel(deliveries, recipient)
     filename = "entregas_no_confirmadas_semana_actual_#{report_data[:week_start].strftime("%Y%m%d")}.xlsx"
 
     attachments[filename] = excel_stream.string
@@ -100,7 +100,7 @@ class AdminReportsMailer < ApplicationMailer
 
   private
 
-  def generate_unconfirmed_deliveries_excel(deliveries)
+  def generate_unconfirmed_deliveries_excel(deliveries, recipient)
     package = Axlsx::Package.new
     workbook = package.workbook
 
@@ -157,7 +157,7 @@ class AdminReportsMailer < ApplicationMailer
     package.to_stream
   end
 
-  def generate_address_errors_excel(deliveries)
+  def generate_address_errors_excel(deliveries, recipient)
     package = Axlsx::Package.new
     workbook = package.workbook
 
@@ -177,6 +177,11 @@ class AdminReportsMailer < ApplicationMailer
       b: true
     )
 
+    recommendation_style = workbook.styles.add_style(
+      fg_color: "FF8C00",
+      b: false
+    )
+
     workbook.add_worksheet(name: "Errores de Dirección") do |sheet|
       sheet.add_row([
         "Fecha de Entrega",
@@ -190,6 +195,7 @@ class AdminReportsMailer < ApplicationMailer
         "Latitud",
         "Longitud",
         "Errores Detectados",
+        "Recomendaciones",
         "Calidad Geocodificación",
         "Estado Entrega"
       ], style: header_style)
@@ -197,7 +203,8 @@ class AdminReportsMailer < ApplicationMailer
       deliveries.each do |delivery|
         seller = delivery.order.seller
         address = delivery.delivery_address
-        errors = address.error_summary
+        errors = address.error_summary(recipient_email: recipient)
+        recommendations = address.recommendations_summary(recipient_email: recipient)
 
         sheet.add_row([
           delivery.delivery_date,
@@ -210,13 +217,14 @@ class AdminReportsMailer < ApplicationMailer
           address.description,
           address.latitude,
           address.longitude,
-          errors,
+          errors.presence || "—",
+          recommendations.presence || "—",
           address.geocode_quality,
           delivery.display_status
-        ], style: [date_style, nil, nil, nil, nil, nil, nil, nil, nil, nil, error_style, nil, nil])
+        ], style: [date_style, nil, nil, nil, nil, nil, nil, nil, nil, nil, error_style, recommendation_style, nil, nil])
       end
 
-      sheet.column_widths(12, 15, 25, 20, 15, 25, 35, 25, 12, 12, 40, 20, 18)
+      sheet.column_widths(12, 15, 25, 20, 15, 25, 35, 25, 12, 12, 40, 40, 20, 18)
     end
 
     package.to_stream
