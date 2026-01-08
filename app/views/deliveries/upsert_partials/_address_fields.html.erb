@@ -76,10 +76,13 @@
         </div>
       </div>
       <!-- Tab: Buscar/Crear nueva dirección -->
+      <!-- 🔥 AQUÍ VA EL data-controller="address-autocomplete" ENVOLVIENDO TODOS LOS TARGETS -->
       <div class="tab-pane fade <%= 'show active' if params[:delivery_address].present? %>"
            id="new-address"
            role="tabpanel"
-           aria-labelledby="new-tab">
+           aria-labelledby="new-tab"
+           data-controller="address-autocomplete"
+           data-address-autocomplete-api-key-value="<%= ENV.fetch('GOOGLE_MAPS_API_KEY', '') %>">
         <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
           <i class="bi bi-exclamation-triangle-fill me-2"></i>
           <div>
@@ -87,7 +90,7 @@
           </div>
         </div>
         <!-- Buscador de direcciones con autocompletado -->
-        <div class="mb-3" data-controller="address-autocomplete">
+        <div class="mb-3">
           <label for="delivery_address_address" class="form-label fw-bold">
             <i class="bi bi-search me-1"></i> Buscar dirección *
           </label>
@@ -106,20 +109,22 @@
             Escribe la dirección completa. El sistema intentará geocodificarla automáticamente.
           </div>
         </div>
-        <!-- Descripción adicional -->
-        <div class="mb-3">
-          <label for="delivery_address_description" class="form-label fw-bold">
-            <i class="bi bi-card-text me-1"></i> Descripción adicional
-          </label>
-          <%= text_field_tag "delivery_address[description]",
-                params.dig(:delivery_address, :description),
-                placeholder: "Ej: Casa blanca, portón negro, frente al supermercado",
-                class: "form-control",
-                data: {
-                  "delivery-form-target": "newAddressDescription",
-                  "address-validator-target": "addressInput",
-                  action: "input->address-validator#validateAddress"
-                } %>
+        <!-- Info dirección seleccionada (autocomplete) -->
+        <div data-address-autocomplete-target="selectedAddressInfo"
+             class="alert alert-info mb-3"
+             style="display:none;">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-info-circle me-2"></i>
+            <div>
+              <strong>Dirección seleccionada:</strong><br>
+              <span data-address-autocomplete-target="selectedAddressText"></span>
+            </div>
+          </div>
+        </div>
+        <!-- Mapa pequeño para preview del autocomplete -->
+        <div data-address-autocomplete-target="map"
+             style="height: 250px;"
+             class="mb-3 border rounded">
         </div>
         <!-- Coordenadas (readonly, se llenan automáticamente) -->
         <div class="row mb-3">
@@ -172,9 +177,33 @@
           <i class="bi bi-info-circle me-1"></i>
           Las coordenadas se obtienen automáticamente al buscar la dirección o hacer clic en el mapa.
         </div>
+        <!-- Hidden field para client_id -->
+        <%= hidden_field_tag "delivery_address[client_id]",
+            (@client&.id || delivery.order&.client&.id),
+            data: { "delivery-form-target": "newAddressClientId" } %>
+      </div>
+      <!-- FIN del tab "Buscar/Crear nueva" y del controller address-autocomplete -->
+    </div>
+    <!-- 🔔 Descripción adicional (siempre visible) -->
+    <div class="mt-4 p-3 border rounded bg-light">
+      <label for="delivery_address_description" class="form-label fw-bold text-danger">
+        <i class="bi bi-card-text me-1"></i> Referencia exacta de entrega *
+      </label>
+      <%= text_field_tag "delivery_address[description]",
+        params.dig(:delivery_address, :description),
+        placeholder: "Ej: Casa blanca, portón negro, 200m norte de la iglesia, frente al supermercado",
+        class: "form-control form-control-lg",
+        data: {
+          "delivery-form-target": "newAddressDescription",
+          "address-validator-target": "addressInput",
+          action: "input->address-validator#validateAddress"
+        } %>
+      <div class="form-text">
+        <i class="bi bi-info-circle me-1"></i>
+        Esta información es <strong>clave</strong> para el chofer. Sé lo más específico posible.
       </div>
     </div>
-    <!-- Mapa de preview (se muestra siempre) -->
+    <!-- Mapa de preview (se muestra siempre, fuera de los tabs) -->
     <div class="mt-4">
       <h6 class="fw-bold mb-2">
         <i class="bi bi-map me-1"></i> Vista previa en mapa
