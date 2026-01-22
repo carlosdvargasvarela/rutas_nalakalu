@@ -1,20 +1,14 @@
-# app/views/deliveries/index.xlsx.axlsx
-
 wb = xlsx_package.workbook
 wb.add_worksheet(name: "Entregas") do |sheet|
   sheet.add_row [
     "Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo"
   ]
-|  
+  
   @all_deliveries.each do |delivery|
-    # 🔹 CAMBIO: Excluir delivery_items que estén en estado "archived" o cuya delivery esté archivada
+    # 🔹 CAMBIO: Excluir entregas archivadas
     next if delivery.archived?
     
     delivery.delivery_items.each do |delivery_item|
-      # 🔹 Si el delivery_item tiene un estado "archived", lo saltamos
-      # (Nota: DeliveryItem no tiene enum :archived, pero si lo tuviera, aquí iría)
-      # Por ahora, solo verificamos que la delivery no esté archivada
-      
       sheet.add_row [
         delivery.delivery_date.strftime("%d/%m/%Y"),
         delivery.order.number,
