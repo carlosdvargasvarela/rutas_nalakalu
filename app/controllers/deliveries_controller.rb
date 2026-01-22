@@ -8,10 +8,16 @@ class DeliveriesController < ApplicationController
   before_action :set_addresses, only: [:new, :edit, :create, :update]
 
   # GET /deliveries
+
   def index
     session[:deliveries_return_to] = request.fullpath
 
-    base_scope = (params[:show_rescheduled] == "1") ? Delivery.all : Delivery.where.not(status: :rescheduled)
+    # 🔹 CAMBIO: Excluir entregas archivadas desde el inicio
+    base_scope = if params[:show_rescheduled] == "1"
+      Delivery.where.not(status: :archived)
+    else
+      Delivery.where.not(status: [:rescheduled, :archived])
+    end
 
     if params[:no_plan].present?
       base_scope = base_scope.where.not(id: DeliveryPlanAssignment.select(:delivery_id))
@@ -25,6 +31,7 @@ class DeliveriesController < ApplicationController
       end
     end
 
+    # 🔹 CAMBIO: Excluir archived también aquí
     excluded_statuses = %i[delivered rescheduled cancelled archived failed]
     base_scope = base_scope.where.not(status: excluded_statuses) if params[:no_plan].present?
 
@@ -37,7 +44,11 @@ class DeliveriesController < ApplicationController
     deliveries_scope = @q.result.includes(order: [:client, :seller], delivery_address: :client)
 
     @deliveries = deliveries_scope.order(delivery_date: :asc).page(params[:page])
-    @all_deliveries = deliveries_scope.includes(delivery_items: {order_item: :order}).order(delivery_date: :asc)
+
+    # 🔹 CAMBIO: @all_deliveries también excluye archived
+    @all_deliveries = deliveries_scope
+      .includes(delivery_items: {order_item: :order})
+      .order(delivery_date: :asc)
 
     authorize Delivery
 
