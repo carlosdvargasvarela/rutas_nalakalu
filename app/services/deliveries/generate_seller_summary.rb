@@ -4,25 +4,23 @@ module Deliveries
     def call
       summaries = {}
 
-      # Calcular ventana de tiempo
+      # Ventana de tiempo: 18:00 del día anterior a 07:00 de hoy (hora CR)
       now = Time.current.in_time_zone("America/Costa_Rica")
       window_start = (now - 13.hours).beginning_of_day + 18.hours  # 18:00 del día anterior
-      window_end = now.beginning_of_day + 7.hours                   # 07:00 de hoy
+      window_end = now.beginning_of_day + 7.hours                # 07:00 de hoy
 
-      # Entregas creadas en la ventana de tiempo (excluyendo archivadas)
       new_deliveries = Delivery
         .where.not(status: :archived)
         .where("deliveries.created_at >= ? AND deliveries.created_at <= ?", window_start, window_end)
         .includes(
+          :delivery_address,
           order: [:client, :seller],
-          delivery_address: :client,
           delivery_items: {order_item: :order}
         )
         .order(:created_at)
 
       return summaries if new_deliveries.empty?
 
-      # Agrupar por vendedor
       new_deliveries.group_by { |d| d.order.seller_id }.each do |seller_id, deliveries|
         summaries[seller_id] = {
           deliveries: deliveries,
@@ -38,7 +36,7 @@ module Deliveries
     def build_summary(deliveries)
       deliveries_with_errors = deliveries.select { |d| has_delivery_errors?(d) }
 
-      # Agregar errores por categoría
+      # Agregamos categorías de error
       error_categories = Hash.new(0)
       deliveries_with_errors.each do |delivery|
         detector = Deliveries::ErrorDetector.new(delivery)

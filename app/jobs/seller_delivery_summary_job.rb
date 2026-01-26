@@ -4,7 +4,8 @@ class SellerDeliverySummaryJob
 
   sidekiq_options queue: "mailers", retry: 3
 
-  def perform
+  # solo_admins: si es true, no envía correos a vendedores, solo el consolidado a admins
+  def perform(solo_admins = false)
     Rails.logger.info "🚀 [SellerDeliverySummaryJob] Iniciando envío de resúmenes de entregas cargadas..."
 
     service = Deliveries::GenerateSellerSummary.new
@@ -15,10 +16,24 @@ class SellerDeliverySummaryJob
       return
     end
 
-    # 1. Enviar a cada vendedor
+    send_to_sellers(summaries) unless solo_admins
+    send_consolidated_summary_to_admins(summaries)
+
+    Rails.logger.info "✅ [SellerDeliverySummaryJob] Completado. #{summaries.count} vendedor(es) detectado(s) (solo_admins=#{solo_admins})"
+  end
+
+  private
+
+  def send_to_sellers(summaries)
     summaries.each do |seller_id, data|
       seller = Seller.find_by(id: seller_id)
       next unless seller&.user&.email
+
+      # ✅ Verificar que el usuario tenga notificaciones habilitadas
+      unless seller.user.send_notifications?
+        Rails.logger.info "⏭️  [SellerDeliverySummaryJob] Vendedor #{seller.user.email} tiene notificaciones deshabilitadas, omitiendo..."
+        next
+      end
 
       begin
         SellerDeliverySummaryMailer.with(
@@ -32,37 +47,35 @@ class SellerDeliverySummaryJob
         Rails.logger.error "❌ [SellerDeliverySummaryJob] Error enviando a #{seller.user.email}: #{e.message}"
       end
     end
-
-    # 2. Enviar resumen consolidado a admins
-    send_consolidated_summary_to_admins(summaries)
-
-    Rails.logger.info "✅ [SellerDeliverySummaryJob] Completado. #{summaries.count} vendedores notificados"
   end
 
-  private
-
   def send_consolidated_summary_to_admins(summaries)
-    admin_users = User.where(role: :admin).where.not(email: nil)
+    # ✅ Filtrar admins con email Y con notificaciones habilitadas
+    admin_users = User.where(role: :admin)
+      .where(send_notifications: true)
 
     if admin_users.empty?
-      Rails.logger.warn "⚠️ [SellerDeliverySummaryJob] No hay admins con email configurado"
+      Rails.logger.warn "⚠️ [SellerDeliverySummaryJob] No hay admins con email y notificaciones habilitadas"
       return
     end
 
-    # Calcular estadísticas globales
-    all_deliveries = summaries.values.flat_map { |data| data[:deliveries] }
+    # ✅ Convertir claves Integer a String para que ActiveJob pueda serializar
+    summaries_for_job = summaries.transform_keys(&:to_s)
+
+    all_deliveries = summaries_for_job.values.flat_map { |data| data[:deliveries] }
+
     global_summary = {
-      total_sellers: summaries.count,
+      total_sellers: summaries_for_job.count,
       total_deliveries: all_deliveries.count,
       total_items: all_deliveries.sum { |d| d.delivery_items.count },
-      total_with_errors: all_deliveries.count { |d| has_delivery_errors?(d) },
-      by_seller: summaries.transform_values { |data| data[:summary] }
+      total_with_errors: all_deliveries.count { |d| Deliveries::ErrorDetector.new(d).has_errors? },
+      by_seller: summaries_for_job.transform_values { |data| data[:summary] }
     }
 
     admin_users.each do |admin|
       SellerDeliverySummaryMailer.with(
         admin: admin,
-        summaries: summaries,
+        summaries: summaries_for_job,     # ✅ claves string
         global_summary: global_summary
       ).consolidated_admin_summary.deliver_later
 
@@ -70,9 +83,5 @@ class SellerDeliverySummaryJob
     rescue => e
       Rails.logger.error "❌ [SellerDeliverySummaryJob] Error enviando a admin #{admin.email}: #{e.message}"
     end
-  end
-
-  def has_delivery_errors?(delivery)
-    Deliveries::ErrorDetector.new(delivery).has_errors?
   end
 end

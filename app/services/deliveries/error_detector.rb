@@ -15,6 +15,7 @@ module Deliveries
       @errors ||= detect_all_errors
     end
 
+    # Devuelve un hash { "Dirección" => 3, "Contacto" => 1, ... }
     def error_summary
       errors.group_by { |e| e[:category] }.transform_values(&:count)
     end
@@ -24,27 +25,19 @@ module Deliveries
     def detect_all_errors
       detected = []
 
-      # 1. Errores de dirección
       detected.concat(address_errors)
-
-      # 2. Errores de contacto
       detected.concat(contact_errors)
-
-      # 3. Errores de productos
       detected.concat(product_errors)
-
-      # 4. Errores de fecha
       detected.concat(date_errors)
-
-      # 5. Errores de cliente
       detected.concat(client_errors)
-
-      # 6. Errores de orden
       detected.concat(order_errors)
 
       detected
     end
 
+    # ==========================
+    # 1. ERRORES DE DIRECCIÓN
+    # ==========================
     def address_errors
       errors = []
       address = delivery.delivery_address
@@ -58,73 +51,37 @@ module Deliveries
         return errors
       end
 
-      # Dirección vacía o muy corta
-      if address.address.blank?
-        errors << {
-          category: "Dirección",
-          severity: "critical",
-          message: "Dirección vacía"
-        }
-      elsif address.address.length < 10
-        errors << {
-          category: "Dirección",
-          severity: "warning",
-          message: "Dirección muy corta (menos de 10 caracteres)"
-        }
-      end
+      # Usamos la lógica centralizada del modelo DeliveryAddress
+      addr_errors = address.address_errors
+      addr_errors.each do |msg|
+        severity =
+          case msg
+          when /Fuera de Costa Rica/i, /Coordenadas cero/i, /Sin coordenadas/i
+            "high"
+          when /Geocodificación sin resultados/i
+            "medium"
+          when /Texto de dirección inválido/i, /Dirección vacía/i
+            "critical"
+          else
+            "medium"
+          end
 
-      # Sin coordenadas
-      if address.latitude.blank? || address.longitude.blank?
         errors << {
           category: "Dirección",
-          severity: "high",
-          message: "Sin coordenadas GPS (no se puede ubicar en el mapa)"
-        }
-      end
-
-      # Coordenadas fuera de Costa Rica
-      if address.latitude.present? && address.longitude.present?
-        unless address.in_costa_rica?
-          errors << {
-            category: "Dirección",
-            severity: "high",
-            message: "Coordenadas fuera de Costa Rica"
-          }
-        end
-      end
-
-      # Provincia/cantón/distrito vacíos
-      if address.province.blank?
-        errors << {
-          category: "Dirección",
-          severity: "medium",
-          message: "Sin provincia especificada"
-        }
-      end
-
-      if address.canton.blank?
-        errors << {
-          category: "Dirección",
-          severity: "medium",
-          message: "Sin cantón especificado"
-        }
-      end
-
-      if address.district.blank?
-        errors << {
-          category: "Dirección",
-          severity: "low",
-          message: "Sin distrito especificado"
+          severity: severity,
+          message: msg
         }
       end
 
       errors
     end
 
+    # ==========================
+    # 2. ERRORES DE CONTACTO
+    # ==========================
     def contact_errors
       errors = []
 
-      # Sin nombre de contacto
       if delivery.contact_name.blank?
         errors << {
           category: "Contacto",
@@ -133,7 +90,6 @@ module Deliveries
         }
       end
 
-      # Sin teléfono
       if delivery.contact_phone.blank?
         errors << {
           category: "Contacto",
@@ -151,10 +107,12 @@ module Deliveries
       errors
     end
 
+    # ==========================
+    # 3. ERRORES DE PRODUCTOS
+    # ==========================
     def product_errors
       errors = []
 
-      # Sin productos
       if delivery.delivery_items.empty?
         errors << {
           category: "Productos",
@@ -164,13 +122,22 @@ module Deliveries
         return errors
       end
 
-      # Items con cantidad cero o negativa
       delivery.delivery_items.each do |item|
+        # Cantidad inválida
         if item.quantity_delivered.to_i <= 0
           errors << {
             category: "Productos",
             severity: "high",
             message: "Producto '#{item.order_item.product}' con cantidad inválida (#{item.quantity_delivered})"
+          }
+        end
+
+        # Sin descripción de producto
+        if item.order_item.product.blank?
+          errors << {
+            category: "Productos",
+            severity: "high",
+            message: "Item sin descripción de producto"
           }
         end
       end
@@ -188,24 +155,15 @@ module Deliveries
         }
       end
 
-      # Items sin producto especificado
-      delivery.delivery_items.each do |item|
-        if item.order_item.product.blank?
-          errors << {
-            category: "Productos",
-            severity: "high",
-            message: "Item sin descripción de producto"
-          }
-        end
-      end
-
       errors
     end
 
+    # ==========================
+    # 4. ERRORES DE FECHA
+    # ==========================
     def date_errors
       errors = []
 
-      # Sin fecha de entrega
       if delivery.delivery_date.blank?
         errors << {
           category: "Fecha",
@@ -215,7 +173,6 @@ module Deliveries
         return errors
       end
 
-      # Fecha en el pasado
       if delivery.delivery_date < Date.today
         errors << {
           category: "Fecha",
@@ -224,7 +181,6 @@ module Deliveries
         }
       end
 
-      # Fecha muy lejana (más de 60 días)
       if delivery.delivery_date > Date.today + 60.days
         errors << {
           category: "Fecha",
@@ -236,11 +192,15 @@ module Deliveries
       errors
     end
 
+    # ==========================
+    # 5. ERRORES DE CLIENTE
+    # ==========================
     def client_errors
       errors = []
-      client = delivery.order.client
+      client = delivery.order&.client
 
-      # Cliente sin email
+      return errors if client.blank?
+
       if client.email.blank?
         errors << {
           category: "Cliente",
@@ -249,7 +209,6 @@ module Deliveries
         }
       end
 
-      # Cliente sin teléfono
       if client.phone.blank?
         errors << {
           category: "Cliente",
@@ -261,11 +220,21 @@ module Deliveries
       errors
     end
 
+    # ==========================
+    # 6. ERRORES DE ORDEN
+    # ==========================
     def order_errors
       errors = []
       order = delivery.order
 
-      # Orden sin número
+      if order.blank?
+        return [{
+          category: "Orden",
+          severity: "critical",
+          message: "Entrega sin orden asociada"
+        }]
+      end
+
       if order.number.blank?
         errors << {
           category: "Orden",
@@ -274,7 +243,6 @@ module Deliveries
         }
       end
 
-      # Orden sin vendedor
       if order.seller.blank?
         errors << {
           category: "Orden",
@@ -283,7 +251,6 @@ module Deliveries
         }
       end
 
-      # Orden sin items
       if order.order_items.empty?
         errors << {
           category: "Orden",
@@ -295,8 +262,10 @@ module Deliveries
       errors
     end
 
+    # ==========================
+    # HELPERS
+    # ==========================
     def valid_phone_format?(phone)
-      # Formato básico para Costa Rica: 8 dígitos, puede tener guiones o espacios
       cleaned = phone.to_s.gsub(/[\s\-()]/, "")
       cleaned.match?(/^\d{8}$/)
     end
