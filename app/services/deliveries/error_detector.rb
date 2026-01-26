@@ -181,14 +181,6 @@ module Deliveries
         }
       end
 
-      if delivery.delivery_date > Date.today + 60.days
-        errors << {
-          category: "Fecha",
-          severity: "warning",
-          message: "Fecha de entrega muy lejana (#{I18n.l(delivery.delivery_date)})"
-        }
-      end
-
       errors
     end
 
@@ -200,22 +192,6 @@ module Deliveries
       client = delivery.order&.client
 
       return errors if client.blank?
-
-      if client.email.blank?
-        errors << {
-          category: "Cliente",
-          severity: "low",
-          message: "Cliente sin email configurado"
-        }
-      end
-
-      if client.phone.blank?
-        errors << {
-          category: "Cliente",
-          severity: "medium",
-          message: "Cliente sin teléfono configurado"
-        }
-      end
 
       errors
     end
