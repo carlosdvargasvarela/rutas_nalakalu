@@ -96,12 +96,6 @@ module Deliveries
           severity: "critical",
           message: "Sin teléfono de contacto"
         }
-      elsif !valid_phone_format?(delivery.contact_phone)
-        errors << {
-          category: "Contacto",
-          severity: "medium",
-          message: "Formato de teléfono inválido: #{delivery.contact_phone}"
-        }
       end
 
       errors
@@ -236,14 +230,6 @@ module Deliveries
       end
 
       errors
-    end
-
-    # ==========================
-    # HELPERS
-    # ==========================
-    def valid_phone_format?(phone)
-      cleaned = phone.to_s.gsub(/[\s\-()]/, "")
-      cleaned.match?(/^\d{8}$/)
     end
   end
 end
