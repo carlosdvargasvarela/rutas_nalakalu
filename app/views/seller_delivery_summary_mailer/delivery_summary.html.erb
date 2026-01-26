@@ -56,7 +56,7 @@
               <div style="display:flex; justify-content:space-between">
                 <span class="order-title">Pedido #<%= delivery.order.number %></span>
                 <% if detector.has_errors? %>
-                  <span style="color:#ef4444; font-size:12px; font-weight:700">⚠️ REQUIERE CORRECCIÓN</span>
+                  <span style="color:#ef4444; font-size:11px; font-weight:800; text-transform:uppercase;">⚠️ Requiere Atención</span>
                 <% end %>
               </div>
               <div class="info-grid">
@@ -66,18 +66,26 @@
                 </div>
                 <div class="info-col">
                   <span class="label">Dirección</span>
-                  <%= delivery.delivery_address&.address&.truncate(50) || "No especificada" %>
+                  <%= delivery.delivery_address&.address&.truncate(60) || "⚠️ Dirección no asignada" %>
                 </div>
               </div>
               <% if detector.has_errors? %>
-                <div class="err-box">
+                <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; padding: 12px; margin: 10px 0;">
+                  <span style="display:block; font-size:11px; font-weight:700; color:#9f1239; text-transform:uppercase; margin-bottom:8px;">
+                    Errores a corregir:
+                  </span>
                   <% detector.errors.each do |err| %>
-                    <div class="err-item">• <%= err[:message] %></div>
+                    <div style="color: #be123c; font-size: 12px; margin-bottom: 4px; display: table;">
+                      <span style="display: table-cell; padding-right: 8px;">❌</span>
+                      <span style="display: table-cell;"><%= err[:message] %></span>
+                    </div>
                   <% end %>
                 </div>
               <% end %>
               <div style="margin-top:15px; text-align:right">
-                <%= link_to "Corregir / Editar", edit_delivery_url(delivery), class: "btn-edit #{'btn-err' if detector.has_errors?}" %>
+                <%= link_to detector.has_errors? ? "Corregir Errores" : "Ver Detalles", 
+                edit_delivery_url(delivery), 
+                class: "btn-edit #{'btn-err' if detector.has_errors?}" %>
               </div>
             </div>
           <% end %>

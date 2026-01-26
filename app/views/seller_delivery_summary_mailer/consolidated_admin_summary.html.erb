@@ -80,12 +80,26 @@
                 <tbody>
                   <% deliveries.each do |delivery| %>
                     <% detector = Deliveries::ErrorDetector.new(delivery) %>
-                    <tr class="<​%= 'row-err' if detector.has_errors? %>">
-                      <td><strong>#<%= delivery.order.number %></strong></td>
-                      <td><%= delivery.order.client.name.truncate(30) %></td>
-                      <td><%= l(delivery.delivery_date, format: :short) if delivery.delivery_date %></td>
-                      <td>
-                        <% if detector.has_errors? %>
+                    <% has_errors = detector.has_errors? %>
+                    <tr class="<​%= 'row-err' if has_errors %>">
+                      <td style="vertical-align: top;">
+                        <strong>#<%= delivery.order.number %></strong>
+                      </td>
+                      <td style="vertical-align: top;">
+                        <%= delivery.order.client.name.truncate(30) %>
+                        <% if has_errors %>
+                          <div style="margin-top: 4px; font-size: 11px; color: #b91c1c; line-height: 1.2;">
+                            <% detector.errors.each do |err| %>
+                              <div style="margin-bottom: 2px;">• <%= err[:message] %></div>
+                            <% end %>
+                          </div>
+                        <% end %>
+                      </td>
+                      <td style="vertical-align: top;">
+                        <%= l(delivery.delivery_date, format: :short) if delivery.delivery_date %>
+                      </td>
+                      <td style="vertical-align: top;">
+                        <% if has_errors %>
                           <span class="badge badge-red"><%= detector.errors.count %> ERR</span>
                         <% else %>
                           <span class="badge badge-green">OK</span>
