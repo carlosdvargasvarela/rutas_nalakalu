@@ -45,7 +45,6 @@ class DeliveryPlansController < ApplicationController
       end
 
       format.xlsx do
-        # Para Excel seguimos cargando toda la estructura completa sin paginar
         @delivery_plans = @q.result
           .left_joins(:deliveries)
           .select(<<~SQL)

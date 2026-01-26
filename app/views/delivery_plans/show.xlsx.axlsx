@@ -7,26 +7,42 @@ header_style = wb.styles.add_style(
   bg_color: "4472C4",
   fg_color: "FFFFFF",
   b: true,
-  alignment: { horizontal: :center }
+  alignment: { horizontal: :center, wrap_text: true }
 )
 
 scheduled_style = wb.styles.add_style(
   bg_color: "FFF2CC",
-  border: { style: :thin, color: "D6B656" }
+  border: { style: :thin, color: "D6B656" },
+  alignment: { wrap_text: true, vertical: :top }
 )
 
 ready_style = wb.styles.add_style(
   bg_color: "E2EFDA",
-  border: { style: :thin, color: "70AD47" }
+  border: { style: :thin, color: "70AD47" },
+  alignment: { wrap_text: true, vertical: :top }
 )
 
 confirmed_style = wb.styles.add_style(
   bg_color: "DEEBF7",
-  border: { style: :thin, color: "5B9BD5" }
+  border: { style: :thin, color: "5B9BD5" },
+  alignment: { wrap_text: true, vertical: :top }
+)
+
+delivered_style = wb.styles.add_style(
+  bg_color: "D5E8D4",
+  border: { style: :thin, color: "82B366" },
+  alignment: { wrap_text: true, vertical: :top }
+)
+
+cancelled_style = wb.styles.add_style(
+  bg_color: "F8CECC",
+  border: { style: :thin, color: "B85450" },
+  alignment: { wrap_text: true, vertical: :top }
 )
 
 default_style = wb.styles.add_style(
-  border: { style: :thin, color: "CCCCCC" }
+  border: { style: :thin, color: "CCCCCC" },
+  alignment: { wrap_text: true, vertical: :top }
 )
 
 # =====================
@@ -59,14 +75,21 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
   @assignments.each do |assignment|
     delivery = assignment.delivery
 
+    # Determinar estilo según estado de la entrega
+    row_style = case delivery.status&.to_s
+                when "scheduled"        then scheduled_style
+                when "ready_to_deliver" then ready_style
+                when "confirmed"        then confirmed_style
+                when "delivered"        then delivered_style
+                when "cancelled"        then cancelled_style
+                else default_style
+                end
+
     if delivery.active_items_for_plan_for(current_user).empty?
-      # Estilo según estado
-      row_style = case delivery.status
-                  when "scheduled"        then scheduled_style
-                  when "ready_to_deliver" then ready_style
-                  when "confirmed"        then confirmed_style
-                  else default_style
-                  end
+      # Combinar notas para fila sin productos
+      all_notes = []
+      all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
+      notes_text = all_notes.join("\n")
 
       sheet.add_row [
         delivery.delivery_date.strftime("%d/%m/%Y"),
@@ -82,22 +105,15 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
         delivery.display_status,
         delivery.delivery_time_preference.presence || "Sin preferencia",
         "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
-        ""
+        notes_text
       ], style: row_style
 
     else
       delivery.active_items_for_plan_for(current_user).each do |delivery_item|
-        # Estilo según estado
-        row_style = case delivery.status
-                    when "scheduled"        then scheduled_style
-                    when "ready_to_deliver" then ready_style
-                    when "confirmed"        then confirmed_style
-                    else default_style
-                    end
-
-        # Combinar notas
+        # Combinar notas con saltos de línea
         all_notes = []
-        all_notes << "PRODUCCIÓN: #{delivery_item.order_item.notes}" if delivery_item.order_item.notes.present?
+        all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
+        all_notes << "PRODUCCIÓN: #{delivery_item.order_item.notes}" if delivery_item.order_item&.notes.present?
         all_notes << "LOGÍSTICA: #{delivery_item.notes}" if delivery_item.notes.present?
         notes_text = all_notes.join("\n")
 
@@ -124,7 +140,7 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
   # =====================
   # Ajustes de hoja
   # =====================
-  sheet.column_widths 12, 15, 25, 10, 12, 20, 30, 8, 15, 10, 15, 15, 25, 40
+  sheet.column_widths 12, 15, 25, 10, 12, 20, 30, 8, 15, 10, 15, 15, 25, 50
 
   # Combinar celdas de fecha si todas son iguales
   if @assignments.any?

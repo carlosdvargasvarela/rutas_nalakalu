@@ -101,7 +101,7 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
       if delivery.active_items_for_plan_for(current_user).empty?
         # Combinar notas para fila sin productos
         all_notes = []
-        all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.respond_to?(:delivery_notes) && delivery.delivery_notes.present?
+        all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
         notes_text = all_notes.join("\n")
 
         # Fila sin productos
@@ -130,7 +130,7 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
         delivery.active_items_for_plan_for(current_user).each do |delivery_item|
           # Combinar notas con saltos de línea
           all_notes = []
-          all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.respond_to?(:delivery_notes) && delivery.delivery_notes.present?
+          all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
           all_notes << "PRODUCCIÓN: #{delivery_item.order_item.notes}" if delivery_item.order_item&.notes.present?
           all_notes << "LOGÍSTICA: #{delivery_item.notes}" if delivery_item.notes.present?
           notes_text = all_notes.join("\n")
