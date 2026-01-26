@@ -44,3 +44,12 @@ seller_address_errors_next_week:
   queue: default
   description: "Envía a cada vendedor un informe de errores de dirección en sus entregas de la semana siguiente"
   rails_timezone: "America/Costa_Rica"
+
+# Resumen de entregas cargadas para vendedores
+# Se ejecuta todos los días a las 07:30 hora Costa Rica
+seller_delivery_summary:
+  cron: "30 7 * * *"
+  class: SellerDeliverySummaryJob
+  queue: mailers
+  description: "Envía resumen de entregas cargadas a cada vendedor"
+  rails_timezone: "America/Costa_Rica"

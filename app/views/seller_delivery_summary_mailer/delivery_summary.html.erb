@@ -1,0 +1,426 @@
+<!-- app/views/seller_delivery_summary_mailer/delivery_summary.html.erb -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 8px 8px 0 0;
+        text-align: center;
+      }
+      .header h1 {
+        margin: 0 0 10px 0;
+        font-size: 28px;
+      }
+      .header p {
+        margin: 0;
+        opacity: 0.95;
+        font-size: 16px;
+      }
+      .content {
+        background: white;
+        padding: 30px;
+      }
+      .greeting {
+        font-size: 18px;
+        margin-bottom: 20px;
+        color: #333;
+      }
+      .summary-box {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+        border-left: 4px solid #667eea;
+      }
+      .summary-stats {
+        display: flex;
+        gap: 20px;
+        margin: 15px 0;
+        flex-wrap: wrap;
+      }
+      .stat {
+        flex: 1;
+        min-width: 150px;
+        text-align: center;
+        padding: 10px;
+        background: white;
+        border-radius: 6px;
+      }
+      .stat-number {
+        display: block;
+        font-size: 28px;
+        font-weight: bold;
+        color: #667eea;
+      }
+      .stat-label {
+        display: block;
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+        text-transform: uppercase;
+      }
+      .error-alert {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+      .error-alert h3 {
+        margin: 0 0 10px 0;
+        color: #856404;
+      }
+      .error-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .error-list li {
+        padding: 5px 0;
+        color: #856404;
+      }
+      .error-list li:before {
+        content: "⚠️ ";
+        margin-right: 8px;
+      }
+      .delivery-section {
+        margin: 30px 0;
+      }
+      .delivery-date-header {
+        background: #f8f9fa;
+        padding: 12px 15px;
+        border-left: 4px solid #667eea;
+        margin: 20px 0 15px 0;
+        font-weight: bold;
+        font-size: 16px;
+        color: #333;
+      }
+      .delivery-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        padding: 15px;
+        margin: 10px 0;
+        background: #fafafa;
+        position: relative;
+      }
+      .delivery-card.with-errors {
+        border-left: 4px solid #dc3545;
+        background: #fff5f5;
+      }
+      .delivery-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .delivery-order {
+        font-weight: bold;
+        font-size: 16px;
+        color: #333;
+      }
+      .delivery-status {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .status-scheduled {
+        background: #e3f2fd;
+        color: #1976d2;
+      }
+      .delivery-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin: 10px 0;
+        font-size: 14px;
+      }
+      .info-item {
+        display: flex;
+        flex-direction: column;
+      }
+      .info-label {
+        font-weight: 600;
+        color: #666;
+        font-size: 12px;
+        text-transform: uppercase;
+        margin-bottom: 3px;
+      }
+      .info-value {
+        color: #333;
+      }
+      .items-list {
+        background: white;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+        font-size: 13px;
+      }
+      .item-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .item-row:last-child {
+        border-bottom: none;
+      }
+      .item-product {
+        flex: 1;
+        font-weight: 500;
+      }
+      .item-qty {
+        text-align: right;
+        color: #666;
+        min-width: 60px;
+      }
+      .delivery-errors {
+        background: #fff5f5;
+        border-left: 3px solid #dc3545;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 4px;
+        font-size: 13px;
+      }
+      .delivery-errors h4 {
+        margin: 0 0 8px 0;
+        color: #dc3545;
+        font-size: 13px;
+      }
+      .delivery-errors ul {
+        margin: 0;
+        padding-left: 20px;
+        color: #dc3545;
+      }
+      .delivery-errors li {
+        margin: 3px 0;
+      }
+      .delivery-errors li.critical {
+        font-weight: bold;
+      }
+      .delivery-errors li.high {
+        color: #dc3545;
+      }
+      .delivery-errors li.medium {
+        color: #fd7e14;
+      }
+      .delivery-errors li.warning,
+      .delivery-errors li.low {
+        color: #856404;
+      }
+      .edit-button {
+        display: inline-block;
+        background: #667eea;
+        color: white !important;
+        padding: 8px 16px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        margin-top: 10px;
+      }
+      .edit-button:hover {
+        background: #5568d3;
+      }
+      .cta-button {
+        display: inline-block;
+        background: #667eea;
+        color: white !important;
+        padding: 12px 24px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: bold;
+        margin: 20px 0;
+        text-align: center;
+      }
+      .cta-button:hover {
+        background: #5568d3;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 40px;
+        padding: 20px;
+        color: #666;
+        font-size: 12px;
+        border-top: 1px solid #e0e0e0;
+      }
+      .footer p {
+        margin: 5px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>📦 Resumen de Entregas Cargadas</h1>
+      <p><%= Date.today.strftime("%d de %B de %Y") %></p>
+    </div>
+    <div class="content">
+      <div class="greeting">
+        Hola <strong><%= @seller.name %></strong>,
+      </div>
+      <p>
+        Se han cargado <strong><%= @summary[:total_count] %></strong> entrega(s) con 
+        <strong><%= @summary[:total_items] %></strong> producto(s) en el sistema.
+      </p>
+      <%# ========== RESUMEN EJECUTIVO ========== %>
+      <div class="summary-box">
+        <h3 style="margin-top: 0; color: #333;">📊 Resumen Ejecutivo</h3>
+        <div class="summary-stats">
+          <div class="stat">
+            <span class="stat-number"><%= @summary[:total_count] %></span>
+            <span class="stat-label">Entregas</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number"><%= @summary[:total_items] %></span>
+            <span class="stat-label">Productos</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number"><%= @summary[:with_errors] %></span>
+            <span class="stat-label">Con Errores</span>
+          </div>
+        </div>
+      </div>
+      <%# ========== ALERTA DE ERRORES ========== %>
+      <% if @summary[:with_errors] > 0 %>
+        <div class="error-alert">
+          <h3>⚠️ Entregas con Problemas Detectados</h3>
+          <p>
+            Se encontraron <strong><%= @summary[:with_errors] %></strong> entrega(s) con errores que requieren atención:
+          </p>
+          <ul class="error-list">
+            <% @summary[:error_categories].each do |category, count| %>
+              <li><strong><%= category %></strong> (<%= count %>)</li>
+            <% end %>
+          </ul>
+          <p style="margin: 10px 0 0 0; font-size: 13px; color: #666;">
+            Revisa los detalles abajo y usa el botón "Editar entrega" para corregir estos problemas.
+          </p>
+        </div>
+      <% end %>
+      <%# ========== ENTREGAS POR FECHA ========== %>
+      <div class="delivery-section">
+        <h2 style="color: #333; margin-top: 30px;">📋 Detalle de Entregas</h2>
+        <% @deliveries_by_date.each do |delivery_date, deliveries_for_date| %>
+          <div class="delivery-date-header">
+            📅 <%= I18n.l(delivery_date, format: :long) %>
+          </div>
+          <% deliveries_for_date.each do |delivery| %>
+            <%
+              detector = Deliveries::ErrorDetector.new(delivery)
+              has_errors = detector.has_errors?
+              errors = detector.errors
+            %>
+            <div class="delivery-card <%= 'with-errors' if has_errors %>">
+              <%# Header -%>
+              <div class="delivery-header">
+                <div>
+                  <div class="delivery-order">
+                    Pedido #<%= delivery.order.number %>
+                  </div>
+                  <div style="font-size: 13px; color: #666; margin-top: 3px;">
+                    Cliente: <strong><%= delivery.order.client.name %></strong>
+                  </div>
+                </div>
+                <span class="delivery-status status-scheduled">
+                  <%= delivery.display_status %>
+                </span>
+              </div>
+              <%# Info Grid -%>
+              <div class="delivery-info">
+                <div class="info-item">
+                  <span class="info-label">📍 Dirección</span>
+                  <span class="info-value">
+                    <%= delivery.delivery_address&.address || "—" %>
+                  </span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">👤 Contacto</span>
+                  <span class="info-value">
+                    <% if delivery.contact_name.present? && delivery.contact_phone.present? %>
+                      <%= delivery.contact_name %> / <%= delivery.contact_phone %>
+                    <% elsif delivery.contact_name.present? %>
+                      <%= delivery.contact_name %> <span style="color: #dc3545;">(sin teléfono)</span>
+                    <% elsif delivery.contact_phone.present? %>
+                      <%= delivery.contact_phone %> <span style="color: #dc3545;">(sin nombre)</span>
+                    <% else %>
+                      <span style="color: #dc3545;">⚠️ Sin información de contacto</span>
+                    <% end %>
+                  </span>
+                </div>
+              </div>
+              <%# Productos -%>
+              <div class="items-list">
+                <div style="font-weight: bold; margin-bottom: 8px; color: #333;">
+                  📦 Productos (<%= delivery.delivery_items.count %>)
+                </div>
+                <% delivery.delivery_items.each do |item| %>
+                  <div class="item-row">
+                    <span class="item-product">
+                      <%= item.order_item.product %>
+                    </span>
+                    <span class="item-qty">
+                      × <%= item.quantity_delivered %>
+                    </span>
+                  </div>
+                <% end %>
+              </div>
+              <%# Errores -%>
+              <% if has_errors %>
+                <div class="delivery-errors">
+                  <h4>🚨 Errores Detectados</h4>
+                  <ul>
+                    <% errors.each do |error| %>
+                      <li class="<​%= error[:severity] %>">
+                        <strong>[<%= error[:category] %>]</strong> <%= error[:message] %>
+                      </li>
+                    <% end %>
+                  </ul>
+                </div>
+              <% end %>
+              <%# Notas -%>
+              <% if delivery.delivery_notes.present? %>
+                <div style="background: #f0f8ff; padding: 10px; border-radius: 4px; margin: 10px 0; font-size: 13px; border-left: 3px solid #0066cc;">
+                  <strong>📝 Notas:</strong> <%= delivery.delivery_notes %>
+                </div>
+              <% end %>
+              <%# Botón de edición -%>
+              <div style="text-align: right; margin-top: 10px;">
+                <%= link_to "✏️ Editar entrega", edit_delivery_url(delivery), class: "edit-button" %>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+      <%# ========== CTA ========== %>
+      <div style="text-align: center;">
+        <%= link_to "Ver todas mis entregas en el sistema", deliveries_url, class: "cta-button" %>
+      </div>
+      <%# ========== FOOTER ========== %>
+      <div class="footer">
+        <p>
+          <strong>¿Necesitas corregir algo?</strong>
+          Usa el botón "Editar entrega" en cada tarjeta para actualizar la información.
+        </p>
+        <p style="margin-top: 15px; color: #999;">
+          Este es un correo automático generado por el Sistema de Rutas NaLakalu.
+          <br>
+          No respondas a este correo. Si tienes preguntas, contacta al equipo de logística.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
