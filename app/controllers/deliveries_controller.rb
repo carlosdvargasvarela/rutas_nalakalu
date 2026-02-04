@@ -10,6 +10,7 @@ class DeliveriesController < ApplicationController
   # GET /deliveries
 
   def index
+    authorize Delivery
     session[:deliveries_return_to] = request.fullpath
 
     # 🔹 CAMBIO: Excluir entregas archivadas desde el inicio
@@ -60,6 +61,7 @@ class DeliveriesController < ApplicationController
   end
 
   def show
+    authorize @delivery
     # 🔥 OPTIMIZACIÓN: Precargar todas las asociaciones necesarias
     @delivery = Delivery.includes(
       :order,
@@ -67,7 +69,7 @@ class DeliveriesController < ApplicationController
       delivery_items: {order_item: [:order, :order_item_notes]},
       order: [:client, :seller],
       delivery_address: :client,
-      delivery_plan_assignments: {delivery_plan: :driver}
+      delivery_plan_assignment: {delivery_plan: :driver}
     ).find(params[:id])
 
     # 🔥 OPTIMIZACIÓN: Precargar asociaciones para entregas futuras
@@ -88,6 +90,7 @@ class DeliveriesController < ApplicationController
   end
 
   def new
+    authorize Delivery
     if params[:order_id].present?
       @order = Order.find(params[:order_id])
       @client = @order.client
@@ -106,6 +109,7 @@ class DeliveriesController < ApplicationController
   end
 
   def edit
+    authorize @delivery, :edit?
     @client = @delivery.order.client
     @order = @delivery.order
 

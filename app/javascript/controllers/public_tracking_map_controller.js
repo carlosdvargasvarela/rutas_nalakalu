@@ -25,6 +25,23 @@ export default class extends Controller {
   }
 
   initMap() {
+    // Validar coordenadas antes de inicializar
+    if (!this.hasValidCoordinates(this.truckLatValue, this.truckLngValue)) {
+      console.warn(
+        "Coordenadas del camión inválidas, usando coordenadas por defecto",
+      );
+      this.truckLatValue = this.destLatValue || 9.9281; // San José, Costa Rica
+      this.truckLngValue = this.destLngValue || -84.0907;
+    }
+
+    if (!this.hasValidCoordinates(this.destLatValue, this.destLngValue)) {
+      console.warn(
+        "Coordenadas de destino inválidas, usando coordenadas del camión",
+      );
+      this.destLatValue = this.truckLatValue;
+      this.destLngValue = this.truckLngValue;
+    }
+
     const truckPos = { lat: this.truckLatValue, lng: this.truckLngValue };
     const destPos = { lat: this.destLatValue, lng: this.destLngValue };
 
@@ -61,10 +78,18 @@ export default class extends Controller {
   }
 
   updateTruck(lat, lng, timestamp) {
+    // Validar coordenadas antes de actualizar
+    if (!this.hasValidCoordinates(lat, lng)) {
+      console.warn("Coordenadas inválidas recibidas:", lat, lng);
+      return;
+    }
+
     const pos = { lat: parseFloat(lat), lng: parseFloat(lng) };
     this.truckMarker.setPosition(pos);
-    if (this.lastUpdateTarget)
+
+    if (this.lastUpdateTarget) {
       this.lastUpdateTarget.textContent = "Actualizado hace un momento";
+    }
   }
 
   fitBounds() {
@@ -72,5 +97,18 @@ export default class extends Controller {
     bounds.extend({ lat: this.truckLatValue, lng: this.truckLngValue });
     bounds.extend({ lat: this.destLatValue, lng: this.destLngValue });
     this.map.fitBounds(bounds, 50);
+  }
+
+  hasValidCoordinates(lat, lng) {
+    return (
+      lat !== null &&
+      lng !== null &&
+      !isNaN(lat) &&
+      !isNaN(lng) &&
+      isFinite(lat) &&
+      isFinite(lng) &&
+      lat !== 0 &&
+      lng !== 0
+    );
   }
 }

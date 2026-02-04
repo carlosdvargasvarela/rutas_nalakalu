@@ -1,6 +1,7 @@
 # app/controllers/delivery_plans_controller.rb
 class DeliveryPlansController < ApplicationController
   def index
+    authorize DeliveryPlan
     # 1. Configurar Ransack con un orden por defecto si no hay uno
     @q = DeliveryPlan.ransack(params[:q])
     @q.sorts = ["year desc", "week desc", "created_at desc"] if @q.sorts.empty?

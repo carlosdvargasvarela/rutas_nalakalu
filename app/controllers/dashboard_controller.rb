@@ -3,6 +3,7 @@ class DashboardController < ApplicationController
   before_action :authenticate_user!
 
   def index
+    authorize :dashboard, :index?
     if current_user&.role.to_s == "driver"
       redirect_to driver_delivery_plans_path and return
     end

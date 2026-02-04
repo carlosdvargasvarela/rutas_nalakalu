@@ -1,40 +1,53 @@
-<div class="card shadow-sm border-0 overflow-hidden">
-  <div class="card-body p-0">
-    <!-- Mapa con Stimulus -->
-    <div id="public-map" 
-         data-controller="public-tracking-map"
-         data-public-tracking-map-plan-id-value="<​%= @plan.id %>"
-      data-public-tracking-map-dest-lat-value="<​%= @address.latitude.to_f %>"
-        data-public-tracking-map-dest-lng-value="<​%= @address.longitude.to_f %>"
-          data-public-tracking-map-truck-lat-value="<​%= @plan.current_lat.to_f %>"
-            data-public-tracking-map-truck-lng-value="<​%= @plan.current_lng.to_f %>">
-            </div>
-          </div>
-          <div class="card-body bg-white">
-            <div class="d-flex align-items-center mb-3">
-              <div class="flex-shrink-0 bg-primary text-white rounded-circle p-3 me-3">
-                🚚
-              </div>
-              <div>
-                <h5 class="mb-0">Estado: <%= @plan.status_i18n %></h5>
-                <small class="text-muted" data-public-tracking-map-target="lastUpdate">
-                  Actualizando en tiempo real...
-                </small>
-              </div>
-            </div>
-            <hr>
-            <div class="row">
-              <div class="col-6">
-                <small class="text-muted d-block">Pedido</small>
-                <strong>#<%= @delivery.order.number %></strong>
-              </div>
-              <div class="col-6">
-                <small class="text-muted d-block">Destino</small>
-                <strong><%= @address.address.truncate(30) %></strong>
-              </div>
-            </div>
-          </div>
+<div class="container py-4">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <!-- Encabezado -->
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+          <h4 class="fw-bold mb-1">Seguimiento de tu entrega</h4>
+          <p class="text-muted mb-0">Pedido #<%= @delivery.order.number %></p>
         </div>
-        <div class="mt-4 text-center">
-          <p class="small text-muted">Gracias por confiar en NaLakalu</p>
+      </div>
+      <!-- Mapa en tiempo real -->
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body p-0">
+          <div 
+            data-controller="public-tracking-map"
+            data-public-tracking-map-plan-id-value="<%= @plan.id %>"
+            data-public-tracking-map-dest-lat-value="<%= @delivery.delivery_address.latitude %>"
+              data-public-tracking-map-dest-lng-value="<%= @delivery.delivery_address.longitude %>"
+                data-public-tracking-map-truck-lat-value="<%= @plan.current_lat || @delivery.delivery_address.latitude %>"
+                  data-public-tracking-map-truck-lng-value="<%= @plan.current_lng || @delivery.delivery_address.longitude %>"
+                    style="height: 400px; border-radius: 0.375rem;">
+                  </div>
+                  <div class="p-3 bg-light border-top">
+                    <small class="text-muted" data-public-tracking-map-target="lastUpdate">
+                      <%= @plan.last_seen_at ? "Última actualización: #{time_ago_in_words(@plan.last_seen_at)} atrás" : "Esperando ubicación..." %>
+                    </small>
+                  </div>
+                </div>
+              </div>
+              <!-- Información de la entrega -->
+              <div class="card shadow-sm border-0">
+                <div class="card-body">
+                  <h5 class="fw-bold mb-3">Detalles de la entrega</h5>
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <small class="text-muted d-block">Fecha estimada</small>
+                      <strong><%= l(@delivery.delivery_date, format: :long) %></strong>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <small class="text-muted d-block">Estado</small>
+                      <span class="badge bg-primary">En camino</span>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="mb-2">
+                    <small class="text-muted d-block">Dirección de entrega</small>
+                    <strong><%= @delivery.delivery_address.address %></strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>

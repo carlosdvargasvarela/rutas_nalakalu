@@ -109,8 +109,8 @@
   </div>
 </div>
 <!-- Plan de Entrega -->
-<% if delivery.delivery_plan_assignments.any? %>
-  <% dpa = delivery.delivery_plan_assignments.includes(delivery_plan: { driver: :crew_members }).order(:stop_order).first %>
+<% if delivery.delivery_plan_assignment.present? %>
+  <% dpa = delivery.delivery_plan_assignment %>
   <% plan = dpa.delivery_plan %>
   <% driver = plan.driver %>
   <div class="col-md-4 mb-3">
