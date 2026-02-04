@@ -301,8 +301,8 @@ class DeliveryPlansController < ApplicationController
           id: @delivery_plan.id,
           truck: @delivery_plan.truck,
           status: @delivery_plan.status,
-          current_lat: @delivery_plan.current_lat,
-          current_lng: @delivery_plan.current_lng,
+          current_lat: @delivery_plan.current_lat&.to_f,
+          current_lng: @delivery_plan.current_lng&.to_f,
           last_seen_at: @delivery_plan.last_seen_at,
           assignments: @assignments.map do |a|
             addr = a.delivery.delivery_address
@@ -315,8 +315,8 @@ class DeliveryPlansController < ApplicationController
                 contact_name: a.delivery.contact_name,
                 contact_phone: a.delivery.contact_phone,
                 delivery_notes: a.delivery.delivery_notes,
-                latitude: addr&.latitude,
-                longitude: addr&.longitude,
+                latitude: addr&.latitude&.to_f,
+                longitude: addr&.longitude&.to_f,
                 address: addr&.address,
                 description: addr&.description,
                 plus_code: addr&.plus_code

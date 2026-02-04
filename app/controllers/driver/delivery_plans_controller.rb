@@ -187,6 +187,16 @@ module Driver
         saved_count += 1 if location.persisted?
       end
 
+      # 🆕 Actualizar la última posición conocida del plan
+      if positions.any?
+        last_position = positions.last
+        plan.update_columns(
+          current_lat: last_position[:latitude],
+          current_lng: last_position[:longitude],
+          last_seen_at: Time.current
+        )
+      end
+
       render json: {
         success: true,
         saved: saved_count,
