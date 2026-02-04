@@ -9,12 +9,18 @@ class Delivery < ApplicationRecord
 
   accepts_nested_attributes_for :delivery_items, allow_destroy: true
 
+  before_create :generate_tracking_token
+
   # Delegar coordenadas directamente al delivery_address
   delegate :latitude, :longitude, :address, :plus_code, to: :delivery_address, allow_nil: true
   delegate :client, to: :delivery_address, allow_nil: true
 
   def location
     {lat: latitude.to_f, lng: longitude.to_f}
+  end
+
+  def public_tracking_url
+    Rails.application.routes.url_helpers.public_tracking_url(tracking_token)
   end
 
   # ============================================================================
@@ -118,7 +124,7 @@ class Delivery < ApplicationRecord
   def client_name
     order.client.name
   end
-  
+
   def service_case?
     delivery_type.in?(SERVICE_CASE_TYPES)
   end
@@ -413,5 +419,9 @@ class Delivery < ApplicationRecord
     return :scheduled if non_terminal_statuses.all? { |s| s == "pending" }
 
     nil
+  end
+
+  def generate_tracking_token
+    self.tracking_token ||= SecureRandom.urlsafe_base64(32)
   end
 end

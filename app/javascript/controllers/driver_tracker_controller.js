@@ -1,221 +1,239 @@
 // app/javascript/controllers/driver_tracker_controller.js
-import { Controller } from "@hotwired/stimulus"
+import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-    static values = {
-        deliveryPlanId: Number,
-        planStatus: String, // 👈 NUEVO: recibir el estado del plan
-        updateInterval: { type: Number, default: 30000 },
-        batchSize: { type: Number, default: 10 }
+  static values = {
+    planId: Number,
+    interval: { type: Number, default: 15000 }, // 15 segundos por defecto
+    url: String,
+  };
+
+  static targets = ["status", "lastUpdate"];
+
+  connect() {
+    console.log("🚚 Driver Tracker conectado");
+    this.positions = [];
+    this.watchId = null;
+    this.syncTimer = null;
+    this.isTracking = false;
+
+    // Cargar posiciones pendientes del localStorage
+    this.loadPendingPositions();
+
+    // Iniciar tracking automáticamente
+    this.startTracking();
+  }
+
+  disconnect() {
+    console.log("🚚 Driver Tracker desconectado");
+    this.stopTracking();
+  }
+
+  startTracking() {
+    if (this.isTracking) return;
+
+    if (!navigator.geolocation) {
+      this.showError("Tu dispositivo no soporta geolocalización");
+      return;
     }
 
-    connect() {
-        console.log("🚚 Driver Tracker conectado")
-        this.positionQueue = []
-        this.watchId = null
-        this.syncInterval = null
+    this.isTracking = true;
+    this.updateStatus("Iniciando GPS...", "warning");
 
-        // 🔒 No iniciar tracking si el plan ya está completado o abortado
-        if (this.planStatusValue === "completed" || this.planStatusValue === "aborted") {
-            console.log("⏹ Plan finalizado, no se inicia tracking")
-            this.updateStatus("tracking", "Tracking: OFF (Plan finalizado)", "secondary")
-            return
-        }
+    // Opciones de geolocalización
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
+    };
 
-        if (this.hasDeliveryPlanIdValue) {
-            this.startTracking()
-        }
+    // Iniciar watchPosition
+    this.watchId = navigator.geolocation.watchPosition(
+      (position) => this.onPositionSuccess(position),
+      (error) => this.onPositionError(error),
+      options,
+    );
 
-        // 🔁 Escuchar evento global cuando se complete el plan
-        document.addEventListener("delivery_plan:completed", this.handlePlanCompleted.bind(this))
+    // Iniciar sincronización periódica
+    this.syncTimer = setInterval(() => {
+      this.syncPositions();
+    }, this.intervalValue);
+
+    console.log("✅ Tracking GPS iniciado");
+  }
+
+  stopTracking() {
+    if (!this.isTracking) return;
+
+    if (this.watchId) {
+      navigator.geolocation.clearWatch(this.watchId);
+      this.watchId = null;
     }
 
-    disconnect() {
-        console.log("🛑 Driver Tracker desconectado")
-        document.removeEventListener("delivery_plan:completed", this.handlePlanCompleted.bind(this))
-        this.stopTracking()
+    if (this.syncTimer) {
+      clearInterval(this.syncTimer);
+      this.syncTimer = null;
     }
 
-    handlePlanCompleted(event) {
-        if (event.detail?.planId === this.deliveryPlanIdValue) {
-            console.log("✅ Plan completado, deteniendo tracking")
-            this.stopTracking()
-        }
+    this.isTracking = false;
+    this.updateStatus("GPS detenido", "secondary");
+    console.log("⏹️ Tracking GPS detenido");
+  }
+
+  onPositionSuccess(position) {
+    const coords = {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+      accuracy: position.coords.accuracy,
+      speed: position.coords.speed,
+      heading: position.coords.heading,
+      timestamp: new Date().toISOString(),
+    };
+
+    console.log("📍 Nueva posición capturada:", coords);
+
+    // Agregar a la cola
+    this.positions.push(coords);
+
+    // Actualizar UI
+    this.updateStatus(
+      `GPS activo (±${Math.round(coords.accuracy)}m)`,
+      "success",
+    );
+    this.updateLastUpdate();
+
+    // Intentar sincronizar inmediatamente si hay posiciones acumuladas
+    if (this.positions.length >= 1) {
+      this.syncPositions();
+    }
+  }
+
+  onPositionError(error) {
+    let message = "Error de GPS";
+
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        message = "Permiso de ubicación denegado";
+        break;
+      case error.POSITION_UNAVAILABLE:
+        message = "Ubicación no disponible";
+        break;
+      case error.TIMEOUT:
+        message = "Tiempo de espera agotado";
+        break;
     }
 
-    startTracking() {
-        if (!navigator.geolocation) {
-            console.error("❌ Geolocalización no disponible")
-            this.showError("Tu dispositivo no soporta GPS")
-            return
-        }
+    console.error("❌ Error GPS:", message, error);
+    this.updateStatus(message, "danger");
+  }
 
-        const options = {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-        }
-
-        this.watchId = navigator.geolocation.watchPosition(
-            (position) => this.handlePosition(position),
-            (error) => this.handleError(error),
-            options
-        )
-
-        this.syncInterval = setInterval(() => {
-            this.syncPositions()
-        }, this.updateIntervalValue)
-
-        this.updateStatus("tracking", "Tracking: ON", "success")
-        console.log("✅ Tracking iniciado")
+  async syncPositions() {
+    if (this.positions.length === 0) {
+      console.log("📭 No hay posiciones para sincronizar");
+      return;
     }
 
-    stopTracking() {
-        if (this.watchId) {
-            navigator.geolocation.clearWatch(this.watchId)
-            this.watchId = null
-        }
+    const positionsToSync = [...this.positions];
+    console.log(`📤 Sincronizando ${positionsToSync.length} posiciones...`);
 
-        if (this.syncInterval) {
-            clearInterval(this.syncInterval)
-            this.syncInterval = null
-        }
+    try {
+      const response = await fetch(this.urlValue, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": this.csrfToken,
+        },
+        body: JSON.stringify({
+          delivery_plan_id: this.planIdValue,
+          positions: positionsToSync,
+        }),
+      });
 
-        // Enviar posiciones pendientes antes de detener
-        if (this.positionQueue.length > 0) {
-            this.syncPositions()
-        }
+      if (response.ok) {
+        const data = await response.json();
+        console.log("✅ Posiciones sincronizadas:", data);
 
-        this.updateStatus("tracking", "Tracking: OFF", "secondary")
-        console.log("🛑 Tracking detenido")
+        // Limpiar posiciones sincronizadas
+        this.positions = [];
+        this.clearPendingPositions();
+
+        this.updateStatus(
+          `GPS activo - ${data.saved || positionsToSync.length} puntos guardados`,
+          "success",
+        );
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } catch (error) {
+      console.error("❌ Error al sincronizar:", error);
+
+      // Guardar en localStorage para reintentar después
+      this.savePendingPositions();
+
+      this.updateStatus("Sin conexión - guardando offline", "warning");
     }
+  }
 
-    handlePosition(position) {
-        // 🔒 Verificar estado antes de procesar posición
-        if (this.planStatusValue === "completed" || this.planStatusValue === "aborted") {
-            console.log("⏹ Plan finalizado durante tracking, deteniendo...")
-            this.stopTracking()
-            return
-        }
-
-        const { latitude, longitude, accuracy, speed, heading } = position.coords
-        const timestamp = new Date(position.timestamp).toISOString()
-
-        console.log(`📍 Nueva posición: ${latitude}, ${longitude} (±${accuracy}m)`)
-
-        this.positionQueue.push({
-            lat: latitude,
-            lng: longitude,
-            accuracy: accuracy,
-            speed: speed || 0,
-            heading: heading || 0,
-            at: timestamp
-        })
-
-        this.updateStatus("gps", "GPS Activo", "success")
-        this.updateLastPosition(latitude, longitude, timestamp)
-
-        if (this.positionQueue.length >= this.batchSizeValue) {
-            this.syncPositions()
-        }
+  // Gestión de localStorage para posiciones pendientes
+  savePendingPositions() {
+    try {
+      const key = `pending_positions_${this.planIdValue}`;
+      localStorage.setItem(key, JSON.stringify(this.positions));
+      console.log("💾 Posiciones guardadas en localStorage");
+    } catch (error) {
+      console.error("Error guardando en localStorage:", error);
     }
+  }
 
-    handleError(error) {
-        console.error("❌ Error GPS:", error.message)
+  loadPendingPositions() {
+    try {
+      const key = `pending_positions_${this.planIdValue}`;
+      const stored = localStorage.getItem(key);
 
-        let message = "Error de GPS"
-        switch (error.code) {
-            case error.PERMISSION_DENIED:
-                message = "Permiso GPS denegado"
-                break
-            case error.POSITION_UNAVAILABLE:
-                message = "GPS no disponible"
-                break
-            case error.TIMEOUT:
-                message = "GPS timeout"
-                break
-        }
-
-        this.updateStatus("gps", message, "danger")
-        this.showError(message)
+      if (stored) {
+        this.positions = JSON.parse(stored);
+        console.log(
+          `📥 ${this.positions.length} posiciones cargadas desde localStorage`,
+        );
+      }
+    } catch (error) {
+      console.error("Error cargando desde localStorage:", error);
+      this.positions = [];
     }
+  }
 
-    async syncPositions() {
-        if (this.positionQueue.length === 0) {
-            console.log("⏭️ No hay posiciones para sincronizar")
-            return
-        }
-
-        const positions = [...this.positionQueue]
-        this.positionQueue = []
-
-        console.log(`🔄 Sincronizando ${positions.length} posiciones...`)
-
-        try {
-            const response = await fetch(
-                `/driver/delivery_plans/${this.deliveryPlanIdValue}/update_position_batch`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-Token": this.csrfToken
-                    },
-                    body: JSON.stringify({ positions })
-                }
-            )
-
-            if (response.ok) {
-                const data = await response.json()
-                console.log(`✅ Sincronizado: ${data.accepted} aceptadas, ${data.rejected} rechazadas`)
-                this.updateStatus("sync", "Sincronizado", "success")
-            } else if (response.status === 403) {
-                // Plan completado en el servidor
-                console.log("🔒 Plan completado, deteniendo tracking")
-                this.stopTracking()
-            } else {
-                console.error("❌ Error al sincronizar:", response.status)
-                this.positionQueue.unshift(...positions)
-                this.updateStatus("sync", "Error sync", "warning")
-            }
-        } catch (error) {
-            console.error("❌ Error de red:", error)
-            this.positionQueue.unshift(...positions)
-            this.updateStatus("sync", "Sin conexión", "warning")
-            this.saveToIndexedDB(positions)
-        }
+  clearPendingPositions() {
+    try {
+      const key = `pending_positions_${this.planIdValue}`;
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.error("Error limpiando localStorage:", error);
     }
+  }
 
-    async saveToIndexedDB(positions) {
-        console.log("💾 Guardando en IndexedDB para sincronizar después")
-        // TODO: Implementar almacenamiento offline
+  // Métodos de UI
+  updateStatus(message, type = "secondary") {
+    if (this.hasStatusTarget) {
+      this.statusTarget.textContent = message;
+      this.statusTarget.className = `badge bg-${type}`;
     }
+  }
 
-    updateStatus(type, text, variant = "info") {
-        const element = document.getElementById(`${type}-status`)
-        if (element) {
-            element.textContent = text
-            element.className = `badge bg-${variant}`
-        }
+  updateLastUpdate() {
+    if (this.hasLastUpdateTarget) {
+      const now = new Date();
+      this.lastUpdateTarget.textContent = now.toLocaleTimeString("es-CR");
     }
+  }
 
-    updateLastPosition(lat, lng, timestamp) {
-        const element = document.getElementById("last-position-update")
-        if (element) {
-            const date = new Date(timestamp)
-            element.textContent = date.toLocaleTimeString()
-        }
+  // Obtener CSRF token
+  get csrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || "";
+  }
 
-        const latElement = document.getElementById("current-latitude")
-        const lngElement = document.getElementById("current-longitude")
-        if (latElement) latElement.textContent = lat.toFixed(6)
-        if (lngElement) lngElement.textContent = lng.toFixed(6)
-    }
-
-    showError(message) {
-        console.error(message)
-    }
-
-    get csrfToken() {
-        return document.querySelector('meta[name="csrf-token"]')?.content
-    }
+  // Acción manual para forzar sincronización
+  forceSync() {
+    console.log("🔄 Sincronización forzada");
+    this.syncPositions();
+  }
 }

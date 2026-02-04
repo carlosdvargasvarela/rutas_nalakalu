@@ -31,12 +31,8 @@ module Driver
       show? && (record.status_routes_created? || record.status_in_progress?)
     end
 
-    def update_position?
-      show? && record.status_in_progress?
-    end
-
     def update_position_batch?
-      update_position?
+      show?
     end
   end
 end

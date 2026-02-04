@@ -1,101 +1,89 @@
 # frozen_string_literal: true
 
+# app/controllers/driver/assignments_controller.rb
+
 module Driver
   class AssignmentsController < ApplicationController
-    layout false
     before_action :authenticate_user!
-    before_action :set_delivery_plan
     before_action :set_assignment
     after_action :verify_authorized
 
-    # Forzamos JSON para respuestas consistentes en el frontend
-    before_action :ensure_json_request
-
-    # PATCH /driver/delivery_plans/:delivery_plan_id/assignments/:id/start.json
-    def start
-      authorize [ :driver, @assignment ]
-      handle_optimistic_lock do
-        @assignment.start!
-        render_success("Entrega iniciada")
-      end
-    end
-
-    # PATCH /driver/delivery_plans/:delivery_plan_id/assignments/:id/complete.json
+    # PATCH /driver/assignments/:id/complete
     def complete
-      authorize [ :driver, @assignment ]
+      authorize [:driver, @assignment]
+
       handle_optimistic_lock do
         @assignment.complete!
         render_success("Entrega completada")
       end
     end
 
-    # PATCH /driver/delivery_plans/:delivery_plan_id/assignments/:id/mark_failed.json
-    def mark_failed
-      authorize [ :driver, @assignment ]
+    # PATCH /driver/assignments/:id/fail
+    def fail
+      authorize [:driver, @assignment]
 
-      reason = params[:reason].presence || params.dig(:assignment, :reason).presence || "No especificado"
-      @assignment.mark_as_failed!(reason: reason, failed_by: current_user)
+      reason = params[:reason].presence || "No especificado"
 
-      render json: {
-        ok: true,
-        message: "Entrega marcada como fallida",
-        assignment: assignment_json(@assignment),
-        progress: progress_json
-      }, status: :ok
-    rescue Pundit::NotAuthorizedError
-      render json: { ok: false, error: "No autorizado" }, status: :forbidden
-    rescue StandardError => e
-      render json: { ok: false, error: e.message }, status: :unprocessable_entity
+      handle_optimistic_lock do
+        @assignment.mark_as_failed!(reason: reason, failed_by: current_user)
+        render_success("Entrega marcada como fallida")
+      end
     end
 
-    # PATCH /driver/delivery_plans/:delivery_plan_id/assignments/:id/note.json
-    def note
-      authorize [ :driver, @assignment ]
+    # PATCH /driver/assignments/:id/add_note
+    def add_note
+      authorize [:driver, @assignment]
 
-      note_text = params.dig(:note, :text)
+      note_text = params[:note].presence
+
       if note_text.blank?
-        render json: { ok: false, error: "La nota no puede estar vacía" }, status: :unprocessable_entity
+        render json: {
+          success: false,
+          error: "La nota no puede estar vacía"
+        }, status: :unprocessable_entity
         return
       end
 
       handle_optimistic_lock do
-        # Tu modelo ya define add_driver_note!(note)
         @assignment.add_driver_note!(note_text)
-        render_success("Nota agregada")
+        render_success("Nota agregada correctamente")
       end
     end
 
     private
 
-    def ensure_json_request
-      request.format = :json
-    end
-
-    def set_delivery_plan
-      @delivery_plan = DeliveryPlan.find(params[:delivery_plan_id])
-    end
-
     def set_assignment
-      @assignment = @delivery_plan.delivery_plan_assignments.find(params[:id])
+      @assignment = DeliveryPlanAssignment.find(params[:id])
     end
 
     def handle_optimistic_lock
       yield
     rescue Pundit::NotAuthorizedError
-      render json: { ok: false, error: "No autorizado" }, status: :forbidden
+      render json: {
+        success: false,
+        error: "No autorizado"
+      }, status: :forbidden
     rescue ActiveRecord::StaleObjectError
       render json: {
-        ok: false,
-        error: "El recurso fue modificado por otro proceso. Recargando...",
+        success: false,
+        error: "El recurso fue modificado por otro proceso. Recarga la página.",
         assignment: assignment_json(@assignment.reload)
       }, status: :conflict
     rescue ActiveRecord::RecordInvalid => e
-      render json: { ok: false, error: e.message }, status: :unprocessable_entity
+      render json: {
+        success: false,
+        error: e.message
+      }, status: :unprocessable_entity
+    rescue => e
+      render json: {
+        success: false,
+        error: e.message
+      }, status: :unprocessable_entity
     end
 
     def render_success(message)
       render json: {
-        ok: true,
+        success: true,
         message: message,
         assignment: assignment_json(@assignment),
         progress: progress_json
@@ -137,11 +125,14 @@ module Driver
     end
 
     def progress_json
-      assignments = @delivery_plan.delivery_plan_assignments
+      delivery_plan = @assignment.delivery_plan
+      assignments = delivery_plan.delivery_plan_assignments
+
       {
         completed: assignments.count(&:completed?),
         in_route: assignments.count(&:in_route?),
         pending: assignments.count(&:pending?),
+        failed: assignments.count(&:cancelled?),
         total: assignments.count
       }
     end

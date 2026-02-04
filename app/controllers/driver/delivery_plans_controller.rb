@@ -2,7 +2,7 @@
 module Driver
   class DeliveryPlansController < ApplicationController
     before_action :authenticate_user!
-    before_action :set_delivery_plan, only: [:show, :start, :finish, :abort, :update_position_batch]
+    before_action :set_delivery_plan, only: [:show, :start, :finish, :abort]
 
     after_action :verify_authorized
 
@@ -167,52 +167,31 @@ module Driver
     end
 
     def update_position_batch
-      authorize @delivery_plan, policy_class: Driver::DeliveryPlanPolicy
+      plan = DeliveryPlan.find(params[:delivery_plan_id])
 
-      # Rechazar si el plan ya está completado o abortado
-      if @delivery_plan.completed? || @delivery_plan.aborted?
-        render json: {ok: false, error: "Plan already finished"}, status: :forbidden
-        return
+      authorize plan, :update_position_batch?, policy_class: Driver::DeliveryPlanPolicy
+
+      positions = params[:positions] || []
+      saved_count = 0
+
+      positions.each do |pos|
+        location = plan.delivery_plan_locations.create(
+          latitude: pos[:latitude],
+          longitude: pos[:longitude],
+          accuracy: pos[:accuracy],
+          speed: pos[:speed],
+          heading: pos[:heading],
+          recorded_at: pos[:timestamp] || Time.current
+        )
+
+        saved_count += 1 if location.persisted?
       end
-
-      positions = position_batch_params[:positions] || []
-      if positions.empty?
-        render json: {ok: false, error: "No positions provided"}, status: :unprocessable_entity
-        return
-      end
-
-      valid_positions = positions.select do |pos|
-        pos[:lat].present? && pos[:lng].present? &&
-          pos[:lat].to_f.between?(-90, 90) &&
-          pos[:lng].to_f.between?(-180, 180)
-      end
-
-      if valid_positions.empty?
-        render json: {ok: false, error: "No valid positions"}, status: :unprocessable_entity
-        return
-      end
-
-      last_position = valid_positions.max_by { |p| p[:at]&.to_time || Time.current }
-      @delivery_plan.update!(
-        current_lat: last_position[:lat],
-        current_lng: last_position[:lng],
-        current_speed: last_position[:speed],
-        current_heading: last_position[:heading],
-        current_accuracy: last_position[:accuracy],
-        last_seen_at: last_position[:at]&.to_time || Time.current
-      )
-
-      DeliveryPlanLocation.create_from_batch(@delivery_plan, valid_positions)
 
       render json: {
-        ok: true,
-        accepted: valid_positions.size,
-        rejected: positions.size - valid_positions.size
-      }, status: :ok
-    rescue ActiveRecord::RecordInvalid => e
-      render json: {ok: false, error: e.message}, status: :unprocessable_entity
-    rescue ActiveRecord::StaleObjectError
-      render json: {ok: false, error: "Plan was modified, please reload"}, status: :conflict
+        success: true,
+        saved: saved_count,
+        total: positions.size
+      }
     end
 
     private

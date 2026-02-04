@@ -202,22 +202,30 @@ Rails.application.routes.draw do
   # =============================================================================
   # MODO CHOFER (Driver)
   # =============================================================================
+  # =============================================================================
+  # MODO CHOFER (Driver)
+  # =============================================================================
   namespace :driver do
+    # Rutas de planes de entrega
     resources :delivery_plans, only: [:index, :show] do
+      collection do
+        post :update_position_batch
+      end
+
       member do
         patch :start
         patch :finish
         patch :abort
-        patch :update_position
-        patch :update_position_batch
       end
+    end
 
-      resources :assignments, only: [:show, :update], controller: "assignments" do
-        member do
-          patch :start
-          patch :complete
-          patch :mark_failed
-        end
+    # Rutas de assignments
+    # Cambiamos only: [] por only: [:show] para generar el helper _path
+    resources :assignments, only: [:show] do
+      member do
+        patch :complete
+        patch :fail
+        patch :add_note
       end
     end
   end
@@ -260,4 +268,9 @@ Rails.application.routes.draw do
       end
     end
   end
+
+  # =============================================================================
+  # Ruta pública para clientes
+  # =============================================================================
+  get "/t/:token", to: "public_trackings#show", as: :public_tracking
 end

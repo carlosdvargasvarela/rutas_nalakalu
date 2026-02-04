@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_01_02_201420) do
+ActiveRecord::Schema[7.2].define(version: 2026_02_04_064517) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -75,6 +75,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_02_201420) do
     t.boolean "confirmed_by_vendor", default: false, null: false
     t.datetime "confirmed_by_vendor_at"
     t.integer "load_status", default: 0, null: false
+    t.string "tracking_token"
     t.index ["approved"], name: "index_deliveries_on_approved"
     t.index ["archived"], name: "index_deliveries_on_archived"
     t.index ["confirmed_by_vendor"], name: "index_deliveries_on_confirmed_by_vendor"
@@ -84,6 +85,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_02_201420) do
     t.index ["delivery_type"], name: "index_deliveries_on_delivery_type"
     t.index ["load_status"], name: "index_deliveries_on_load_status"
     t.index ["order_id"], name: "index_deliveries_on_order_id"
+    t.index ["tracking_token"], name: "index_deliveries_on_tracking_token", unique: true
   end
 
   create_table "delivery_addresses", force: :cascade do |t|
@@ -165,8 +167,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_02_201420) do
     t.string "source", default: "live", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "recorded_at"
     t.index ["delivery_plan_id", "captured_at"], name: "index_locations_on_plan_and_captured_at"
     t.index ["delivery_plan_id"], name: "index_delivery_plan_locations_on_delivery_plan_id"
+    t.index ["recorded_at"], name: "index_delivery_plan_locations_on_recorded_at"
   end
 
   create_table "delivery_plans", force: :cascade do |t|
