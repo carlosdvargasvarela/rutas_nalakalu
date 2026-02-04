@@ -4,12 +4,13 @@ class Delivery < ApplicationRecord
   belongs_to :delivery_address
   has_many :delivery_items, dependent: :destroy
   has_many :order_items, through: :delivery_items
-  has_many :delivery_plan_assignments, dependent: :destroy
-  has_many :delivery_plans, through: :delivery_plan_assignments
+  has_one :delivery_plan_assignment, dependent: :destroy
+  has_one :delivery_plan, through: :delivery_plan_assignment
 
   accepts_nested_attributes_for :delivery_items, allow_destroy: true
 
-  before_create :generate_tracking_token
+  # 🔹 MEJORA: Usar before_validation para asegurar que el token exista siempre
+  before_validation :generate_tracking_token, on: :create
 
   # Delegar coordenadas directamente al delivery_address
   delegate :latitude, :longitude, :address, :plus_code, to: :delivery_address, allow_nil: true
@@ -20,14 +21,14 @@ class Delivery < ApplicationRecord
   end
 
   def public_tracking_url
-    Rails.application.routes.url_helpers.public_tracking_url(tracking_token)
+    Rails.application.routes.url_helpers.public_tracking_url(token: tracking_token)
   end
 
   # ============================================================================
   # ENUMS
   # ============================================================================
 
-  enum status: {
+  enum :status, {
     scheduled: 0,
     ready_to_deliver: 1,
     in_plan: 2,
@@ -40,7 +41,7 @@ class Delivery < ApplicationRecord
     loaded_on_truck: 9
   }
 
-  enum delivery_type: {
+  enum :delivery_type, {
     normal: 0,
     pickup_with_return: 1,
     return_delivery: 2,
@@ -49,12 +50,12 @@ class Delivery < ApplicationRecord
     only_pickup: 5
   }
 
-  enum load_status: {
+  enum :load_status, {
     empty: 0,
     partial: 1,
     all_loaded: 2,
     some_missing: 3
-  }, _prefix: :load
+  }, prefix: :load
 
   # ============================================================================
   # CONSTANTES
@@ -409,10 +410,10 @@ class Delivery < ApplicationRecord
 
     # 3) Todos confirmed → ready_to_deliver / in_plan
     if non_terminal_statuses.all? { |s| s == "confirmed" }
-      unless delivery_plans.exists?
+      unless delivery_plan.present?
         mark_as_confirmed_by_vendor!
       end
-      return delivery_plans.exists? ? :in_plan : :ready_to_deliver
+      return delivery_plan.present? ? :in_plan : :ready_to_deliver
     end
 
     # 4) Todos pending → scheduled

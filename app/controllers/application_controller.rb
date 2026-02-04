@@ -9,6 +9,14 @@ class ApplicationController < ActionController::Base
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :check_password_change
 
+  # 🔹 Verificar autorización en todos los controladores (excepto Devise y públicos)
+  after_action :verify_authorized, unless: :skip_authorization?
+
+  # 🔹 IMPORTANTE: Permitir que Pundit funcione sin usuario (para tracking público)
+  def pundit_user
+    current_user # Puede ser nil para controladores públicos
+  end
+
   # Manejo global de errores de autorización
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
@@ -24,7 +32,7 @@ class ApplicationController < ActionController::Base
 
   def user_not_authorized
     flash[:alert] = "No tienes permiso para realizar esta acción."
-    redirect_to(request.referer || root_path)
+    redirect_to(request.referrer || root_path)
   end
 
   def configure_permitted_parameters
@@ -44,8 +52,18 @@ class ApplicationController < ActionController::Base
   def set_layout
     if controller_path.start_with?("driver/")
       "driver"
+    elsif controller_path.start_with?("public_")
+      "public"
     else
       "application"
     end
+  end
+
+  # 🔹 Determinar cuándo NO verificar autorización
+  def skip_authorization?
+    devise_controller? ||
+      controller_path.start_with?("public_") ||
+      controller_name == "rails/health" ||
+      controller_name == "pwa"
   end
 end

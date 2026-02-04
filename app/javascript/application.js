@@ -1,6 +1,7 @@
 // app/javascript/application.js
 import "@hotwired/turbo-rails"
 import "controllers"
+import "channels"
 
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker

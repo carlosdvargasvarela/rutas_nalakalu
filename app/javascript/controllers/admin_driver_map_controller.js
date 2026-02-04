@@ -1,5 +1,6 @@
 // app/javascript/controllers/admin_driver_map_controller.js
 import { Controller } from "@hotwired/stimulus";
+import { subscribeToDeliveryPlan } from "channels/delivery_plan_channel";
 
 export default class extends Controller {
   static values = {
@@ -16,26 +17,28 @@ export default class extends Controller {
     console.log("📍 Current Lng:", this.currentLngValue);
     console.log("📍 Assignments:", this.assignmentsValue);
 
-    // ✅ Validar que tenemos un ID válido
     if (!this.deliveryPlanIdValue || isNaN(this.deliveryPlanIdValue)) {
-      console.error(
-        "❌ ID de plan de entrega inválido:",
-        this.deliveryPlanIdValue,
-      );
-      this.element.innerHTML = `
-        <div class="alert alert-danger m-3">
-          <strong>Error:</strong> No se pudo cargar el mapa. ID de plan inválido.
-        </div>
-      `;
+      console.error("❌ ID inválido");
       return;
     }
 
+    this.subscription = subscribeToDeliveryPlan(
+      this.deliveryPlanIdValue,
+      (data) => {
+        if (data.type === "position_update") {
+          this.updateDriverPosition(data.current_lat, data.current_lng);
+          this.updateLastSeenTime(data.last_seen_at);
+        }
+      },
+    );
+
     this.initMap();
-    this.startPolling();
   }
 
   disconnect() {
-    this.stopPolling();
+    if (this.subscription) {
+      this.subscription.unsubscribe();
+    }
   }
 
   async initMap() {
@@ -249,43 +252,6 @@ export default class extends Controller {
       cancelled: "Fallida",
     };
     return labels[status] || status;
-  }
-
-  startPolling() {
-    this.pollInterval = setInterval(() => {
-      this.fetchCurrentPosition();
-    }, 15000); // Cada 15 segundos
-  }
-
-  stopPolling() {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
-    }
-  }
-
-  async fetchCurrentPosition() {
-    try {
-      const response = await fetch(
-        `/delivery_plans/${this.deliveryPlanIdValue}.json`,
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.current_lat !== null && data.current_lng !== null) {
-        this.updateDriverPosition(data.current_lat, data.current_lng);
-        this.updateLastSeenTime(data.last_seen_at);
-      }
-
-      if (data.assignments) {
-        this.updateAssignmentStatuses(data.assignments);
-      }
-    } catch (error) {
-      console.error("❌ Error fetching position:", error);
-    }
   }
 
   updateDriverPosition(lat, lng) {

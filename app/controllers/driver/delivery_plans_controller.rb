@@ -94,8 +94,8 @@ module Driver
                 status: a.status,
                 delivery: {
                   id: a.delivery.id,
-                  latitude: a.delivery.delivery_address.latitude,
-                  longitude: a.delivery.delivery_address.longitude,
+                  latitude: a.delivery.delivery_address.latitude&.to_f,
+                  longitude: a.delivery.delivery_address.longitude&.to_f,
                   contact_name: a.delivery.contact_name,
                   contact_phone: a.delivery.contact_phone
                 }
@@ -190,10 +190,21 @@ module Driver
       # 🆕 Actualizar la última posición conocida del plan
       if positions.any?
         last_position = positions.last
+
         plan.update_columns(
-          current_lat: last_position[:latitude],
-          current_lng: last_position[:longitude],
+          current_lat: last_position[:latitude]&.to_f,
+          current_lng: last_position[:longitude]&.to_f,
           last_seen_at: Time.current
+        )
+
+        DeliveryPlanChannel.broadcast_to(
+          plan,
+          {
+            type: "position_update",
+            current_lat: plan.current_lat,
+            current_lng: plan.current_lng,
+            last_seen_at: plan.last_seen_at
+          }
         )
       end
 
