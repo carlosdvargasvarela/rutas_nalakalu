@@ -17,6 +17,10 @@ class DeliveryItemPolicy < ApplicationPolicy
     user.admin? || user.production_manager? || user.logistics?
   end
 
+  def confirm?
+    admin_or_vendor?
+  end
+
   class Scope < Scope
     def resolve
       if user.admin? || user.production_manager? || user.logistics?
@@ -31,5 +35,9 @@ class DeliveryItemPolicy < ApplicationPolicy
 
   def admin_or_manager_or_logistics?
     user.admin? || user.production_manager? || user.logistics?
+  end
+
+  def admin_or_vendor?
+    user.admin? || user.seller? || user.production_manager?
   end
 end

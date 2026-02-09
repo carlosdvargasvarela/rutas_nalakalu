@@ -235,7 +235,7 @@ class Delivery < ApplicationRecord
     return if archived?
     return if statuses.empty?
 
-    if (in_plan? || in_route?) && delivery_plans.exists?
+    if (in_plan? || in_route?) && delivery_plan.present?
       has_problems = statuses.any? { |s| %w[cancelled rescheduled failed].include?(s) }
       all_delivered = statuses.all? { |s| s == "delivered" }
 
@@ -276,10 +276,6 @@ class Delivery < ApplicationRecord
 
   def confirmed?
     order_items.all? { |oi| oi.status == "ready" }
-  end
-
-  def delivery_plan
-    delivery_plans.first
   end
 
   def delivery_history

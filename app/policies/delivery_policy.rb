@@ -62,6 +62,14 @@ class DeliveryPolicy < ApplicationPolicy
     user.seller?
   end
 
+  def addresses_for_client?
+    index?
+  end
+
+  def orders_for_client?
+    index?
+  end
+
   class Scope < Scope
     def resolve
       if user.admin? || user.production_manager? || user.logistics?

@@ -7,6 +7,7 @@ class DeliveryItemsController < ApplicationController
   end
 
   def confirm
+    authorize DeliveryItem, :confirm?
     DeliveryItems::StatusUpdater.new(
       delivery_item: @delivery_item,
       new_status: :confirmed,
@@ -20,6 +21,7 @@ class DeliveryItemsController < ApplicationController
   end
 
   def mark_delivered
+    authorize DeliveryItem, :confirm?
     DeliveryItems::StatusUpdater.new(
       delivery_item: @delivery_item,
       new_status: :delivered,
@@ -33,6 +35,7 @@ class DeliveryItemsController < ApplicationController
   end
 
   def reschedule
+    authorize DeliveryItem, :confirm?
     DeliveryItems::Rescheduler.new(
       delivery_item: @delivery_item,
       params: params,
@@ -49,6 +52,7 @@ class DeliveryItemsController < ApplicationController
   end
 
   def cancel
+    authorize DeliveryItem, :confirm?
     DeliveryItems::StatusUpdater.new(
       delivery_item: @delivery_item,
       new_status: :cancelled,
@@ -62,7 +66,7 @@ class DeliveryItemsController < ApplicationController
   end
 
   def update_notes
-    authorize @delivery_item if respond_to?(:authorize)
+    authorize DeliveryItem, :confirm?
 
     DeliveryItems::NotesUpdater.new(
       delivery_item: @delivery_item,
@@ -78,9 +82,9 @@ class DeliveryItemsController < ApplicationController
   end
 
   def bulk_add_notes
+    authorize DeliveryItem, :confirm?
     delivery = Delivery.find(params[:delivery_id])
     delivery_plan = delivery.delivery_plan
-    authorize delivery, :update? if respond_to?(:authorize)
 
     DeliveryItems::NotesUpdater.new(
       delivery: delivery,

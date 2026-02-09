@@ -133,7 +133,7 @@ class AdminReportsMailer < ApplicationMailer
 
       deliveries.each do |delivery|
         seller = delivery.order.seller
-        in_plan = delivery.delivery_plans.any? ? "Sí" : "No"
+        in_plan = delivery.delivery_plan.present? ? "Sí" : "No"
 
         sheet.add_row([
           delivery.delivery_date,

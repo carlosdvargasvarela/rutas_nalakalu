@@ -267,6 +267,7 @@ class DeliveriesController < ApplicationController
   end
 
   def mark_as_delivered
+    authorize @delivery, :edit?
     @delivery.mark_as_delivered!
     @delivery.update_status_based_on_items
     redirect_to @delivery, notice: "Entrega marcada como completada."
@@ -279,6 +280,7 @@ class DeliveriesController < ApplicationController
   end
 
   def archive
+    authorize @delivery, :edit?
     if @delivery.update(status: :archived)
       redirect_to @delivery, notice: "La entrega fue archivada correctamente."
     else
@@ -302,11 +304,13 @@ class DeliveriesController < ApplicationController
   end
 
   def addresses_for_client
+    authorize Delivery, :addresses_for_client?
     client = Client.find(params[:client_id])
     render json: client.delivery_addresses.select(:id, :address, :description, :latitude, :longitude, :plus_code)
   end
 
   def orders_for_client
+    authorize Delivery, :orders_for_client?
     client = Client.find(params[:client_id])
     orders = client.orders.select(:id, :number).order(created_at: :desc)
     render json: orders.map { |o| {id: o.id, number: o.number, text: o.number} }
