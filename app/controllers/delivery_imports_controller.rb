@@ -1,9 +1,11 @@
 class DeliveryImportsController < ApplicationController
   def new
+    authorize DeliveryImport
     @import = DeliveryImport.new
   end
 
   def create
+    authorize DeliveryImport, :create?
     # Crear el import primero
     import = current_user.delivery_imports.new(status: :pending)
 
@@ -20,11 +22,13 @@ class DeliveryImportsController < ApplicationController
   end
 
   def show
+    authorize DeliveryImport
     @import = DeliveryImport.find(params[:id])
   end
 
   # PATCH /delivery_imports/:id/update_rows
   def update_rows
+    authorize DeliveryImport
     import = DeliveryImport.find(params[:id])
     service = RouteExcelImportService.new(nil)
     updated_count = 0
@@ -56,6 +60,7 @@ class DeliveryImportsController < ApplicationController
 
   # POST /delivery_imports/:id/process_import
   def process_import
+    authorize DeliveryImport
     import = DeliveryImport.find(params[:id])
 
     if import.delivery_import_rows.any? { |r| r.row_errors.present? }
@@ -68,6 +73,7 @@ class DeliveryImportsController < ApplicationController
 
   # GET /delivery_imports/template
   def template
+    authorize DeliveryImport, :create?
     package = Axlsx::Package.new
     wb = package.workbook
     wb.add_worksheet(name: "Entregas") do |sheet|
