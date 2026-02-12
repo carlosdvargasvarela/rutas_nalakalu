@@ -1,5 +1,6 @@
+// app/javascript/controllers/public_tracking_map_controller.js
 import { Controller } from "@hotwired/stimulus";
-import { subscribeToDeliveryPlan } from "../channels/delivery_plan_channel";
+import { subscribeToDeliveryPlan } from "channels/delivery_plan_channel";
 
 export default class extends Controller {
   static values = {
