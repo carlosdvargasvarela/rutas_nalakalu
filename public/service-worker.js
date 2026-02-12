@@ -1,3 +1,4 @@
+/*
 // public/service-worker.js
 const CACHE_VERSION = "v1.2.0"; // 🔥 BUMP para forzar actualización
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
@@ -657,3 +658,4 @@ function isDriverJSON(pathname) {
 }
 
 console.log("[SW] Service Worker v1.2.0 loaded");
+*/

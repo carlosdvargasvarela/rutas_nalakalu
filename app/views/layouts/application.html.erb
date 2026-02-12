@@ -34,6 +34,31 @@
     <!-- Expone la API key al front -->
     <script>
       window.GOOGLE_MAPS_API_KEY = "<%= ENV['GOOGLE_MAPS_API_KEY'] %>";
+      // Registrar Service Worker SOLO en /driver/*
+        if ('serviceWorker' in navigator && window.location.pathname.startsWith('/driver')) {
+          window.addEventListener('load', async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('/service-worker.js', {
+          scope: '/driver/',
+          updateViaCache: 'none' // 🔥 Fuerza revalidación siempre
+        })
+        console.log('[SW] Registered for /driver/', reg)
+
+        // Forzar actualización si hay nueva versión
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('[SW] New version available, reloading...')
+              window.location.reload()
+            }
+          })
+        })
+      } catch (e) {
+        console.warn('[SW] Registration failed', e)
+      }
+          })
+        }
     </script>
   </body>
 </html>
