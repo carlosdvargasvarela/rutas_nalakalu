@@ -1,53 +1,104 @@
-<!-- app/views/dashboard/_kpi_cards.html.erb -->
-<div class="col-md-3">
-  <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
-    <div class="d-flex align-items-center">
-      <div class="flex-shrink-0 bg-primary bg-opacity-10 p-3 rounded-3">
-        <i class="bi bi-truck text-primary fs-4"></i>
+<%# app/views/dashboard/_kpi_cards.html.erb %>
+<div class="row g-3 mb-4">
+  <%# 1. Entregas Pendientes %>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <% 
+      pending_params = {
+        q: {
+          status_in: %w[scheduled ready_to_deliver],
+          order_seller_seller_code_eq: (current_user.seller.seller_code if current_user.seller?)
+        }.compact
+      }
+    %>
+    <%= link_to deliveries_path(pending_params), class: "text-decoration-none" do %>
+      <div class="card border-0 shadow-sm h-100 hover-shadow-transition">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="flex-shrink-0 btn-soft-primary p-3 rounded-3">
+              <i class="bi bi-truck fs-4"></i>
+            </div>
+            <div class="flex-grow-1 ms-3">
+              <h6 class="card-subtitle text-muted fw-normal mb-1">Entregas Pendientes</h6>
+              <h4 class="card-title mb-0"><%= @pending_deliveries_count %></h4>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="flex-grow-1 ms-3">
-        <h6 class="text-muted small mb-0">Entregas Pendientes</h6>
-        <h4 class="fw-bold mb-0"><%= @pending_deliveries_count %></h4>
+    <% end %>
+  </div>
+  <%# 2. Pedidos Activos %>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <% 
+      active_orders_params = {
+        q: {
+          status_in: %w[pending in_production],
+          seller_seller_code_eq: (current_user.seller.seller_code if current_user.seller?)
+        }.compact
+      }
+    %>
+    <%= link_to orders_path(active_orders_params), class: "text-decoration-none" do %>
+      <div class="card border-0 shadow-sm h-100 hover-shadow-transition">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="flex-shrink-0 btn-soft-success p-3 rounded-3">
+              <i class="bi bi-box-seam fs-4"></i>
+            </div>
+            <div class="flex-grow-1 ms-3">
+              <h6 class="card-subtitle text-muted fw-normal mb-1">Pedidos Activos</h6>
+              <h4 class="card-title mb-0"><%= @active_orders_count %></h4>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    <% end %>
+  </div>
+  <%# 3. Planes de Entrega %>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <%= link_to delivery_plans_path, class: "text-decoration-none" do %>
+      <div class="card border-0 shadow-sm h-100 hover-shadow-transition">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="flex-shrink-0 btn-soft-info p-3 rounded-3">
+              <i class="bi bi-calendar-check fs-4"></i>
+            </div>
+            <div class="flex-grow-1 ms-3">
+              <h6 class="card-subtitle text-muted fw-normal mb-1">Próximos Planes</h6>
+              <h4 class="card-title mb-0"><%= @upcoming_plans_count %></h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  <%# 4. Notificaciones %>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <%= link_to notifications_path, class: "text-decoration-none" do %>
+      <div class="card border-0 shadow-sm h-100 hover-shadow-transition">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="flex-shrink-0 btn-soft-warning p-3 rounded-3">
+              <i class="bi bi-bell fs-4"></i>
+            </div>
+            <div class="flex-grow-1 ms-3">
+              <h6 class="card-subtitle text-muted fw-normal mb-1">Notificaciones</h6>
+              <h4 class="card-title mb-0"><%= @unread_notifications_count %></h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
   </div>
 </div>
-<div class="col-md-3">
-  <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
-    <div class="d-flex align-items-center">
-      <div class="flex-shrink-0 bg-success bg-opacity-10 p-3 rounded-3">
-        <i class="bi bi-box-seam text-success fs-4"></i>
-      </div>
-      <div class="flex-grow-1 ms-3">
-        <h6 class="text-muted small mb-0">Pedidos Activos</h6>
-        <h4 class="fw-bold mb-0"><%= @active_orders_count %></h4>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="col-md-3">
-  <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
-    <div class="d-flex align-items-center">
-      <div class="flex-shrink-0 bg-info bg-opacity-10 p-3 rounded-3">
-        <i class="bi bi-calendar-event text-info fs-4"></i>
-      </div>
-      <div class="flex-grow-1 ms-3">
-        <h6 class="text-muted small mb-0">Planes Semanales</h6>
-        <h4 class="fw-bold mb-0"><%= @upcoming_plans_count %></h4>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="col-md-3">
-  <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
-    <div class="d-flex align-items-center">
-      <div class="flex-shrink-0 bg-warning bg-opacity-10 p-3 rounded-3">
-        <i class="bi bi-bell text-warning fs-4"></i>
-      </div>
-      <div class="flex-grow-1 ms-3">
-        <h6 class="text-muted small mb-0">Notificaciones</h6>
-        <h4 class="fw-bold mb-0"><%= @unread_notifications_count %></h4>
-      </div>
-    </div>
-  </div>
-</div>
+<style>
+  .hover-shadow-transition {
+    transition: all 0.2s ease-in-out;
+  }
+  .hover-shadow-transition:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.1)!important;
+  }
+  .btn-soft-primary { background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+  .btn-soft-success { background-color: rgba(25, 135, 84, 0.1); color: #198754; }
+  .btn-soft-info { background-color: rgba(13, 202, 240, 0.1); color: #0dcaf0; }
+  .btn-soft-warning { background-color: rgba(255, 193, 7, 0.1); color: #ffc107; }
+</style>
