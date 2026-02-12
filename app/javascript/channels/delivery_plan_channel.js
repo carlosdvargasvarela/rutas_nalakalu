@@ -1,5 +1,5 @@
 // app/javascript/channels/delivery_plan_channel.js
-import consumer from "./consumer";
+import consumer from "channels/consumer";
 
 export function subscribeToDeliveryPlan(deliveryPlanId, callback) {
   return consumer.subscriptions.create(
