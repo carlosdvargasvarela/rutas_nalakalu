@@ -1,19 +1,22 @@
-<div class="card shadow-sm border-0 rounded-3 h-100">
-  <div class="card-header bg-success text-white fw-semibold">
-    <i class="bi bi-list-check me-2"></i> Tareas pendientes
+<!-- app/views/dashboard/_pending_tasks.html.erb -->
+<div class="card shadow-sm border-0 rounded-4 h-100">
+  <div class="card-header bg-white border-0 pt-4 px-4">
+    <h6 class="fw-bold mb-0">
+      <i class="bi bi-list-check me-2 text-success"></i> Tareas Pendientes
+    </h6>
   </div>
   <div class="card-body">
     <% if tasks.present? %>
       <ul class="list-unstyled mb-0">
         <% tasks.each do |task| %>
-          <li class="d-flex align-items-start mb-4">
+          <li class="d-flex align-items-start mb-3 pb-3 border-bottom">
             <div class="flex-shrink-0 me-3">
-              <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-<%= task[:color] %> bg-opacity-10" style="width:48px; height:48px;">
-                <i class="<%= task[:icon] %> fs-4 text-<%= task[:color] %>"></i>
+              <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-<%= task[:color] %> bg-opacity-10" style="width:40px; height:40px;">
+                <i class="<%= task[:icon] %> text-<%= task[:color] %>"></i>
               </span>
             </div>
             <div class="flex-grow-1">
-              <h6 class="fw-semibold mb-1"><%= task[:title] %></h6>
+              <h6 class="fw-semibold mb-1 small"><%= task[:title] %></h6>
               <p class="text-muted small mb-2"><%= task[:description] %></p>
               <%= link_to task[:action_text], task[:action_url], class: "btn btn-sm btn-outline-#{task[:color]} rounded-pill" %>
             </div>
@@ -22,8 +25,9 @@
       </ul>
     <% else %>
       <div class="text-center text-muted py-4">
-        <i class="bi bi-check-circle fs-3 text-success mb-2 d-block"></i>
-        ¡Excelente! No tienes tareas pendientes
+        <i class="bi bi-check-circle fs-1 text-success mb-2 d-block"></i>
+        <p class="mb-0"><strong>¡Excelente!</strong></p>
+        <small>No tienes tareas pendientes</small>
       </div>
     <% end %>
   </div>

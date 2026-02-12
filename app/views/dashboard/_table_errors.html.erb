@@ -1,0 +1,64 @@
+<!-- app/views/dashboard/_table_errors.html.erb -->
+<div class="table-responsive">
+  <table class="table table-hover align-middle mb-0">
+    <thead class="bg-light">
+      <tr>
+        <th class="ps-4">Pedido</th>
+        <th>Cliente</th>
+        <th>Fecha</th>
+        <th>Errores Detectados</th>
+        <th class="text-end pe-4">Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if deliveries.any? %>
+        <% deliveries.each do |delivery| %>
+          <% detector = Deliveries::ErrorDetector.new(delivery) %>
+          <tr>
+            <td class="ps-4">
+              <%= link_to delivery.order.number, delivery_path(delivery), class: "fw-bold text-dark text-decoration-none" %>
+            </td>
+            <td><%= delivery.order.client.name %></td>
+            <td>
+              <span class="text-muted small"><%= l delivery.delivery_date, format: :short %></span>
+            </td>
+            <td>
+              <% detector.errors.take(2).each do |err| %>
+                <% severity_color = case err[:severity]
+                     when 'critical' then 'danger'
+                     when 'high' then 'warning'
+                     else 'secondary'
+                     end %>
+                <div class="badge bg-<%= severity_color %> bg-opacity-10 text-<%= severity_color %> mb-1 d-block text-start fw-normal">
+                  <i class="bi bi-x-circle me-1"></i>
+                  <strong><%= err[:category] %>:</strong> <%= err[:message] %>
+                </div>
+              <% end %>
+              <% if detector.errors.size > 2 %>
+                <small class="text-muted fst-italic">+ <%= detector.errors.size - 2 %> error(es) más...</small>
+              <% end %>
+            </td>
+            <td class="text-end pe-4">
+              <%= link_to edit_delivery_path(delivery), class: "btn btn-sm btn-outline-danger rounded-pill" do %>
+                <i class="bi bi-pencil"></i> Corregir
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      <% else %>
+        <tr>
+          <td colspan="5" class="text-center py-5 text-muted">
+            <i class="bi bi-check-circle fs-1 text-success d-block mb-2"></i>
+            <strong>¡Todo en orden!</strong> No se detectaron pedidos con errores críticos.
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<!-- Paginación -->
+<% if deliveries.any? %>
+  <div class="card-footer bg-white border-0 d-flex justify-content-center py-3">
+    <%= paginate deliveries, param_name: "page_errors" %>
+  </div>
+<% end %>

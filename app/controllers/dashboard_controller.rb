@@ -4,32 +4,50 @@ class DashboardController < ApplicationController
 
   def index
     authorize :dashboard, :index?
+
     if current_user&.role.to_s == "driver"
       redirect_to driver_delivery_plans_path and return
     end
-    # Cards resumen
+
+    # KPIs Principales
     @pending_deliveries_count = current_user_deliveries.where(status: [:scheduled, :ready_to_deliver]).count
     @active_orders_count = current_user_orders.where(status: [:pending, :in_production]).count
     @upcoming_plans_count = upcoming_delivery_plans.count
     @unread_notifications_count = current_user.notifications.unread.count
-    @overdue_unplanned_deliveries =
-      current_user_deliveries
-        .overdue_unplanned
-        .includes(order: [:client, :seller], delivery_address: :client)
-        .order(delivery_date: :asc)
-        .page(params[:page_overdue])
+
+    # 1. Entregas de esta semana sin plan (Prioridad Logística) - CON PAGINACIÓN
+    @unplanned_this_week = current_user_deliveries
+      .where(delivery_date: Date.current.beginning_of_week..Date.current.end_of_week)
+      .available_for_plan
+      .includes(
+        order: [:client, :seller, :order_items],
+        delivery_address: :client,
+        delivery_items: :order_item
+      )
+      .order(:delivery_date)
+      .page(params[:page_unplanned])
+      .per(10)
+
+    # 2. Entregas con Errores - OPTIMIZADO: Solo cargamos 50 y filtramos
+    # En lugar de cargar TODAS, limitamos desde el inicio
+    @deliveries_with_errors = detect_deliveries_with_errors
+      .page(params[:page_errors])
+      .per(10)
+
+    # 3. Pendientes de aprobación (Admin/PM) - CON PAGINACIÓN
+    @pending_approvals = if current_user.admin? || current_user.production_manager?
+      Delivery.where(approved: false)
+        .where("delivery_date BETWEEN ? AND ?", Date.current.beginning_of_week, Date.current.end_of_week)
+        .includes(order: [:client, :seller])
+        .order(:delivery_date)
+        .page(params[:page_approvals])
         .per(10)
+    else
+      Delivery.none.page(1)
+    end
 
-    @overdue_deliveries_count =
-      current_user_deliveries
-        .overdue_unplanned
-        .count
-
-    # Notificaciones recientes
-    @recent_notifications = current_user.notifications.recent.limit(5)
-
+    # 4. Notificaciones de Reschedule - CON PAGINACIÓN
     @reschedule_notifications = if current_user.seller?
-      # Solo notificaciones ligadas a sus pedidos
       current_user.notifications
         .joins("LEFT JOIN deliveries ON notifications.notifiable_id = deliveries.id AND notifications.notifiable_type = 'Delivery'")
         .joins("LEFT JOIN orders ON deliveries.order_id = orders.id")
@@ -39,7 +57,6 @@ class DashboardController < ApplicationController
         .page(params[:page_reschedules])
         .per(10)
     else
-      # PM o Admin ven todas
       current_user.notifications
         .where(notification_type: ["reschedule_delivery"])
         .recent
@@ -47,63 +64,41 @@ class DashboardController < ApplicationController
         .per(10)
     end
 
-    # Tareas pendientes según rol
+    # 5. Tareas y Notificaciones generales
     @pending_tasks = build_pending_tasks
-
-    # Datos para gráfico (opcional)
-    @chart_data = build_chart_data if current_user.admin? || current_user.production_manager?
-
-    @deliveries_per_day = Delivery.where(status: :delivered, delivery_date: Date.current.beginning_of_week..Date.current.end_of_week).group_by_day(:delivery_date).count
-    @orders_per_status = Order.group(:status).count
-    @orders_per_seller = Seller.joins(:orders).where(orders: {status: [:pending, :in_production]}).group("sellers.name").count
-    @deliveries_per_driver = User.where(role: :driver).left_joins(delivery_plans: {delivery_plan_assignments: :delivery}).group("users.name").count("deliveries.id")
-    @orders_per_week = Order.group_by_week(:created_at, last: 8, format: "%d/%m").count
-
-    # Entregas de esta semana sin plan
-    @unplanned_deliveries_this_week =
-      current_user_deliveries
-        .where(delivery_date: Date.current.beginning_of_week..Date.current.end_of_week)
-        .available_for_plan
-        .includes(order: [:client, :seller], delivery_address: :client)
-        .order(:delivery_date)
-
-    # Opcional: paginación si lo requieres
-    # @unplanned_deliveries_this_week = @unplanned_deliveries_this_week.page(params[:page_unplanned]).per(10)
-
-    # 🔥 Entregas reprogramadas con filtros y paginación
-    if current_user.seller?
-      @q_rescheduled = current_user_deliveries.rescheduled.ransack(params[:q])
-      @rescheduled_deliveries = @q_rescheduled.result(distinct: true)
-        .includes(order: [:client, :seller], delivery_address: :client)
-        .page(params[:page])
-        .per(10)
-    elsif current_user.production_manager? || current_user.admin?
-      # Tabla 1: Todas las entregas reagendadas
-      @q_all_rescheduled = Delivery.rescheduled.ransack(params[:q_all])
-      @rescheduled_deliveries = @q_all_rescheduled.result(distinct: true)
-        .includes(order: [:client, :seller], delivery_address: :client)
-        .page(params[:page_all])
-        .per(10)
-
-      # Tabla 2: Reagendadas de esta semana
-      @q_rescheduled_week = Delivery.rescheduled_this_week.ransack(params[:q_week])
-      @rescheduled_this_week = @q_rescheduled_week.result(distinct: true)
-        .includes(order: [:client, :seller], delivery_address: :client)
-        .page(params[:page_week])
-        .per(10)
-    end
-
-    # Pendientes de aprobación
-    @pending_approvals = if current_user.admin? || current_user.production_manager?
-      Delivery.where(approved: false)
-        .where("delivery_date BETWEEN ? AND ?", Date.current.beginning_of_week, Date.current.end_of_week)
-        .order(:delivery_date)
-    else
-      []
-    end
+    @recent_notifications = current_user.notifications.recent.limit(5)
   end
 
   private
+
+  # 🔥 NUEVO MÉTODO OPTIMIZADO PARA DETECTAR ERRORES
+  def detect_deliveries_with_errors
+    # Solo revisamos las primeras 100 entregas candidatas (no todas)
+    candidates = current_user_deliveries
+      .where(status: [:scheduled, :ready_to_deliver])
+      .includes(
+        order: [:client, :seller, :order_items],
+        delivery_address: :client,
+        delivery_items: :order_item
+      )
+      .order(:delivery_date)
+      .limit(100) # 🔥 LÍMITE CRÍTICO PARA PERFORMANCE
+
+    # Filtramos en memoria solo estas 100
+    ids_with_errors = candidates.select do |delivery|
+      Deliveries::ErrorDetector.new(delivery).has_errors?
+    end.map(&:id)
+
+    # Devolvemos la relación paginable
+    current_user_deliveries
+      .where(id: ids_with_errors)
+      .includes(
+        order: [:client, :seller, :order_items],
+        delivery_address: :client,
+        delivery_items: :order_item
+      )
+      .order(:delivery_date)
+  end
 
   def current_user_deliveries
     case current_user.role
@@ -193,13 +188,5 @@ class DashboardController < ApplicationController
     end
 
     tasks
-  end
-
-  def build_chart_data
-    {
-      completed_this_week: 17,
-      scheduled_this_week: 20,
-      monthly_average: 92
-    }
   end
 end

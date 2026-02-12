@@ -173,7 +173,7 @@ module Deliveries
 
       if active_items.empty?
         # Remover assignments
-        delivery.delivery_plan_assignments.destroy_all
+        delivery.delivery_plan_assignment.destroy if !delivery.delivery_plan_assignment.nil?
 
         # Marcar el delivery como rescheduled si todos sus items fueron movidos
         all_rescheduled = delivery.delivery_items.all? { |di| di.status.in?(%w[rescheduled cancelled delivered]) }

@@ -273,4 +273,13 @@ Rails.application.routes.draw do
   # Ruta pública para clientes
   # =============================================================================
   get "/t/:token", to: "public_trackings#show", as: :public_tracking
+
+  # =============================================================================
+  # API V1 - Nalakalú productos
+  # =============================================================================
+  namespace :api do
+    namespace :v1 do
+      resources :deliveries, only: [:index, :show]
+    end
+  end
 end

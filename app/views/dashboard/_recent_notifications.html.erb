@@ -1,22 +1,35 @@
-<div class="card shadow-sm border-0 rounded-3 h-100">
-  <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-    <h6 class="mb-0"><i class="bi bi-bell me-2"></i> Notificaciones recientes</h6>
-    <%= link_to "Ver todas", notifications_path, class: "btn btn-sm btn-light rounded-pill" %>
+<!-- app/views/dashboard/_recent_notifications.html.erb -->
+<div class="card shadow-sm border-0 rounded-4 h-100">
+  <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+    <h6 class="fw-bold mb-0">
+      <i class="bi bi-bell me-2 text-primary"></i> Notificaciones Recientes
+    </h6>
+    <%= link_to "Ver todas", notifications_path, class: "btn btn-sm btn-outline-primary rounded-pill" %>
   </div>
   <div class="list-group list-group-flush">
     <% if notifications.present? %>
       <% notifications.limit(5).each do |notification| %>
-        <div class="list-group-item d-flex align-items-start <%= 'bg-light' unless notification.read %>">
-          <i class="<%= notification_type_icon(notification.notification_type) %> text-<%= notification_type_color(notification.notification_type) %> fs-5 me-3"></i>
-          <div class="flex-grow-1">
-            <p class="mb-1"><%= truncate(strip_tags(notification.message), length: 80) %></p>
-            <small class="text-muted"><%= time_ago_in_words(notification.created_at) %> atrás</small>
-            <% unless notification.read %><span class="badge bg-primary ms-2">Nueva</span><% end %>
+        <div class="list-group-item border-0 <%= 'bg-light' unless notification.read %>">
+          <div class="d-flex align-items-start">
+            <i class="<%= notification_type_icon(notification.notification_type) %> text-<%= notification_type_color(notification.notification_type) %> me-3 mt-1"></i>
+            <div class="flex-grow-1">
+              <p class="mb-1 small"><%= truncate(strip_tags(notification.message), length: 80) %></p>
+              <small class="text-muted">
+                <i class="bi bi-clock me-1"></i>
+                <%= time_ago_in_words(notification.created_at) %> atrás
+              </small>
+              <% unless notification.read %>
+                <span class="badge bg-primary ms-2">Nueva</span>
+              <% end %>
+            </div>
           </div>
         </div>
       <% end %>
     <% else %>
-      <div class="p-4 text-center text-muted"> <i class="bi bi-bell-slash fs-3 mb-2"></i> Sin notificaciones recientes </div>
+      <div class="p-4 text-center text-muted">
+        <i class="bi bi-bell-slash fs-3 mb-2 d-block"></i>
+        <small>Sin notificaciones recientes</small>
+      </div>
     <% end %>
   </div>
 </div>

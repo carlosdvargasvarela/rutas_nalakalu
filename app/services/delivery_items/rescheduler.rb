@@ -188,7 +188,7 @@ module DeliveryItems
       active_items = original_delivery.delivery_items.where.not(status: [:delivered, :cancelled, :rescheduled])
 
       if active_items.empty?
-        original_delivery.delivery_plan_assignments.destroy_all
+        original_delivery.delivery_plan_assignment.destroy
 
         all_rescheduled = original_delivery.delivery_items.all? { |di| di.status.in?(%w[rescheduled cancelled delivered]) }
         original_delivery.update_column(:status, Delivery.statuses[:rescheduled]) if all_rescheduled

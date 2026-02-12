@@ -1,0 +1,74 @@
+<!-- app/views/dashboard/_table_reschedules.html.erb -->
+<div class="table-responsive">
+  <table class="table table-hover align-middle mb-0">
+    <thead class="bg-light">
+      <tr>
+        <th class="ps-4">Fecha</th>
+        <th>Mensaje</th>
+        <th>Estado</th>
+        <th class="text-end pe-4">Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if notifications.any? %>
+        <% notifications.each do |notification| %>
+          <tr class="<​%= 'table-warning bg-opacity-10' unless notification.read %>">
+            <td class="ps-4">
+              <small class="text-muted">
+                <i class="bi bi-clock me-1"></i>
+                <%= time_ago_in_words(notification.created_at) %> atrás
+              </small>
+            </td>
+            <td>
+              <div class="d-flex align-items-start">
+                <i class="bi bi-exclamation-circle text-warning fs-5 me-2"></i>
+                <div>
+                  <%= truncate(strip_tags(notification.message), length: 120) %>
+                </div>
+              </div>
+            </td>
+            <td>
+              <% if notification.read %>
+                <span class="badge bg-success bg-opacity-10 text-success">
+                  <i class="bi bi-check-circle"></i> Leída
+                </span>
+              <% else %>
+                <span class="badge bg-warning text-dark">
+                  <i class="bi bi-bell"></i> Nueva
+                </span>
+              <% end %>
+            </td>
+            <td class="text-end pe-4">
+              <div class="btn-group btn-group-sm">
+                <%= link_to notification.target_path, class: "btn btn-outline-primary rounded-pill" do %>
+                  <i class="bi bi-eye"></i> Ver
+                <% end %>
+                <% unless notification.read %>
+                  <%= button_to mark_as_read_notification_path(notification),
+                                method: :patch,
+                                class: "btn btn-outline-success rounded-pill",
+                                title: "Marcar como leída" do %>
+                    <i class="bi bi-check2"></i>
+                  <% end %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      <% else %>
+        <tr>
+          <td colspan="4" class="text-center py-5 text-muted">
+            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+            <strong>Sin reprogramaciones recientes</strong>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<!-- Paginación -->
+<% if notifications.any? %>
+  <div class="card-footer bg-white border-0 d-flex justify-content-center py-3">
+    <%= paginate notifications, param_name: "page_reschedules" %>
+  </div>
+<% end %>

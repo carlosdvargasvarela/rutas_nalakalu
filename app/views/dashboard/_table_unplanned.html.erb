@@ -1,0 +1,74 @@
+<!-- app/views/dashboard/_table_unplanned.html.erb -->
+<div class="table-responsive">
+  <table class="table table-hover align-middle mb-0">
+    <thead class="bg-light">
+      <tr>
+        <th class="ps-4">Fecha</th>
+        <th>Pedido</th>
+        <th>Cliente</th>
+        <th>Dirección</th>
+        <th>Vendedor</th>
+        <th class="text-end pe-4">Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if deliveries.any? %>
+        <% deliveries.each do |delivery| %>
+          <tr>
+            <td class="ps-4">
+              <span class="fw-bold text-dark"><%= l delivery.delivery_date, format: :short %></span>
+              <% type_color = case delivery.delivery_type
+                   when 'normal' then 'success'
+                   when 'internal_delivery' then 'warning'
+                   when 'only_pickup' then 'info'
+                   else 'secondary'
+                   end %>
+              <div class="mt-1">
+                <span class="badge bg-<%= type_color %> bg-opacity-75 small">
+                  <%= delivery.display_type %>
+                </span>
+              </div>
+            </td>
+            <td>
+              <%= link_to delivery.order.number, delivery_path(delivery), class: "fw-semibold text-decoration-none" %>
+            </td>
+            <td><%= delivery.order.client.name %></td>
+            <td>
+              <small class="text-muted">
+                <%= truncate(delivery.delivery_address&.address.to_s, length: 50) %>
+              </small>
+            </td>
+            <td><%= delivery.order.seller.name %></td>
+            <td class="text-end pe-4">
+              <div class="btn-group btn-group-sm">
+                <%= link_to delivery_path(delivery), class: "btn btn-outline-primary rounded-pill" do %>
+                  <i class="bi bi-eye"></i>
+                <% end %>
+                <% if current_user.admin? || current_user.production_manager? || current_user.logistics? %>
+                  <%= link_to delivery_plans_path(q: { week_eq: Date.current.cweek, year_eq: Date.current.cwyear }),
+                              class: "btn btn-outline-success rounded-pill",
+                              title: "Ir a planes de esta semana" do %>
+                    <i class="bi bi-diagram-3"></i>
+                  <% end %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      <% else %>
+        <tr>
+          <td colspan="6" class="text-center py-5 text-muted">
+            <i class="bi bi-check-circle fs-1 text-success d-block mb-2"></i>
+            <strong>¡Excelente!</strong> Todas las entregas de esta semana tienen plan asignado.
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<!-- Paginación -->
+<% if deliveries.any? %>
+  <div class="card-footer bg-white border-0 d-flex justify-content-center py-3">
+    <%= paginate deliveries, param_name: "page_unplanned" %>
+  </div>
+<% end %>
