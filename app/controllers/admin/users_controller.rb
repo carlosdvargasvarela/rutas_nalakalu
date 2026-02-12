@@ -5,15 +5,18 @@ class Admin::UsersController < ApplicationController
   before_action :set_user, only: [ :edit, :update, :send_reset_password, :unlock, :toggle_notifications ]
 
   def index
+    authorize User
     @users = User.order(:name)
   end
 
   def new
+    authorize User
     @user = User.new
     # Si quieres preconstruir un miembro cuando el rol se seleccione por JS, lo hacemos en la vista con Stimulus.
   end
 
   def create
+    authorize User
     @user = User.new(user_params.except(:seller_code))
     @user.seller_code = user_params[:seller_code]
     @user.password = "Nalakalu.01"
@@ -33,13 +36,13 @@ class Admin::UsersController < ApplicationController
   end
 
   def edit
-    # UX: si es driver y no tiene crew, construir una fila vacía
+    authorize User
     @user.crew_members.build if @user.driver? && @user.crew_members.empty?
   end
 
   def update
+    authorize User
     attrs = user_params
-    # No forzar cambio de contraseña si vienen en blanco
     if attrs[:password].blank? && attrs[:password_confirmation].blank?
       attrs = attrs.except(:password, :password_confirmation)
     end
