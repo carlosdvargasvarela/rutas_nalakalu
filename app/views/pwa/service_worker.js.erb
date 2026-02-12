@@ -1,6 +1,6 @@
 // app/views/pwa/service-worker.js.erb
 
-const CACHE_VERSION = "v3.0.0";
+const CACHE_VERSION = "v3.0.1";
 const STATIC_CACHE = `driver-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `driver-runtime-${CACHE_VERSION}`;
 
@@ -83,11 +83,12 @@ self.addEventListener("fetch", (event) => {
     "/rails/",            // ActiveStorage, etc.
     "/packs/",            // Webpacker (si lo usas)
     "channels/consumer",  // Consumer de ActionCable
-    "channels/delivery"   // Canales específicos
+    "channels/delivery",  // Canales específicos
+    "actioncable"         // ActionCable ESM
   ];
 
   // Si la URL coincide con algún patrón de bypass, NO interceptar
-  if (BYPASS_PATTERNS.some(pattern => url.pathname.includes(pattern))) {
+  if (BYPASS_PATTERNS.some(pattern => url.pathname.includes(pattern) || url.href.includes(pattern))) {
     console.log("[SW] Bypassing:", url.pathname);
     return; // Dejar que el navegador lo maneje normalmente
   }
