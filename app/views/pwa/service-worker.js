@@ -1,5 +1,5 @@
 // app/views/pwa/service-worker.js.erb
-const CACHE_VERSION = "v2.0.0";
+const CACHE_VERSION = "v2.0.1";
 const STATIC_CACHE = `driver-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `driver-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = "/offline";
@@ -10,7 +10,7 @@ const STATIC_ASSETS = ["/offline", "/manifest.json"];
 // INSTALL
 // ============================================
 self.addEventListener("install", (event) => {
-  console.log("[SW] Installing v2.0.0");
+  console.log("[SW] Installing v2.0.1");
   event.waitUntil(
     caches
       .open(STATIC_CACHE)
@@ -23,7 +23,7 @@ self.addEventListener("install", (event) => {
 // ACTIVATE
 // ============================================
 self.addEventListener("activate", (event) => {
-  console.log("[SW] Activating v2.0.0");
+  console.log("[SW] Activating v2.0.1");
   event.waitUntil(
     caches
       .keys()
@@ -49,16 +49,17 @@ self.addEventListener("fetch", (event) => {
   // Solo mismo origen
   if (url.origin !== location.origin) return;
 
-  // 🔥 NUNCA interceptar:
+  // 🔥 NUNCA interceptar (dejar que el navegador lo maneje):
   // - /assets/* (importmap, CSS, JS compilado)
-  // - /cable (ActionCable)
+  // - /cable (ActionCable WebSocket)
   // - /rails/* (ActiveStorage, etc.)
   if (
     url.pathname.startsWith("/assets/") ||
     url.pathname.startsWith("/cable") ||
     url.pathname.startsWith("/rails/")
   ) {
-    return; // Navegador lo maneja directo
+    // ✅ NO hacer nada, dejar que el navegador lo maneje normalmente
+    return;
   }
 
   // Solo cachear dentro de /driver/*
@@ -254,4 +255,4 @@ async function notifyClients(message) {
   clients.forEach((client) => client.postMessage(message));
 }
 
-console.log("[SW] Driver PWA v2.0.0 loaded");
+console.log("[SW] Driver PWA v2.0.1 loaded");
