@@ -9,35 +9,33 @@ class DashboardController < ApplicationController
       redirect_to driver_delivery_plans_path and return
     end
 
+    # Rango de fechas: Desde hoy hasta el final de la próxima semana
+    @error_date_range = Date.current..Date.current.next_week.end_of_week
+
     # KPIs Principales
     @pending_deliveries_count = current_user_deliveries.where(status: [:scheduled, :ready_to_deliver]).count
     @active_orders_count = current_user_orders.where(status: [:pending, :in_production]).count
     @upcoming_plans_count = upcoming_delivery_plans.count
     @unread_notifications_count = current_user.notifications.unread.count
 
-    # 1. Entregas de esta semana sin plan (Prioridad Logística) - CON PAGINACIÓN
+    # 1. Entregas de esta semana sin plan
     @unplanned_this_week = current_user_deliveries
       .where(delivery_date: Date.current.beginning_of_week..Date.current.end_of_week)
       .available_for_plan
-      .includes(
-        order: [:client, :seller, :order_items],
-        delivery_address: :client,
-        delivery_items: :order_item
-      )
+      .includes(order: [:client, :seller], delivery_address: :client)
       .order(:delivery_date)
       .page(params[:page_unplanned])
       .per(10)
 
-    # 2. Entregas con Errores - OPTIMIZADO: Solo cargamos 50 y filtramos
-    # En lugar de cargar TODAS, limitamos desde el inicio
+    # 2. Entregas con Errores (Semana actual y siguiente) - OPTIMIZADO
     @deliveries_with_errors = detect_deliveries_with_errors
       .page(params[:page_errors])
       .per(10)
 
-    # 3. Pendientes de aprobación (Admin/PM) - CON PAGINACIÓN
+    # 3. Pendientes de aprobación (Admin/PM)
     @pending_approvals = if current_user.admin? || current_user.production_manager?
       Delivery.where(approved: false)
-        .where("delivery_date BETWEEN ? AND ?", Date.current.beginning_of_week, Date.current.end_of_week)
+        .where(delivery_date: Date.current.beginning_of_week..Date.current.end_of_week)
         .includes(order: [:client, :seller])
         .order(:delivery_date)
         .page(params[:page_approvals])
@@ -46,23 +44,10 @@ class DashboardController < ApplicationController
       Delivery.none.page(1)
     end
 
-    # 4. Notificaciones de Reschedule - CON PAGINACIÓN
-    @reschedule_notifications = if current_user.seller?
-      current_user.notifications
-        .joins("LEFT JOIN deliveries ON notifications.notifiable_id = deliveries.id AND notifications.notifiable_type = 'Delivery'")
-        .joins("LEFT JOIN orders ON deliveries.order_id = orders.id")
-        .where(notification_type: ["reschedule_delivery"])
-        .where("orders.seller_id = ?", current_user.seller.id)
-        .recent
-        .page(params[:page_reschedules])
-        .per(10)
-    else
-      current_user.notifications
-        .where(notification_type: ["reschedule_delivery"])
-        .recent
-        .page(params[:page_reschedules])
-        .per(10)
-    end
+    # 4. Notificaciones de Reschedule
+    @reschedule_notifications = fetch_reschedule_notifications
+      .page(params[:page_reschedules])
+      .per(10)
 
     # 5. Tareas y Notificaciones generales
     @pending_tasks = build_pending_tasks
@@ -71,10 +56,10 @@ class DashboardController < ApplicationController
 
   private
 
-  # 🔥 NUEVO MÉTODO OPTIMIZADO PARA DETECTAR ERRORES
   def detect_deliveries_with_errors
-    # Solo revisamos las primeras 100 entregas candidatas (no todas)
+    # Filtramos entregas solo en el rango solicitado: Semana actual y siguiente
     candidates = current_user_deliveries
+      .where(delivery_date: @error_date_range)
       .where(status: [:scheduled, :ready_to_deliver])
       .includes(
         order: [:client, :seller, :order_items],
@@ -82,50 +67,45 @@ class DashboardController < ApplicationController
         delivery_items: :order_item
       )
       .order(:delivery_date)
-      .limit(100) # 🔥 LÍMITE CRÍTICO PARA PERFORMANCE
 
-    # Filtramos en memoria solo estas 100
+    # Identificamos IDs que tienen errores usando el Service Object
     ids_with_errors = candidates.select do |delivery|
       Deliveries::ErrorDetector.new(delivery).has_errors?
     end.map(&:id)
 
-    # Devolvemos la relación paginable
+    # Retornamos una relación de ActiveRecord para que Kaminari pueda paginar
     current_user_deliveries
       .where(id: ids_with_errors)
-      .includes(
-        order: [:client, :seller, :order_items],
-        delivery_address: :client,
-        delivery_items: :order_item
-      )
+      .includes(order: [:client, :seller], delivery_address: :client)
       .order(:delivery_date)
+  end
+
+  def fetch_reschedule_notifications
+    query = current_user.notifications.where(notification_type: "reschedule_delivery").recent
+
+    if current_user.seller?
+      query = query.joins("INNER JOIN deliveries ON notifications.notifiable_id = deliveries.id")
+        .joins("INNER JOIN orders ON deliveries.order_id = orders.id")
+        .where(orders: {seller_id: current_user.seller.id})
+    end
+    query
   end
 
   def current_user_deliveries
     case current_user.role
     when "seller"
       Delivery.joins(:order).where(orders: {seller: current_user.seller})
-    when "driver"
-      Delivery
-        .joins(delivery_plan_assignments: :delivery_plan)
-        .where(delivery_plans: {driver_id: current_user.id})
     else
       Delivery.all
     end
   end
 
   def current_user_orders
-    case current_user.role
-    when "seller"
-      current_user.seller&.orders || Order.none
-    else
-      Order.all
-    end
+    current_user.seller? ? (current_user.seller&.orders || Order.none) : Order.all
   end
 
   def upcoming_delivery_plans
-    current_week = Date.current.cweek
-    current_year = Date.current.year
-    DeliveryPlan.where(week: current_week..current_week + 2, year: current_year)
+    DeliveryPlan.where(week: Date.current.cweek..Date.current.cweek + 1, year: Date.current.year)
   end
 
   def build_pending_tasks
