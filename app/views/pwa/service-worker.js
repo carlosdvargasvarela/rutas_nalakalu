@@ -4,10 +4,7 @@ const STATIC_CACHE = `driver-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `driver-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = "/offline";
 
-const STATIC_ASSETS = [
-  "/offline",
-  "/manifest.json"
-];
+const STATIC_ASSETS = ["/offline", "/manifest.json"];
 
 // ============================================
 // INSTALL
@@ -15,9 +12,10 @@ const STATIC_ASSETS = [
 self.addEventListener("install", (event) => {
   console.log("[SW] Installing v2.0.0");
   event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then(cache => cache.addAll(STATIC_ASSETS))
-      .then(() => self.skipWaiting())
+    caches
+      .open(STATIC_CACHE)
+      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -27,14 +25,17 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   console.log("[SW] Activating v2.0.0");
   event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(
-        keys
-          .filter(k => k.startsWith("driver-"))
-          .filter(k => k !== STATIC_CACHE && k !== RUNTIME_CACHE)
-          .map(k => caches.delete(k))
-      ))
-      .then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((k) => k.startsWith("driver-"))
+            .filter((k) => k !== STATIC_CACHE && k !== RUNTIME_CACHE)
+            .map((k) => caches.delete(k)),
+        ),
+      )
+      .then(() => self.clients.claim()),
   );
 });
 
@@ -136,10 +137,10 @@ async function staleWhileRevalidate(request) {
   if (cached) return cached;
   if (network) return network;
 
-  return new Response(
-    JSON.stringify({ ok: false, offline: true }),
-    { status: 503, headers: { "Content-Type": "application/json" } }
-  );
+  return new Response(JSON.stringify({ ok: false, offline: true }), {
+    status: 503,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 async function handleMutation(request) {
@@ -148,15 +149,15 @@ async function handleMutation(request) {
   } catch (error) {
     console.log("[SW] Mutation offline, enqueueing:", request.url);
     await enqueuePendingAction(request);
-    
+
     if ("sync" in self.registration) {
       await self.registration.sync.register("sync-actions");
     }
 
-    return new Response(
-      JSON.stringify({ ok: true, queued: true }),
-      { status: 202, headers: { "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ ok: true, queued: true }), {
+      status: 202,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
 
@@ -182,7 +183,10 @@ function openDB() {
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains("pending-actions")) {
-        db.createObjectStore("pending-actions", { keyPath: "id", autoIncrement: true });
+        db.createObjectStore("pending-actions", {
+          keyPath: "id",
+          autoIncrement: true,
+        });
       }
     };
   });
@@ -197,7 +201,7 @@ async function enqueuePendingAction(request) {
     headers: Object.fromEntries([...request.headers.entries()]),
     body,
     timestamp: Date.now(),
-    retries: 0
+    retries: 0,
   };
 
   return new Promise((resolve, reject) => {
@@ -223,7 +227,7 @@ async function flushPendingActions() {
       const response = await fetch(action.url, {
         method: action.method,
         headers: action.headers,
-        body: action.body
+        body: action.body,
       });
 
       if (response.ok) {
@@ -247,7 +251,7 @@ async function deletePendingAction(id) {
 
 async function notifyClients(message) {
   const clients = await self.clients.matchAll({ type: "window" });
-  clients.forEach(client => client.postMessage(message));
+  clients.forEach((client) => client.postMessage(message));
 }
 
 console.log("[SW] Driver PWA v2.0.0 loaded");
