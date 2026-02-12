@@ -1,3 +1,6 @@
 // app/javascript/channels/index.js
-import "./consumer"
-import "./delivery_plan_channel"
+// Este archivo carga todos los canales
+import "./consumer";
+import "./delivery_plan_channel";
+
+console.log("📡 ActionCable channels loaded");

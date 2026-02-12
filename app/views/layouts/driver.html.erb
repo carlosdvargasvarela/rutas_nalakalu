@@ -4,13 +4,14 @@
     <title>NaLakalu - Conductor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#667eea">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="<​%= pwa_manifest_path %>">
     <style>
       body {
         padding-bottom: 80px;
@@ -25,22 +26,6 @@
         border-radius: 0.75rem;
         box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
         margin-bottom: 1rem;
-      }
-      .assignment-card {
-        transition: all 0.2s ease;
-      }
-      .assignment-card:active {
-        transform: scale(0.98);
-      }
-      .status-badge {
-        font-size: 0.75rem;
-        padding: 0.35rem 0.65rem;
-        border-radius: 0.5rem;
-      }
-      .btn-action {
-        border-radius: 0.5rem;
-        font-weight: 600;
-        padding: 0.5rem 1rem;
       }
       .offline-banner {
         position: fixed;
@@ -57,15 +42,14 @@
     </style>
   </head>
   <body>
-    <div id="driver-layout-flag" class="d-none">driver layout</div>
     <!-- Navbar -->
     <nav class="navbar navbar-dark navbar-driver fixed-top">
       <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="<%= driver_delivery_plans_path %>">
+        <a class="navbar-brand fw-bold" href="<​%= driver_delivery_plans_path %>">
           <i class="bi bi-truck me-2"></i>NaLakalu
         </a>
         <div class="d-flex align-items-center gap-2">
-          <span class="badge bg-light text-dark" data-offline-queue-target="badge">
+          <span class="badge bg-light text-dark" id="connection-badge">
             <i class="bi bi-wifi"></i>
           </span>
           <div class="dropdown">
@@ -91,81 +75,86 @@
       <strong>Sin conexión.</strong> Tus acciones se sincronizarán automáticamente.
     </div>
     <!-- Contenido principal -->
-    <div class="container-fluid mt-5 pt-3" data-controller="offline-queue">
+    <div class="container-fluid mt-5 pt-3">
       <%= yield %>
     </div>
     <!-- Toast container -->
     <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 1080;">
       <div id="toasts-container"></div>
     </div>
-    <!-- Scripts -->
     <script>
       // Registrar Service Worker
-      // Registrar Service Worker SOLO en /driver/*
-        if ('serviceWorker' in navigator && window.location.pathname.startsWith('/driver')) {
-          window.addEventListener('load', async () => {
-      try {
-        const reg = await navigator.serviceWorker.register('/service-worker.js', {
-          scope: '/driver/',
-          updateViaCache: 'none' // 🔥 Fuerza revalidación siempre
-        })
-        console.log('[SW] Registered for /driver/', reg)
+      if ('serviceWorker' in navigator && window.location.pathname.startsWith('/driver')) {
+        window.addEventListener('load', async () => {
+          try {
+            const reg = await navigator.serviceWorker.register('<%= pwa_service_worker_path %>', {
+              scope: '/driver/',
+              updateViaCache: 'none'
+            });
+            console.log('[App] Service Worker registered:', reg.scope);
 
-        // Forzar actualización si hay nueva versión
-        reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('[SW] New version available, reloading...')
-              window.location.reload()
-            }
-          })
-        })
-      } catch (e) {
-        console.warn('[SW] Registration failed', e)
+            // Auto-actualizar
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('[App] New version available, reloading...');
+                  window.location.reload();
+                }
+              });
+            });
+          } catch (e) {
+            console.warn('[App] SW registration failed:', e);
+          }
+        });
       }
-          })
-        }
 
-      // Mostrar/ocultar banner offline
+      // Banner offline
       function updateOfflineBanner() {
-        const banner = document.getElementById('offline-banner')
+        const banner = document.getElementById('offline-banner');
+        const badge = document.getElementById('connection-badge');
+
         if (navigator.onLine) {
-          banner?.classList.add('d-none')
+          banner?.classList.add('d-none');
+          if (badge) {
+            badge.innerHTML = '<i class="bi bi-wifi"></i>';
+            badge.classList.remove('bg-danger');
+            badge.classList.add('bg-light', 'text-dark');
+          }
         } else {
-          banner?.classList.remove('d-none')
+          banner?.classList.remove('d-none');
+          if (badge) {
+            badge.innerHTML = '<i class="bi bi-wifi-off"></i>';
+            badge.classList.remove('bg-light', 'text-dark');
+            badge.classList.add('bg-danger');
+          }
         }
       }
 
-      window.addEventListener('online', updateOfflineBanner)
-      window.addEventListener('offline', updateOfflineBanner)
-      updateOfflineBanner()
+      window.addEventListener('online', updateOfflineBanner);
+      window.addEventListener('offline', updateOfflineBanner);
+      updateOfflineBanner();
 
       // Sistema de toasts
-      document.addEventListener("toast:show", (e) => {
-        const { message, type } = e.detail || {}
-        showToast(message, type)
-      })
-
       function showToast(message, type = 'info') {
-        const container = document.getElementById('toasts-container')
-        if (!container) return
+        const container = document.getElementById('toasts-container');
+        if (!container) return;
 
         const bgClass = {
           success: 'bg-success',
           error: 'bg-danger',
           warning: 'bg-warning',
           info: 'bg-primary'
-        }[type] || 'bg-primary'
+        }[type] || 'bg-primary';
 
         const icon = {
           success: 'check-circle-fill',
           error: 'exclamation-octagon-fill',
           warning: 'exclamation-triangle-fill',
           info: 'info-circle-fill'
-        }[type] || 'info-circle-fill'
+        }[type] || 'info-circle-fill';
 
-        const toastId = `toast-${Date.now()}`
+        const toastId = `toast-${Date.now()}`;
         const toastHTML = `
           <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert">
             <div class="d-flex">
@@ -175,15 +164,20 @@
               <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
             </div>
           </div>
-        `
-        container.insertAdjacentHTML('beforeend', toastHTML)
+        `;
+        container.insertAdjacentHTML('beforeend', toastHTML);
 
-        const toastEl = document.getElementById(toastId)
-        const toast = new bootstrap.Toast(toastEl, { delay: 3000 })
-        toast.show()
+        const toastEl = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
 
-        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove())
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
       }
+
+      document.addEventListener("toast:show", (e) => {
+        const { message, type } = e.detail || {};
+        showToast(message, type);
+      });
     </script>
   </body>
 </html>
