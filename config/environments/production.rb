@@ -49,6 +49,8 @@ Rails.application.configure do
   # Asegurar que ActionCable use Redis en producción
   config.action_cable.disable_request_forgery_protection = false
 
+  config.public_file_server.enabled = ENV["RAILS_SERVE_STATIC_FILES"].present?
+
   # Mount Action Cable outside main process or domain.
   # config.action_cable.mount_path = nil
   # config.action_cable.url = "wss://example.com/cable"
