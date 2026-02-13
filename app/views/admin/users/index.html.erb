@@ -1,104 +1,109 @@
-<h2 class="mb-4">
-  <i class="bi bi-people-fill me-2 text-primary"></i>
-  Usuarios del sistema
-</h2>
-<div class="mb-3 d-flex justify-content-between align-items-center flex-wrap">
-  <%= link_to new_admin_user_path, class: "btn btn-primary" do %>
-    <i class="bi bi-person-plus-fill me-1"></i>
-    Nuevo usuario
-  <% end %>
-  <span class="text-muted ms-2">
-    <i class="bi bi-123 me-1"></i>
-    <%= pluralize(@users.count, "usuario") %> registrados
-  </span>
+<%# app/views/admin/users/index.html.erb %>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-1 fw-semibold">
+      Administración de usuarios
+    </h2>
+    <p class="text-muted mb-0">
+      Gestiona accesos, roles y notificaciones del sistema
+    </p>
+  </div>
+  <div class="d-flex align-items-center gap-3">
+    <span class="text-muted small">
+      <strong><%= @users.count %></strong>
+      <%= pluralize(@users.count, "usuario") %>
+    </span>
+    <%= link_to new_admin_user_path, class: "btn btn-primary" do %>
+      <i class="bi bi-person-plus-fill me-1"></i>
+      Nuevo usuario
+    <% end %>
+  </div>
 </div>
-<div class="table-responsive shadow-sm rounded">
-  <table class="table table-hover align-middle mb-0">
-    <thead class="table-light">
-      <tr>
-        <th><i class="bi bi-person-fill me-1"></i>Nombre</th>
-        <th><i class="bi bi-envelope-fill me-1"></i>Correo</th>
-        <th><i class="bi bi-person-badge-fill me-1"></i>Rol</th>
-        <th><i class="bi bi-clock-history me-1"></i>Último acceso</th>
-        <th><i class="bi bi-shield-lock-fill me-1"></i>Estado</th>
-        <th><i class="bi bi-bell-fill me-1"></i>Notificaciones</th>
-        <th class="text-center"><i class="bi bi-gear-fill me-1"></i>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @users.each do |user| %>
-        <tr class="<%= 'table-danger' if user.access_locked? %>">
-          <td>
-            <i class="bi bi-person-circle me-1 text-secondary"></i>
-            <%= user.name %>
-          </td>
-          <td><%= user.email %></td>
-          <td>
-            <%# Badge de rol con color según tipo %>
-            <% role_color = case user.role
-              when "admin" then "danger"
-              when "production_manager" then "warning"
-              when "seller" then "info"
-              when "logistics" then "primary"
-              when "driver" then "secondary"
-              else "dark"
-            end %>
-            <span class="badge bg-<%= role_color %>">
-              <%= user.display_role %>
-            </span>
-          </td>
-          <td>
-            <% if user.last_sign_in_at.present? %>
-              <span class="text-success">
-                <%= l(user.last_sign_in_at, format: :short) %>
-              </span>
-            <% else %>
-              <span class="text-muted">Nunca</span>
-            <% end %>
-          </td>
-          <td>
-            <% if user.access_locked? %>
-              <span class="badge bg-danger">
-                <i class="bi bi-lock-fill me-1"></i>
-                Bloqueado
-              </span>
-            <% else %>
-              <span class="badge bg-success">
-                <i class="bi bi-unlock-fill me-1"></i>
-                Activo
-              </span>
-            <% end %>
-          </td>
-          <td>
-            <% if user.send_notifications? %>
-              <span class="badge bg-primary">
-                <i class="bi bi-bell-fill me-1"></i> On
-              </span>
-            <% else %>
-              <span class="badge bg-secondary">
-                <i class="bi bi-bell-slash me-1"></i> Off
-              </span>
-            <% end %>
-          </td>
-          <td class="text-center">
-            <div class="btn-group" role="group">
-              <%= link_to edit_admin_user_path(user),
-                  class: "btn btn-sm btn-outline-secondary",
-                  title: "Editar",
-                  data: { bs_toggle: "tooltip" } do %>
-                <i class="bi bi-pencil-square"></i>
-              <% end %>
-              <%= button_to toggle_notifications_admin_user_path(user),
-                  method: :patch,
-                  class: "btn btn-sm #{user.send_notifications? ? 'btn-outline-primary' : 'btn-outline-secondary'}",
-                  title: user.send_notifications? ? "Desactivar notificaciones" : "Activar notificaciones",
-                  data: { bs_toggle: "tooltip", turbo_confirm: "¿Cambiar notificaciones para #{user.name}?" } do %>
-                <i class="bi <%= user.send_notifications? ? 'bi-bell-fill' : 'bi-bell-slash' %>"></i>
-              <% end %>
-            </div>
-          </td>
+<div class="card shadow-sm border-0">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead class="bg-light">
+        <tr>
+          <th>Usuario</th>
+          <th>Rol</th>
+          <th>Último acceso</th>
+          <th>Estado</th>
+          <th>Notificaciones</th>
+          <th class="text-end">Acciones</th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @users.each do |user| %>
+          <tr class="border-top">
+            <td>
+              <div class="d-flex flex-column">
+                <strong><%= user.name %></strong>
+                <span class="text-muted small"><%= user.email %></span>
+              </div>
+            </td>
+            <td>
+              <% role_color = case user.role
+                when "admin" then "danger"
+                when "production_manager" then "warning"
+                when "seller" then "info"
+                when "logistics" then "primary"
+                when "driver" then "secondary"
+              end %>
+              <span class="badge bg-<%= role_color %> bg-opacity-10 text-<%= role_color %> fw-semibold">
+                <%= user.display_role %>
+              </span>
+            </td>
+            <td>
+              <% if user.last_sign_in_at.present? %>
+                <span class="text-success small">
+                  <i class="bi bi-check-circle me-1"></i>
+                  <%= l(user.last_sign_in_at, format: :short) %>
+                </span>
+              <% else %>
+                <span class="text-muted small">Nunca</span>
+              <% end %>
+            </td>
+            <td>
+              <% if user.access_locked? %>
+                <span class="badge bg-danger bg-opacity-10 text-danger">
+                  <i class="bi bi-lock-fill me-1"></i>
+                  Bloqueado
+                </span>
+              <% else %>
+                <span class="badge bg-success bg-opacity-10 text-success">
+                  <i class="bi bi-unlock-fill me-1"></i>
+                  Activo
+                </span>
+              <% end %>
+            </td>
+            <td>
+              <% if user.send_notifications? %>
+                <span class="badge bg-primary bg-opacity-10 text-primary">
+                  <i class="bi bi-bell-fill me-1"></i> Activas
+                </span>
+              <% else %>
+                <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                  <i class="bi bi-bell-slash me-1"></i> Inactivas
+                </span>
+              <% end %>
+            </td>
+            <td class="text-end">
+              <div class="btn-group">
+                <%= link_to edit_admin_user_path(user),
+                    class: "btn btn-sm btn-outline-secondary" do %>
+                  <i class="bi bi-pencil-square"></i>
+                <% end %>
+                <%= button_to toggle_notifications_admin_user_path(user),
+                    method: :patch,
+                    class: "btn btn-sm #{user.send_notifications? ? 'btn-outline-primary' : 'btn-outline-secondary'}",
+                    data: { turbo_confirm: "¿Cambiar notificaciones para #{user.name}?" } do %>
+                  <i class="bi <%= user.send_notifications? ? 'bi-bell-fill' : 'bi-bell-slash' %>"></i>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 </div>
