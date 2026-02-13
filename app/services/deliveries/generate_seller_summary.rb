@@ -7,7 +7,7 @@ module Deliveries
       # Ventana de tiempo: 18:00 del día anterior a 07:00 de hoy (hora CR)
       now = Time.current.in_time_zone("America/Costa_Rica")
       window_start = (now - 13.hours).beginning_of_day + 18.hours  # 18:00 del día anterior
-      window_end = now.beginning_of_day + 7.hours                # 07:00 de hoy
+      window_end = now.beginning_of_day + 8.hours                # 07:00 de hoy
 
       new_deliveries = Delivery
         .where.not(status: :archived)
