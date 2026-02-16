@@ -1,27 +1,35 @@
-<!-- app/views/devise/passwords/edit.html.erb -->
-<div class="row justify-content-center">
-  <div class="col-md-6 col-lg-5">
-    <div class="card shadow-sm border-0 mt-5">
-      <div class="card-header bg-info text-white text-center">
-        <h4 class="mb-0">
-          <i class="bi bi-key-fill me-2"></i>
-          Establecer nueva contraseña
-        </h4>
+<%# app/views/devise/passwords/edit.html.erb %>
+<% content_for :title, "Nueva contraseña" %>
+<div class="card shadow-lg border-0 rounded-4">
+  <div class="card-body p-5">
+    <div class="text-center mb-4">
+      <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success bg-opacity-10 mb-3" style="width: 64px; height: 64px;">
+        <i class="bi bi-key-fill fs-2 text-success"></i>
       </div>
-      <div class="card-body">
-        <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
-          <%= f.input :reset_password_token, as: :hidden, input_html: { value: params[:reset_password_token] } %>
-          <div class="mb-3">
-            <%= f.input :password, required: true, input_html: { class: "form-control" }, prepend: '<i class="bi bi-lock-fill"></i>'.html_safe, label: "Nueva contraseña" %>
-          </div>
-          <div class="mb-3">
-            <%= f.input :password_confirmation, required: true, input_html: { class: "form-control" }, prepend: '<i class="bi bi-lock-fill"></i>'.html_safe, label: "Confirmar contraseña" %>
-          </div>
-          <div class="d-flex justify-content-end">
-            <%= f.button :submit, "Guardar contraseña", class: "btn btn-info" %>
-          </div>
-        <% end %>
-      </div>
+      <h4 class="fw-semibold mb-1">Establecer nueva contraseña</h4>
+      <p class="text-muted small mb-0">Elige una contraseña segura</p>
     </div>
+    <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
+      <%= f.input :reset_password_token, as: :hidden, input_html: { value: params[:reset_password_token] } %>
+      <div class="mb-3">
+        <%= f.input :password,
+            required: true,
+            autofocus: true,
+            label: "Nueva contraseña",
+            hint: "Mínimo 6 caracteres",
+            input_html: { class: "form-control form-control-lg" },
+            wrapper_html: { class: "mb-3" } %>
+      </div>
+      <div class="mb-4">
+        <%= f.input :password_confirmation,
+            required: true,
+            label: "Confirmar contraseña",
+            input_html: { class: "form-control form-control-lg" },
+            wrapper_html: { class: "mb-3" } %>
+      </div>
+      <div class="d-grid">
+        <%= f.button :submit, "Guardar contraseña", class: "btn btn-success btn-lg" %>
+      </div>
+    <% end %>
   </div>
 </div>

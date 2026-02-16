@@ -1,0 +1,57 @@
+<%# app/views/layouts/devise.html.erb %>
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>NaLakalu - <%= yield(:title) || "Acceso al sistema" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="devise-body">
+    <div class="devise-container">
+      <div class="devise-brand mb-4 text-center">
+        <h1 class="brand-logo">NaLakalu</h1>
+        <p class="text-muted small">Sistema de gestión de entregas</p>
+      </div>
+      <%= yield %>
+      <footer class="devise-footer text-center mt-4">
+        <p class="text-muted small mb-0">
+          © <%= Date.current.year %> NaLakalu - Costa Rica
+        </p>
+      </footer>
+    </div>
+    <style>
+      .devise-body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+      }
+
+      .devise-container {
+        width: 100%;
+        max-width: 440px;
+      }
+
+      .devise-brand .brand-logo {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: white;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 0.5rem;
+      }
+
+      .devise-brand p {
+        color: rgba(255,255,255,0.9);
+      }
+
+      .devise-footer {
+        color: rgba(255,255,255,0.8);
+      }
+    </style>
+  </body>
+</html>

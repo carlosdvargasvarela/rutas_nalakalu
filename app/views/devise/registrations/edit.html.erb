@@ -1,63 +1,64 @@
 <%# app/views/devise/registrations/edit.html.erb %>
-<div class="row justify-content-center">
-  <div class="col-md-6 col-lg-5">
-    <div class="card shadow-sm border-0 mt-5">
-      <div class="card-header bg-secondary text-white text-center">
-        <h4 class="mb-0">
-          <i class="bi bi-person-gear me-2"></i>
-          Editar perfil
-        </h4>
+<% content_for :title, "Editar perfil" %>
+<div class="card shadow-lg border-0 rounded-4">
+  <div class="card-body p-5">
+    <div class="text-center mb-4">
+      <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-secondary bg-opacity-10 mb-3" style="width: 64px; height: 64px;">
+        <i class="bi bi-person-gear fs-2 text-secondary"></i>
       </div>
-      <div class="card-body">
-        <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
-          <!-- Nombre -->
-          <div class="mb-3">
-            <%= f.input :name,
-                        label: "Nombre",
-                        input_html: { class: "form-control" } %>
-          </div>
-          <!-- Email -->
-          <div class="mb-3">
-            <%= f.input :email,
-                        label: "Correo electrónico",
-                        input_html: { class: "form-control", readonly: true } %>
-          </div>
-          <hr>
-          <h6 class="text-muted">Cambiar contraseña</h6>
-          <!-- Nueva contraseña -->
-          <div class="mb-3">
-            <% if resource.force_password_change? %>
-              <%= f.input :password,
-                          label: "Nueva contraseña",
-                          input_html: { class: "form-control" },
-                          required: true %>
-            <% else %>
-              <%= f.input :password,
-                          label: "Nueva contraseña",
-                          input_html: { class: "form-control" },
-                          hint: "Déjalo en blanco si no deseas cambiarla" %>
-            <% end %>
-          </div>
-          <!-- Confirmar nueva contraseña -->
-          <div class="mb-3">
-            <%= f.input :password_confirmation,
-                        label: "Confirmar nueva contraseña",
-                        input_html: { class: "form-control" },
-                        required: resource.force_password_change? %>
-          </div>
-          <!-- Contraseña actual (solo si no es cambio forzado) -->
-          <% unless resource.force_password_change? %>
-            <div class="mb-3">
-              <%= f.input :current_password,
-                          label: "Contraseña actual",
-                          input_html: { class: "form-control" } %>
-            </div>
-          <% end %>
-          <div class="d-flex justify-content-end">
-            <%= f.button :submit, "Actualizar perfil", class: "btn btn-secondary" %>
-          </div>
+      <h4 class="fw-semibold mb-1">Editar perfil</h4>
+      <p class="text-muted small mb-0">Actualiza tu información personal</p>
+    </div>
+    <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
+      <div class="mb-3">
+        <%= f.input :name,
+            label: "Nombre completo",
+            input_html: { class: "form-control" },
+            wrapper_html: { class: "mb-3" } %>
+      </div>
+      <div class="mb-3">
+        <%= f.input :email,
+            label: "Correo electrónico",
+            input_html: { class: "form-control", readonly: true },
+            wrapper_html: { class: "mb-3" },
+            hint: "El correo no puede modificarse" %>
+      </div>
+      <hr class="my-4">
+      <h6 class="text-muted mb-3">Cambiar contraseña (opcional)</h6>
+      <div class="mb-3">
+        <% if resource.force_password_change? %>
+          <%= f.input :password,
+              label: "Nueva contraseña",
+              input_html: { class: "form-control" },
+              required: true,
+              wrapper_html: { class: "mb-3" } %>
+        <% else %>
+          <%= f.input :password,
+              label: "Nueva contraseña",
+              input_html: { class: "form-control" },
+              hint: "Déjalo en blanco si no deseas cambiarla",
+              wrapper_html: { class: "mb-3" } %>
         <% end %>
       </div>
-    </div>
+      <div class="mb-3">
+        <%= f.input :password_confirmation,
+            label: "Confirmar nueva contraseña",
+            input_html: { class: "form-control" },
+            required: resource.force_password_change?,
+            wrapper_html: { class: "mb-3" } %>
+      </div>
+      <% unless resource.force_password_change? %>
+        <div class="mb-4">
+          <%= f.input :current_password,
+              label: "Contraseña actual",
+              input_html: { class: "form-control" },
+              hint: "Necesitamos tu contraseña actual para confirmar los cambios",
+              wrapper_html: { class: "mb-3" } %>
+        </div>
+      <% end %>
+      <div class="d-grid">
+        <%= f.button :submit, "Actualizar perfil", class: "btn btn-secondary btn-lg" %>
+      </div>
+    <% end %>
   </div>
 </div>
