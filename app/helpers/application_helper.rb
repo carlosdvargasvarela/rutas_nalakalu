@@ -9,6 +9,22 @@ module ApplicationHelper
     BOOTSTRAP_BADGE_VARIANTS.include?(c) ? c : "secondary"
   end
 
+  def smart_deliveries_path(params = {})
+    if current_user&.production_manager? || current_user&.logistics?
+      management_production_deliveries_path(params)
+    else
+      deliveries_path(params)
+    end
+  end
+
+  def smart_delivery_path(delivery)
+    if current_user&.production_manager? || current_user&.logistics?
+      production_delivery_path(delivery)
+    else
+      delivery_path(delivery)
+    end
+  end
+
   # Delivery: usa EXACTAMENTE tus enums
   DELIVERY_STATUS_COLORS = {
     "scheduled" => "warning",

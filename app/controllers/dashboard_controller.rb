@@ -56,6 +56,17 @@ class DashboardController < ApplicationController
 
   private
 
+  def redirect_by_role
+    if current_user.production_manager?
+      redirect_to management_production_deliveries_path and return
+    elsif current_user.driver?
+      redirect_to driver_delivery_plans_path and return
+    elsif current_user.logistics?
+      redirect_to delivery_plans_path and return
+    end
+    # Si es seller o admin, continúa al dashboard normal
+  end
+
   def detect_deliveries_with_errors
     # Filtramos entregas solo en el rango solicitado: Semana actual y siguiente
     candidates = current_user_deliveries

@@ -30,7 +30,7 @@
               </div>
             </td>
             <td>
-              <%= link_to delivery.order.number, delivery_path(delivery), class: "fw-semibold text-decoration-none" %>
+              <%= link_to delivery.order.number, smart_delivery_path(delivery), class: "fw-semibold text-decoration-none" %>
             </td>
             <td><%= delivery.order.client.name %></td>
             <td>
@@ -41,7 +41,7 @@
             <td><%= delivery.order.seller.name %></td>
             <td class="text-end pe-4">
               <div class="btn-group btn-group-sm">
-                <%= link_to delivery_path(delivery), class: "btn btn-outline-primary rounded-pill" do %>
+                <%= link_to smart_delivery_path(delivery), class: "btn btn-outline-primary rounded-pill" do %>
                   <i class="bi bi-eye"></i>
                 <% end %>
                 <% if current_user.admin? || current_user.production_manager? || current_user.logistics? %>

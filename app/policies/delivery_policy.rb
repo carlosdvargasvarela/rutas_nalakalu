@@ -1,5 +1,10 @@
 # app/policies/delivery_policy.rb
+
 class DeliveryPolicy < ApplicationPolicy
+  # =============================================================================
+  # PERMISOS BÁSICOS (CRUD)
+  # =============================================================================
+
   def index?
     user.admin? || user.production_manager? || user.logistics? || user.seller? || user.driver?
   end
@@ -26,25 +31,29 @@ class DeliveryPolicy < ApplicationPolicy
     user.admin?
   end
 
-  def new_internal_delivery?
-    user.admin? || user.logistics? || user.production_manager? || user.seller?
-  end
+  # =============================================================================
+  # PERMISOS DE GESTIÓN OPERATIVA (PRODUCTION)
+  # =============================================================================
 
-  def new_service_case?
-    user.admin? || user.logistics? || user.production_manager? || user.seller?
+  def management?
+    user.admin? || user.production_manager? || user.logistics?
   end
 
   def approve?
     user.admin? || user.logistics? || user.production_manager?
   end
 
-  def create_service_case?
-    new_service_case?
+  def quick_update?
+    user.admin? || user.production_manager? || user.logistics?
   end
 
-  def create_internal_delivery?
-    new_internal_delivery?
+  def add_product?
+    user.admin? || user.production_manager? || user.logistics?
   end
+
+  # =============================================================================
+  # PERMISOS DE CARGA (LOADING)
+  # =============================================================================
 
   def mark_all_loaded?
     user.admin? || user.production_manager? || user.logistics?
@@ -54,6 +63,38 @@ class DeliveryPolicy < ApplicationPolicy
     user.admin? || user.production_manager? || user.logistics?
   end
 
+  # =============================================================================
+  # PERMISOS DE CASOS ESPECIALES
+  # =============================================================================
+
+  def new_internal_delivery?
+    user.admin? || user.logistics? || user.production_manager? || user.seller?
+  end
+
+  def create_internal_delivery?
+    new_internal_delivery?
+  end
+
+  def new_service_case?
+    user.admin? || user.logistics? || user.production_manager? || user.seller?
+  end
+
+  def create_service_case?
+    new_service_case?
+  end
+
+  def new_service_case_for_existing?
+    new_service_case?
+  end
+
+  def create_service_case_for_existing?
+    new_service_case?
+  end
+
+  # =============================================================================
+  # PERMISOS DE REASIGNACIÓN
+  # =============================================================================
+
   def reassign_seller?
     user.admin? || user.logistics? || user.production_manager?
   end
@@ -61,6 +102,10 @@ class DeliveryPolicy < ApplicationPolicy
   def take_order?
     user.seller?
   end
+
+  # =============================================================================
+  # PERMISOS DE CONSULTA
+  # =============================================================================
 
   def addresses_for_client?
     index?
@@ -70,11 +115,17 @@ class DeliveryPolicy < ApplicationPolicy
     index?
   end
 
+  # =============================================================================
+  # SCOPE - FILTRADO POR ROL
+  # =============================================================================
+
   class Scope < Scope
     def resolve
       if user.admin? || user.production_manager? || user.logistics?
+        # Acceso completo a todas las entregas
         scope.all
       elsif user.seller?
+        # Solo entregas de pedidos asignados al vendedor
         scope.joins(order: :seller).where(sellers: {user_id: user.id})
       elsif user.driver?
         # Solo entregas asignadas a planes donde el driver es el usuario actual

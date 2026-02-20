@@ -1,0 +1,36 @@
+<%# app/views/production/deliveries/_delivery_items_list.html.erb %>
+<div class="table-responsive">
+  <table class="table table-hover align-middle mb-0">
+    <thead class="bg-light">
+      <tr>
+        <th class="ps-4">Producto</th>
+        <th class="text-center">Cant. Pedida</th>
+        <th class="text-center">Cant. en Entrega</th>
+        <th>Estado</th>
+        <th class="pe-4">Notas</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% delivery.delivery_items.each do |item| %>
+        <tr>
+          <td class="ps-4">
+            <div class="fw-bold text-dark"><%= item.order_item.product %></div>
+            <small class="text-muted">SKU: <%= item.order_item.id %></small>
+          </td>
+          <td class="text-center"><%= item.order_item.quantity %></td>
+          <td class="text-center">
+            <span class="badge bg-primary rounded-pill px-3"><%= item.quantity_delivered %></span>
+          </td>
+          <td>
+            <span class="badge bg-<%= delivery_item_status_color(item.status) %>-soft text-<%= delivery_item_status_color(item.status) %>">
+              <%= item.status.humanize %>
+            </span>
+          </td>
+          <td class="pe-4 small text-muted">
+            <%= item.order_item.notes.presence || "-" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,50 @@
+<%# app/views/production/deliveries/_quick_edit_modal.html.erb %>
+
+<div class="modal fade" id="quickEditModal<%= delivery.id %>" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold">Editar Entrega #<%= delivery.id %></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <%= form_with(model: delivery, url: quick_update_production_delivery_path(delivery), method: :patch) do |f| %>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-bold small text-uppercase">Fecha de Entrega</label>
+              <%= f.date_field :delivery_date, class: "form-control shadow-sm" %>
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label fw-bold small text-uppercase">Contacto</label>
+              <%= f.text_field :contact_name, class: "form-control shadow-sm", placeholder: "Nombre" %>
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label fw-bold small text-uppercase">Teléfono</label>
+              <%= f.text_field :contact_phone, class: "form-control shadow-sm", placeholder: "Teléfono" %>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-bold small text-uppercase">Preferencia de Horario</label>
+              <%= f.select :delivery_time_preference, 
+                  ['Mañana (8am - 12pm)', 'Tarde (1pm - 5pm)', 'Todo el día'], 
+                  { include_blank: "Seleccionar horario..." }, 
+                  { class: "form-select shadow-sm" } %>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-bold small text-uppercase">Notas de Entrega</label>
+              <%= f.text_area :delivery_notes, class: "form-control shadow-sm", rows: 3, placeholder: "Instrucciones especiales..." %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <%= f.submit "Guardar Cambios", class: "btn btn-primary px-4 shadow-sm" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

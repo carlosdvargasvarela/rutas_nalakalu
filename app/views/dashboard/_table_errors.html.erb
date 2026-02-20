@@ -16,7 +16,7 @@
           <% detector = Deliveries::ErrorDetector.new(delivery) %>
           <tr>
             <td class="ps-4">
-              <%= link_to delivery.order.number, delivery_path(delivery), class: "fw-bold text-dark text-decoration-none" %>
+              <%= link_to delivery.order.number, smart_delivery_path(delivery), class: "fw-bold text-dark text-decoration-none" %>
             </td>
             <td><%= delivery.order.client.name %></td>
             <td>
@@ -39,7 +39,9 @@
               <% end %>
             </td>
             <td class="text-end pe-4">
-              <%= link_to edit_delivery_path(delivery), class: "btn btn-sm btn-outline-danger rounded-pill" do %>
+              <%# CORRECCIÓN: Calculamos la ruta antes del link_to %>
+              <% target_path = current_user.production_manager? ? smart_delivery_path(delivery) : edit_delivery_path(delivery) %>
+              <%= link_to target_path, class: "btn btn-sm btn-outline-danger rounded-pill" do %>
                 <i class="bi bi-pencil"></i> Corregir
               <% end %>
             </td>

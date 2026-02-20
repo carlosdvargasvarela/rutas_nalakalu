@@ -1,0 +1,137 @@
+<%# app/views/production/deliveries/show.html.erb %>
+<div class="container-fluid px-4 py-4">
+  <%# Header con Navegación y Acciones Principales %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <%= link_to management_production_deliveries_path, class: "text-decoration-none small mb-2 d-block" do %>
+        <i class="bi bi-arrow-left"></i> Volver a Gestión
+      <% end %>
+      <h2 class="fw-bold mb-0">Entrega #<%= @delivery.id %></h2>
+      <span class="badge bg-<%= delivery_status_color(@delivery.status) %> fs-6 mt-2">
+        <%= @delivery.display_status %>
+      </span>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addProductModal">
+        <i class="bi bi-plus-circle me-2"></i>Agregar Producto
+      </button>
+      <% unless @delivery.approved? %>
+        <%= button_to approve_production_delivery_path(@delivery), 
+            method: :patch, 
+            class: "btn btn-success shadow-sm px-4",
+            data: { turbo_confirm: "¿Aprobar esta entrega para planificación?" } do %>
+          <i class="bi bi-check-circle me-2"></i>Aprobar Entrega
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+  <div class="row g-4">
+    <%# Columna Principal: Productos y Errores %>
+    <div class="col-lg-8">
+      <%# Alerta de Errores %>
+      <% if @has_errors %>
+        <div class="card border-0 shadow-sm mb-4 border-start border-4 border-danger">
+          <div class="card-body">
+            <h5 class="text-danger fw-bold mb-3"><i class="bi bi-exclamation-triangle-fill me-2"></i>Errores Críticos Detectados</h5>
+            <div class="list-group list-group-flush">
+              <% @errors.each do |error| %>
+                <div class="list-group-item border-0 px-0 py-2">
+                  <span class="badge bg-danger me-2"><%= error[:category] %></span>
+                  <span class="text-dark"><%= error[:message] %></span>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+      <%# Lista de Productos %>
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-bold">Productos en esta Entrega</h5>
+          <span class="badge bg-light text-dark border"><%= @delivery.delivery_items.count %> Items</span>
+        </div>
+        <div class="card-body p-0" id="delivery_items_<%= @delivery.id %>">
+          <%= render 'production/deliveries/delivery_items_list', delivery: @delivery %>
+        </div>
+      </div>
+      <%# Notas de la Entrega %>
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+          <h5 class="mb-0 fw-bold">Notas e Instrucciones</h5>
+        </div>
+        <div class="card-body">
+          <p class="text-muted mb-0">
+            <%= @delivery.delivery_notes.presence || "No hay notas adicionales para esta entrega." %>
+          </p>
+        </div>
+      </div>
+    </div>
+    <%# Columna Lateral: Información de Contexto %>
+    <div class="col-lg-4">
+      <%# Card de Cliente y Dirección %>
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <h6 class="text-muted text-uppercase fw-bold small mb-3">Información de Destino</h6>
+          <div class="d-flex align-items-center mb-3">
+            <div class="avatar-circle bg-soft-primary text-primary me-3">
+              <%= @delivery.order.client.name[0..1].upcase %>
+            </div>
+            <div>
+              <h6 class="mb-0 fw-bold"><%= @delivery.order.client.name %></h6>
+              <small class="text-muted">Pedido #<%= @delivery.order.id %></small>
+            </div>
+          </div>
+          <hr>
+          <div class="mb-3">
+            <small class="text-muted d-block">Dirección de Entrega:</small>
+            <span class="text-dark"><%= @delivery.delivery_address.address %></span>
+          </div>
+          <div class="mb-3">
+            <small class="text-muted d-block">Contacto:</small>
+            <span class="text-dark fw-bold"><%= @delivery.contact_name %></span><br>
+            <a href="tel:<%= @delivery.contact_phone %>" class="text-decoration-none">
+              <i class="bi bi-telephone me-1"></i><%= @delivery.contact_phone %>
+            </a>
+          </div>
+        </div>
+      </div>
+      <%# Historial de Entregas del mismo Pedido %>
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+          <h6 class="mb-0 fw-bold">Flujo del Pedido</h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            <% @delivery_history.each do |hist| %>
+              <div class="list-group-item border-0 py-3 <%= 'bg-light' if hist.id == @delivery.id %>">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <small class="text-muted d-block"><%= l(hist.delivery_date, format: :short) %></small>
+                    <span class="fw-bold <%= 'text-primary' if hist.id == @delivery.id %>">
+                      Entrega #<%= hist.id %>
+                    </span>
+                  </div>
+                  <span class="badge bg-<%= delivery_status_color(hist.status) %>-soft text-<%= delivery_status_color(hist.status) %>">
+                    <%= hist.display_status %>
+                  </span>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<%# Modales %>
+<%= render 'production/deliveries/add_product_modal', delivery: @delivery %>
+<style>
+  .avatar-circle {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 1.2rem;
+  }
+  .bg-soft-primary { background-color: rgba(13, 110, 253, 0.1); }
+  .bg-success-soft { background-color: rgba(25, 135, 84, 0.1); }
+  .text-success { color: #198754!important; }
+</style>

@@ -1,4 +1,5 @@
 # app/controllers/application_controller.rb
+
 class ApplicationController < ActionController::Base
   include Pundit::Authorization
 
@@ -9,22 +10,26 @@ class ApplicationController < ActionController::Base
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :check_password_change
 
-  # 🔹 Verificar autorización en todos los controladores (excepto Devise y públicos)
   after_action :verify_authorized, unless: :skip_authorization?
 
-  # 🔹 IMPORTANTE: Permitir que Pundit funcione sin usuario (para tracking público)
   def pundit_user
-    current_user # Puede ser nil para controladores públicos
+    current_user
   end
 
-  # Manejo global de errores de autorización
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
+  # 🔹 NUEVO: Redirigir según rol después del login
   def after_sign_in_path_for(resource)
     if resource.force_password_change?
-      edit_user_registration_path # formulario Devise de edición de perfil/contraseña
+      edit_user_registration_path
+    elsif resource.production_manager?
+      management_production_deliveries_path  # 👈 Vista de producción
+    elsif resource.driver?
+      driver_delivery_plans_path             # 👈 Vista de chofer
+    elsif resource.logistics?
+      delivery_plans_path                    # 👈 Vista de logística
     else
-      super
+      root_path                              # 👈 Dashboard genérico (vendedores, admin)
     end
   end
 
@@ -43,7 +48,6 @@ class ApplicationController < ActionController::Base
   def check_password_change
     return unless current_user&.force_password_change?
 
-    # Evita bucles infinitos / permitir acciones de cerrar sesión, actualizar perfil, etc.
     unless devise_controller? && action_name.in?(%w[edit update destroy])
       redirect_to edit_user_registration_path, alert: "Debes cambiar tu contraseña antes de continuar."
     end
@@ -59,7 +63,6 @@ class ApplicationController < ActionController::Base
     end
   end
 
-  # 🔹 Determinar cuándo NO verificar autorización
   def skip_authorization?
     devise_controller? ||
       controller_path.start_with?("public_") ||

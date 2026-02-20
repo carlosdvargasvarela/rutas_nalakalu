@@ -253,10 +253,17 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :deliveries, only: [] do
+    resources :deliveries, only: [:show] do  # 👈 Agregamos :show
+      collection do
+        get :management
+      end
+
       member do
-        post :mark_all_loaded # Marcar toda la entrega como cargada
-        post :reset_load_status # Resetear carga de la entrega
+        post :mark_all_loaded
+        post :reset_load_status
+        patch :approve
+        patch :quick_update
+        post :add_product
       end
     end
 

@@ -10,7 +10,8 @@
         }.compact
       }
     %>
-    <%= link_to deliveries_path(pending_params), class: "text-decoration-none" do %>
+    <%# CORRECCIÓN AQUÍ: Se eliminó el doble paréntesis %>
+    <%= link_to smart_deliveries_path(pending_params), class: "text-decoration-none" do %>
       <div class="card border-0 shadow-sm h-100 hover-shadow-transition">
         <div class="card-body">
           <div class="d-flex align-items-center">

@@ -13,7 +13,12 @@
     </li>
   <% end %>
   <li class="nav-item">
-    <%= link_to deliveries_path, class: "nav-link" do %>
+    <%= link_to(
+      (current_user.production_manager? || current_user.logistics?) ?
+        management_production_deliveries_path :
+        deliveries_path,
+      class: "nav-link"
+    ) do %>
       <i class="bi bi-truck me-1"></i> Entregas
     <% end %>
   </li>
