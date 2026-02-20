@@ -143,10 +143,8 @@ class NotificationService
 
   # ✅ NUEVO: Alerta diaria de entregas pendientes de confirmar para la próxima semana
   def self.send_daily_next_week_pending_confirmations!
-    # Calcular rango de la próxima semana ISO
     next_week_start, next_week_end = IsoWeekHelper.next_iso_week_range
 
-    # Buscar entregas que cumplen las condiciones
     pending_deliveries = Delivery
       .where(status: :scheduled)
       .where(approved: true)
@@ -159,16 +157,13 @@ class NotificationService
 
     Rails.logger.info "[NextWeekPendingConfirmations] Encontradas #{pending_deliveries.count} entregas pendientes para la próxima semana (#{next_week_start} - #{next_week_end})"
 
-    # Agrupar por seller
     deliveries_by_seller = pending_deliveries.group_by { |d| d.order.seller }
 
-    # Enviar correo a cada seller
     deliveries_by_seller.each do |seller, deliveries|
       next unless seller&.user
 
       message = build_next_week_pending_message_for_seller(seller, deliveries, next_week_start, next_week_end)
 
-      # Enviar correo directo al seller (respetando send_notifications)
       NotificationMailer.safe_notify(
         user_id: seller.user.id,
         message: message,
@@ -180,7 +175,6 @@ class NotificationService
       Rails.logger.info "[NextWeekPendingConfirmations] Correo enviado a seller: #{seller.user.email} (#{deliveries.count} entregas)"
     end
 
-    # Enviar correo global a todos los admins
     admin_users = User.where(role: :admin)
     if admin_users.any?
       message = build_next_week_pending_message_for_admins(pending_deliveries, next_week_start, next_week_end)
@@ -230,9 +224,14 @@ class NotificationService
   end
   private_class_method :current_week_created_message
 
+  # ✅ ACTUALIZADO: Sin emojis, motivo y reagendado por siempre presentes con fallback
   def self.current_week_rescheduled_message(delivery, old_date:, rescheduled_by: nil, reason: nil)
     old_f = I18n.l(old_date, format: :long)
     new_f = I18n.l(delivery.delivery_date, format: :long)
+
+    motivo_texto = reason.present? ? reason : "El usuario no agregó motivos"
+    usuario_texto = rescheduled_by.present? ? rescheduled_by : "No especificado"
+
     productos = delivery.delivery_items.includes(order_item: :order).map do |di|
       prod = di.order_item&.product || "-"
       qty = di.quantity_delivered || 1
@@ -241,22 +240,22 @@ class NotificationService
 
     [
       "Entrega reagendada en la semana actual (ISO):",
-      "📦 Pedido: #{delivery.order.number}",
-      "📅 Del: #{old_f}",
-      "📅 Al:  #{new_f}",
-      "👤 Cliente: #{delivery.order.client.name}",
-      "📍 Dirección: #{delivery.delivery_address.address}#{" (#{delivery.delivery_address.description})" if delivery.delivery_address.description.present?}",
-      "🏷️ Tipo: #{delivery.display_type}",
-      "👨‍💼 Vendedor: #{delivery.order.seller.name} (#{delivery.order.seller.seller_code})",
-      (reason.present? ? "📝 Motivo: #{reason}" : nil),
-      (rescheduled_by.present? ? "🔁 Reagendado por: #{rescheduled_by}" : nil),
+      "Pedido: #{delivery.order.number}",
+      "Del: #{old_f}",
+      "Al:  #{new_f}",
+      "Cliente: #{delivery.order.client.name}",
+      "Direccion: #{delivery.delivery_address.address}#{" (#{delivery.delivery_address.description})" if delivery.delivery_address.description.present?}",
+      "Tipo: #{delivery.display_type}",
+      "Vendedor: #{delivery.order.seller.name} (#{delivery.order.seller.seller_code})",
+      "Motivo: #{motivo_texto}",
+      "Reagendado por: #{usuario_texto}",
+      "",
       "Productos:",
       productos
-    ].compact.join("\n")
+    ].join("\n")
   end
   private_class_method :current_week_rescheduled_message
 
-  # ✅ NUEVO: Construir mensaje para seller
   def self.build_next_week_pending_message_for_seller(seller, deliveries, start_date, end_date)
     seller_name = seller.name.presence || seller.user.name.presence || seller.user.email
     formatted_range = "#{I18n.l(start_date, format: :short)} - #{I18n.l(end_date, format: :short)}"
@@ -286,14 +285,12 @@ class NotificationService
   end
   private_class_method :build_next_week_pending_message_for_seller
 
-  # ✅ NUEVO: Construir mensaje para admins
   def self.build_next_week_pending_message_for_admins(deliveries, start_date, end_date)
     formatted_range = "#{I18n.l(start_date, format: :short)} - #{I18n.l(end_date, format: :short)}"
 
     message = "📊 Resumen de entregas pendientes de confirmar para la próxima semana (#{formatted_range}):\n\n"
     message += "Total de entregas: #{deliveries.count}\n\n"
 
-    # Agrupar por seller para el resumen
     by_seller = deliveries.group_by { |d| d.order.seller }
 
     by_seller.each do |seller, seller_deliveries|
