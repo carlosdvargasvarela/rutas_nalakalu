@@ -1,117 +1,168 @@
 <%# app/views/production/deliveries/show.html.erb %>
 <div class="container-fluid px-4 py-4">
-  <%# Header con Navegación y Acciones Principales %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <%# ── HEADER ── %>
+  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
     <div>
-      <%= link_to management_production_deliveries_path, class: "text-decoration-none small mb-2 d-block" do %>
-        <i class="bi bi-arrow-left"></i> Volver a Gestión
+      <%= link_to management_production_deliveries_path, class: "text-decoration-none small mb-2 d-block text-muted" do %>
+        <i class="bi bi-arrow-left me-1"></i> Volver a Gestión
       <% end %>
-      <h2 class="fw-bold mb-0">Entrega #<%= @delivery.id %></h2>
-      <span class="badge bg-<%= delivery_status_color(@delivery.status) %> fs-6 mt-2">
-        <%= @delivery.display_status %>
-      </span>
+      <h2 class="fw-bold mb-1">
+        Entrega - <%= @delivery.order.number %>
+        <span class="badge bg-<%= delivery_status_color(@delivery.status) %> fs-6 align-middle ms-2">
+          <%= @delivery.display_status %>
+        </span>
+        <% if @delivery.approved? %>
+          <span class="badge bg-success fs-6 align-middle ms-1">
+            <i class="bi bi-shield-check me-1"></i>Aprobada
+          </span>
+        <% end %>
+      </h2>
+      <small class="text-muted">
+        <i class="bi bi-calendar-event me-1"></i>
+        <%= l(@delivery.delivery_date, format: :long) %>
+        &nbsp;·&nbsp;
+        <i class="bi bi-person me-1"></i>
+        <%= @delivery.order.client.name %>
+        &nbsp;·&nbsp;
+        Pedido: <%= @delivery.order.number %>
+      </small>
     </div>
-    <div class="d-flex gap-2">
-      <button class="btn btn-outline-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addProductModal">
-        <i class="bi bi-plus-circle me-2"></i>Agregar Producto
-      </button>
+    <%# ── ACCIONES PRINCIPALES ── %>
+    <div class="d-flex flex-wrap gap-2 align-items-start">
       <% unless @delivery.approved? %>
-        <%= button_to approve_production_delivery_path(@delivery), 
-            method: :patch, 
-            class: "btn btn-success shadow-sm px-4",
+        <%= button_to approve_production_delivery_path(@delivery),
+            method: :patch,
+            class: "btn btn-success shadow-sm",
             data: { turbo_confirm: "¿Aprobar esta entrega para planificación?" } do %>
-          <i class="bi bi-check-circle me-2"></i>Aprobar Entrega
+          <i class="bi bi-shield-check me-1"></i> Aprobar
         <% end %>
       <% end %>
+      <%= button_to confirm_all_items_production_delivery_path(@delivery),
+          method: :patch,
+          class: "btn btn-primary shadow-sm",
+          data: { turbo_confirm: "¿Confirmar todos los productos de esta entrega?" } do %>
+        <i class="bi bi-check-all me-1"></i> Confirmar todos
+      <% end %>
+      <button class="btn btn-warning shadow-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#rescheduleDeliveryModal">
+        <i class="bi bi-calendar-plus me-1"></i> Reagendar entrega
+      </button>
+      <%# BOTÓN EDITAR: Ahora abre el modal directamente %>
+      <% if policy(@delivery).edit? %>
+        <button class="btn btn-outline-secondary shadow-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#editModal<%= @delivery.id %>">
+          <i class="bi bi-pencil-square me-1"></i> Editar
+        </button>
+      <% end %>
+      <button class="btn btn-outline-primary shadow-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#addProductModal">
+        <i class="bi bi-plus-circle me-1"></i> Agregar producto
+      </button>
     </div>
   </div>
+  <%# ... (Resto del contenido: Alerta de errores, Columnas, etc. se mantiene igual) ... %>
+  <%# ── ALERTA DE ERRORES ── %>
+  <% if @has_errors %>
+    <div class="alert alert-danger border-start border-5 border-danger shadow-sm mb-4" role="alert">
+      <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Errores Críticos Detectados</h6>
+      <ul class="mb-0 ps-3">
+        <% @errors.each do |error| %>
+          <li>
+            <span class="badge bg-danger me-1"><%= error[:category] %></span>
+            <%= error[:message] %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
   <div class="row g-4">
-    <%# Columna Principal: Productos y Errores %>
+    <%# ── COLUMNA PRINCIPAL ── %>
     <div class="col-lg-8">
-      <%# Alerta de Errores %>
-      <% if @has_errors %>
-        <div class="card border-0 shadow-sm mb-4 border-start border-4 border-danger">
-          <div class="card-body">
-            <h5 class="text-danger fw-bold mb-3"><i class="bi bi-exclamation-triangle-fill me-2"></i>Errores Críticos Detectados</h5>
-            <div class="list-group list-group-flush">
-              <% @errors.each do |error| %>
-                <div class="list-group-item border-0 px-0 py-2">
-                  <span class="badge bg-danger me-2"><%= error[:category] %></span>
-                  <span class="text-dark"><%= error[:message] %></span>
-                </div>
-              <% end %>
-            </div>
-          </div>
-        </div>
-      <% end %>
-      <%# Lista de Productos %>
       <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 fw-bold">Productos en esta Entrega</h5>
-          <span class="badge bg-light text-dark border"><%= @delivery.delivery_items.count %> Items</span>
+          <h5 class="mb-0 fw-bold"><i class="bi bi-box-seam me-2 text-primary"></i>Productos</h5>
+          <span class="badge bg-light text-dark border">
+            <%= @delivery.delivery_items.count %> items
+          </span>
         </div>
         <div class="card-body p-0" id="delivery_items_<%= @delivery.id %>">
-          <%= render 'production/deliveries/delivery_items_list', delivery: @delivery %>
+          <%= render "production/deliveries/delivery_items_list", delivery: @delivery %>
         </div>
       </div>
-      <%# Notas de la Entrega %>
-      <div class="card border-0 shadow-sm">
+      <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white py-3">
-          <h5 class="mb-0 fw-bold">Notas e Instrucciones</h5>
+          <h5 class="mb-0 fw-bold"><i class="bi bi-chat-left-text me-2 text-secondary"></i>Notas e Instrucciones</h5>
         </div>
         <div class="card-body">
           <p class="text-muted mb-0">
-            <%= @delivery.delivery_notes.presence || "No hay notas adicionales para esta entrega." %>
+            <%= @delivery.delivery_notes.presence || "Sin notas adicionales." %>
           </p>
         </div>
       </div>
     </div>
-    <%# Columna Lateral: Información de Contexto %>
+    <%# ── COLUMNA LATERAL ── %>
     <div class="col-lg-4">
-      <%# Card de Cliente y Dirección %>
       <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
-          <h6 class="text-muted text-uppercase fw-bold small mb-3">Información de Destino</h6>
+          <h6 class="text-muted text-uppercase fw-bold small mb-3">Destino</h6>
           <div class="d-flex align-items-center mb-3">
-            <div class="avatar-circle bg-soft-primary text-primary me-3">
+            <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center me-3 fw-bold"
+                 style="width:48px;height:48px;font-size:1.1rem;">
               <%= @delivery.order.client.name[0..1].upcase %>
             </div>
             <div>
               <h6 class="mb-0 fw-bold"><%= @delivery.order.client.name %></h6>
-              <small class="text-muted">Pedido #<%= @delivery.order.id %></small>
+              <small class="text-muted">Pedido: <%= @delivery.order.number %></small>
             </div>
           </div>
-          <hr>
-          <div class="mb-3">
-            <small class="text-muted d-block">Dirección de Entrega:</small>
-            <span class="text-dark"><%= @delivery.delivery_address.address %></span>
-          </div>
-          <div class="mb-3">
-            <small class="text-muted d-block">Contacto:</small>
-            <span class="text-dark fw-bold"><%= @delivery.contact_name %></span><br>
+          <hr class="my-2">
+          <p class="mb-1 small">
+            <i class="bi bi-geo-alt text-danger me-1"></i>
+            <%= @delivery.delivery_address.address %>
+          </p>
+          <% if @delivery.delivery_address.description.present? %>
+            <p class="mb-1 small text-muted fst-italic">
+              <%= @delivery.delivery_address.description %>
+            </p>
+          <% end %>
+          <% if @delivery.delivery_address.latitude.present? %>
+            <%= link_to "https://www.google.com/maps?q=#{@delivery.delivery_address.latitude},#{@delivery.delivery_address.longitude}",
+                target: "_blank",
+                class: "btn btn-sm btn-outline-primary mt-2 w-100" do %>
+              <i class="bi bi-map me-1"></i> Abrir en Google Maps
+            <% end %>
+          <% end %>
+          <hr class="my-2">
+          <p class="mb-1 small">
+            <i class="bi bi-person me-1"></i>
+            <strong><%= @delivery.contact_name %></strong>
+          </p>
+          <p class="mb-0 small">
             <a href="tel:<%= @delivery.contact_phone %>" class="text-decoration-none">
               <i class="bi bi-telephone me-1"></i><%= @delivery.contact_phone %>
             </a>
-          </div>
+          </p>
         </div>
       </div>
-      <%# Historial de Entregas del mismo Pedido %>
       <div class="card border-0 shadow-sm">
         <div class="card-header bg-white py-3">
-          <h6 class="mb-0 fw-bold">Flujo del Pedido</h6>
+          <h6 class="mb-0 fw-bold"><i class="bi bi-diagram-3 me-2 text-secondary"></i>Flujo del Pedido</h6>
         </div>
         <div class="card-body p-0">
           <div class="list-group list-group-flush">
             <% @delivery_history.each do |hist| %>
-              <div class="list-group-item border-0 py-3 <%= 'bg-light' if hist.id == @delivery.id %>">
+              <div class="list-group-item border-0 py-2 px-3 <%= 'bg-light' if hist.id == @delivery.id %>">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
                     <small class="text-muted d-block"><%= l(hist.delivery_date, format: :short) %></small>
-                    <span class="fw-bold <%= 'text-primary' if hist.id == @delivery.id %>">
-                      Entrega #<%= hist.id %>
-                    </span>
+                    <%= link_to "Entrega ##{hist.id}",
+                        production_delivery_path(hist),
+                        class: "fw-bold text-decoration-none #{hist.id == @delivery.id ? 'text-primary' : 'text-dark'}" %>
                   </div>
-                  <span class="badge bg-<%= delivery_status_color(hist.status) %>-soft text-<%= delivery_status_color(hist.status) %>">
+                  <span class="badge bg-<%= delivery_status_color(hist.status) %>">
                     <%= hist.display_status %>
                   </span>
                 </div>
@@ -123,15 +174,10 @@
     </div>
   </div>
 </div>
-<%# Modales %>
-<%= render 'production/deliveries/add_product_modal', delivery: @delivery %>
-<style>
-  .avatar-circle {
-    width: 48px; height: 48px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: bold; font-size: 1.2rem;
-  }
-  .bg-soft-primary { background-color: rgba(13, 110, 253, 0.1); }
-  .bg-success-soft { background-color: rgba(25, 135, 84, 0.1); }
-  .text-success { color: #198754!important; }
-</style>
+<%# ── MODALES ── %>
+<%= render "production/deliveries/edit_modal", 
+      delivery: @delivery, 
+      addresses: @addresses, 
+      client: @delivery.order.client %>
+<%= render "production/deliveries/add_product_modal", delivery: @delivery %>
+<%= render "production/deliveries/reschedule_delivery_modal", delivery: @delivery %>

@@ -1,0 +1,27 @@
+<%# app/views/production/deliveries/_edit_modal.html.erb %>
+<% client = delivery.order.client %>
+<% addresses = client.delivery_addresses.to_a %>
+<div class="modal fade"
+     id="editModal<%= delivery.id %>"
+     tabindex="-1"
+     aria-labelledby="editModalLabel<%= delivery.id %>"
+     aria-hidden="true"
+     data-bs-backdrop="static">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-primary text-white py-3">
+        <h5 class="modal-title fw-bold" id="editModalLabel<%= delivery.id %>">
+          <i class="bi bi-pencil-square me-2"></i>
+          Editar Entrega - <%= delivery.order.number %>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <%= render "production/deliveries/edit_form",
+              delivery: delivery,
+              addresses: addresses,
+              client: client %>
+      </div>
+    </div>
+  </div>
+</div>

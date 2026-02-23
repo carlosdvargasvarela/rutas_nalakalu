@@ -1,7 +1,6 @@
 <%# app/views/production/deliveries/management.html.erb %>
 <div class="container-fluid px-4 py-4">
-  <%# Header con Título y Stats %>
-  <div class="d-flex justify-content-between align-items-end mb-4">
+  <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
     <div>
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb mb-1">
@@ -13,43 +12,46 @@
         <i class="bi bi-gear-wide-connected text-primary me-2"></i>Gestión de Operaciones
       </h2>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <%= link_to deliveries_path(q: { delivery_date_gteq: Date.current }),
+          class: "btn btn-outline-secondary btn-sm shadow-sm" do %>
+        <i class="bi bi-table me-1"></i> Vista Logística Completa
+      <% end %>
       <div class="bg-white p-2 px-3 rounded shadow-sm border-start border-4 border-primary">
-        <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Total Semana</small>
+        <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.65rem;">Total Semana</small>
         <span class="h5 mb-0 fw-bold"><%= @stats[:this_week] %></span>
       </div>
       <div class="bg-white p-2 px-3 rounded shadow-sm border-start border-4 border-success">
-        <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Listas</small>
+        <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.65rem;">Listas</small>
         <span class="h5 mb-0 fw-bold"><%= @stats[:ready_to_deliver] %></span>
       </div>
     </div>
   </div>
-  <%# Tabs de Navegación de Flujo %>
   <div class="card shadow-sm border-0 mb-4">
     <div class="card-header bg-white border-0 pt-3">
       <ul class="nav nav-pills nav-fill gap-2 p-1 bg-light rounded-3">
         <li class="nav-item">
-          <%= link_to management_production_deliveries_path(filter: 'this_week'), 
+          <%= link_to management_production_deliveries_path(filter: "this_week"),
               class: "nav-link py-2 d-flex align-items-center justify-content-center #{@filter == 'this_week' ? 'active shadow-sm' : 'text-secondary'}" do %>
             <i class="bi bi-calendar-week me-2"></i> Esta Semana
           <% end %>
         </li>
         <li class="nav-item">
-          <%= link_to management_production_deliveries_path(filter: 'pending_approval'), 
+          <%= link_to management_production_deliveries_path(filter: "pending_approval"),
               class: "nav-link py-2 d-flex align-items-center justify-content-center #{@filter == 'pending_approval' ? 'active shadow-sm bg-warning text-dark' : 'text-secondary'}" do %>
             <i class="bi bi-shield-exclamation me-2"></i> Por Aprobar
             <span class="badge rounded-pill bg-white text-dark ms-2"><%= @stats[:pending_approval] %></span>
           <% end %>
         </li>
         <li class="nav-item">
-          <%= link_to management_production_deliveries_path(filter: 'errors'), 
+          <%= link_to management_production_deliveries_path(filter: "errors"),
               class: "nav-link py-2 d-flex align-items-center justify-content-center #{@filter == 'errors' ? 'active shadow-sm bg-danger' : 'text-secondary'}" do %>
             <i class="bi bi-bug me-2"></i> Con Errores
             <span class="badge rounded-pill bg-white text-danger ms-2"><%= @stats[:with_errors] %></span>
           <% end %>
         </li>
         <li class="nav-item">
-          <%= link_to management_production_deliveries_path(filter: 'ready'), 
+          <%= link_to management_production_deliveries_path(filter: "ready"),
               class: "nav-link py-2 d-flex align-items-center justify-content-center #{@filter == 'ready' ? 'active shadow-sm bg-success' : 'text-secondary'}" do %>
             <i class="bi bi-check-all me-2"></i> Listas para Ruta
           <% end %>
@@ -60,13 +62,13 @@
       <% if @deliveries.any? %>
         <div class="list-group list-group-flush">
           <% @deliveries.each do |delivery| %>
-            <%= render 'production/deliveries/management_card', delivery: delivery %>
+            <%= render "production/deliveries/management_card", delivery: delivery %>
           <% end %>
         </div>
       <% else %>
         <div class="text-center py-5">
           <i class="bi bi-inbox text-muted display-1"></i>
-          <p class="mt-3 text-muted">No hay entregas en esta categoría por ahora.</p>
+          <p class="mt-3 text-muted">No hay entregas en esta categoría.</p>
         </div>
       <% end %>
     </div>
@@ -78,4 +80,5 @@
 <style>
   .nav-pills .nav-link.active { transition: all 0.3s ease; }
   .hover-bg-light:hover { background-color: #f8f9fa; }
+  .btn-white { background-color: #fff; }
 </style>

@@ -28,7 +28,8 @@ class DeliveryPlan < ApplicationRecord
     GRIR: 4,
     PickUp_Ricardo: 5,
     PickUp_Ruben: 6,
-    Recoje_Sala: 7
+    Recoje_Sala: 7,
+    Sala: 8
   }
 
   enum load_status: {

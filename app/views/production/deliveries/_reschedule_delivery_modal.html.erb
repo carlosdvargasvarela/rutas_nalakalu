@@ -1,0 +1,29 @@
+<%# app/views/production/deliveries/_reschedule_delivery_modal.html.erb %>
+<div class="modal fade" id="rescheduleDeliveryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-calendar-plus me-2"></i>Reagendar Entrega #<%= delivery.id %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <%= form_with url: reschedule_delivery_production_delivery_path(delivery), method: :patch do |f| %>
+        <div class="modal-body">
+          <p class="text-muted small mb-3">
+            Se marcará esta entrega como <strong>reagendada</strong> y se creará una nueva entrega con todos los productos para la fecha seleccionada.
+          </p>
+          <label class="form-label fw-bold small text-uppercase">Nueva Fecha de Entrega</label>
+          <%= date_field_tag :new_date, Date.current + 1,
+              class: "form-control shadow-sm",
+              required: true,
+              min: Date.current + 1 %>
+        </div>
+        <div class="modal-footer border-0 bg-light">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <%= f.submit "Confirmar Reagendamiento", class: "btn btn-warning btn-sm px-3" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

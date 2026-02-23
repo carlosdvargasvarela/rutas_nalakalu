@@ -47,7 +47,7 @@ class Production::DeliveryItemsController < ApplicationController
     @delivery = @delivery_item.delivery
     @delivery_plan = @delivery.delivery_plan
     @load_stats = @delivery_plan.load_stats if @delivery_plan
-    @assignment = @delivery.delivery_plan_assignments.first
+    @assignment = @delivery.delivery_plan_assignment
 
     streams = []
 

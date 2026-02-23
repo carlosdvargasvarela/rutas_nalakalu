@@ -1,44 +1,43 @@
 <%# app/views/production/deliveries/_add_product_modal.html.erb %>
-
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i>Agregar Producto a Entrega</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      <div class="modal-header bg-primary text-white border-0">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-plus-circle me-2"></i>Agregar Producto a Entrega #<%= delivery.id %>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      
-      <%= form_with(url: add_product_production_delivery_path(delivery), method: :post) do |f| %>
+      <%= form_with url: add_product_production_delivery_path(delivery), method: :post do |f| %>
         <div class="modal-body">
-          <div class="alert alert-info small">
-            <i class="bi bi-info-circle me-2"></i>Esto creará un nuevo ítem en el pedido original y lo asignará automáticamente a esta entrega.
+          <div class="alert alert-info small border-0">
+            <i class="bi bi-info-circle me-2"></i>
+            Esto creará un nuevo ítem en el pedido original y lo asignará a esta entrega.
           </div>
-          
           <div class="row g-3">
             <div class="col-12">
-              <label class="form-label fw-bold small text-uppercase">Nombre del Producto / Descripción</label>
-              <%= f.text_field :product, class: "form-control shadow-sm", placeholder: "Ej: Almohadón decorativo azul", required: true %>
+              <label class="form-label fw-semibold small text-uppercase text-muted">Producto / Descripción</label>
+              <%= f.text_field :product, class: "form-control",
+                    placeholder: "Ej: Almohadón decorativo azul", required: true %>
             </div>
-            
             <div class="col-md-6">
-              <label class="form-label fw-bold small text-uppercase">Cantidad Total</label>
-              <%= f.number_field :quantity, class: "form-control shadow-sm", value: 1, min: 1, required: true %>
+              <label class="form-label fw-semibold small text-uppercase text-muted">Cantidad Total</label>
+              <%= f.number_field :quantity, class: "form-control", value: 1, min: 1, required: true %>
             </div>
-            
             <div class="col-md-6">
-              <label class="form-label fw-bold small text-uppercase">Cant. a Entregar Hoy</label>
-              <%= f.number_field :quantity_delivered, class: "form-control shadow-sm", value: 1, min: 1, required: true %>
+              <label class="form-label fw-semibold small text-uppercase text-muted">Cant. a Entregar</label>
+              <%= f.number_field :quantity_delivered, class: "form-control", value: 1, min: 1, required: true %>
             </div>
-
             <div class="col-12">
-              <label class="form-label fw-bold small text-uppercase">Notas para Producción</label>
-              <%= f.text_area :notes, class: "form-control shadow-sm", rows: 2, placeholder: "Ej: Tela especial, entrega urgente..." %>
+              <label class="form-label fw-semibold small text-uppercase text-muted">Notas</label>
+              <%= f.text_area :notes, class: "form-control", rows: 2,
+                    placeholder: "Ej: Tela especial, entrega urgente..." %>
             </div>
           </div>
         </div>
         <div class="modal-footer bg-light border-0">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <%= f.submit "Agregar e Incluir", class: "btn btn-primary px-4 shadow-sm" %>
+          <%= f.submit "Agregar e Incluir", class: "btn btn-primary px-4" %>
         </div>
       <% end %>
     </div>

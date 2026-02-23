@@ -253,25 +253,30 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :deliveries, only: [:show] do  # 👈 Agregamos :show
+    resources :deliveries, only: [:show, :edit, :update] do
       collection do
         get :management
       end
 
       member do
-        post :mark_all_loaded
-        post :reset_load_status
         patch :approve
         patch :quick_update
+        patch :confirm_all_items
+        patch :reschedule_delivery
+        patch :reschedule_item
+        patch :mark_item_delivered
+        patch :cancel_item
         post :add_product
+        post :mark_all_loaded
+        post :reset_load_status
       end
     end
 
-    resources :delivery_items, only: [] do
+    resources :delivery_items do
       member do
-        post :mark_loaded
-        post :mark_unloaded
-        post :mark_missing
+        match :mark_loaded, via: [:get, :post]
+        match :mark_unloaded, via: [:get, :post]
+        match :mark_missing, via: [:get, :post]
       end
     end
   end
