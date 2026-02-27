@@ -173,55 +173,78 @@ export default class extends Controller {
   }
 
   drawRoute() {
-    const routePoints = [];
-    const bounds = new google.maps.LatLngBounds();
-
-    // Posición actual del conductor
-    if (this.hasCurrentLatValue && this.hasCurrentLngValue) {
-      const driverPos = {
-        lat: this.currentLatValue,
-        lng: this.currentLngValue,
-      };
-      routePoints.push(driverPos);
-      bounds.extend(driverPos);
+    if (!this.hasCurrentLatValue || !this.hasCurrentLngValue) {
+      console.warn("⚠️ No hay posición válida del conductor");
+      return;
     }
 
-    // Entregas pendientes en orden
-    this.assignmentsValue
+    const origin = {
+      lat: this.currentLatValue,
+      lng: this.currentLngValue,
+    };
+
+    // Paradas pendientes en orden
+    const waypoints = this.assignmentsValue
       .filter((a) => a.status === "pending" || a.status === "in_route")
       .sort((a, b) => a.stop_order - b.stop_order)
-      .forEach((assignment) => {
+      .map((assignment) => {
         const delivery = assignment.delivery;
-        if (delivery.latitude && delivery.longitude) {
-          const lat = parseFloat(delivery.latitude);
-          const lng = parseFloat(delivery.longitude);
 
-          if (!isNaN(lat) && !isNaN(lng)) {
-            const pos = { lat, lng };
-            routePoints.push(pos);
-            bounds.extend(pos);
-          }
-        }
-      });
+        if (!delivery.latitude || !delivery.longitude) return null;
 
-    // Crear polyline
-    if (this.routeLine) {
-      this.routeLine.setMap(null);
+        const lat = parseFloat(delivery.latitude);
+        const lng = parseFloat(delivery.longitude);
+
+        if (isNaN(lat) || isNaN(lng)) return null;
+
+        return {
+          location: { lat, lng },
+          stopover: true,
+        };
+      })
+      .filter(Boolean);
+
+    if (waypoints.length === 0) {
+      console.warn("⚠️ No hay paradas para trazar ruta");
+      return;
     }
 
-    if (routePoints.length > 0) {
-      this.routeLine = new google.maps.Polyline({
-        path: routePoints,
-        geodesic: true,
+    const destination = waypoints[waypoints.length - 1].location;
+    const intermediateWaypoints = waypoints.slice(0, -1);
+
+    // Limpiar renderer anterior si existe
+    if (this.directionsRenderer) {
+      this.directionsRenderer.setMap(null);
+    }
+
+    this.directionsService = new google.maps.DirectionsService();
+    this.directionsRenderer = new google.maps.DirectionsRenderer({
+      suppressMarkers: true, // ✅ mantenemos tus marcadores personalizados
+      polylineOptions: {
         strokeColor: "#0d6efd",
-        strokeOpacity: 0.7,
-        strokeWeight: 4,
-        map: this.map,
-      });
+        strokeOpacity: 0.8,
+        strokeWeight: 5,
+      },
+    });
 
-      // Ajustar vista
-      this.map.fitBounds(bounds, { padding: 80 });
-    }
+    this.directionsRenderer.setMap(this.map);
+
+    this.directionsService.route(
+      {
+        origin: origin,
+        destination: destination,
+        waypoints: intermediateWaypoints,
+        travelMode: google.maps.TravelMode.DRIVING,
+        optimizeWaypoints: false,
+      },
+      (result, status) => {
+        if (status === "OK") {
+          this.directionsRenderer.setDirections(result);
+        } else {
+          console.error("❌ Error calculando ruta:", status);
+        }
+      },
+    );
   }
 
   getMarkerColor(status) {
