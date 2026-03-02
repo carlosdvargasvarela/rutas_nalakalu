@@ -1,3 +1,4 @@
+<%# app/views/delivery_plans/index.html.erb %>
 <div class="container-fluid py-4">
   <%# ================== ENCABEZADO ================== %>
   <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -61,7 +62,7 @@
             <div class="d-flex flex-wrap gap-2">
               <% @stats[:by_status].sort_by { |status, _| DeliveryPlan.statuses[status.to_s] || 999 }.each do |status, count| %>
                 <span class="badge bg-<%= delivery_plan_status_color(status) %> d-flex align-items-center gap-1 px-3 py-2" style="font-size: 0.85rem;">
-                  <i class="<%= delivery_plan_status_icon(status) %>"></i>
+                  <i class="<​%= delivery_plan_status_icon(status) %>"></i>
                   <%= delivery_plan_status_label(status) %>
                   <span class="badge bg-white text-dark ms-1"><%= count %></span>
                 </span>
@@ -154,7 +155,6 @@
           <tbody>
             <% @delivery_plans.each do |plan| %>
               <%
-                # Rango de semana
                 if plan.year.present? && plan.week.present?
                   begin
                     start_date = Date.commercial(plan.year.to_i, plan.week.to_i, 1)
@@ -166,12 +166,12 @@
                   start_date = end_date = nil
                 end
 
-                total_count        = plan.deliveries_count.to_i
-                delivered_count    = plan.delivered_count.to_i
+                total_count         = plan.deliveries_count.to_i
+                delivered_count     = plan.delivered_count.to_i
                 progress_percentage = total_count > 0 ? (delivered_count.to_f / total_count * 100).round : 0
 
-                first_date = plan.first_delivery_date
-                last_date  = plan.last_delivery_date
+                first_date = plan.respond_to?(:first_delivery_date) ? plan.first_delivery_date : nil
+                last_date  = plan.respond_to?(:last_delivery_date) ? plan.last_delivery_date : nil
               %>
               <tr>
                 <td>
@@ -187,7 +187,7 @@
                   <% end %>
                 </td>
                 <td>
-                  <% if total_count > 0 && first_date.present? && last_date.present? %>
+                  <% if total_count > 0 && first_date.present? %>
                     <% if first_date == last_date %>
                       <div class="d-flex align-items-center">
                         <i class="bi bi-calendar-check text-primary me-2"></i>
@@ -217,7 +217,7 @@
                 </td>
                 <td>
                   <span class="badge bg-<%= delivery_plan_status_color(plan.status) %> d-flex align-items-center gap-1" style="width: fit-content;">
-                    <i class="<%= delivery_plan_status_icon(plan.status) %>"></i>
+                    <i class="<​%= delivery_plan_status_icon(plan.status) %>"></i>
                     <%= plan.display_status %>
                   </span>
                 </td>
@@ -259,9 +259,9 @@
                       <div class="progress-bar bg-success"
                            role="progressbar"
                            style="width: <%= progress_percentage %>%"
-                           aria-valuenow="<%= progress_percentage %>"
-                           aria-valuemin="0"
-                           aria-valuemax="100"></div>
+                           aria-valuenow="<​%= progress_percentage %>"
+                        aria-valuemin="0"
+                        aria-valuemax="100"></div>
                     </div>
                     <small class="text-muted fw-semibold" style="min-width: 45px;"><%= delivered_count %>/<%= total_count %></small>
                   </div>
@@ -353,12 +353,12 @@
             start_date = end_date = nil
           end
 
-          total_count        = plan.deliveries_count.to_i
-          delivered_count    = plan.delivered_count.to_i
+          total_count         = plan.deliveries_count.to_i
+          delivered_count     = plan.delivered_count.to_i
           progress_percentage = total_count > 0 ? (delivered_count.to_f / total_count * 100).round : 0
 
-          first_date = plan.first_delivery_date
-          last_date  = plan.last_delivery_date
+          first_date = plan.respond_to?(:first_delivery_date) ? plan.first_delivery_date : nil
+          last_date  = plan.respond_to?(:last_delivery_date) ? plan.last_delivery_date : nil
         %>
         <div class="col-12">
           <div class="card shadow-sm border-0">
@@ -382,7 +382,7 @@
                   </small>
                   <small class="text-muted d-block">
                     <i class="bi bi-truck me-1"></i>
-                    <% if total_count > 0 && first_date.present? && last_date.present? %>
+                    <% if total_count > 0 && first_date.present? %>
                       <% if first_date == last_date %>
                         <%= l first_date.to_date, format: :short %>
                       <% else %>
@@ -394,7 +394,7 @@
                   </small>
                 </div>
                 <span class="badge bg-<%= delivery_plan_status_color(plan.status) %> d-flex align-items-center gap-1">
-                  <i class="<%= delivery_plan_status_icon(plan.status) %>"></i>
+                  <i class="<​%= delivery_plan_status_icon(plan.status) %>"></i>
                   <%= plan.display_status %>
                 </span>
               </div>
@@ -493,7 +493,7 @@
   <%# ================== PAGINACIÓN ================== %>
   <% if @delivery_plans.respond_to?(:current_page) && @delivery_plans.total_pages > 1 %>
     <div class="d-flex justify-content-center mt-4">
-      <%= paginate @delivery_plans%>
+      <%= paginate @delivery_plans %>
     </div>
   <% end %>
 </div>

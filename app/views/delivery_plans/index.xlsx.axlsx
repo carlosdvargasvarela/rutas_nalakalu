@@ -1,3 +1,4 @@
+# app/views/delivery_plans/index.xlsx.axlsx
 wb = xlsx_package.workbook
 
 # =====================
@@ -49,9 +50,6 @@ default_style = wb.styles.add_style(
 # Hoja
 # =====================
 wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
-  # =====================
-  # Header
-  # =====================
   sheet.add_row [
     "Semana",
     "Año",
@@ -72,11 +70,7 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
     "Notas"
   ], style: header_style
 
-  # =====================
-  # Filas de datos
-  # =====================
   @delivery_plans.each do |delivery_plan|
-    # Obtener todas las asignaciones de este plan
     assignments = delivery_plan.delivery_plan_assignments.includes(
       delivery: [
         { order: [:client, :seller] },
@@ -88,7 +82,6 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
     assignments.each do |assignment|
       delivery = assignment.delivery
 
-      # Determinar estilo según estado de la entrega
       row_style = case delivery.status&.to_s
                   when "scheduled"        then scheduled_style
                   when "ready_to_deliver" then ready_style
@@ -99,12 +92,10 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
                   end
 
       if delivery.active_items_for_plan_for(current_user).empty?
-        # Combinar notas para fila sin productos
         all_notes = []
         all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
         notes_text = all_notes.join("\n")
 
-        # Fila sin productos
         sheet.add_row [
           delivery_plan.week || "N/A",
           delivery_plan.year || "N/A",
@@ -126,9 +117,7 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
         ], style: row_style
 
       else
-        # Una fila por cada producto
         delivery.active_items_for_plan_for(current_user).each do |delivery_item|
-          # Combinar notas con saltos de línea
           all_notes = []
           all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
           all_notes << "PRODUCCIÓN: #{delivery_item.order_item.notes}" if delivery_item.order_item&.notes.present?
@@ -159,12 +148,8 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
     end
   end
 
-  # =====================
-  # Ajustes de hoja
-  # =====================
   sheet.column_widths 8, 8, 12, 15, 25, 10, 12, 20, 30, 8, 15, 10, 15, 15, 15, 25, 50
 
-  # Filtros automáticos
   if @delivery_plans.any?
     total_rows = 1 + @delivery_plans.sum do |plan|
       plan.delivery_plan_assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
@@ -172,7 +157,6 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
     sheet.auto_filter = "A1:Q#{total_rows}" if total_rows > 1
   end
 
-  # Congelar primera fila
   sheet.sheet_view.pane do |pane|
     pane.y_split = 1
     pane.state   = :frozen
@@ -184,7 +168,6 @@ end
 # Hoja de Resumen
 # =====================
 wb.add_worksheet(name: "Resumen por Plan") do |sheet|
-  # Header del resumen
   sheet.add_row [
     "Semana",
     "Año",
@@ -198,16 +181,14 @@ wb.add_worksheet(name: "Resumen por Plan") do |sheet|
     "Productos Únicos"
   ], style: header_style
 
-  # Datos del resumen
   @delivery_plans.each do |plan|
     delivered_count = plan.deliveries.where(status: :delivered).count
     total_count = plan.deliveries.count
     progress = total_count > 0 ? (delivered_count.to_f / total_count * 100).round(1) : 0
-    
-    unique_clients = plan.deliveries.joins(:order).distinct.count('orders.client_id')
-    unique_products = plan.deliveries.joins(delivery_items: :order_item).distinct.count('order_items.product')
 
-    # Estilo según estado del plan
+    unique_clients = plan.deliveries.joins(:order).distinct.count("orders.client_id")
+    unique_products = plan.deliveries.joins(delivery_items: :order_item).distinct.count("order_items.product")
+
     row_style = case plan.status&.to_s
                 when "scheduled"        then scheduled_style
                 when "ready_to_deliver" then ready_style
@@ -231,15 +212,12 @@ wb.add_worksheet(name: "Resumen por Plan") do |sheet|
     ], style: row_style
   end
 
-  # Ajustes de columnas para el resumen
   sheet.column_widths 8, 8, 15, 20, 15, 12, 15, 10, 12, 15
 
-  # Filtros automáticos para el resumen
   if @delivery_plans.any?
     sheet.auto_filter = "A1:J#{@delivery_plans.count + 1}"
   end
 
-  # Congelar primera fila
   sheet.sheet_view.pane do |pane|
     pane.y_split = 1
     pane.state   = :frozen

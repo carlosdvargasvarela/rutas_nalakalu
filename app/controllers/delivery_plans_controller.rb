@@ -2,32 +2,39 @@
 class DeliveryPlansController < ApplicationController
   def index
     authorize DeliveryPlan
-    # 1. Configurar Ransack con un orden por defecto si no hay uno
-    @q = DeliveryPlan.ransack(params[:q])
-    @q.sorts = ["year desc", "week desc", "created_at desc"] if @q.sorts.empty?
+
+    # 1) Tomamos los filtros de fecha (porque el listado usa GROUP + MIN)
+    date_gteq = params.dig(:q, :first_delivery_date_gteq).presence
+    date_lteq = params.dig(:q, :first_delivery_date_lteq).presence
+
+    # 2) Le quitamos esos 2 params a Ransack para evitar conflictos con GROUP BY
+    q_params = (params[:q] || {}).except(:first_delivery_date_gteq, :first_delivery_date_lteq)
+
+    @q = DeliveryPlan.ransack(q_params)
+    @q.sorts = ["first_delivery_date desc"] if @q.sorts.empty?
 
     delivered_status = Delivery.statuses[:delivered]
 
-    # 2. Consulta base con agregados
     base_result = @q.result
       .left_joins(:deliveries)
-      .select(<<~SQL)
-        delivery_plans.*,
-        MIN(deliveries.delivery_date) AS first_delivery_date,
-        MAX(deliveries.delivery_date) AS last_delivery_date,
-        COUNT(deliveries.id)          AS deliveries_count,
-        COUNT(
-          CASE
-            WHEN deliveries.status = #{delivered_status} THEN 1
-          END
-        ) AS delivered_count
-      SQL
+      .select(
+        "delivery_plans.*",
+        "MIN(deliveries.delivery_date) AS first_delivery_date",
+        "MAX(deliveries.delivery_date) AS last_delivery_date",
+        "COUNT(deliveries.id) AS deliveries_count",
+        "COUNT(CASE WHEN deliveries.status = #{delivered_status} THEN 1 END) AS delivered_count"
+      )
       .group("delivery_plans.id")
-      .order(Arel.sql("delivery_plans.year DESC, delivery_plans.week DESC, delivery_plans.created_at DESC"))
+      .order(
+        Arel.sql("MIN(deliveries.delivery_date) DESC, delivery_plans.year DESC, delivery_plans.week DESC")
+      )
+
+    # 3) Aplicar filtros por MIN(delivery_date) con HAVING (correcto con GROUP BY)
+    base_result = base_result.having("MIN(deliveries.delivery_date) >= ?", date_gteq) if date_gteq.present?
+    base_result = base_result.having("MIN(deliveries.delivery_date) <= ?", date_lteq) if date_lteq.present?
 
     respond_to do |format|
       format.html do
-        # 🔹 NUEVO: Calcular estadísticas globales ANTES de paginar
         all_plans = base_result.to_a
 
         @stats = {
@@ -36,25 +43,15 @@ class DeliveryPlansController < ApplicationController
           by_status: all_plans.group_by(&:status).transform_values(&:size)
         }
 
-        # Paginación para HTML
         @delivery_plans = Kaminari.paginate_array(all_plans)
           .page(params[:page])
           .per(15)
 
-        # Para el filtro de camión en la vista
         @available_trucks = DeliveryPlan.distinct.pluck(:truck).compact.uniq
       end
 
       format.xlsx do
-        @delivery_plans = @q.result
-          .left_joins(:deliveries)
-          .select(<<~SQL)
-            delivery_plans.*,
-            MIN(deliveries.delivery_date) AS first_delivery_date,
-            MAX(deliveries.delivery_date) AS last_delivery_date
-          SQL
-          .group("delivery_plans.id")
-          .order("delivery_plans.year DESC, delivery_plans.week DESC")
+        @delivery_plans = base_result
           .includes(
             :driver,
             delivery_plan_assignments: {
