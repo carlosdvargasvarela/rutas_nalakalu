@@ -1,80 +1,96 @@
 <% if deliveries.any? %>
-  <div class="card shadow-sm">
-    <div class="card-header bg-light fw-semibold">
-      <i class="bi bi-truck me-1"></i> Entregas disponibles
+  <div class="card border-0 shadow-sm mb-5">
+    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+      <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-truck me-2 text-primary"></i>Entregas Disponibles</h5>
+      <span class="text-muted small"><%= deliveries.count %> resultados encontrados</span>
     </div>
     <div class="table-responsive">
-      <table class="table table-hover table-sm align-middle">
-        <thead class="table-primary">
-          <tr>
-            <th>
+      <!-- Eliminamos table-sm y forzamos fuente estándar (1rem / 16px) -->
+      <table class="table table-hover align-top mb-0" style="font-size: 1rem; min-width: 1000px;">
+        <thead class="table-light">
+          <tr class="text-muted fw-bold border-bottom">
+            <th class="ps-4 py-3" style="width: 50px;">
               <%= check_box_tag "select_all", "", false,
-                    class: "form-check-input",
+                    class: "form-check-input border-primary shadow-none",
+                    style: "transform: scale(1.2);",
                     data: { action: "delivery-plan-sidebar#toggleAll" } %>
             </th>
-            <th>Pedido</th>
-            <th>Cliente</th>
-            <th>Dirección</th>
-            <th>Rango de horas</th>
-            <th>Fecha</th>
-            <th>Productos</th>
-            <th>Notas</th>
+            <th class="py-3">Pedido / Cliente</th>
+            <th class="py-3">Ubicación y Horario</th>
+            <th class="py-3">Productos</th>
+            <th class="py-3 pe-4">Notas Especiales</th>
           </tr>
         </thead>
         <tbody>
           <% deliveries.each do |delivery| %>
-            <tr class="js-delivery-row" data-delivery-id="<%= delivery.id %>">
-              <td>
+            <tr class="js-delivery-row border-bottom" data-delivery-id="<​%= delivery.id %>">
+              <!-- Checkbox -->
+              <td class="ps-4 py-4">
                 <%= check_box_tag "delivery_ids[]", delivery.id, selected_ids&.include?(delivery.id),
-                            class: "form-check-input delivery-checkbox",
+                            class: "form-check-input delivery-checkbox border-primary shadow-none",
+                            style: "transform: scale(1.2);",
                             data: { action: "delivery-plan-sidebar#toggle",
                                     label: "#{delivery.order.number} - #{delivery.order.client.name}" } %>
               </td>
-              <td class="fw-bold text-primary"><%= delivery.order.number %></td>
-              <td><%= delivery.order.client.name %></td>
-              <td><%= [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - ") %></td>
-              <td><%= delivery.delivery_time_preference || "Sin preferencia" %></td>
-              <td><%= l delivery.delivery_date, format: :short %></td>
-              <td>
-                <% delivery.active_items_for_plan_for(current_user).each do |item| %>
-                  <span class="badge bg-light text-dark me-1">
-                    <%= item.order_item.product %> (<%= item.quantity_delivered %>)
-                  </span>
-                <% end %>
+              <!-- Pedido y Cliente (Agrupados para ahorrar espacio horizontal) -->
+              <td class="py-4">
+                <div class="fw-bold text-primary mb-1" style="font-size: 1.1rem;">
+                  #<%= delivery.order.number %>
+                </div>
+                <div class="fw-bold text-dark" style="font-size: 1.05rem;">
+                  <%= delivery.order.client.name %>
+                </div>
+                <div class="text-muted small mt-1">
+                  <i class="bi bi-calendar3 me-1"></i><%= l delivery.delivery_date, format: :long %>
+                </div>
               </td>
-              <td style="min-width: 300px;">
-                <%# Nota de la entrega (si existe campo) %>
-                <% if delivery.respond_to?(:delivery_notes) && delivery.delivery_notes.present? %>
-                  <div class="mb-2 p-2" style="background:#fff4e5; border-left:4px solid #fd7e14; border-radius:6px;">
-                    <span class="fw-bold text-dark">
-                      <i class="bi bi-sticky me-1 text-warning"></i> Nota de la entrega:
-                    </span>
-                    <div class="mt-1 text-dark"><em><%= delivery.delivery_notes %></em></div>
+              <!-- Ubicación y Horario -->
+              <td class="py-4" style="max-width: 300px;">
+                <div class="d-flex align-items-start mb-2">
+                  <i class="bi bi-geo-alt-fill text-danger me-2 mt-1"></i>
+                  <div class="text-dark fw-medium">
+                    <%= delivery.delivery_address.address %>
+                    <% if delivery.delivery_address.description.present? %>
+                      <div class="text-muted small fw-normal mt-1"><%= delivery.delivery_address.description %></div>
+                    <% end %>
                   </div>
-                <% end %>
-
-                <%# Notas de DeliveryItem %>
-                <% delivery.active_items_for_plan_for(current_user).each do |item| %>
-                  <% if item.notes.present? %>
-                    <div class="mb-2 p-2" style="background:#fff4e5; border-left:4px solid #fd7e14; border-radius:6px;">
-                      <span class="fw-bold text-dark">
-                        <i class="bi bi-pin-angle-fill me-1 text-warning"></i> Nota de entrega:
-                      </span>
-                      <div class="mt-1 text-dark"><em><%= item.notes %></em></div>
-                      <div class="small text-muted mt-1"><i class="bi bi-box-seam me-1"></i><%= item.order_item.product %></div>
+                </div>
+                <div class="badge bg-light text-dark border fw-normal px-2 py-1">
+                  <i class="bi bi-clock me-1 text-primary"></i> <%= delivery.delivery_time_preference || "Sin preferencia" %>
+                </div>
+              </td>
+              <!-- Productos (Lista Vertical) -->
+              <td class="py-4">
+                <div class="d-flex flex-column gap-2">
+                  <% delivery.active_items_for_plan_for(current_user).each do |item| %>
+                    <div class="d-flex align-items-center justify-content-between bg-white border rounded px-2 py-1 shadow-xs" style="min-width: 180px;">
+                      <span class="text-dark fw-medium"><%= item.order_item.product %></span>
+                      <span class="badge bg-primary ms-2">x<%= item.quantity_delivered %></span>
                     </div>
                   <% end %>
+                </div>
+              </td>
+              <!-- Notas (Diseño de Bloque) -->
+              <td class="py-4 pe-4" style="min-width: 350px;">
+                <%# Nota de la entrega %>
+                <% if delivery.respond_to?(:delivery_notes) && delivery.delivery_notes.present? %>
+                  <div class="modern-note note-orange mb-3">
+                    <div class="note-header"><i class="bi bi-exclamation-circle-fill me-2"></i>Nota de Logística</div>
+                    <div class="note-body"><%= delivery.delivery_notes %></div>
+                  </div>
                 <% end %>
-
-                <%# Notas de OrderItem %>
+                <%# Notas de Items (Agrupadas) %>
                 <% delivery.active_items_for_plan_for(current_user).each do |item| %>
+                  <% if item.notes.present? %>
+                    <div class="modern-note note-blue mb-2">
+                      <div class="note-header"><i class="bi bi-info-square-fill me-2"></i><%= item.order_item.product %></div>
+                      <div class="note-body"><%= item.notes %></div>
+                    </div>
+                  <% end %>
                   <% if item.order_item.notes.present? %>
-                    <div class="mb-2 p-2" style="background:#eef6ff; border-left:4px solid #0d6efd; border-radius:6px;">
-                      <span class="fw-bold text-primary">
-                        <i class="bi bi-info-circle me-1"></i> Nota del producto:
-                      </span>
-                      <div class="mt-1 text-dark"><%= item.order_item.notes %></div>
-                      <div class="small text-muted mt-1"><i class="bi bi-box-seam me-1"></i><%= item.order_item.product %></div>
+                    <div class="modern-note note-gray mb-2">
+                      <div class="note-header text-muted"><i class="bi bi-chat-left-text me-2"></i>Nota de Venta: <%= item.order_item.product %></div>
+                      <div class="note-body"><%= item.order_item.notes %></div>
                     </div>
                   <% end %>
                 <% end %>
@@ -86,5 +102,48 @@
     </div>
   </div>
 <% else %>
-  <div class="alert alert-info">No hay entregas disponibles para este rango.</div>
+  <div class="card border-0 shadow-sm p-5 text-center bg-white">
+    <i class="bi bi-clipboard-x h1 text-muted mb-3"></i>
+    <h4 class="text-muted">No hay entregas para mostrar</h4>
+    <p class="text-muted">Intenta ajustar los filtros de fecha arriba.</p>
+  </div>
 <% end %>
+<style>
+  /* Estilos para Notas Modernas */
+  .modern-note {
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 0.95rem;
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  }
+  .note-header {
+    font-weight: 800;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+  }
+  .note-body {
+    line-height: 1.4;
+    color: #333;
+  }
+
+  /* Variaciones de Color */
+  .note-orange { background-color: #fff8f0; border-left: 5px solid #fd7e14; }
+  .note-orange .note-header { color: #d9480f; }
+
+  .note-blue { background-color: #f0f7ff; border-left: 5px solid #0d6efd; }
+  .note-blue .note-header { color: #0056b3; }
+
+  .note-gray { background-color: #f8f9fa; border-left: 5px solid #adb5bd; }
+
+  .shadow-xs { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
+  /* Hover effect en filas */
+  .js-delivery-row:hover {
+    background-color: #fcfcfc !important;
+  }
+</style>
