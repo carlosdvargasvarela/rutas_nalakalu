@@ -62,7 +62,6 @@ class DeliveryPlansController < ApplicationController
               ]
             }
           )
-          .distinct
           .to_a
 
         response.headers["Content-Disposition"] =
