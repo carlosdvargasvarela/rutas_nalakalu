@@ -61,15 +61,35 @@ module Deliveries
     end
 
     def find_or_create_internal_address(client)
-      if params[:delivery_address].present? && params[:delivery_address][:address].present?
-        client.delivery_addresses.create!(
-          params.require(:delivery_address).permit(:address, :description, :latitude, :longitude, :plus_code)
-        )
-      else
-        client.delivery_addresses.find_or_create_by!(address: "Oficinas Centrales NaLakalu") do |addr|
-          addr.description = "Dirección por defecto para mandados internos"
-        end
-      end
+      addr_params = params[:delivery_address]
+      return nil unless addr_params.present?
+
+      # PRIORIDAD DE TEXTO PARA LA DIRECCIÓN:
+      # 1. El address que viene del mapa/autocomplete
+      # 2. La descripción (referencia del chofer)
+      # 3. El texto que el usuario escribió en el buscador (search_input)
+      address_text = addr_params[:address].presence ||
+        addr_params[:description].presence ||
+        addr_params[:search_input].presence ||
+        "Dirección manual"
+
+      # PRIORIDAD PARA LA DESCRIPCIÓN:
+      # Si no hay descripción, usamos lo que sea que el usuario haya escrito en el buscador
+      description_text = addr_params[:description].presence ||
+        addr_params[:search_input].presence ||
+        "Sin descripción detallada"
+
+      address = client.delivery_addresses.new(
+        address: address_text,
+        description: description_text,
+        latitude: addr_params[:latitude].presence,
+        longitude: addr_params[:longitude].presence,
+        plus_code: addr_params[:plus_code].presence
+      )
+
+      # Guardar sin validaciones para permitir "Beraca" o cualquier texto
+      address.save(validate: false)
+      address
     end
 
     def process_internal_items(order)

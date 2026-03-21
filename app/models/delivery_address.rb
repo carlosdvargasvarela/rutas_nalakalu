@@ -125,10 +125,18 @@ class DeliveryAddress < ApplicationRecord
   end
 
   def should_geocode?
-    # Solo geocodificar si:
-    # 1. La dirección cambió
-    # 2. Y NO hay coordenadas manuales (o las coordenadas también cambiaron)
+    # NO geocodificar si:
+    # - El address es igual a la descripción (es manual)
+    # - O si el address contiene "Dirección manual"
+    return false if address == description
+    return false if address.to_s.include?("Dirección manual")
+
     will_save_change_to_address? && !has_manual_coordinates?
+  end
+
+  def address_is_manual_reference?
+    # Si address == description, es una referencia manual, no geocodificar
+    address.present? && description.present? && address.strip == description.strip
   end
 
   def has_manual_coordinates?
