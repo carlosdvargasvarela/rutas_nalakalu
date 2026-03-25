@@ -77,103 +77,20 @@ module Deliveries
     end
 
     def find_or_create_address(client)
-      addr_id = normalize_id(delivery_params[:delivery_address_id])
+      new_addr_params = params[:delivery_address].present? ? address_params : nil
 
-      if addr_id.present?
-        addr = DeliveryAddress.find(addr_id)
-
-        # 🔥 MEJORA: Permitir actualizar descripción sin crear dirección nueva
-        if params[:delivery_address].present?
-          update_attrs = address_params.dup
-
-          # Solo actualizar descripción si cambió
-          if update_attrs[:description].present? && update_attrs[:description] != addr.description
-            addr.description = update_attrs[:description]
-          end
-
-          # Solo actualizar coordenadas si vienen nuevas
-          lat = update_attrs[:latitude].to_s.strip
-          lng = update_attrs[:longitude].to_s.strip
-
-          if lat.present? && lng.present?
-            new_lat = lat.to_f
-            new_lng = lng.to_f
-
-            # Solo actualizar si cambiaron significativamente (más de 0.0001 grados ≈ 11 metros)
-            if (addr.latitude.to_f - new_lat).abs > 0.0001 || (addr.longitude.to_f - new_lng).abs > 0.0001
-              addr.latitude = new_lat
-              addr.longitude = new_lng
-            end
-          end
-
-          # Actualizar plus_code si viene
-          if update_attrs[:plus_code].present? && update_attrs[:plus_code] != addr.plus_code
-            addr.plus_code = update_attrs[:plus_code]
-          end
-
-          # Actualizar address (texto) si viene
-          if update_attrs[:address].present? && update_attrs[:address] != addr.address
-            addr.address = update_attrs[:address]
-          end
-
-          addr.save! if addr.changed?
-        end
-
-        addr
-      elsif params[:delivery_address]&.[](:address).present? ||
-          (params[:delivery_address]&.[](:latitude).present? && params[:delivery_address]&.[](:longitude).present?)
-
-        addr_attrs = address_params
-        lat = addr_attrs[:latitude].to_s.strip
-        lng = addr_attrs[:longitude].to_s.strip
-
-        # Buscar dirección existente por coordenadas (con tolerancia de 11 metros)
-        if lat.present? && lng.present?
-          lat_f = lat.to_f
-          lng_f = lng.to_f
-
-          existing = client.delivery_addresses.where(
-            "ABS(latitude - ?) < 0.0001 AND ABS(longitude - ?) < 0.0001",
-            lat_f,
-            lng_f
-          ).first
-
-          if existing
-            # Actualizar descripción si viene nueva
-            if addr_attrs[:description].present? && addr_attrs[:description] != existing.description
-              existing.update!(description: addr_attrs[:description])
-            end
-            return existing
-          end
-        end
-
-        # Buscar por dirección de texto
-        address_text = addr_attrs[:address].to_s.strip
-        if address_text.present?
-          existing = client.delivery_addresses.find_by(address: address_text)
-          if existing
-            # Actualizar coordenadas y descripción si vienen
-            updates = {}
-            if lat.present? && lng.present?
-              updates[:latitude] = lat.to_f
-              updates[:longitude] = lng.to_f
-            end
-            if addr_attrs[:description].present?
-              updates[:description] = addr_attrs[:description]
-            end
-            if addr_attrs[:plus_code].present?
-              updates[:plus_code] = addr_attrs[:plus_code]
-            end
-            existing.update!(updates) if updates.any?
-            return existing
-          end
-        end
-
-        # Si no existe, crear nueva
-        client.delivery_addresses.create!(addr_attrs)
-      else
-        raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debes seleccionar o ingresar una dirección."
+      # Si vienen datos de dirección → siempre crear una nueva, sin excepción
+      if new_addr_params.present? &&
+          (new_addr_params[:address].present? ||
+           (new_addr_params[:latitude].present? && new_addr_params[:longitude].present?))
+        return client.delivery_addresses.create!(new_addr_params)
       end
+
+      # Si solo viene un addr_id (sin datos nuevos) → usar la existente tal cual (sin tocarla)
+      addr_id = normalize_id(delivery_params[:delivery_address_id])
+      return DeliveryAddress.find(addr_id) if addr_id.present?
+
+      raise ActiveRecord::RecordInvalid.new(DeliveryAddress.new), "Debes seleccionar o ingresar una dirección."
     end
 
     def address_params
