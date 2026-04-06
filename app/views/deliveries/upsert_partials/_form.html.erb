@@ -17,7 +17,7 @@
           <span class="badge bg-warning ms-2" data-delivery-form-target="clientBadge">!</span>
         </button>
       </h2>
-      <div id="collapseClient" class="accordion-collapse collapse show" aria-labelledby="headingClient" data-bs-parent="#deliveryFormAccordion">
+      <div id="collapseClient" class="accordion-collapse collapse show" aria-labelledby="headingClient">
         <div class="accordion-body">
           <%= render "deliveries/upsert_partials/client_fields", f: f, clients: clients, delivery: delivery %>
         </div>
@@ -32,7 +32,7 @@
           <span class="badge bg-warning ms-2" data-delivery-form-target="orderBadge">!</span>
         </button>
       </h2>
-      <div id="collapseOrder" class="accordion-collapse collapse" aria-labelledby="headingOrder" data-bs-parent="#deliveryFormAccordion">
+      <div id="collapseOrder" class="accordion-collapse collapse" aria-labelledby="headingOrder">
         <div class="accordion-body">
           <%= render "deliveries/upsert_partials/order_fields", f: f, delivery: delivery %>
         </div>
@@ -41,13 +41,17 @@
     <!-- SECCIÓN 3: DIRECCIÓN DE ENTREGA -->
     <div class="accordion-item">
       <h2 class="accordion-header" id="headingAddress">
-        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAddress" aria-expanded="false" aria-controls="collapseAddress">
+        <button class="accordion-button collapsed" type="button"
+                data-bs-toggle="collapse" data-bs-target="#collapseAddress"
+                aria-expanded="false" aria-controls="collapseAddress">
           <i class="bi bi-geo-alt-fill me-2"></i>
           <strong>Dirección de entrega</strong>
           <span class="badge bg-warning ms-2" data-delivery-form-target="addressBadge">!</span>
         </button>
       </h2>
-      <div id="collapseAddress" class="accordion-collapse collapse" aria-labelledby="headingAddress" data-bs-parent="#deliveryFormAccordion">
+      <%# data-action dispara resizeMap al expandir, para que el mapa se renderice correctamente %>
+      <div id="collapseAddress" class="accordion-collapse collapse" aria-labelledby="headingAddress"
+           data-action="shown.bs.collapse->address-autocomplete#resizeMap">
         <div class="accordion-body">
           <%= render "deliveries/upsert_partials/address_fields", f: f, addresses: addresses, delivery: delivery %>
         </div>
@@ -62,7 +66,7 @@
           <span class="badge bg-warning ms-2" data-delivery-form-target="deliveryDataBadge">!</span>
         </button>
       </h2>
-      <div id="collapseDeliveryData" class="accordion-collapse collapse" aria-labelledby="headingDeliveryData" data-bs-parent="#deliveryFormAccordion">
+      <div id="collapseDeliveryData" class="accordion-collapse collapse" aria-labelledby="headingDeliveryData">
         <div class="accordion-body">
           <%= render "deliveries/upsert_partials/delivery_data_fields", f: f, delivery: delivery %>
         </div>
@@ -77,7 +81,7 @@
           <span class="badge bg-warning ms-2" data-delivery-form-target="productsBadge">!</span>
         </button>
       </h2>
-      <div id="collapseProducts" class="accordion-collapse collapse" aria-labelledby="headingProducts" data-bs-parent="#deliveryFormAccordion">
+      <div id="collapseProducts" class="accordion-collapse collapse" aria-labelledby="headingProducts">
         <div class="accordion-body">
           <%= render "deliveries/upsert_partials/order_items_fields", f: f %>
         </div>
@@ -92,7 +96,7 @@
           <%= link_to "Cancelar", deliveries_path, class: "btn btn-outline-secondary" %>
         </div>
         <div>
-          <%= f.submit "Guardar entrega", 
+          <%= f.submit "Guardar entrega",
               class: "btn btn-primary btn-lg px-5",
               data: { "address-validator-target": "submitButton" } %>
         </div>

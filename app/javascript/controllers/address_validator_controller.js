@@ -2,32 +2,67 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-  static targets = ["descriptionInput", "statusBadge"];
+  static targets = ["submit", "addressInput", "errorMessage"];
 
-  connect() {
-    this.validateAddress();
-  }
+  validateBeforeSubmit(event) {
+    const lat = document.querySelector(
+      "[data-address-autocomplete-target='lat']",
+    )?.value;
+    const lng = document.querySelector(
+      "[data-address-autocomplete-target='lng']",
+    )?.value;
+    const description = document.querySelector(
+      "textarea[name*='description']",
+    )?.value;
 
-  validateAddress() {
-    const description = this.descriptionInputTarget.value.trim();
-    const isValid = this.isDescriptionValid(description);
-
-    if (isValid) {
-      this.statusBadgeTarget.textContent = "✓ Válido";
-      this.statusBadgeTarget.className = "badge bg-success text-white";
-      this.descriptionInputTarget.classList.remove("is-invalid");
-      this.descriptionInputTarget.classList.add("is-valid");
-    } else {
-      this.statusBadgeTarget.textContent = "⚠ Incompleto";
-      this.statusBadgeTarget.className = "badge bg-warning text-dark";
-      this.descriptionInputTarget.classList.remove("is-valid");
-      this.descriptionInputTarget.classList.add("is-invalid");
+    if (!lat || !lng || parseFloat(lat) === 0 || parseFloat(lng) === 0) {
+      event.preventDefault();
+      this._showError(
+        "Debes seleccionar una ubicación válida en el mapa antes de guardar.",
+      );
+      return;
     }
+
+    if (!description || description.trim().length < 5) {
+      const fallback = this.buildFallbackDescription();
+      document.querySelector("textarea[name*='description']").value = fallback;
+    }
+
+    this._clearError();
   }
 
-  isDescriptionValid(text) {
-    if (text.length < 10) return false;
-    if (text.includes("http://") || text.includes("https://")) return false;
-    return true;
+  buildFallbackDescription() {
+    const details = document.querySelector(
+      "[data-address-autocomplete-target='geoDetails']",
+    )?.innerText;
+
+    if (details && details.trim().length > 10) {
+      return `Sin referencias del vendedor. Ubicación aproximada: ${details.replace(/[\n\r]+/g, ", ").trim()}`;
+    }
+
+    return "Sin referencias del vendedor.";
+  }
+
+  _showError(message) {
+    let errorEl = this.element.querySelector("[data-validator-error]");
+    if (!errorEl) {
+      errorEl = document.createElement("div");
+      errorEl.setAttribute("data-validator-error", "true");
+      errorEl.className =
+        "alert alert-danger mt-3 d-flex align-items-center gap-2";
+      errorEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill"></i><span></span>`;
+      if (this.hasSubmitTarget) {
+        this.submitTarget.closest(".card-body")?.prepend(errorEl);
+      } else {
+        this.element.prepend(errorEl);
+      }
+    }
+    errorEl.querySelector("span").textContent = message;
+    errorEl.style.display = "flex";
+    errorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  _clearError() {
+    this.element.querySelector("[data-validator-error]")?.remove();
   }
 }

@@ -62,7 +62,7 @@
             <div class="d-flex flex-wrap gap-2">
               <% @stats[:by_status].sort_by { |status, _| DeliveryPlan.statuses[status.to_s] || 999 }.each do |status, count| %>
                 <span class="badge bg-<%= delivery_plan_status_color(status) %> d-flex align-items-center gap-1 px-3 py-2" style="font-size: 0.85rem;">
-                  <i class="<​%= delivery_plan_status_icon(status) %>"></i>
+                  <i class="<%= delivery_plan_status_icon(status) %>"></i>
                   <%= delivery_plan_status_label(status) %>
                   <span class="badge bg-white text-dark ms-1"><%= count %></span>
                 </span>
@@ -217,7 +217,7 @@
                 </td>
                 <td>
                   <span class="badge bg-<%= delivery_plan_status_color(plan.status) %> d-flex align-items-center gap-1" style="width: fit-content;">
-                    <i class="<​%= delivery_plan_status_icon(plan.status) %>"></i>
+                    <i class="<%= delivery_plan_status_icon(plan.status) %>"></i>
                     <%= plan.display_status %>
                   </span>
                 </td>
@@ -259,7 +259,7 @@
                       <div class="progress-bar bg-success"
                            role="progressbar"
                            style="width: <%= progress_percentage %>%"
-                           aria-valuenow="<​%= progress_percentage %>"
+                           aria-valuenow="<%= progress_percentage %>"
                         aria-valuemin="0"
                         aria-valuemax="100"></div>
                     </div>
@@ -394,7 +394,7 @@
                   </small>
                 </div>
                 <span class="badge bg-<%= delivery_plan_status_color(plan.status) %> d-flex align-items-center gap-1">
-                  <i class="<​%= delivery_plan_status_icon(plan.status) %>"></i>
+                  <i class="<%= delivery_plan_status_icon(plan.status) %>"></i>
                   <%= plan.display_status %>
                 </span>
               </div>

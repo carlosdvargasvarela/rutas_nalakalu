@@ -81,7 +81,7 @@
                   <% deliveries.each do |delivery| %>
                     <% detector = Deliveries::ErrorDetector.new(delivery) %>
                     <% has_errors = detector.has_errors? %>
-                    <tr class="<​%= 'row-err' if has_errors %>">
+                    <tr class="<%= 'row-err' if has_errors %>">
                       <td style="vertical-align: top;">
                         <strong>#<%= delivery.order.number %></strong>
                       </td>

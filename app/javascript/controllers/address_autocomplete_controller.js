@@ -18,33 +18,37 @@ export default class extends Controller {
     "statusBadge",
     "coordsStatus",
     "descStatus",
+    "geoDetails",
   ];
 
-  static values = {
-    apiKey: String,
-  };
+  static values = { apiKey: String };
 
   connect() {
-    console.log("✅ AddressAutocompleteController connected");
     this._initialized = false;
     this._initAttempts = 0;
+    this._descriptionWasManuallyEdited = false;
+    this._lastInputSource = null;
 
-    this.loadGoogleMapsAPI().then(() => {
-      this.tryInitializeAutocomplete();
-    });
+    if (this.hasDescriptionTarget) {
+      this.descriptionTarget.addEventListener("input", () => {
+        this._descriptionWasManuallyEdited = true;
+      });
+    }
+
+    this.loadGoogleMapsAPI().then(() => this.tryInitializeAutocomplete());
   }
 
   disconnect() {
     if (this.autocomplete)
       google.maps.event.clearInstanceListeners(this.autocomplete);
     if (this.marker) google.maps.event.clearInstanceListeners(this.marker);
+    if (this.map) google.maps.event.clearInstanceListeners(this.map);
   }
 
-  // ===========================================================================
-  // CARGA DE GOOGLE MAPS API
-  // ===========================================================================
-  loadGoogleMapsAPI() {
-    if (window.google && window.google.maps) return Promise.resolve();
+  // ─── CARGA DE API ────────────────────────────────────────────────────────────
+
+  async loadGoogleMapsAPI() {
+    if (window.google?.maps) return Promise.resolve();
     if (window.__googleMapsLoadingPromise)
       return window.__googleMapsLoadingPromise;
 
@@ -53,7 +57,7 @@ export default class extends Controller {
         "script[data-google-maps-loader='true']",
       );
       if (existing) {
-        existing.addEventListener("load", () => resolve());
+        existing.addEventListener("load", resolve);
         existing.addEventListener("error", () =>
           reject(new Error("Google Maps script load failed")),
         );
@@ -62,33 +66,27 @@ export default class extends Controller {
 
       const script = document.createElement("script");
       script.dataset.googleMapsLoader = "true";
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${this.apiKeyValue}&libraries=places,marker,geocoding&loading=async`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${this.apiKeyValue}&libraries=places,marker&loading=async`;
       script.async = true;
       script.defer = true;
-
-      script.onload = () => resolve();
+      script.onload = resolve;
       script.onerror = () =>
         reject(new Error("Google Maps script load failed"));
-
       document.head.appendChild(script);
     });
 
     return window.__googleMapsLoadingPromise;
   }
 
-  // ===========================================================================
-  // INICIALIZACIÓN DEL MAPA Y AUTOCOMPLETE
-  // ===========================================================================
+  // ─── INICIALIZACIÓN ──────────────────────────────────────────────────────────
+
   async tryInitializeAutocomplete() {
     if (this._initialized) return;
 
     if (!this.hasMapTarget) {
       this._initAttempts += 1;
-      console.warn("⚠️ Missing map target. Attempt:", this._initAttempts);
-
-      if (this._initAttempts <= 10) {
+      if (this._initAttempts <= 10)
         setTimeout(() => this.tryInitializeAutocomplete(), 200);
-      }
       return;
     }
 
@@ -97,23 +95,20 @@ export default class extends Controller {
       const { AdvancedMarkerElement } =
         await google.maps.importLibrary("marker");
       await google.maps.importLibrary("places");
-      await google.maps.importLibrary("geocoding");
 
-      // Coordenadas iniciales (Costa Rica - San José)
-      const initialLat = parseFloat(this.latTarget.value) || 9.9281;
-      const initialLng = parseFloat(this.lngTarget.value) || -84.0907;
+      const initialLat = parseFloat(this.latTarget?.value) || 9.9281;
+      const initialLng = parseFloat(this.lngTarget?.value) || -84.0907;
+      const hasExisting = initialLat !== 9.9281 || initialLng !== -84.0907;
 
-      // Crear mapa
       this.map = new Map(this.mapTarget, {
         center: { lat: initialLat, lng: initialLng },
-        zoom: initialLat === 9.9281 ? 13 : 17,
+        zoom: hasExisting ? 17 : 8,
         mapId: "DELIVERY_ADDRESS_MAP_ID",
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: true,
       });
 
-      // Crear marcador arrastrable
       this.marker = new AdvancedMarkerElement({
         map: this.map,
         position: { lat: initialLat, lng: initialLng },
@@ -121,302 +116,704 @@ export default class extends Controller {
         title: "Ubicación de entrega",
       });
 
-      // Listener para arrastrar marcador
-      this.marker.addListener("dragend", (event) => {
-        const position = event.latLng;
-        this.updateFromCoords(position.lat(), position.lng());
-        this.reverseGeocode(position);
-      });
-
-      // Listener para clic en el mapa
-      this.map.addListener("click", (event) => {
-        const position = event.latLng;
-        this.marker.position = position;
-        this.updateFromCoords(position.lat(), position.lng());
-        this.reverseGeocode(position);
-      });
-
       this.geocoder = new google.maps.Geocoder();
 
-      // Autocomplete (solo si existe el input)
-      if (this.hasInputTarget) {
-        this.autocomplete = new google.maps.places.Autocomplete(
-          this.inputTarget,
-          {
-            componentRestrictions: { country: "cr" },
-            fields: [
-              "address_components",
-              "geometry",
-              "name",
-              "formatted_address",
-              "plus_code",
-            ],
-            types: [],
-          },
-        );
+      this.marker.addListener("dragend", async (event) => {
+        this._lastInputSource = "map_drag";
+        const lat = event.latLng.lat();
+        const lng = event.latLng.lng();
+        this.updateFromCoords(lat, lng);
+        await this.reverseGeocode({ lat, lng });
+      });
 
-        this.autocomplete.addListener("place_changed", () => {
-          const place = this.autocomplete.getPlace();
-          if (place.geometry) {
-            this.updateFromPlace(place);
-          }
-        });
-      }
+      this.map.addListener("click", async (event) => {
+        this._lastInputSource = "map_click";
+        const lat = event.latLng.lat();
+        const lng = event.latLng.lng();
+        this.marker.position = event.latLng;
+        this.updateFromCoords(lat, lng);
+        await this.reverseGeocode({ lat, lng });
+      });
 
-      // Actualizar displays si ya hay coordenadas
-      if (initialLat !== 9.9281 || initialLng !== -84.0907) {
+      if (this.hasInputTarget) this._initLegacyAutocomplete();
+      if (hasExisting) {
         this.updateDisplays(initialLat, initialLng);
         this.validateStatus();
       }
 
       this._initialized = true;
-      console.log("✅ Address autocomplete initialized");
+      console.log("✅ AddressAutocompleteController inicializado");
     } catch (error) {
-      console.error("❌ Error initializing address autocomplete:", error);
+      console.error("❌ Error inicializando address autocomplete:", error);
     }
   }
 
-  // ===========================================================================
-  // INPUT INTELIGENTE: DETECTA PLUS CODE, COORDENADAS O BÚSQUEDA
-  // ===========================================================================
-  handleSmartInput(event) {
-    const text = event.target.value.trim();
-    if (!text) return;
+  // ─── AUTOCOMPLETE LEGACY ─────────────────────────────────────────────────────
 
-    console.log("🔍 Analizando input:", text);
+  _initLegacyAutocomplete() {
+    this.autocomplete = new google.maps.places.Autocomplete(this.inputTarget, {
+      componentRestrictions: { country: "cr" },
+      fields: [
+        "address_components",
+        "formatted_address",
+        "geometry",
+        "name",
+        "place_id",
+        "plus_code",
+        "types",
+        "vicinity",
+        "url",
+      ],
+      types: [],
+    });
 
-    // 1️⃣ ¿Son coordenadas? (Ej: 9.93, -84.08 o 9.93,-84.08)
-    const coordRegex = /^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/;
-    const coordMatch = text.match(coordRegex);
+    this.autocomplete.addListener("place_changed", () => {
+      const place = this.autocomplete.getPlace();
+      if (!place?.geometry?.location) {
+        console.warn("⚠️ El autocomplete no devolvió geometry.location");
+        return;
+      }
+      this._lastInputSource = "autocomplete";
+      this._handlePlaceResult(place);
+    });
+  }
+
+  // ─── MANEJO DE RESULTADO DE PLACE ────────────────────────────────────────────
+
+  async _handlePlaceResult(place) {
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+
+    const placeName = place.name || "";
+    const formattedAddress = place.formatted_address || "";
+    const vicinity = place.vicinity || "";
+    const placeId = place.place_id || "";
+    const placeUrl = place.url || "";
+    const placeTypes = place.types || [];
+    const plusCode =
+      place.plus_code?.global_code || place.plus_code?.compound_code || "";
+    const components = this._extractComponents(place.address_components || []);
+
+    this.updateFromCoords(lat, lng);
+
+    if (plusCode && this.hasPlusTarget) {
+      this.plusTarget.value = plusCode;
+      if (this.hasPlusDisplayTarget)
+        this.plusDisplayTarget.textContent = plusCode;
+    }
+
+    // Enriquecer con Place Details si tenemos place_id
+    let enriched = {
+      placeName,
+      formattedAddress,
+      vicinity,
+      components,
+      placeTypes,
+      placeUrl,
+    };
+    if (placeId) {
+      const details = await this._fetchPlaceDetails(placeId);
+      if (details) enriched = this._mergeWithDetails(enriched, details);
+    }
+
+    const driverAddress = this._buildDriverAddress(enriched);
+    const richReference = this._buildRichReference(enriched);
+
+    if (this.hasAddressNameTarget) this.addressNameTarget.value = driverAddress;
+    if (this.hasAddressDisplayTarget)
+      this.addressDisplayTarget.textContent = driverAddress;
+
+    this._updateDatasetMetadata({
+      placeId,
+      formattedAddress,
+      placeName,
+      source: "autocomplete",
+    });
+    this._showGeoDetails(enriched);
+    this._setDescription(richReference);
+    this.validateStatus();
+  }
+
+  // ─── PLACE DETAILS (enriquecimiento) ─────────────────────────────────────────
+
+  /**
+   * Llama a Place Details (Legacy) para obtener datos adicionales del lugar.
+   * Campos básicos solicitados: name, formatted_address, address_components,
+   * vicinity, url, plus_code, types.
+   * Ref: https://developers.google.com/maps/documentation/places/web-service/legacy/details
+   */
+  async _fetchPlaceDetails(placeId) {
+    if (!placeId) return null;
+
+    return new Promise((resolve) => {
+      const service = new google.maps.places.PlacesService(this.mapTarget);
+
+      service.getDetails(
+        {
+          placeId,
+          fields: [
+            "name",
+            "formatted_address",
+            "address_components",
+            "vicinity",
+            "url",
+            "plus_code",
+            "types",
+            "adr_address",
+          ],
+          language: "es",
+        },
+        (result, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && result) {
+            resolve(result);
+          } else {
+            console.warn("⚠️ Place Details no disponible:", status);
+            resolve(null);
+          }
+        },
+      );
+    });
+  }
+
+  _mergeWithDetails(base, details) {
+    const detailComponents = this._extractComponents(
+      details.address_components || [],
+    );
+
+    // Fusionar componentes: los de details tienen prioridad si son más ricos
+    const mergedComponents = { ...base.components };
+    Object.entries(detailComponents).forEach(([key, value]) => {
+      if (value && !mergedComponents[key]) mergedComponents[key] = value;
+    });
+
+    return {
+      placeName: details.name || base.placeName,
+      formattedAddress: details.formatted_address || base.formattedAddress,
+      vicinity: details.vicinity || base.vicinity,
+      placeUrl: details.url || base.placeUrl,
+      placeTypes: details.types || base.placeTypes,
+      plusCode:
+        details.plus_code?.global_code ||
+        details.plus_code?.compound_code ||
+        "",
+      adrAddress: details.adr_address || "",
+      components: mergedComponents,
+    };
+  }
+
+  // ─── ENTRADA MANUAL (coords / plus code) ─────────────────────────────────────
+
+  async handleSmartInput(event) {
+    const rawText = event.target.value.trim();
+    if (!rawText) return;
+
+    const normalized = rawText.replace(/\s+/g, " ").trim();
+    const coordMatch = normalized.match(
+      /^(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)$/,
+    );
+
     if (coordMatch) {
       const lat = parseFloat(coordMatch[1]);
-      const lng = parseFloat(coordMatch[2]);
-
-      console.log("📍 Coordenadas detectadas:", lat, lng);
-
-      // Validar que estén en rango de Costa Rica (ampliado para incluir toda la región)
-      if (lat >= 8.0 && lat <= 11.5 && lng >= -86.0 && lng <= -82.0) {
-        console.log("✅ Coordenadas válidas para Costa Rica");
+      const lng = parseFloat(coordMatch[3]);
+      if (this._coordsLookLikeCostaRica(lat, lng)) {
+        this._lastInputSource = "coordinates";
         this.updateFromCoords(lat, lng);
-        this.reverseGeocode({ lat, lng });
-
-        // Limpiar el input después de procesar
+        await this.reverseGeocode({ lat, lng });
         event.target.value = "";
-        return;
       } else {
-        console.warn("⚠️ Coordenadas fuera del rango de Costa Rica:", lat, lng);
         alert(
-          `Las coordenadas ${lat}, ${lng} están fuera del rango de Costa Rica.\n\nRango válido:\nLatitud: 8.0 a 11.5\nLongitud: -86.0 a -82.0`,
+          `Las coordenadas ${lat}, ${lng} están fuera del rango esperado para Costa Rica.`,
         );
       }
+      return;
     }
 
-    // 2️⃣ ¿Es un Plus Code? (Ej: W2H5+2Q o W2H5+2Q San José)
-    if (text.includes("+") && text.length >= 7) {
-      console.log("🔢 Plus Code detectado:", text);
+    if (this._looksLikePlusCode(normalized)) {
+      this._lastInputSource = "plus_code";
+      await this._resolvePlusCode(normalized);
+      event.target.value = "";
+    }
+  }
 
-      if (!this.geocoder) {
-        console.error("❌ Geocoder no disponible");
+  async _resolvePlusCode(plusCode) {
+    if (!this.geocoder) return;
+
+    try {
+      const response = await this.geocoder.geocode({
+        address: plusCode,
+        componentRestrictions: { country: "CR" },
+      });
+
+      if (!response.results?.length) {
+        alert(`No se pudo encontrar el Plus Code: ${plusCode}`);
         return;
       }
 
-      this.geocoder.geocode({ address: text }, (results, status) => {
-        if (status === "OK" && results[0]) {
-          console.log("✅ Plus Code geocodificado exitosamente");
-          this.updateFromPlace(results[0]);
-          event.target.value = "";
-        } else {
-          console.warn("❌ Plus Code no encontrado:", text, status);
-          alert(
-            `No se pudo encontrar el Plus Code: ${text}\n\nVerifica que esté escrito correctamente.`,
-          );
-        }
-      });
-      return;
-    }
+      const result = response.results[0];
+      const lat = result.geometry.location.lat();
+      const lng = result.geometry.location.lng();
 
-    // 3️⃣ Si no es ninguno de los anteriores, el autocomplete de Places se encarga
-    console.log("🔎 Dejando que Places Autocomplete maneje la búsqueda");
-  }
+      this.updateFromCoords(lat, lng);
 
-  // ===========================================================================
-  // ACTUALIZAR DESDE COORDENADAS
-  // ===========================================================================
-  updateFromCoords(lat, lng) {
-    console.log("🗺️ Actualizando mapa con coordenadas:", lat, lng);
-
-    const pos = { lat, lng };
-
-    // Actualizar mapa
-    this.map.setCenter(pos);
-    this.map.setZoom(17);
-    this.marker.position = pos;
-
-    // Actualizar campos
-    this.updateFields(lat, lng);
-    this.updateDisplays(lat, lng);
-    this.validateStatus();
-  }
-
-  // ===========================================================================
-  // ACTUALIZAR DESDE PLACE (AUTOCOMPLETE O PLUS CODE)
-  // ===========================================================================
-  updateFromPlace(place) {
-    const location = place.geometry.location;
-    const lat = location.lat();
-    const lng = location.lng();
-
-    console.log("📍 Actualizando desde Place:", lat, lng);
-
-    // Actualizar mapa
-    this.map.setCenter(location);
-    this.map.setZoom(17);
-    this.marker.position = location;
-
-    // Actualizar campos
-    this.updateFields(lat, lng);
-    this.updateDisplays(lat, lng);
-
-    // Plus Code
-    if (place.plus_code) {
-      const plusCode =
-        place.plus_code.global_code || place.plus_code.compound_code || "";
-      this.plusTarget.value = plusCode;
-      if (this.hasPlusDisplayTarget) {
-        this.plusDisplayTarget.textContent = plusCode;
+      if (this.hasPlusTarget) {
+        this.plusTarget.value = plusCode;
+        if (this.hasPlusDisplayTarget)
+          this.plusDisplayTarget.textContent = plusCode;
       }
-    }
 
-    // Dirección
-    const address = place.formatted_address || place.name || "";
-    this.addressNameTarget.value = address;
-    if (this.hasAddressDisplayTarget) {
-      this.addressDisplayTarget.value = address;
+      await this.reverseGeocode({ lat, lng, originalPlusCode: plusCode });
+    } catch (error) {
+      console.error("❌ Error resolviendo Plus Code:", error);
+      alert(`No se pudo resolver el Plus Code: ${plusCode}`);
     }
-
-    this.validateStatus();
   }
 
-  // ===========================================================================
-  // REVERSE GEOCODING (OBTENER DIRECCIÓN DESDE COORDENADAS)
-  // ===========================================================================
-  async reverseGeocode(position) {
-    if (!this.geocoder) {
-      console.warn("⚠️ Geocoder no disponible para reverse geocoding");
-      return;
-    }
+  // ─── REVERSE GEOCODE ─────────────────────────────────────────────────────────
 
-    console.log("🔄 Ejecutando reverse geocoding...");
+  async reverseGeocode(position) {
+    if (!this.geocoder) return;
 
     try {
-      const response = await this.geocoder.geocode({ location: position });
+      const response = await this.geocoder.geocode({
+        location: { lat: position.lat, lng: position.lng },
+      });
 
-      if (response.results && response.results.length > 0) {
-        const result = response.results[0];
-        console.log("✅ Reverse geocoding exitoso:", result);
+      if (!response.results?.length) return;
 
-        // Dirección
-        const address = result.formatted_address;
-        this.addressNameTarget.value = address;
-        if (this.hasAddressDisplayTarget) {
-          this.addressDisplayTarget.value = address;
-        }
+      const results = response.results;
+      const primary = results[0];
+      const formattedAddress = primary.formatted_address || "";
+      const components = this._mergeGeocoderComponents(results);
+      const placeName = this._extractBestPlaceNameFromGeocoderResults(results);
+      const vicinity = this._extractVicinityFromResults(results);
+      const plusCode =
+        primary.plus_code?.global_code ||
+        primary.plus_code?.compound_code ||
+        position.originalPlusCode ||
+        "";
+      const placeTypes = primary.types || [];
 
-        // Plus Code
-        if (result.plus_code) {
-          const plusCode =
-            result.plus_code.global_code ||
-            result.plus_code.compound_code ||
-            "";
-          this.plusTarget.value = plusCode;
-          if (this.hasPlusDisplayTarget) {
-            this.plusDisplayTarget.textContent = plusCode;
-          }
-        }
+      if (plusCode && this.hasPlusTarget) {
+        this.plusTarget.value = plusCode;
+        if (this.hasPlusDisplayTarget)
+          this.plusDisplayTarget.textContent = plusCode;
       }
+
+      const enriched = {
+        placeName,
+        formattedAddress,
+        vicinity,
+        components,
+        placeTypes,
+        placeUrl: "",
+      };
+
+      const driverAddress = this._buildDriverAddress(enriched);
+      const richReference = this._buildRichReference(enriched);
+
+      if (this.hasAddressNameTarget)
+        this.addressNameTarget.value = driverAddress;
+      if (this.hasAddressDisplayTarget)
+        this.addressDisplayTarget.textContent = driverAddress;
+
+      this._updateDatasetMetadata({
+        placeId: "",
+        formattedAddress,
+        placeName,
+        source: this._lastInputSource || "reverse_geocode",
+      });
+
+      this._showGeoDetails(enriched);
+      this._setDescription(richReference);
+      this.validateStatus();
     } catch (error) {
       console.error("❌ Error en reverse geocoding:", error);
     }
   }
 
-  // ===========================================================================
-  // CARGAR DIRECCIÓN EXISTENTE (DESDE SELECT)
-  // ===========================================================================
-  async loadExistingAddress(event) {
+  _mergeGeocoderComponents(results) {
+    const merged = {};
+    results.forEach((result) => {
+      const extracted = this._extractComponents(
+        result.address_components || [],
+      );
+      Object.entries(extracted).forEach(([key, value]) => {
+        if (!merged[key] && value) merged[key] = value;
+      });
+    });
+    return merged;
+  }
+
+  _extractBestPlaceNameFromGeocoderResults(results) {
+    const preferredTypes = [
+      "premise",
+      "subpremise",
+      "point_of_interest",
+      "establishment",
+      "street_address",
+      "route",
+    ];
+
+    for (const type of preferredTypes) {
+      for (const result of results) {
+        if (!result.types?.includes(type)) continue;
+        const first = (result.formatted_address || "").split(",")[0]?.trim();
+        if (
+          first &&
+          !this._looksLikePlusCode(first) &&
+          first.length > 2 &&
+          first.length < 100
+        )
+          return first;
+      }
+    }
+
+    for (const result of results) {
+      const first = (result.formatted_address || "").split(",")[0]?.trim();
+      if (
+        first &&
+        !this._looksLikePlusCode(first) &&
+        first.length > 2 &&
+        first.length < 100
+      )
+        return first;
+    }
+
+    return "";
+  }
+
+  _extractVicinityFromResults(results) {
+    for (const result of results) {
+      if (result.vicinity) return result.vicinity;
+    }
+    return "";
+  }
+
+  // ─── CONSTRUCCIÓN DE DIRECCIÓN PRINCIPAL ─────────────────────────────────────
+
+  /**
+   * Dirección corta y legible para el campo "address".
+   * Formato: [Nombre del lugar], [Barrio/Distrito], [Cantón], [Provincia]
+   */
+  _buildDriverAddress({ placeName, formattedAddress, vicinity, components }) {
+    const parts = [];
+
+    const name = this._cleanPlaceName(placeName);
+    if (name && !this._isAdministrativeOnly(name, components)) {
+      parts.push(name);
+    }
+
+    // Usar vicinity si aporta algo que no esté ya
+    if (vicinity) {
+      const vicinityFirst = vicinity.split(",")[0]?.trim();
+      if (
+        vicinityFirst &&
+        !this._isAdministrativeOnly(vicinityFirst, components)
+      ) {
+        this._pushUniquePart(parts, vicinityFirst);
+      }
+    }
+
+    this._appendAdministrativeHierarchy(parts, components);
+
+    if (parts.length > 0) return parts.join(", ").trim();
+
+    return this._cleanFormattedAddress(formattedAddress);
+  }
+
+  // ─── CONSTRUCCIÓN DE REFERENCIA RICA ─────────────────────────────────────────
+
+  /**
+   * Referencia completa para el campo "description".
+   * Incluye todo lo útil: nombre, vicinity, segmentos de formatted_address,
+   * jerarquía administrativa, código postal.
+   * Sin duplicados. Sin Plus Codes visibles.
+   */
+  _buildRichReference({
+    placeName,
+    formattedAddress,
+    vicinity,
+    components,
+    placeTypes,
+    adrAddress,
+  }) {
+    const parts = [];
+
+    // 1. Nombre del lugar (POI, negocio, edificio)
+    const name = this._cleanPlaceName(placeName);
+    if (name && !this._isAdministrativeOnly(name, components)) {
+      parts.push(name);
+    }
+
+    // 2. Vicinity (referencia vial cercana que Google genera)
+    if (vicinity) {
+      vicinity.split(",").forEach((seg) => {
+        const s = seg.trim();
+        if (s && !this._looksLikePlusCode(s) && !/^costa rica$/i.test(s)) {
+          this._pushUniquePart(parts, s);
+        }
+      });
+    }
+
+    // 3. Segmentos útiles de formatted_address (no administrativos, no Plus Codes)
+    if (formattedAddress) {
+      const adminCandidates = this._buildAdminCandidates(components);
+      formattedAddress.split(",").forEach((seg) => {
+        const s = seg.trim();
+        if (!s) return;
+        if (this._looksLikePlusCode(s)) return;
+        if (/^costa rica$/i.test(s)) return;
+        if (/^provincia\s+de\s+/i.test(s)) return;
+        if (name && this._isSimilar(s, name)) return;
+        if (adminCandidates.includes(s.toLowerCase())) return;
+        this._pushUniquePart(parts, s);
+      });
+    }
+
+    // 4. Premise / subpremise (edificio, apartamento, local)
+    if (components.premise) this._pushUniquePart(parts, components.premise);
+    if (components.subpremise)
+      this._pushUniquePart(parts, components.subpremise);
+
+    // 5. Ruta / calle si existe
+    if (components.route) {
+      const routeStr = components.street_number
+        ? `${components.route} ${components.street_number}`
+        : components.route;
+      this._pushUniquePart(parts, routeStr);
+    }
+
+    // 6. Jerarquía administrativa completa
+    this._appendAdministrativeHierarchy(parts, components);
+
+    // 7. Código postal al final si aporta
+    if (components.postal_code)
+      this._pushUniquePart(parts, components.postal_code);
+
+    return parts.join(", ").trim();
+  }
+
+  // ─── JERARQUÍA ADMINISTRATIVA ─────────────────────────────────────────────────
+
+  _appendAdministrativeHierarchy(parts, components) {
+    const district =
+      components.sublocality_5 ||
+      components.sublocality_4 ||
+      components.sublocality_3 ||
+      components.sublocality_2 ||
+      components.sublocality_1 ||
+      components.sublocality ||
+      components.neighborhood ||
+      components.admin_level_3 ||
+      null;
+
+    const locality = components.locality || components.postal_town || null;
+    const canton = components.admin_level_2 || null;
+    const province = this._cleanProvince(components.admin_level_1);
+
+    if (district) this._pushUniquePart(parts, district);
+    if (locality) this._pushUniquePart(parts, locality);
+    if (canton) this._pushUniquePart(parts, canton);
+    if (province) this._pushUniquePart(parts, province);
+  }
+
+  _buildAdminCandidates(components) {
+    return [
+      components.neighborhood,
+      components.sublocality,
+      components.sublocality_1,
+      components.sublocality_2,
+      components.sublocality_3,
+      components.sublocality_4,
+      components.sublocality_5,
+      components.locality,
+      components.postal_town,
+      components.admin_level_3,
+      components.admin_level_2,
+      this._cleanProvince(components.admin_level_1),
+      components.admin_level_1,
+      components.country,
+      components.postal_code,
+    ]
+      .filter(Boolean)
+      .map((v) => v.toLowerCase().trim());
+  }
+
+  // ─── CARGA DE DIRECCIÓN EXISTENTE ────────────────────────────────────────────
+
+  loadExistingAddress(event) {
     const id = event.target.value;
     if (!id) return;
 
-    console.log("📥 Cargando dirección existente:", id);
+    fetch(`/delivery_addresses/${id}.json`)
+      .then((r) => r.json())
+      .then(async (data) => {
+        const lat = parseFloat(data.latitude);
+        const lng = parseFloat(data.longitude);
 
-    try {
-      const response = await fetch(`/delivery_addresses/${id}.json`);
-      const data = await response.json();
+        if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+          this.updateFromCoords(lat, lng);
 
-      const lat = parseFloat(data.latitude);
-      const lng = parseFloat(data.longitude);
-
-      if (!isNaN(lat) && !isNaN(lng)) {
-        this.updateFromCoords(lat, lng);
-
-        // Cargar descripción
-        if (this.hasDescriptionTarget && data.description) {
-          this.descriptionTarget.value = data.description;
-        }
-
-        // Cargar Plus Code
-        if (data.plus_code) {
-          this.plusTarget.value = data.plus_code;
-          if (this.hasPlusDisplayTarget) {
-            this.plusDisplayTarget.textContent = data.plus_code;
+          if (this.hasDescriptionTarget && data.description) {
+            this.descriptionTarget.value = data.description;
+            this._descriptionWasManuallyEdited = true;
           }
-        }
 
-        // Cargar dirección
-        if (data.address) {
-          this.addressNameTarget.value = data.address;
-          if (this.hasAddressDisplayTarget) {
-            this.addressDisplayTarget.value = data.address;
+          if (data.plus_code && this.hasPlusTarget) {
+            this.plusTarget.value = data.plus_code;
+            if (this.hasPlusDisplayTarget)
+              this.plusDisplayTarget.textContent = data.plus_code;
           }
-        }
 
-        this.validateStatus();
-      }
-    } catch (error) {
-      console.error("❌ Error loading existing address:", error);
-    }
+          if (data.address && this.hasAddressNameTarget) {
+            this.addressNameTarget.value = data.address;
+            if (this.hasAddressDisplayTarget)
+              this.addressDisplayTarget.textContent = data.address;
+          }
+
+          this._lastInputSource = "existing_record";
+          await this.reverseGeocode({ lat, lng });
+        }
+      })
+      .catch((error) =>
+        console.error("❌ Error cargando dirección existente:", error),
+      );
   }
 
-  // ===========================================================================
-  // ACTUALIZAR CAMPOS HIDDEN
-  // ===========================================================================
+  // ─── MAPA / COORDS ───────────────────────────────────────────────────────────
+
+  updateFromCoords(lat, lng) {
+    const pos = { lat, lng };
+    if (this.map) {
+      this.map.setCenter(pos);
+      this.map.setZoom(17);
+    }
+    if (this.marker) this.marker.position = pos;
+    this.updateFields(lat, lng);
+    this.updateDisplays(lat, lng);
+    this.validateStatus();
+  }
+
   updateFields(lat, lng) {
-    this.latTarget.value = lat.toFixed(7);
-    this.lngTarget.value = lng.toFixed(7);
-    console.log(
-      "💾 Campos actualizados:",
-      this.latTarget.value,
-      this.lngTarget.value,
-    );
+    if (this.hasLatTarget) this.latTarget.value = Number(lat).toFixed(7);
+    if (this.hasLngTarget) this.lngTarget.value = Number(lng).toFixed(7);
   }
 
-  // ===========================================================================
-  // ACTUALIZAR DISPLAYS VISUALES
-  // ===========================================================================
   updateDisplays(lat, lng) {
-    if (this.hasLatDisplayTarget) {
-      this.latDisplayTarget.textContent = lat.toFixed(5);
-    }
-    if (this.hasLngDisplayTarget) {
-      this.lngDisplayTarget.textContent = lng.toFixed(5);
-    }
-    console.log("🖥️ Displays actualizados");
+    if (this.hasLatDisplayTarget)
+      this.latDisplayTarget.textContent = Number(lat).toFixed(5);
+    if (this.hasLngDisplayTarget)
+      this.lngDisplayTarget.textContent = Number(lng).toFixed(5);
   }
 
-  // ===========================================================================
-  // VALIDACIÓN DE ESTADO
-  // ===========================================================================
+  resizeMap() {
+    if (!this.map) return;
+    google.maps.event.trigger(this.map, "resize");
+    const lat = parseFloat(this.latTarget?.value);
+    const lng = parseFloat(this.lngTarget?.value);
+    if (!Number.isNaN(lat) && !Number.isNaN(lng))
+      this.map.setCenter({ lat, lng });
+  }
+
+  // ─── UI ──────────────────────────────────────────────────────────────────────
+
+  _showGeoDetails({
+    placeName,
+    formattedAddress,
+    vicinity,
+    components,
+    placeTypes,
+    placeUrl,
+  }) {
+    if (!this.hasGeoDetailsTarget) return;
+
+    const district =
+      components.sublocality_5 ||
+      components.sublocality_4 ||
+      components.sublocality_3 ||
+      components.sublocality_2 ||
+      components.sublocality_1 ||
+      components.sublocality ||
+      components.neighborhood ||
+      components.admin_level_3 ||
+      null;
+
+    const locality = components.locality || components.postal_town || null;
+    const province = this._cleanProvince(components.admin_level_1);
+
+    const rows = [
+      placeName ? `<li><strong>Lugar:</strong> ${placeName}</li>` : null,
+      components.premise
+        ? `<li><strong>Edificio / Complejo:</strong> ${components.premise}</li>`
+        : null,
+      components.subpremise
+        ? `<li><strong>Unidad / Apto:</strong> ${components.subpremise}</li>`
+        : null,
+      components.route
+        ? `<li><strong>Calle / Ruta:</strong> ${components.route}${components.street_number ? " " + components.street_number : ""}</li>`
+        : null,
+      vicinity
+        ? `<li><strong>Referencia vial:</strong> ${vicinity}</li>`
+        : null,
+      district
+        ? `<li><strong>Distrito / Barrio:</strong> ${district}</li>`
+        : null,
+      locality
+        ? `<li><strong>Ciudad / Pueblo:</strong> ${locality}</li>`
+        : null,
+      components.admin_level_2
+        ? `<li><strong>Cantón:</strong> ${components.admin_level_2}</li>`
+        : null,
+      province ? `<li><strong>Provincia:</strong> ${province}</li>` : null,
+      components.postal_code
+        ? `<li><strong>Código postal:</strong> ${components.postal_code}</li>`
+        : null,
+      placeTypes?.length
+        ? `<li><strong>Tipo de lugar:</strong> ${placeTypes.slice(0, 3).join(", ")}</li>`
+        : null,
+      placeUrl
+        ? `<li><strong>Google Maps:</strong> <a href="${placeUrl}" target="_blank" rel="noopener">Ver en Maps</a></li>`
+        : null,
+      formattedAddress
+        ? `<li><strong>Dirección Google:</strong> ${formattedAddress}</li>`
+        : null,
+    ].filter(Boolean);
+
+    if (rows.length === 0) {
+      this.geoDetailsTarget.style.display = "none";
+      return;
+    }
+
+    this.geoDetailsTarget.innerHTML = `
+      <div class="small">
+        <div class="fw-bold text-success mb-2">Detalles detectados</div>
+        <ul class="mb-0 ps-3">${rows.join("")}</ul>
+      </div>
+    `;
+    this.geoDetailsTarget.style.removeProperty("display");
+    this.geoDetailsTarget.classList.remove("d-none");
+  }
+
+  _setDescription(richReference) {
+    if (!this.hasDescriptionTarget) return;
+    if (this._descriptionWasManuallyEdited) return;
+    if (richReference) this.descriptionTarget.value = richReference;
+  }
+
+  _updateDatasetMetadata({ placeId, formattedAddress, placeName, source }) {
+    if (this.hasAddressNameTarget) {
+      this.addressNameTarget.dataset.googlePlaceId = placeId || "";
+      this.addressNameTarget.dataset.googleFormattedAddress =
+        formattedAddress || "";
+      this.addressNameTarget.dataset.googlePlaceName = placeName || "";
+      this.addressNameTarget.dataset.inputSource = source || "";
+    }
+  }
+
   validateStatus() {
     const hasCoords =
+      this.hasLatTarget &&
+      this.hasLngTarget &&
       this.latTarget.value &&
       this.lngTarget.value &&
       parseFloat(this.latTarget.value) !== 0 &&
@@ -426,41 +823,150 @@ export default class extends Controller {
       this.hasDescriptionTarget &&
       this.descriptionTarget.value.trim().length >= 10;
 
-    // Actualizar badge de coordenadas
     if (this.hasCoordsStatusTarget) {
-      if (hasCoords) {
-        this.coordsStatusTarget.className = "badge bg-success";
-        this.coordsStatusTarget.innerHTML =
-          '<i class="bi bi-check-circle me-1"></i> Coordenadas: OK';
-      } else {
-        this.coordsStatusTarget.className = "badge bg-warning";
-        this.coordsStatusTarget.innerHTML =
-          '<i class="bi bi-exclamation-circle me-1"></i> Coordenadas: Pendiente';
-      }
+      this.coordsStatusTarget.className = hasCoords
+        ? "badge bg-success"
+        : "badge bg-warning text-dark";
+      this.coordsStatusTarget.innerHTML = hasCoords
+        ? "Coordenadas: OK"
+        : "Coordenadas: pendiente";
     }
 
-    // Actualizar badge de descripción
     if (this.hasDescStatusTarget) {
-      if (hasDescription) {
-        this.descStatusTarget.className = "badge bg-success";
-        this.descStatusTarget.innerHTML =
-          '<i class="bi bi-check-circle me-1"></i> Descripción: OK';
-      } else {
-        this.descStatusTarget.className = "badge bg-warning";
-        this.descStatusTarget.innerHTML =
-          '<i class="bi bi-exclamation-circle me-1"></i> Descripción: Pendiente';
-      }
+      this.descStatusTarget.className = hasDescription
+        ? "badge bg-success"
+        : "badge bg-warning text-dark";
+      this.descStatusTarget.innerHTML = hasDescription
+        ? "Descripción: OK"
+        : "Descripción: pendiente";
     }
 
-    // Actualizar badge principal
     if (this.hasStatusBadgeTarget) {
-      if (hasCoords && hasDescription) {
-        this.statusBadgeTarget.className = "badge bg-success";
-        this.statusBadgeTarget.textContent = "✓ Completo";
-      } else {
-        this.statusBadgeTarget.className = "badge bg-warning text-dark";
-        this.statusBadgeTarget.textContent = "⚠ Incompleto";
-      }
+      this.statusBadgeTarget.className =
+        hasCoords && hasDescription
+          ? "badge bg-success"
+          : "badge bg-warning text-dark";
+      this.statusBadgeTarget.textContent =
+        hasCoords && hasDescription ? "✓ Completo" : "⚠ Incompleto";
     }
+  }
+
+  // ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+  _extractComponents(components) {
+    const find = (type) =>
+      components.find((c) => (c.types || []).includes(type))?.long_name || null;
+    const findShort = (type) =>
+      components.find((c) => (c.types || []).includes(type))?.short_name ||
+      null;
+
+    return {
+      street_number: find("street_number"),
+      route: find("route"),
+      intersection: find("intersection"),
+      neighborhood: find("neighborhood"),
+      sublocality: find("sublocality"),
+      sublocality_1: find("sublocality_level_1"),
+      sublocality_2: find("sublocality_level_2"),
+      sublocality_3: find("sublocality_level_3"),
+      sublocality_4: find("sublocality_level_4"),
+      sublocality_5: find("sublocality_level_5"),
+      premise: find("premise"),
+      subpremise: find("subpremise"),
+      locality: find("locality"),
+      postal_town: find("postal_town"),
+      admin_level_3: find("administrative_area_level_3"),
+      admin_level_2: find("administrative_area_level_2"),
+      admin_level_1: find("administrative_area_level_1"),
+      admin_level_1_short: findShort("administrative_area_level_1"),
+      country: find("country"),
+      country_short: findShort("country"),
+      postal_code: find("postal_code"),
+      postal_suffix: find("postal_code_suffix"),
+      point_of_interest: find("point_of_interest"),
+      establishment: find("establishment"),
+      plus_code: find("plus_code"),
+    };
+  }
+
+  _cleanPlaceName(name) {
+    if (!name) return "";
+    return name
+      .replace(/^\s+|\s+$/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  _cleanProvince(value) {
+    if (!value) return null;
+    return value.replace(/^Provincia\s+de\s+/i, "").trim();
+  }
+
+  _cleanFormattedAddress(address) {
+    if (!address) return "";
+    return address
+      .split(",")
+      .map((p) => p.trim())
+      .filter(
+        (p) => p && !this._looksLikePlusCode(p) && !/^costa rica$/i.test(p),
+      )
+      .join(", ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  _pushUniquePart(parts, candidate) {
+    if (!candidate) return;
+    if (this._looksLikePlusCode(candidate)) return;
+    const normalized = candidate.trim();
+    if (!normalized) return;
+    if (!parts.some((p) => this._isSimilar(p, normalized)))
+      parts.push(normalized);
+  }
+
+  _isSimilar(a, b) {
+    if (!a || !b) return false;
+    const n = (v) =>
+      v
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+    const na = n(a);
+    const nb = n(b);
+    return na === nb || na.includes(nb) || nb.includes(na);
+  }
+
+  _looksLikePlusCode(value) {
+    if (!value) return false;
+    return /[23456789CFGHJMPQRVWX]{2,}\+[23456789CFGHJMPQRVWX]{2,}/i.test(
+      value.trim(),
+    );
+  }
+
+  _coordsLookLikeCostaRica(lat, lng) {
+    return lat >= 8.0 && lat <= 11.5 && lng >= -86.5 && lng <= -82.0;
+  }
+
+  _isAdministrativeOnly(value, components) {
+    if (!value) return false;
+    const adminValues = [
+      components.neighborhood,
+      components.sublocality,
+      components.sublocality_1,
+      components.sublocality_2,
+      components.sublocality_3,
+      components.sublocality_4,
+      components.sublocality_5,
+      components.locality,
+      components.postal_town,
+      components.admin_level_3,
+      components.admin_level_2,
+      components.admin_level_1,
+      this._cleanProvince(components.admin_level_1),
+    ].filter(Boolean);
+    return adminValues.some((item) => this._isSimilar(value, item));
   }
 }

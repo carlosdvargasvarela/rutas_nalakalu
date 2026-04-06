@@ -12,7 +12,7 @@
     <tbody>
       <% if notifications.any? %>
         <% notifications.each do |notification| %>
-          <tr class="<​%= 'table-warning bg-opacity-10' unless notification.read %>">
+          <tr class="<%= 'table-warning bg-opacity-10' unless notification.read %>">
             <td class="ps-4">
               <small class="text-muted">
                 <i class="bi bi-clock me-1"></i>

@@ -23,7 +23,7 @@
         </thead>
         <tbody>
           <% deliveries.each do |delivery| %>
-            <tr class="js-delivery-row border-bottom" data-delivery-id="<​%= delivery.id %>">
+            <tr class="js-delivery-row border-bottom" data-delivery-id="<%= delivery.id %>">
               <!-- Checkbox -->
               <td class="ps-4 py-4">
                 <%= check_box_tag "delivery_ids[]", delivery.id, selected_ids&.include?(delivery.id),

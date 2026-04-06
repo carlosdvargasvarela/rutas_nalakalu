@@ -2,5 +2,30 @@
     "solargraph.commandPath": "~/.rbenv/shims/solargraph",
     "solargraph.formatting": true,
     "editor.stickyScroll.enabled": true,
-    "emmet.includeLanguages": { "erb": "html", "ruby": "html" }
+    "emmet.includeLanguages": {
+        "erb": "html",
+        "ruby": "html"
+    },
+    "sqltools.connections": [
+        {
+            "pgOptions": {
+                "ssl": {
+                    "rejectUnauthorized": false,
+                    "requestCert": true
+                }
+            },
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "c3v5n5ajfopshl.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com",
+            "port": 5432,
+            "sshOptions": {
+                "port": 22
+            },
+            "driver": "PostgreSQL",
+            "name": "Nalakalu Productos",
+            "database": "d48cv86mc64k4i",
+            "username": "u9o9ru8i03nqs8",
+            "password": "pbfbd6d4be9339a362d4030c984b328d2e269306499c74424b59c538e734c6c8e"
+        }
+    ]
 }
