@@ -1,0 +1,47 @@
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light">
+    <i class="bi bi-pencil-square me-2 text-success"></i><strong>Detalle del mandado</strong>
+  </div>
+  <div class="card-body">
+    <div class="alert alert-info mb-3">
+      <i class="bi bi-lightbulb me-2"></i>
+      <strong>Descripción clara:</strong> Especifique qué se debe realizar, qué se debe entregar o recoger, y cualquier instrucción especial
+    </div>
+    
+    <%= f.simple_fields_for :delivery_items do |di| %>
+      <%= di.simple_fields_for :order_item do |oi| %>
+        <%= oi.input :product, 
+            as: :text, 
+            label: "Descripción del mandado",
+            input_html: { 
+              class: "form-control", 
+              rows: 5, 
+              placeholder: "Ej: Recoger 50 tornillos de 2 pulgadas en Ferretería El Tornillo y llevarlos a la bodega principal. Pedir factura a nombre de NaLakalu.",
+              data: { 
+                action: "input->internal-delivery-form#validateTaskDetails" 
+              }
+            },
+            hint: "Sea lo más específico posible para evitar confusiones",
+            label_html: { class: "form-label fw-bold" } %>
+        
+        <%= oi.hidden_field :quantity, value: 1 %>
+        <%= di.hidden_field :quantity_delivered, value: 1 %>
+      <% end %>
+    <% end %>
+
+    <!-- Ejemplos de mandados comunes -->
+    <div class="card bg-light border-0 mt-3">
+      <div class="card-body">
+        <h6 class="text-muted mb-2">
+          <i class="bi bi-lightbulb me-1"></i> Ejemplos de mandados comunes:
+        </h6>
+        <ul class="small mb-0 text-muted">
+          <li>Trasladar 10 cajas de herrajes desde bodega A a bodega B</li>
+          <li>Comprar materiales en ferretería según lista adjunta</li>
+          <li>Recoger documentos firmados en oficinas del cliente X</li>
+          <li>Entregar muestras de productos a vendedor en zona Y</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

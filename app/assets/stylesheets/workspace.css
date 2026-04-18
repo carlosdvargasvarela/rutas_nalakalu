@@ -1,0 +1,28 @@
+/* Workspace — delivery cards */
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+  border-color: var(--bs-primary) !important;
+}
+
+.border-start-danger {
+  border-left: 4px solid var(--bs-danger) !important;
+}
+.border-start-primary {
+  border-left: 4px solid var(--bs-primary) !important;
+}
+
+/* Card activa — Stimulus agrega .active-card al <a> */
+.active-card .card {
+  background-color: #eef3ff !important;
+  border-color: var(--bs-primary) !important;
+  border-left-width: 5px !important;
+}
+
+/* Workspace — items */
+.btn-xs {
+  padding: 0.15rem 0.4rem;
+  font-size: 0.75rem;
+  border-radius: 0.2rem;
+  line-height: 1.4;
+}

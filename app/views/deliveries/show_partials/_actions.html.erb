@@ -1,0 +1,62 @@
+<%# app/views/deliveries/show_partials/_actions.html.erb %>
+<div class="d-flex gap-2 align-items-center">
+  <%# Aprobar %>
+  <% if policy(delivery).approve? && !delivery.approved? %>
+    <%= button_to approve_delivery_path(delivery),
+          method: :patch,
+          class: "btn btn-sm btn-success d-flex align-items-center gap-1",
+          data: { turbo_confirm: "¿Aprobar esta entrega para producción?" } do %>
+      <i class="bi bi-check-circle-fill"></i>
+      <span class="d-none d-md-inline">Aprobar</span>
+    <% end %>
+  <% end %>
+  <%# Confirmar todos los productos %>
+  <% if policy(delivery).edit? && delivery.delivery_items.pending.any? %>
+    <%= button_to confirm_all_items_delivery_path(delivery),
+          method: :patch,
+          class: "btn btn-sm btn-primary d-flex align-items-center gap-1",
+          data: { turbo_confirm: "¿Confirmar todos los productos como listos?" } do %>
+      <i class="bi bi-box-seam-fill"></i>
+      <span class="d-none d-md-inline">Confirmar Todo</span>
+    <% end %>
+  <% end %>
+  <%# Dropdown acciones secundarias %>
+  <div class="dropdown">
+    <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+            type="button"
+            data-bs-toggle="dropdown">
+      <i class="bi bi-three-dots-vertical"></i>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+      <%# Archivar %>
+      <li>
+        <%= button_to archive_delivery_path(delivery),
+              method: :patch,
+              class: "dropdown-item text-danger",
+              form_class: "d-block",
+              data: { turbo_confirm: "¿Archivar esta entrega? Se quitará de la vista principal." } do %>
+          <i class="bi bi-archive me-2"></i> Archivar Entrega
+        <% end %>
+      </li>
+      <li><hr class="dropdown-divider"></li>
+      <%# Reasignar vendedor %>
+      <% if policy(delivery).reassign_seller? %>
+        <li>
+          <button class="dropdown-item"
+                  data-bs-toggle="modal"
+                  data-bs-target="#reassignSellerModal">
+            <i class="bi bi-person-gear me-2"></i> Reasignar Vendedor
+          </button>
+        </li>
+      <% end %>
+      <%# Caso de servicio %>
+      <li>
+        <%= link_to new_service_case_for_existing_delivery_path(delivery),
+              class: "dropdown-item",
+              data: { turbo_frame: "_top" } do %>
+          <i class="bi bi-headset me-2"></i> Crear Caso de Servicio
+        <% end %>
+      </li>
+    </ul>
+  </div>
+</div>

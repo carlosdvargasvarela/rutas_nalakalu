@@ -1,0 +1,104 @@
+<%# app/views/deliveries/show_partials/_product_item.html.erb %>
+<div id="<%= dom_id(item) %>"
+  class="card border-0 shadow-sm"
+  style="border-left: 3px solid var(--bs-<%= delivery_item_status_color(item.status) %>) !important;">
+  <div class="card-body p-2">
+    <%# Fila principal: checkbox + nombre + estado %>
+    <div class="d-flex align-items-start gap-2">
+      <%# Checkbox bulk (solo si el item es accionable) %>
+      <% unless item.delivered? || item.cancelled? || item.rescheduled? %>
+        <div class="pt-1 flex-shrink-0">
+          <input type="checkbox"
+                 class="form-check-input"
+                 value="<%= item.id %>"
+          data-bulk-items-target="checkbox"
+          data-action="change->bulk-items#toggle">
+        </div>
+      <% else %>
+        <div class="pt-1 flex-shrink-0" style="width: 16px;"></div>
+      <% end %>
+      <div class="flex-grow-1">
+        <%# Nombre + badges %>
+        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+          <span class="badge bg-secondary">x<%= item.quantity %></span>
+          <span class="small fw-bold"><%= item.order_item.product %></span>
+          <% if item.service_case? %>
+            <span class="badge bg-warning text-dark" style="font-size:0.65rem;">
+              <i class="bi bi-tools"></i> Servicio
+            </span>
+          <% end %>
+          <span class="badge bg-<%= delivery_item_status_color(item.status) %> ms-auto flex-shrink-0">
+            <%= item.display_status %>
+          </span>
+        </div>
+        <%# Notas del order_item %>
+        <% if item.order_item.notes.present? %>
+          <div class="small text-muted ps-1 border-start border-warning border-2 mb-1">
+            <%= item.order_item.notes %>
+          </div>
+        <% end %>
+        <% if item.order_item.notes_open? %>
+          <div class="small text-warning fw-medium mb-1">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            Producción reporta pendientes — revisar antes de confirmar
+          </div>
+        <% end %>
+        <%# Notas de producción %>
+        <% unless current_user.seller? %>
+          <% if item.order_item.order_item_notes.any? %>
+            <div class="mt-1">
+              <%= render "order_item_notes/list", item: item.order_item %>
+            </div>
+          <% end %>
+        <% end %>
+        <%# Acciones individuales %>
+        <% unless item.delivered? || item.cancelled? || item.rescheduled? %>
+          <div class="mt-2 d-flex flex-wrap gap-1 justify-content-end">
+            <% if item.pending? && policy(delivery).edit? %>
+              <%= button_to confirm_delivery_item_path(item),
+                    method: :patch,
+                    class: "btn btn-xs btn-outline-primary",
+                    data: { turbo_confirm: "¿Confirmar este producto?" } do %>
+                <i class="bi bi-check-circle"></i> Confirmar
+              <% end %>
+            <% end %>
+            <% if policy(delivery).edit? %>
+              <%= button_to mark_delivered_delivery_item_path(item),
+                    method: :patch,
+                    class: "btn btn-xs btn-success",
+                    data: { turbo_confirm: "¿Marcar como entregado?" } do %>
+                <i class="bi bi-check2-circle"></i> Entregado
+              <% end %>
+              <button type="button"
+                      class="btn btn-xs btn-warning"
+                      data-bs-toggle="modal"
+                      data-bs-target="#rescheduleItemModal<%= item.id %>">
+                <i class="bi bi-calendar2-plus"></i> Reagendar
+              </button>
+              <%= button_to cancel_delivery_item_path(item),
+                    method: :patch,
+                    class: "btn btn-xs btn-outline-danger",
+                    data: { turbo_confirm: "¿Cancelar este item?" } do %>
+                <i class="bi bi-x-circle"></i>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="mt-1 text-end">
+            <% if item.delivered? %>
+              <span class="small text-success"><i class="bi bi-check2-circle me-1"></i>Entregado</span>
+            <% elsif item.rescheduled? %>
+              <span class="small text-warning"><i class="bi bi-calendar-x me-1"></i>Reagendado</span>
+            <% elsif item.cancelled? %>
+              <span class="small text-danger"><i class="bi bi-x-circle me-1"></i>Cancelado</span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+<%# Modal reagendado individual %>
+<% if policy(delivery).edit? && !item.delivered? && !item.cancelled? %>
+  <%= render "delivery_items/reschedule_modal", item: item, future_deliveries: @future_deliveries %>
+<% end %>

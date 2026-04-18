@@ -1,0 +1,52 @@
+<h1 class="mb-4 d-flex align-items-center">
+  <i class="bi bi-truck me-2 text-primary"></i>
+  <span>Listado de Entregas</span>
+</h1>
+<!-- Filtros -->
+<%= render "deliveries/index_partials/filters", q: @q %>
+<!-- Selector de Vista -->
+<div class="d-flex justify-content-between mb-3">
+  <div class="btn-group" role="group" aria-label="Selector de vista">
+    <%= link_to deliveries_path(request.query_parameters.merge(view: "table")),
+          class: "btn btn-sm #{params[:view] == 'table' || params[:view].blank? ? 'btn-primary' : 'btn-outline-secondary'}" do %>
+      <i class="bi bi-table"></i> Tabla
+    <% end %>
+    <%= link_to deliveries_path(request.query_parameters.merge(view: "cards")),
+          class: "btn btn-sm #{params[:view] == 'cards' ? 'btn-primary' : 'btn-outline-secondary'}" do %>
+      <i class="bi bi-grid-3x3-gap"></i> Cards
+    <% end %>
+  </div>
+</div>
+<!-- Botones globales -->
+<div class="d-flex gap-2">
+  <% if policy(Delivery).new? %>
+    <%= link_to new_delivery_path, class: "btn btn-success btn-sm" do %>
+      <i class="bi bi-plus-circle me-1"></i> Nueva entrega
+    <% end %>
+    <%= link_to new_internal_delivery_deliveries_path, class: "btn btn-warning btn-sm" do %>
+      <i class="bi bi-bag-plus me-1"></i> Mandado
+    <% end %>
+    <%= link_to new_service_case_deliveries_path, class: "btn btn-info text-white btn-sm" do %>
+      <i class="bi bi-tools me-1"></i> Caso servicio
+    <% end %>
+  <% end %>
+  <div class="btn-group">
+    <%= link_to deliveries_path(request.query_parameters.merge(format: :xlsx)),
+                  class: "btn btn-outline-success btn-sm" do %>
+      <i class="bi bi-file-earmark-excel me-1"></i> Excel
+    <% end %>
+  </div>
+</div>
+</div>
+<% if @deliveries.any? %>
+  <% if params[:view] == "cards" %>
+    <%= render "deliveries/index_partials/cards", deliveries: @deliveries %>
+  <% else %>
+    <%= render "deliveries/index_partials/table", deliveries: @deliveries %>
+  <% end %>
+  <div class="d-flex justify-content-center mt-3">
+    <%= paginate @deliveries %>
+  </div>
+<% else %>
+  <%= render "deliveries/index_partials/no_results" %>
+<% end %>

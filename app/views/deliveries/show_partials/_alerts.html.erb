@@ -1,14 +1,28 @@
+<%# app/views/deliveries/show_partials/_alerts.html.erb %>
 <% if policy(delivery).approve? && !delivery.approved? %>
-  <div class="alert alert-warning d-flex justify-content-between align-items-center shadow-sm">
-    <span>
-      <i class="bi bi-exclamation-triangle me-2"></i>
+  <div class="alert alert-warning d-flex justify-content-between align-items-center gap-2 py-2 mb-0 shadow-sm">
+    <span class="small">
+      <i class="bi bi-exclamation-triangle me-1"></i>
       Esta entrega requiere aprobación de producción.
     </span>
     <%= button_to approve_delivery_path(delivery),
-        method: :patch,
-        class: "btn btn-sm btn-success",
-        data: { turbo_confirm: "¿Marcar esta entrega como aprobada para la semana actual?" } do %>
-      <i class="bi bi-check-circle"></i> Aprobar Entrega
+          method: :patch,
+          class: "btn btn-sm btn-success flex-shrink-0",
+          form_class: "d-flex",
+          data: { turbo_confirm: "¿Marcar esta entrega como aprobada?" } do %>
+      <i class="bi bi-check-circle me-1"></i> Aprobar
     <% end %>
+  </div>
+<% end %>
+<% if delivery.rescheduled? && delivery.reschedule_reason.present? %>
+  <div class="alert alert-info py-2 mb-0 small">
+    <i class="bi bi-calendar-x me-1"></i>
+    Reagendada — <strong>Motivo:</strong> <%= delivery.reschedule_reason %>
+  </div>
+<% end %>
+<% if delivery.address_error? %>
+  <div class="alert alert-danger py-2 mb-0 small">
+    <i class="bi bi-geo-alt me-1"></i>
+    Error en la dirección — verificar antes de asignar al plan.
   </div>
 <% end %>

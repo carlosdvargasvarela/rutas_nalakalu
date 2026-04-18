@@ -1,0 +1,61 @@
+<%# app/views/deliveries/show_partials/_reassign_seller_modal.html.erb %>
+<%# Solo para roles que pueden reasignar y si hay pedido %>
+<% if policy(delivery).reassign_seller? && delivery.order.present? %>
+  <% current_seller = delivery.order.seller %>
+
+  <%# Modal Bootstrap %>
+  <div class="modal fade" id="reassignSellerModal" tabindex="-1"
+       aria-labelledby="reassignSellerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="reassignSellerModalLabel">
+            Reasignar vendedor del pedido <%= delivery.order.number %>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+
+        <%= form_with url: reassign_seller_delivery_path(delivery),
+                      method: :patch,
+                      local: true do |f| %>
+          <div class="modal-body">
+            <p class="mb-3">
+              <strong>Vendedor actual:</strong>
+              <%= current_seller.name %>
+              <span class="text-muted small">
+                (<%= current_seller.seller_code %>)
+              </span>
+            </p>
+
+            <div class="mb-3">
+              <%= f.label :seller_id, "Nuevo vendedor", class: "form-label fw-bold" %>
+              <%= f.select :seller_id,
+                    options_from_collection_for_select(
+                      Seller.order(:name),
+                      :id,
+                      ->(s) { "#{s.name} (#{s.seller_code})" },
+                      current_seller&.id
+                    ),
+                    { prompt: "Selecciona un vendedor" },
+                    class: "form-select" %>
+              <div class="form-text">
+                El pedido completo será transferido al nuevo vendedor.
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal">
+              Cancelar
+            </button>
+            <%= f.submit "Confirmar reasignación",
+                  class: "btn btn-primary",
+                  data: { turbo_confirm: "¿Reasignar este pedido al vendedor seleccionado?" } %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

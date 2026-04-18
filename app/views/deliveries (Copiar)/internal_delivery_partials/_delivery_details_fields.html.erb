@@ -1,0 +1,49 @@
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light">
+    <i class="bi bi-calendar-event me-2 text-success"></i><strong>Detalles de la entrega</strong>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <%= f.label :delivery_date, "Fecha de servicio", class: "form-label fw-bold" %>
+        <%= f.date_field :delivery_date, 
+            class: "form-control form-control-lg", 
+            required: true,
+            data: { 
+              action: "change->internal-delivery-form#validateDeliveryDetails" 
+            } %>
+        <div class="form-text">
+          <i class="bi bi-info-circle me-1"></i>
+          Fecha en la que se debe realizar el mandado
+        </div>
+      </div>
+      <div class="col-md-6">
+        <%= f.label :delivery_time_preference, "Horario preferido", class: "form-label fw-bold" %>
+        <%= f.select :delivery_time_preference,
+            [["Mañana (8:00 AM - 12:00 PM)", "Mañana"], 
+             ["Tarde (12:00 PM - 5:00 PM)", "Tarde"],
+             ["Todo el día", "Todo el día"]],
+            { prompt: "Seleccione horario" },
+            class: "form-select form-select-lg",
+            data: { 
+              action: "change->internal-delivery-form#validateDeliveryDetails" 
+            } %>
+        <div class="form-text">
+          <i class="bi bi-clock me-1"></i>
+          Horario preferido para realizar el mandado
+        </div>
+      </div>
+      <div class="col-12">
+        <%= f.input :delivery_notes, 
+            as: :text, 
+            label: "Notas adicionales (opcional)", 
+            input_html: { 
+              rows: 3, 
+              class: "form-control",
+              placeholder: "Ej: Coordinar con bodega antes de ir, llevar factura original..."
+            },
+            label_html: { class: "form-label fw-bold" } %>
+      </div>
+    </div>
+  </div>
+</div>

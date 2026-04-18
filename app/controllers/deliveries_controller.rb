@@ -1,5 +1,7 @@
 # app/controllers/deliveries_controller.rb
 class DeliveriesController < ApplicationController
+  include ActionView::RecordIdentifier
+
   before_action :set_delivery, only: [
     :show, :edit, :update, :mark_as_delivered, :confirm_all_items,
     :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing,
@@ -7,13 +9,10 @@ class DeliveriesController < ApplicationController
   ]
   before_action :set_addresses, only: [:new, :edit, :create, :update]
 
-  # GET /deliveries
-
   def index
     authorize Delivery
     session[:deliveries_return_to] = request.fullpath
 
-    # 🔹 CAMBIO: Excluir entregas archivadas desde el inicio
     base_scope = if params[:show_rescheduled] == "1"
       Delivery.where.not(status: :archived)
     else
@@ -32,11 +31,9 @@ class DeliveriesController < ApplicationController
       end
     end
 
-    # 🔹 CAMBIO: Excluir archived también aquí
     excluded_statuses = %i[delivered rescheduled cancelled archived failed]
     base_scope = base_scope.where.not(status: excluded_statuses) if params[:no_plan].present?
 
-    # 🔹 Filtrar solo casos de servicio
     if params[:only_service_cases].present?
       base_scope = base_scope.service_cases
     end
@@ -46,7 +43,6 @@ class DeliveriesController < ApplicationController
 
     @deliveries = deliveries_scope.order(delivery_date: :asc).page(params[:page])
 
-    # 🔹 CAMBIO: @all_deliveries también excluye archived
     @all_deliveries = deliveries_scope
       .includes(delivery_items: {order_item: :order})
       .order(delivery_date: :asc)
@@ -62,31 +58,8 @@ class DeliveriesController < ApplicationController
 
   def show
     authorize @delivery
-    # 🔥 OPTIMIZACIÓN: Precargar todas las asociaciones necesarias
-    @delivery = Delivery.includes(
-      :order,
-      :delivery_address,
-      delivery_items: {order_item: [:order, :order_item_notes]},
-      order: [:client, :seller],
-      delivery_address: :client,
-      delivery_plan_assignment: {delivery_plan: :driver}
-    ).find(params[:id])
-
-    # 🔥 OPTIMIZACIÓN: Precargar asociaciones para entregas futuras
-    @future_deliveries = Delivery
-      .includes(order: :client, delivery_address: :client)
-      .where(order_id: @delivery.order_id, delivery_address_id: @delivery.delivery_address_id)
-      .where.not(id: @delivery.id)
-      .where(status: [:scheduled, :ready_to_deliver, :in_plan, :in_route])
-
-    # 🔥 OPTIMIZACIÓN: Precargar asociaciones para historial
-    @delivery_history = @delivery.order.deliveries
-      .includes(
-        delivery_items: {order_item: [:order, :order_item_notes]},
-        delivery_address: :client
-      )
-      .where(delivery_address_id: @delivery.delivery_address_id)
-      .order(:delivery_date)
+    load_delivery_for_panel
+    set_delivery_panel_data
   end
 
   def new
@@ -120,7 +93,6 @@ class DeliveriesController < ApplicationController
     @delivery.delivery_items.build.build_order_item if @delivery.delivery_items.empty?
   end
 
-  # POST /deliveries
   def create
     authorize Delivery
     sanitize_delivery_address_param!
@@ -131,7 +103,6 @@ class DeliveriesController < ApplicationController
     handle_create_error(e)
   end
 
-  # PATCH/PUT /deliveries/:id
   def update
     authorize @delivery, :edit?
     sanitize_delivery_address_param!
@@ -263,7 +234,27 @@ class DeliveriesController < ApplicationController
     @delivery.mark_as_confirmed_by_vendor!
     @delivery.status = :ready_to_deliver
     @delivery.save!
-    redirect_to(delivery_path(@delivery), notice: "#{updated} productos confirmados para entrega.")
+
+    respond_to do |format|
+      format.turbo_stream do
+        load_delivery_for_panel
+        set_delivery_panel_data
+
+        render turbo_stream: [
+          turbo_stream.replace(
+            "delivery_detail",
+            partial: "deliveries/show_partials/detail",
+            locals: {delivery: @delivery}
+          ),
+          turbo_stream.replace(
+            dom_id(@delivery, :card),
+            partial: "deliveries/index_partials/delivery_card",
+            locals: {delivery: @delivery}
+          )
+        ]
+      end
+      format.html { redirect_to delivery_path(@delivery), notice: "#{updated} productos confirmados para entrega." }
+    end
   end
 
   def mark_as_delivered
@@ -276,15 +267,57 @@ class DeliveriesController < ApplicationController
   def approve
     authorize @delivery, :approve?
     @delivery.approve!
-    redirect_to @delivery, notice: "Entrega aprobada correctamente para esta semana."
+
+    respond_to do |format|
+      format.turbo_stream do
+        load_delivery_for_panel
+        set_delivery_panel_data
+
+        render turbo_stream: [
+          turbo_stream.replace(
+            "delivery_detail",
+            partial: "deliveries/show_partials/detail",
+            locals: {delivery: @delivery}
+          ),
+          turbo_stream.replace(
+            dom_id(@delivery, :card),
+            partial: "deliveries/index_partials/delivery_card",
+            locals: {delivery: @delivery}
+          )
+        ]
+      end
+      format.html { redirect_to @delivery, notice: "Entrega aprobada correctamente para esta semana." }
+    end
   end
 
   def archive
     authorize @delivery, :edit?
-    if @delivery.update(status: :archived)
-      redirect_to @delivery, notice: "La entrega fue archivada correctamente."
-    else
-      redirect_to @delivery, alert: "No se pudo archivar la entrega."
+
+    respond_to do |format|
+      if @delivery.update(status: :archived)
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.remove(dom_id(@delivery, :card)),
+            turbo_stream.replace(
+              "delivery_detail",
+              partial: "deliveries/shared_partials/detail_empty_state"
+            )
+          ]
+        end
+        format.html { redirect_to deliveries_path, notice: "La entrega fue archivada correctamente." }
+      else
+        format.turbo_stream do
+          load_delivery_for_panel
+          set_delivery_panel_data
+
+          render turbo_stream: turbo_stream.replace(
+            "delivery_detail",
+            partial: "deliveries/show_partials/detail",
+            locals: {delivery: @delivery}
+          )
+        end
+        format.html { redirect_to @delivery, alert: "No se pudo archivar la entrega." }
+      end
     end
   end
 
@@ -326,8 +359,6 @@ class DeliveriesController < ApplicationController
     redirect_to @delivery, notice: "El estado de la entrega ha sido actualizado."
   end
 
-  # PATCH /deliveries/:id/reassign_seller
-  # Permite a admin/logística/producción cambiar el vendedor del pedido
   def reassign_seller
     authorize @delivery, :reassign_seller?
 
@@ -347,13 +378,9 @@ class DeliveriesController < ApplicationController
       alert: "No se pudo reasignar el pedido: #{e.message}"
   end
 
-  # PATCH /deliveries/:id/take_order
-  # Permite a un vendedor tomar el pedido para sí mismo
   def take_order
     authorize @delivery, :take_order?
-
     @delivery.order.take_by_user!(current_user)
-
     redirect_to @delivery,
       notice: "Tomaste el pedido #{@delivery.order.number}. Ahora está asignado a ti."
   rescue => e
@@ -370,6 +397,33 @@ class DeliveriesController < ApplicationController
     ).find(params[:id])
   end
 
+  def load_delivery_for_panel
+    @delivery = Delivery.includes(
+      :order,
+      :delivery_address,
+      delivery_items: {order_item: [:order, :order_item_notes]},
+      order: [:client, :seller],
+      delivery_address: :client,
+      delivery_plan_assignment: {delivery_plan: :driver}
+    ).find(@delivery.id)
+  end
+
+  def set_delivery_panel_data
+    @future_deliveries = Delivery
+      .includes(order: :client, delivery_address: :client)
+      .where(order_id: @delivery.order_id, delivery_address_id: @delivery.delivery_address_id)
+      .where.not(id: @delivery.id)
+      .where(status: [:scheduled, :ready_to_deliver, :in_plan, :in_route])
+
+    @delivery_history = @delivery.order.deliveries
+      .includes(
+        delivery_items: {order_item: [:order, :order_item_notes]},
+        delivery_address: :client
+      )
+      .where(delivery_address_id: @delivery.delivery_address_id)
+      .order(:delivery_date)
+  end
+
   def set_addresses
     @addresses = @delivery&.order&.client&.delivery_addresses&.to_a || []
   end
@@ -378,14 +432,14 @@ class DeliveriesController < ApplicationController
     raw = params.dig(:delivery, :delivery_address_id).to_s
     params[:delivery][:delivery_address_id] = nil if raw == "__new__" || raw.blank?
   rescue
-    # noop
+    nil
   end
 
   def sanitize_order_id_param!
     raw = params.dig(:delivery, :order_id).to_s
     params[:delivery][:order_id] = nil if raw == "__new__" || raw.blank?
   rescue
-    # noop
+    nil
   end
 
   def safe_date(str)

@@ -199,9 +199,7 @@ Rails.application.routes.draw do
       end
     end
   end
-  # =============================================================================
-  # MODO CHOFER (Driver)
-  # =============================================================================
+
   # =============================================================================
   # MODO CHOFER (Driver)
   # =============================================================================
@@ -273,6 +271,12 @@ Rails.application.routes.draw do
     end
 
     resources :delivery_items do
+      collection do
+        patch :bulk_confirm
+        patch :bulk_deliver
+        patch :bulk_cancel
+        patch :bulk_reschedule
+      end
       member do
         match :mark_loaded, via: [:get, :post]
         match :mark_unloaded, via: [:get, :post]

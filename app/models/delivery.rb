@@ -126,6 +126,10 @@ class Delivery < ApplicationRecord
     order.client.name
   end
 
+  def order_number
+    order.number
+  end
+
   def service_case?
     delivery_type.in?(SERVICE_CASE_TYPES)
   end
@@ -199,6 +203,10 @@ class Delivery < ApplicationRecord
       recalculate_load_status!
       update_status_based_on_items
     end
+  end
+
+  def address_error?
+    Deliveries::ErrorDetector.new(self).errors.any? { |e| e[:category] == "Dirección" }
   end
 
   # Resetear carga de la entrega

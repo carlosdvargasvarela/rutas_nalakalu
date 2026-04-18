@@ -1,29 +1,29 @@
-<!-- app/views/deliveries/show_partials/_map.html.erb -->
-<div class="col-12 mb-4">
-  <div class="card shadow-sm">
-    <div class="card-header bg-light">
-      <i class="bi bi-map me-1"></i> Ubicación en el mapa
-    </div>
-    <div class="card-body">
-      <% if delivery.delivery_address.latitude.present? && delivery.delivery_address.longitude.present? %>
-        <div id="delivery-map"
-             data-controller="delivery-map"
-             data-delivery-map-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
-             data-delivery-map-points-value="<%= [{
-               lat: delivery.delivery_address.latitude,
-               lng: delivery.delivery_address.longitude,
-               client: delivery.order&.client&.name,
-               address: delivery.delivery_address.address,
-               order_number: delivery.order&.number
-             }].to_json %>"
-             style="height: 300px; border:1px solid #ddd; border-radius: 8px;">
-        </div>
-      <% else %>
-        <div class="alert alert-info">
-          <i class="bi bi-info-circle me-2"></i>
-          Esta dirección aún no tiene coordenadas registradas.
-        </div>
-      <% end %>
-    </div>
+<%# app/views/deliveries/show_partials/_map.html.erb %>
+<% if delivery.delivery_address.latitude.present? && delivery.delivery_address.longitude.present? %>
+  <div id="delivery-map"
+       data-controller="delivery-map"
+       data-delivery-map-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
+    data-delivery-map-points-value="<%= [{
+         lat: delivery.delivery_address.latitude,
+         lng: delivery.delivery_address.longitude,
+         client: delivery.order&.client&.name,
+         address: delivery.delivery_address.address,
+         order_number: delivery.order&.number
+       }].to_json %>"
+      style="min-height: 280px; height: 35vh; border: 1px solid #ddd; border-radius: 8px;">
   </div>
-</div>
+<% else %>
+  <div class="text-center py-4 text-muted">
+    <i class="bi bi-geo-alt display-6 d-block mb-2"></i>
+    <span class="small">Sin coordenadas registradas para esta dirección.</span>
+    <% if policy(delivery).edit? %>
+      <div class="mt-2">
+        <%= link_to edit_delivery_path(delivery),
+              class: "btn btn-sm btn-outline-secondary",
+              data: { turbo_frame: "_top" } do %>
+          <i class="bi bi-pencil me-1"></i> Editar dirección
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

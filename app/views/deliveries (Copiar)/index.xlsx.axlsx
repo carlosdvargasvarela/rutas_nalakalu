@@ -1,0 +1,25 @@
+wb = xlsx_package.workbook
+wb.add_worksheet(name: "Entregas") do |sheet|
+  sheet.add_row [
+    "Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo"
+  ]
+  
+  @all_deliveries.each do |delivery|
+    # 🔹 CAMBIO: Excluir entregas archivadas
+    next if delivery.archived?
+    
+    delivery.delivery_items.each do |delivery_item|
+      sheet.add_row [
+        delivery.delivery_date.strftime("%d/%m/%Y"),
+        delivery.order.number,
+        delivery_item.order_item.product,
+        delivery_item.quantity,
+        delivery.order.seller.seller_code,
+        delivery.order.client.name,
+        delivery.delivery_address.address,
+        delivery.display_status,
+        delivery.delivery_type_humanize
+      ]
+    end
+  end
+end

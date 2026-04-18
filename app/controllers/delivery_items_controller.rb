@@ -14,8 +14,20 @@ class DeliveryItemsController < ApplicationController
       current_user: current_user
     ).call
 
-    redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-      notice: "Producto confirmado para entrega."
+    respond_to do |format|
+      format.turbo_stream do
+        @delivery_item.reload
+        render turbo_stream: turbo_stream.replace(
+          dom_id(@delivery_item),
+          partial: "deliveries/show_partials/product_item",
+          locals: {item: @delivery_item, delivery: @delivery_item.delivery}
+        )
+      end
+      format.html do
+        redirect_back fallback_location: delivery_path(@delivery_item.delivery),
+          notice: "Producto confirmado para entrega."
+      end
+    end
   rescue => e
     handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
   end
@@ -28,8 +40,20 @@ class DeliveryItemsController < ApplicationController
       current_user: current_user
     ).call
 
-    redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-      notice: "Producto marcado como entregado."
+    respond_to do |format|
+      format.turbo_stream do
+        @delivery_item.reload
+        render turbo_stream: turbo_stream.replace(
+          dom_id(@delivery_item),
+          partial: "deliveries/show_partials/product_item",
+          locals: {item: @delivery_item, delivery: @delivery_item.delivery}
+        )
+      end
+      format.html do
+        redirect_back fallback_location: delivery_path(@delivery_item.delivery),
+          notice: "Producto marcado como entregado."
+      end
+    end
   rescue => e
     handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
   end
@@ -59,15 +83,26 @@ class DeliveryItemsController < ApplicationController
       current_user: current_user
     ).call
 
-    redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-      notice: "Producto cancelado."
+    respond_to do |format|
+      format.turbo_stream do
+        @delivery_item.reload
+        render turbo_stream: turbo_stream.replace(
+          dom_id(@delivery_item),
+          partial: "deliveries/show_partials/product_item",
+          locals: {item: @delivery_item, delivery: @delivery_item.delivery}
+        )
+      end
+      format.html do
+        redirect_back fallback_location: delivery_path(@delivery_item.delivery),
+          notice: "Producto cancelado."
+      end
+    end
   rescue => e
     handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
   end
 
   def update_notes
     authorize DeliveryItem, :confirm?
-
     DeliveryItems::NotesUpdater.new(
       delivery_item: @delivery_item,
       note_text: notes_params[:notes],
@@ -109,6 +144,122 @@ class DeliveryItemsController < ApplicationController
     handle_item_error(e, fallback: delivery_plan_path(delivery.delivery_plan))
   end
 
+  def bulk_confirm
+    authorize DeliveryItem, :confirm?
+    items = DeliveryItem.where(id: params[:item_ids], status: :pending)
+    items.each do |item|
+      DeliveryItems::StatusUpdater.new(
+        delivery_item: item,
+        new_status: :confirmed,
+        current_user: current_user
+      ).call
+    end
+
+    delivery = Delivery.find(params[:delivery_id])
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.replace(
+            "delivery_items_list",
+            partial: "deliveries/show_partials/product_table",
+            locals: {delivery: delivery.reload}
+          )
+        ]
+      end
+      format.html { redirect_back fallback_location: delivery_path(delivery), notice: "Items confirmados." }
+    end
+  end
+
+  def bulk_deliver
+    authorize DeliveryItem, :confirm?
+    items = DeliveryItem.where(id: params[:item_ids])
+    items.each do |item|
+      DeliveryItems::StatusUpdater.new(
+        delivery_item: item,
+        new_status: :delivered,
+        current_user: current_user
+      ).call
+    end
+
+    delivery = Delivery.find(params[:delivery_id])
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.replace(
+            "delivery_items_list",
+            partial: "deliveries/show_partials/product_table",
+            locals: {delivery: delivery.reload}
+          )
+        ]
+      end
+      format.html { redirect_back fallback_location: delivery_path(delivery), notice: "Items marcados como entregados." }
+    end
+  end
+
+  def bulk_cancel
+    authorize DeliveryItem, :confirm?
+    items = DeliveryItem.where(id: params[:item_ids])
+    items.each do |item|
+      DeliveryItems::StatusUpdater.new(
+        delivery_item: item,
+        new_status: :cancelled,
+        current_user: current_user
+      ).call
+    end
+
+    delivery = Delivery.find(params[:delivery_id])
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.replace(
+            "delivery_items_list",
+            partial: "deliveries/show_partials/product_table",
+            locals: {delivery: delivery.reload}
+          )
+        ]
+      end
+      format.html { redirect_back fallback_location: delivery_path(delivery), notice: "Items cancelados." }
+    end
+  end
+
+  def bulk_reschedule
+    authorize DeliveryItem, :confirm?
+    delivery = Delivery.find(params[:delivery_id])  # ← mover ARRIBA del items
+    items = DeliveryItem.where(id: params[:item_ids])
+
+    items.each do |item|
+      DeliveryItems::Rescheduler.new(
+        delivery_item: item,
+        params: params,
+        current_user: current_user
+      ).call
+    end
+
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.replace(
+            "delivery_items_list",
+            partial: "deliveries/show_partials/product_table",
+            locals: {delivery: delivery.reload}
+          )
+        ]
+      end
+      format.html { redirect_back fallback_location: delivery_path(delivery), notice: "Items reagendados." }
+    end
+  rescue => e
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          "flash_messages",
+          partial: "shared/flash",
+          locals: {alert: e.message}
+        )
+      end
+      format.html { redirect_back fallback_location: delivery_path(delivery), alert: e.message }
+    end
+  end
+
   private
 
   def set_delivery_item
@@ -119,7 +270,6 @@ class DeliveryItemsController < ApplicationController
     params.require(:delivery_item).permit(:notes)
   end
 
-  # 🔹 Handler centralizado
   def handle_item_error(exception, fallback:, prefix: nil)
     message = prefix.present? ? "#{prefix}: #{exception.message}" : exception.message
     Rails.logger.error("❌ Error DeliveryItemsController: #{message}")

@@ -1,0 +1,36 @@
+/* Animación de entrada para el panel de detalle */
+#delivery_detail {
+  animation: fadeInRight 0.3s ease;
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Indicador de carga para Turbo Frames */
+.turbo-progress-bar {
+  background-color: #0d6efd;
+}
+
+/* Scrollbars más limpios para los paneles */
+.overflow-auto::-webkit-scrollbar {
+  width: 6px;
+}
+.overflow-auto::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+/* app/assets/stylesheets/application.css o en un partial de estilos */
+.btn-xs {
+  padding: 0.15rem 0.4rem;
+  font-size: 0.75rem;
+  border-radius: 0.2rem;
+  line-height: 1.4;
+}

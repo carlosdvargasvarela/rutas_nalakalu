@@ -1,0 +1,106 @@
+<%= simple_form_for delivery,
+      html: {
+        data: {
+          controller: "delivery-form address-validator",
+          "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
+          "delivery-form-orders-url-value": orders_for_client_deliveries_path,
+          action: "submit->address-validator#validateBeforeSubmit"
+        }
+      } do |f| %>
+  <div class="accordion" id="deliveryFormAccordion">
+    <!-- SECCIÓN 1: CLIENTE -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingClient">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseClient" aria-expanded="true" aria-controls="collapseClient">
+          <i class="bi bi-person-fill me-2"></i>
+          <strong>Cliente</strong>
+          <span class="badge bg-warning ms-2" data-delivery-form-target="clientBadge">!</span>
+        </button>
+      </h2>
+      <div id="collapseClient" class="accordion-collapse collapse show" aria-labelledby="headingClient">
+        <div class="accordion-body">
+          <%= render "deliveries/upsert_partials/client_fields", f: f, clients: clients, delivery: delivery %>
+        </div>
+      </div>
+    </div>
+    <!-- SECCIÓN 2: PEDIDO -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingOrder">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOrder" aria-expanded="false" aria-controls="collapseOrder">
+          <i class="bi bi-receipt me-2"></i>
+          <strong>Pedido</strong>
+          <span class="badge bg-warning ms-2" data-delivery-form-target="orderBadge">!</span>
+        </button>
+      </h2>
+      <div id="collapseOrder" class="accordion-collapse collapse" aria-labelledby="headingOrder">
+        <div class="accordion-body">
+          <%= render "deliveries/upsert_partials/order_fields", f: f, delivery: delivery %>
+        </div>
+      </div>
+    </div>
+    <!-- SECCIÓN 3: DIRECCIÓN DE ENTREGA -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingAddress">
+        <button class="accordion-button collapsed" type="button"
+                data-bs-toggle="collapse" data-bs-target="#collapseAddress"
+                aria-expanded="false" aria-controls="collapseAddress">
+          <i class="bi bi-geo-alt-fill me-2"></i>
+          <strong>Dirección de entrega</strong>
+          <span class="badge bg-warning ms-2" data-delivery-form-target="addressBadge">!</span>
+        </button>
+      </h2>
+      <%# data-action dispara resizeMap al expandir, para que el mapa se renderice correctamente %>
+      <div id="collapseAddress" class="accordion-collapse collapse" aria-labelledby="headingAddress"
+           data-action="shown.bs.collapse->address-autocomplete#resizeMap">
+        <div class="accordion-body">
+          <%= render "deliveries/upsert_partials/address_fields", f: f, addresses: addresses, delivery: delivery %>
+        </div>
+      </div>
+    </div>
+    <!-- SECCIÓN 4: DATOS DE ENTREGA -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingDeliveryData">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDeliveryData" aria-expanded="false" aria-controls="collapseDeliveryData">
+          <i class="bi bi-calendar-check me-2"></i>
+          <strong>Datos de entrega</strong>
+          <span class="badge bg-warning ms-2" data-delivery-form-target="deliveryDataBadge">!</span>
+        </button>
+      </h2>
+      <div id="collapseDeliveryData" class="accordion-collapse collapse" aria-labelledby="headingDeliveryData">
+        <div class="accordion-body">
+          <%= render "deliveries/upsert_partials/delivery_data_fields", f: f, delivery: delivery %>
+        </div>
+      </div>
+    </div>
+    <!-- SECCIÓN 5: PRODUCTOS -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingProducts">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProducts" aria-expanded="false" aria-controls="collapseProducts">
+          <i class="bi bi-box-seam me-2"></i>
+          <strong>Productos</strong>
+          <span class="badge bg-warning ms-2" data-delivery-form-target="productsBadge">!</span>
+        </button>
+      </h2>
+      <div id="collapseProducts" class="accordion-collapse collapse" aria-labelledby="headingProducts">
+        <div class="accordion-body">
+          <%= render "deliveries/upsert_partials/order_items_fields", f: f %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- BOTONES DE ACCIÓN -->
+  <div class="card mt-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <%= link_to "Cancelar", deliveries_path, class: "btn btn-outline-secondary" %>
+        </div>
+        <div>
+          <%= f.submit "Guardar entrega",
+              class: "btn btn-primary btn-lg px-5",
+              data: { "address-validator-target": "submitButton" } %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

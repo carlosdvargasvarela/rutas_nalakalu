@@ -1,57 +1,45 @@
-<% unless delivery_history.nil? %>
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-light">
-      <i class="bi bi-clock-history me-1"></i> Historial de esta entrega
-    </div>
-    <div class="card-body">
-      <div class="accordion" id="deliveryHistoryAccordion">
-        <% delivery_history.each do |d| %>
-          <div class="accordion-item">
-            <h2 class="accordion-header" id="heading-<%= d.id %>">
-              <button class="accordion-button <%= d == delivery ? '' : 'collapsed' %>" 
-                      type="button"
-                      data-bs-toggle="collapse" 
-                      data-bs-target="#collapse-<%= d.id %>">
-                <%= l d.delivery_date, format: :long %> —
-                <span class="badge bg-<%= delivery_status_color(d.status) %>">
-                  <%= d.display_status %>
-                </span>
-                <% if d == delivery %>
-                  <small class="ms-2 text-primary">(actual)</small>
+<%# app/views/deliveries/show_partials/_history.html.erb %>
+<% history = local_assigns[:delivery_history] || local_assigns[:history] || [] %>
+<% unless history.empty? %>
+  <div class="accordion" id="deliveryHistoryAccordion">
+    <% history.each do |d| %>
+      <div class="accordion-item border-0 mb-2 rounded shadow-sm">
+        <h2 class="accordion-header">
+          <button class="accordion-button rounded <%= d == delivery ? '' : 'collapsed' %> small"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#collapse-<%= d.id %>">
+            <span class="me-2"><%= d.delivery_date ? l(d.delivery_date, format: :short) : '—' %></span>
+            <span class="badge bg-<%= delivery_status_color(d.status) %>">
+              <%= d.display_status %>
+            </span>
+            <% if d == delivery %>
+              <small class="ms-2 text-primary">(actual)</small>
+            <% end %>
+          </button>
+        </h2>
+        <div id="collapse-<%= d.id %>"
+             class="accordion-collapse collapse <%= d == delivery ? 'show' : '' %>">
+          <div class="accordion-body p-2">
+            <% if d.delivery_items.any? %>
+              <ul class="list-group list-group-flush small">
+                <% d.delivery_items.each do |item| %>
+                  <li class="list-group-item px-0 d-flex justify-content-between">
+                    <span><%= item.order_item.product %></span>
+                    <span class="badge bg-<%= delivery_item_status_color(item.status) %>">
+                      <%= item.display_status %>
+                    </span>
+                  </li>
                 <% end %>
-              </button>
-            </h2>
-            <div id="collapse-<%= d.id %>" 
-                 class="accordion-collapse collapse <%= d == delivery ? 'show' : '' %>"
-                 data-bs-parent="#deliveryHistoryAccordion">
-              <div class="accordion-body">
-                <% if d.delivery_items.any? %>
-                  <ul class="list-group list-group-flush">
-                    <% d.delivery_items.includes(:order_item).each do |item| %>
-                      <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>
-                          <strong><%= item.order_item.product %></strong>
-                          <% if item.order_item.notes.present? %>
-                            <small class="text-muted"> — <%= item.order_item.notes %></small>
-                          <% end %>
-                        </span>
-                        <span>
-                          <span class="badge bg-secondary"><%= item.quantity %></span>
-                          <span class="badge bg-<%= delivery_item_status_color(item.status) %>">
-                            <%= item.display_status %>
-                          </span>
-                        </span>
-                      </li>
-                    <% end %>
-                  </ul>
-                <% else %>
-                  <div class="text-muted">Sin productos asociados</div>
-                <% end %>
-              </div>
-            </div>
+              </ul>
+            <% else %>
+              <span class="text-muted small">Sin productos</span>
+            <% end %>
           </div>
-        <% end %>
+        </div>
       </div>
-    </div>
+    <% end %>
   </div>
+<% else %>
+  <p class="text-muted small text-center py-3">Sin historial disponible.</p>
 <% end %>

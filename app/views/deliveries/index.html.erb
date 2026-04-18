@@ -1,52 +1,179 @@
-<h1 class="mb-4 d-flex align-items-center">
-  <i class="bi bi-truck me-2 text-primary"></i>
-  <span>Listado de Entregas</span>
-</h1>
-<!-- Filtros -->
-<%= render "deliveries/index_partials/filters", q: @q %>
-<!-- Selector de Vista -->
-<div class="d-flex justify-content-between mb-3">
-  <div class="btn-group" role="group" aria-label="Selector de vista">
-    <%= link_to deliveries_path(request.query_parameters.merge(view: "table")),
-          class: "btn btn-sm #{params[:view] == 'table' || params[:view].blank? ? 'btn-primary' : 'btn-outline-secondary'}" do %>
-      <i class="bi bi-table"></i> Tabla
-    <% end %>
-    <%= link_to deliveries_path(request.query_parameters.merge(view: "cards")),
-          class: "btn btn-sm #{params[:view] == 'cards' ? 'btn-primary' : 'btn-outline-secondary'}" do %>
-      <i class="bi bi-grid-3x3-gap"></i> Cards
-    <% end %>
+<%# app/views/deliveries/index.html.erb %>
+<%# app/views/deliveries/index.html.erb %>
+<div class="container-fluid py-3"
+     style="height: calc(100vh - 60px); overflow: hidden;"
+     data-controller="workspace"
+     data-workspace-active-class="active-card">
+  <div class="row h-100 g-3">
+    <%# ── COLUMNA IZQUIERDA: Lista ── %>
+    <div class="col-12 col-lg-5 col-xl-4 h-100 d-flex flex-column">
+      <div class="card shadow-sm border-0 h-100 d-flex flex-column overflow-hidden">
+        <%# Header %>
+        <div class="card-header bg-white border-bottom py-3 flex-shrink-0">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0 fw-bold">
+              <i class="bi bi-truck me-2 text-primary"></i>Entregas
+            </h5>
+            <div class="d-flex gap-1">
+              <%= link_to new_delivery_path, class: "btn btn-sm btn-primary" do %>
+                <i class="bi bi-plus-lg"></i> Nueva
+              <% end %>
+              <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                  <i class="bi bi-three-dots"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                  <li><%= link_to "Mandado interno", new_internal_delivery_deliveries_path, class: "dropdown-item" %></li>
+                  <li><%= link_to "Caso de servicio", new_service_case_deliveries_path, class: "dropdown-item" %></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><%= link_to "Exportar Excel", deliveries_path(format: :xlsx, q: params[:q]), class: "dropdown-item" %></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <%# Filtros Ransack %>
+          <%= search_form_for @q, url: deliveries_path, html: {
+                data: { turbo_frame: "deliveries_list", turbo_action: "advance" }
+              } do |f| %>
+            <div class="d-flex flex-column gap-2">
+              <%# Búsqueda por cliente %>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light border-end-0 text-muted">
+                  <i class="bi bi-person"></i>
+                </span>
+                <%= f.search_field :order_client_name_cont,
+                      class: "form-control bg-light border-start-0 border-end-0",
+                      placeholder: "Cliente..." %>
+                <span class="input-group-text bg-light border-start-0 text-muted">
+                  <i class="bi bi-hash"></i>
+                </span>
+                <%= f.search_field :order_number_cont,
+                      class: "form-control bg-light border-start-0",
+                      placeholder: "N° pedido..." %>
+              </div>
+              <%# Estado %>
+              <div class="d-flex gap-2">
+                <%= f.select :status_eq,
+                      Delivery.statuses.map { |k, _v| [t("activerecord.attributes.delivery.statuses.#{k}"), k] },
+                      { include_blank: "Todos los estados" },
+                      { class: "form-select form-select-sm bg-light" } %>
+              </div>
+              <%# Fechas ── NUEVO ── %>
+              <div class="d-flex gap-2 align-items-center">
+                <div class="input-group input-group-sm flex-grow-1">
+                  <span class="input-group-text bg-light text-muted border-end-0">
+                    <i class="bi bi-calendar-range"></i>
+                  </span>
+                  <%= f.date_field :delivery_date_gteq,
+                        class: "form-control form-control-sm bg-light border-start-0",
+                        title: "Desde",
+                        placeholder: "Desde" %>
+                </div>
+                <span class="text-muted small flex-shrink-0">→</span>
+                <div class="input-group input-group-sm flex-grow-1">
+                  <%= f.date_field :delivery_date_lteq,
+                        class: "form-control form-control-sm bg-light",
+                        title: "Hasta",
+                        placeholder: "Hasta" %>
+                </div>
+              </div>
+              <%# Botones ── %>
+              <div class="d-flex gap-2">
+                <%= f.submit "Filtrar", class: "btn btn-sm btn-primary flex-fill" %>
+                <%= link_to "Limpiar", deliveries_path,
+                      class: "btn btn-sm btn-outline-secondary flex-fill",
+                      data: { turbo_frame: "deliveries_list" } %>
+              </div>
+            </div>
+          <% end %>
+          <%# Filtros rápidos %>
+          <div class="d-flex gap-1 mt-2 flex-wrap">
+            <%= link_to deliveries_path(no_plan: 1),
+                  class: "btn btn-xs btn-outline-secondary #{params[:no_plan].present? ? 'active' : ''}",
+                  data: { turbo_frame: "deliveries_list" } do %>
+              <i class="bi bi-calendar-x me-1"></i>Sin plan
+            <% end %>
+            <%= link_to deliveries_path(show_rescheduled: 1),
+                  class: "btn btn-xs btn-outline-warning #{params[:show_rescheduled] == '1' ? 'active' : ''}",
+                  data: { turbo_frame: "deliveries_list" } do %>
+              <i class="bi bi-arrow-repeat me-1"></i>Reagendadas
+            <% end %>
+            <%= link_to deliveries_path(only_service_cases: 1),
+                  class: "btn btn-xs btn-outline-info #{params[:only_service_cases].present? ? 'active' : ''}",
+                  data: { turbo_frame: "deliveries_list" } do %>
+              <i class="bi bi-tools me-1"></i>Servicio
+            <% end %>
+            <%= link_to "Todas", deliveries_path,
+                  class: "btn btn-xs btn-outline-secondary",
+                  data: { turbo_frame: "deliveries_list" } %>
+          </div>
+        </div>
+        <%# Lista scrollable %>
+        <%= turbo_frame_tag "deliveries_list",
+              class: "flex-grow-1 overflow-auto p-2",
+              style: "background-color: #f4f6f9;" do %>
+          <% if @deliveries.any? %>
+            <div class="d-flex flex-column" id="deliveries_cards_container">
+              <% @deliveries.each do |delivery| %>
+                <%= render "deliveries/index_partials/delivery_card", delivery: delivery %>
+              <% end %>
+            </div>
+            <div class="mt-2 d-flex justify-content-center">
+              <%= paginate @deliveries %>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+              <p class="text-muted mt-3 mb-1">No se encontraron entregas</p>
+              <%= link_to "Limpiar filtros", deliveries_path,
+                    class: "btn btn-sm btn-outline-secondary",
+                    data: { turbo_frame: "deliveries_list" } %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+    <%# ── COLUMNA DERECHA: Panel de detalle ── %>
+    <div class="col-lg-7 col-xl-8 d-none d-lg-flex h-100 flex-column">
+      <div class="card shadow-sm border-0 h-100 overflow-hidden">
+        <%= turbo_frame_tag "delivery_detail", class: "h-100 d-block" do %>
+          <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted p-5 bg-white">
+            <div class="text-center">
+              <i class="bi bi-layout-sidebar-reverse text-light-emphasis" style="font-size: 4rem;"></i>
+              <h5 class="fw-semibold mt-3">Selecciona una entrega</h5>
+              <p class="small text-secondary mb-0">
+                Haz clic en una tarjeta para ver y gestionar los detalles.
+              </p>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
   </div>
 </div>
-<!-- Botones globales -->
-<div class="d-flex gap-2">
-  <% if policy(Delivery).new? %>
-    <%= link_to new_delivery_path, class: "btn btn-success btn-sm" do %>
-      <i class="bi bi-plus-circle me-1"></i> Nueva entrega
-    <% end %>
-    <%= link_to new_internal_delivery_deliveries_path, class: "btn btn-warning btn-sm" do %>
-      <i class="bi bi-bag-plus me-1"></i> Mandado
-    <% end %>
-    <%= link_to new_service_case_deliveries_path, class: "btn btn-info text-white btn-sm" do %>
-      <i class="bi bi-tools me-1"></i> Caso servicio
-    <% end %>
-  <% end %>
-  <div class="btn-group">
-    <%= link_to deliveries_path(request.query_parameters.merge(format: :xlsx)),
-                  class: "btn btn-outline-success btn-sm" do %>
-      <i class="bi bi-file-earmark-excel me-1"></i> Excel
-    <% end %>
-  </div>
-</div>
-</div>
-<% if @deliveries.any? %>
-  <% if params[:view] == "cards" %>
-    <%= render "deliveries/index_partials/cards", deliveries: @deliveries %>
-  <% else %>
-    <%= render "deliveries/index_partials/table", deliveries: @deliveries %>
-  <% end %>
-  <div class="d-flex justify-content-center mt-3">
-    <%= paginate @deliveries %>
-  </div>
-<% else %>
-  <%= render "deliveries/index_partials/no_results" %>
-<% end %>
+<style>
+  turbo-frame#deliveries_list { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  turbo-frame#delivery_detail { display: block; height: 100%; }
+  turbo-frame#delivery_detail { transition: opacity 0.15s ease-in-out; }
+  turbo-frame[busy]#delivery_detail { opacity: 0.4; }
+
+  .btn-xs {
+    padding: 0.15rem 0.5rem;
+    font-size: 0.72rem;
+    border-radius: 0.25rem;
+    line-height: 1.5;
+  }
+
+  .active-card .card {
+    border-left: 4px solid var(--bs-primary) !important;
+    background-color: #eef3ff !important;
+  }
+
+  a.text-decoration-none:hover .card {
+    background-color: #f0f4ff;
+  }
+
+  /* Scrollbar limpio */
+  .overflow-auto::-webkit-scrollbar { width: 5px; }
+  .overflow-auto::-webkit-scrollbar-thumb { background: #d0d7de; border-radius: 10px; }
+</style>
