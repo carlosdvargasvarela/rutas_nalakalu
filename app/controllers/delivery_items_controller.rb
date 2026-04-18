@@ -1,5 +1,7 @@
 # app/controllers/delivery_items_controller.rb
 class DeliveryItemsController < ApplicationController
+  include ActionView::RecordIdentifier
+
   before_action :set_delivery_item, only: [:show, :confirm, :mark_delivered, :reschedule, :cancel, :update_notes]
 
   def show
@@ -8,118 +10,91 @@ class DeliveryItemsController < ApplicationController
 
   def confirm
     authorize DeliveryItem, :confirm?
+
     DeliveryItems::StatusUpdater.new(
       delivery_item: @delivery_item,
       new_status: :confirmed,
       current_user: current_user
     ).call
 
-    respond_to do |format|
-      format.turbo_stream do
-        @delivery_item.reload
-        render turbo_stream: turbo_stream.replace(
-          dom_id(@delivery_item),
-          partial: "deliveries/show_partials/product_item",
-          locals: {item: @delivery_item, delivery: @delivery_item.delivery}
-        )
-      end
-      format.html do
-        redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-          notice: "Producto confirmado para entrega."
-      end
-    end
+    delivery = @delivery_item.delivery.reload
+    respond_with_delivery_update(delivery, notice: "Producto confirmado para entrega.")
   rescue => e
     handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
   end
 
   def mark_delivered
     authorize DeliveryItem, :confirm?
+
     DeliveryItems::StatusUpdater.new(
       delivery_item: @delivery_item,
       new_status: :delivered,
       current_user: current_user
     ).call
 
-    respond_to do |format|
-      format.turbo_stream do
-        @delivery_item.reload
-        render turbo_stream: turbo_stream.replace(
-          dom_id(@delivery_item),
-          partial: "deliveries/show_partials/product_item",
-          locals: {item: @delivery_item, delivery: @delivery_item.delivery}
-        )
-      end
-      format.html do
-        redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-          notice: "Producto marcado como entregado."
-      end
-    end
+    delivery = @delivery_item.delivery.reload
+    respond_with_delivery_update(delivery, notice: "Producto marcado como entregado.")
   rescue => e
     handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
   end
 
   def reschedule
     authorize DeliveryItem, :confirm?
+
     DeliveryItems::Rescheduler.new(
       delivery_item: @delivery_item,
       params: params,
       current_user: current_user
     ).call
 
-    notice = (params[:new_delivery] == "true") ?
-      "Producto reagendado en una nueva entrega." :
-      "Producto reagendado en una entrega existente."
+    delivery = @delivery_item.delivery.reload
 
-    redirect_to delivery_path(@delivery_item.delivery), notice: notice
+    notice = if params[:new_delivery] == "true"
+      "Producto reagendado en una nueva entrega."
+    else
+      "Producto reagendado en una entrega existente."
+    end
+
+    respond_with_delivery_update(delivery, notice: notice)
   rescue => e
     handle_item_error(e, fallback: delivery_path(@delivery_item.delivery), prefix: "Error al reagendar")
   end
 
   def cancel
     authorize DeliveryItem, :confirm?
+
     DeliveryItems::StatusUpdater.new(
       delivery_item: @delivery_item,
       new_status: :cancelled,
       current_user: current_user
     ).call
 
-    respond_to do |format|
-      format.turbo_stream do
-        @delivery_item.reload
-        render turbo_stream: turbo_stream.replace(
-          dom_id(@delivery_item),
-          partial: "deliveries/show_partials/product_item",
-          locals: {item: @delivery_item, delivery: @delivery_item.delivery}
-        )
-      end
-      format.html do
-        redirect_back fallback_location: delivery_path(@delivery_item.delivery),
-          notice: "Producto cancelado."
-      end
-    end
+    delivery = @delivery_item.delivery.reload
+    respond_with_delivery_update(delivery, notice: "Producto cancelado.")
   rescue => e
     handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
   end
 
   def update_notes
     authorize DeliveryItem, :confirm?
+
     DeliveryItems::NotesUpdater.new(
       delivery_item: @delivery_item,
       note_text: notes_params[:notes],
       current_user: current_user
     ).call
 
-    redirect_back fallback_location: delivery_plan_path(@delivery_item.delivery.delivery_plan),
-      notice: "Nota actualizada correctamente."
+    delivery = @delivery_item.delivery.reload
+    respond_with_delivery_update(delivery, notice: "Nota actualizada correctamente.")
   rescue => e
-    handle_item_error(e, fallback: delivery_plan_path(@delivery_item.delivery.delivery_plan),
+    handle_item_error(e, fallback: delivery_path(@delivery_item.delivery),
       prefix: "Error al actualizar la nota")
   end
 
   def bulk_add_notes
     authorize DeliveryItem, :confirm?
+
     delivery = Delivery.find(params[:delivery_id])
-    delivery_plan = delivery.delivery_plan
 
     DeliveryItems::NotesUpdater.new(
       delivery: delivery,
@@ -128,25 +103,25 @@ class DeliveryItemsController < ApplicationController
       current_user: current_user
     ).call
 
-    notice = (params[:target] == "all") ?
-      "Nota agregada a todos los productos de la entrega." :
-      "Nota agregada al producto."
-
-    if !delivery_plan.nil?
-      redirect_back fallback_location: delivery_plan_path(delivery.delivery_plan), notice: notice
+    notice = if params[:target] == "all"
+      "Nota agregada a todos los productos de la entrega."
     else
-      redirect_back fallback_location: delivery_path(delivery), notice: notice
+      "Nota agregada al producto."
     end
+
+    respond_with_delivery_update(delivery.reload, notice: notice)
   rescue ActiveRecord::RecordNotFound
-    redirect_back fallback_location: delivery_plans_path,
-      alert: "Entrega o producto no encontrado."
+    redirect_back fallback_location: delivery_plans_path, alert: "Entrega o producto no encontrado."
   rescue => e
-    handle_item_error(e, fallback: delivery_plan_path(delivery.delivery_plan))
+    handle_item_error(e, fallback: delivery_path(params[:delivery_id]))
   end
 
   def bulk_confirm
     authorize DeliveryItem, :confirm?
-    items = DeliveryItem.where(id: params[:item_ids], status: :pending)
+
+    delivery = Delivery.find(params[:delivery_id])
+    items = delivery.delivery_items.where(status: :pending)
+
     items.each do |item|
       DeliveryItems::StatusUpdater.new(
         delivery_item: item,
@@ -155,24 +130,15 @@ class DeliveryItemsController < ApplicationController
       ).call
     end
 
-    delivery = Delivery.find(params[:delivery_id])
-    respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: [
-          turbo_stream.replace(
-            "delivery_items_list",
-            partial: "deliveries/show_partials/product_table",
-            locals: {delivery: delivery.reload}
-          )
-        ]
-      end
-      format.html { redirect_back fallback_location: delivery_path(delivery), notice: "Items confirmados." }
-    end
+    respond_with_delivery_update(delivery.reload, notice: "Items confirmados.")
   end
 
   def bulk_deliver
     authorize DeliveryItem, :confirm?
-    items = DeliveryItem.where(id: params[:item_ids])
+
+    delivery = Delivery.find(params[:delivery_id])
+    items = delivery.delivery_items
+
     items.each do |item|
       DeliveryItems::StatusUpdater.new(
         delivery_item: item,
@@ -181,24 +147,15 @@ class DeliveryItemsController < ApplicationController
       ).call
     end
 
-    delivery = Delivery.find(params[:delivery_id])
-    respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: [
-          turbo_stream.replace(
-            "delivery_items_list",
-            partial: "deliveries/show_partials/product_table",
-            locals: {delivery: delivery.reload}
-          )
-        ]
-      end
-      format.html { redirect_back fallback_location: delivery_path(delivery), notice: "Items marcados como entregados." }
-    end
+    respond_with_delivery_update(delivery.reload, notice: "Items marcados como entregados.")
   end
 
   def bulk_cancel
     authorize DeliveryItem, :confirm?
-    items = DeliveryItem.where(id: params[:item_ids])
+
+    delivery = Delivery.find(params[:delivery_id])
+    items = delivery.delivery_items
+
     items.each do |item|
       DeliveryItems::StatusUpdater.new(
         delivery_item: item,
@@ -207,24 +164,13 @@ class DeliveryItemsController < ApplicationController
       ).call
     end
 
-    delivery = Delivery.find(params[:delivery_id])
-    respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: [
-          turbo_stream.replace(
-            "delivery_items_list",
-            partial: "deliveries/show_partials/product_table",
-            locals: {delivery: delivery.reload}
-          )
-        ]
-      end
-      format.html { redirect_back fallback_location: delivery_path(delivery), notice: "Items cancelados." }
-    end
+    respond_with_delivery_update(delivery.reload, notice: "Items cancelados.")
   end
 
   def bulk_reschedule
     authorize DeliveryItem, :confirm?
-    delivery = Delivery.find(params[:delivery_id])  # ← mover ARRIBA del items
+
+    delivery = Delivery.find(params[:delivery_id])
     items = DeliveryItem.where(id: params[:item_ids])
 
     items.each do |item|
@@ -235,29 +181,19 @@ class DeliveryItemsController < ApplicationController
       ).call
     end
 
-    respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: [
-          turbo_stream.replace(
-            "delivery_items_list",
-            partial: "deliveries/show_partials/product_table",
-            locals: {delivery: delivery.reload}
-          )
-        ]
-      end
-      format.html { redirect_back fallback_location: delivery_path(delivery), notice: "Items reagendados." }
-    end
+    respond_with_delivery_update(delivery.reload, notice: "Items reagendados.")
   rescue => e
-    respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          "flash_messages",
-          partial: "shared/flash",
-          locals: {alert: e.message}
-        )
-      end
-      format.html { redirect_back fallback_location: delivery_path(delivery), alert: e.message }
-    end
+    handle_item_error(e, fallback: delivery_path(delivery), prefix: "Error al reagendar")
+  end
+
+  def reschedule_form
+    @delivery_item = DeliveryItem.find(params[:id])
+    @delivery = @delivery_item.delivery
+    @future_deliveries = Delivery.where(
+      delivery_address: @delivery.delivery_address
+    ).where("delivery_date >= ?", Date.current).where.not(id: @delivery.id).order(:delivery_date)
+
+    render layout: false
   end
 
   private
@@ -270,9 +206,44 @@ class DeliveryItemsController < ApplicationController
     params.require(:delivery_item).permit(:notes)
   end
 
+  def respond_with_delivery_update(delivery, notice:)
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:notice] = notice
+
+        render turbo_stream: [
+          turbo_stream.replace(
+            "delivery_items_list",
+            partial: "deliveries/show_partials/product_table",
+            locals: {delivery: delivery}
+          ),
+          turbo_stream.replace(
+            dom_id(delivery, :card_content),
+            partial: "deliveries/index_partials/delivery_card_content",
+            locals: {delivery: delivery}
+          )
+        ]
+      end
+
+      format.html do
+        redirect_back fallback_location: delivery_path(delivery), notice: notice
+      end
+    end
+  end
+
   def handle_item_error(exception, fallback:, prefix: nil)
     message = prefix.present? ? "#{prefix}: #{exception.message}" : exception.message
     Rails.logger.error("❌ Error DeliveryItemsController: #{message}")
-    redirect_back fallback_location: fallback, alert: message
+
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:alert] = message
+        render turbo_stream: [], status: :unprocessable_entity
+      end
+
+      format.html do
+        redirect_back fallback_location: fallback, alert: message
+      end
+    end
   end
 end

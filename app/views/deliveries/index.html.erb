@@ -1,5 +1,5 @@
 <%# app/views/deliveries/index.html.erb %>
-<%# app/views/deliveries/index.html.erb %>
+<%= turbo_stream_from "deliveries" %>
 <div class="container-fluid py-3"
      style="height: calc(100vh - 60px); overflow: hidden;"
      data-controller="workspace"

@@ -15,6 +15,7 @@
     <%= javascript_include_tag "https://maps.googleapis.com/maps/api/js?key=#{ENV['GOOGLE_MAPS_API_KEY']}&libraries=places&callback=Function.prototype", async: true, defer: true %>
   </head>
   <body class="bg-light" data-controller="bootstrap">
+    <%= turbo_frame_tag "modal" %>
     <!-- 🚩 Navbar persistente (no se destruye con Turbo) -->
     <div id="navbar-container" data-turbo-permanent>
       <%= render "layouts/navbar" %>

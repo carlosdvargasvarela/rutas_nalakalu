@@ -257,13 +257,6 @@ class DeliveriesController < ApplicationController
     end
   end
 
-  def mark_as_delivered
-    authorize @delivery, :edit?
-    @delivery.mark_as_delivered!
-    @delivery.update_status_based_on_items
-    redirect_to @delivery, notice: "Entrega marcada como completada."
-  end
-
   def approve
     authorize @delivery, :approve?
     @delivery.approve!
@@ -319,6 +312,13 @@ class DeliveriesController < ApplicationController
         format.html { redirect_to @delivery, alert: "No se pudo archivar la entrega." }
       end
     end
+  end
+
+  def mark_as_delivered
+    authorize @delivery, :edit?
+    @delivery.mark_as_delivered!
+    @delivery.update_status_based_on_items
+    redirect_to @delivery, notice: "Entrega marcada como completada."
   end
 
   def by_week

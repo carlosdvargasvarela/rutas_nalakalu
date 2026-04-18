@@ -281,6 +281,8 @@ Rails.application.routes.draw do
         match :mark_loaded, via: [:get, :post]
         match :mark_unloaded, via: [:get, :post]
         match :mark_missing, via: [:get, :post]
+        get :reschedule_form
+        patch :reschedule
       end
     end
   end

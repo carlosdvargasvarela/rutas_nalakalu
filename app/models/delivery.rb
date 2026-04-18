@@ -1,4 +1,7 @@
+# app/models/delivery.rb
 class Delivery < ApplicationRecord
+  include ActionView::RecordIdentifier
+
   has_paper_trail
   belongs_to :order
   belongs_to :delivery_address
@@ -9,10 +12,8 @@ class Delivery < ApplicationRecord
 
   accepts_nested_attributes_for :delivery_items, allow_destroy: true
 
-  # 🔹 MEJORA: Usar before_validation para asegurar que el token exista siempre
   before_validation :generate_tracking_token, on: :create
 
-  # Delegar coordenadas directamente al delivery_address
   delegate :latitude, :longitude, :address, :plus_code, to: :delivery_address, allow_nil: true
   delegate :client, to: :delivery_address, allow_nil: true
 
@@ -162,7 +163,6 @@ class Delivery < ApplicationRecord
     end
   end
 
-  # Método para recalcular estado de carga basado en items
   def recalculate_load_status!
     items = delivery_items.reload
     return if items.empty?
@@ -181,6 +181,7 @@ class Delivery < ApplicationRecord
       :empty
     end
 
+    # update_column está bien acá porque load_status no necesita disparar el broadcast
     update_column(:load_status, Delivery.load_statuses[new_status])
 
     if new_status == :all_loaded
@@ -188,8 +189,6 @@ class Delivery < ApplicationRecord
     end
   end
 
-  # Marcar toda la entrega como cargada
-  # (el recalculo del plan se hace a nivel de DeliveryPlan, no aquí)
   def mark_all_loaded!
     transaction do
       delivery_items
@@ -209,7 +208,6 @@ class Delivery < ApplicationRecord
     Deliveries::ErrorDetector.new(self).errors.any? { |e| e[:category] == "Dirección" }
   end
 
-  # Resetear carga de la entrega
   def reset_load_status!
     transaction do
       delivery_items.update_all(load_status: DeliveryItem.load_statuses[:unloaded], updated_at: Time.current)
@@ -227,7 +225,6 @@ class Delivery < ApplicationRecord
     end
   end
 
-  # Porcentaje de carga
   def load_percentage
     total = delivery_items.count
     return 0 if total.zero?
@@ -236,7 +233,7 @@ class Delivery < ApplicationRecord
     ((loaded.to_f / total) * 100).round
   end
 
-  # Recalcula el estado de la entrega basándose en los estados de sus items
+  # ✅ FIX: update en vez de update_column para disparar after_update_commit y el broadcast
   def update_status_based_on_items
     statuses = delivery_items.pluck(:status).map(&:to_s)
 
@@ -251,7 +248,7 @@ class Delivery < ApplicationRecord
     end
 
     new_status = calculate_delivery_status(statuses)
-    update_column(:status, Delivery.statuses[new_status]) if new_status
+    update(status: new_status) if new_status
   end
 
   def active_items_for_plan
@@ -277,7 +274,8 @@ class Delivery < ApplicationRecord
       update_status_based_on_items
 
       if delivery_items.where.not(status: :delivered).none?
-        update_column(:status, Delivery.statuses[:delivered])
+        # update para disparar broadcast
+        update(status: :delivered)
       end
     end
   end
@@ -389,7 +387,6 @@ class Delivery < ApplicationRecord
     terminal = %w[delivered cancelled rescheduled failed loaded_on_truck]
     non_terminal = %w[pending confirmed in_plan in_route]
 
-    # 1) Uniformidad terminal
     return :delivered if statuses.all? { |s| s == "delivered" }
     return :cancelled if statuses.all? { |s| s == "cancelled" }
     return :rescheduled if statuses.all? { |s| s == "rescheduled" }
@@ -403,16 +400,13 @@ class Delivery < ApplicationRecord
       return nil
     end
 
-    # 1) Si hay al menos un loaded_on_truck y no hay delivered ⇒ mostramos loaded_on_truck
     if non_terminal_statuses.any? { |s| s == "loaded_on_truck" } &&
         terminal_statuses.none? { |s| s == "delivered" }
       return :loaded_on_truck
     end
 
-    # 2) in_route si alguno
     return :in_route if non_terminal_statuses.any? { |s| s == "in_route" }
 
-    # 3) Todos confirmed → ready_to_deliver / in_plan
     if non_terminal_statuses.all? { |s| s == "confirmed" }
       unless delivery_plan.present?
         mark_as_confirmed_by_vendor!
@@ -420,7 +414,6 @@ class Delivery < ApplicationRecord
       return delivery_plan.present? ? :in_plan : :ready_to_deliver
     end
 
-    # 4) Todos pending → scheduled
     return :scheduled if non_terminal_statuses.all? { |s| s == "pending" }
 
     nil
@@ -429,4 +422,17 @@ class Delivery < ApplicationRecord
   def generate_tracking_token
     self.tracking_token ||= SecureRandom.urlsafe_base64(32)
   end
+
+  # ============================================================================
+  # TURBO STREAM BROADCASTING
+  # ============================================================================
+
+  after_update_commit -> {
+    broadcast_replace_to(
+      "deliveries",
+      target: dom_id(self, :card_content),
+      partial: "deliveries/index_partials/delivery_card_content",
+      locals: {delivery: self}
+    )
+  }
 end

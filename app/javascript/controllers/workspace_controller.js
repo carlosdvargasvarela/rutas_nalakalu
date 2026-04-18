@@ -5,13 +5,12 @@ export default class extends Controller {
   static classes = ["active"];
 
   select(event) {
-    // 1. Remover la clase activa de todas las tarjetas
+    const selectedCard = event.currentTarget;
+
     this.cardTargets.forEach((card) => {
       card.classList.remove(...this.activeClasses);
     });
 
-    // 2. Agregar la clase activa a la tarjeta clickeada (o su contenedor)
-    const selected_card = event.currentTarget;
-    selected_card.classList.add(...this.activeClasses);
+    selectedCard.classList.add(...this.activeClasses);
   }
 }
