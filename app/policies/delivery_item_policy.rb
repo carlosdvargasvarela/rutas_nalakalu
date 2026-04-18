@@ -21,6 +21,18 @@ class DeliveryItemPolicy < ApplicationPolicy
     admin_or_vendor?
   end
 
+  def reschedule?
+    admin_or_vendor?
+  end
+
+  def cancel?
+    admin_or_vendor?
+  end
+
+  def update_notes?
+    admin_or_vendor?
+  end
+
   class Scope < Scope
     def resolve
       if user.admin? || user.production_manager? || user.logistics?

@@ -109,8 +109,9 @@ Rails.application.routes.draw do
   # ITEMS DE ENTREGA (DELIVERY ITEMS)
   # =============================================================================
   # Gestión del estado de items individuales en entregas
-  resources :delivery_items, only: [:show] do
+  resources :delivery_items do
     member do
+      get :reschedule_form
       patch :confirm
       patch :mark_delivered
       patch :reschedule
@@ -118,7 +119,11 @@ Rails.application.routes.draw do
       patch :update_notes
     end
     collection do
-      post :bulk_add_notes
+      patch :bulk_confirm
+      patch :bulk_deliver
+      patch :bulk_cancel
+      patch :bulk_reschedule
+      patch :bulk_add_notes
     end
   end
 
@@ -271,12 +276,6 @@ Rails.application.routes.draw do
     end
 
     resources :delivery_items do
-      collection do
-        patch :bulk_confirm
-        patch :bulk_deliver
-        patch :bulk_cancel
-        patch :bulk_reschedule
-      end
       member do
         match :mark_loaded, via: [:get, :post]
         match :mark_unloaded, via: [:get, :post]

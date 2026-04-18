@@ -1,0 +1,82 @@
+<%# app/views/delivery_items/reschedule_form.html.erb %>
+<%= turbo_frame_tag "modal" do %>
+  <div class="modal-header bg-warning-subtle">
+    <h5 class="modal-title fw-semibold">
+      <i class="bi bi-calendar2-plus me-2"></i> Reagendar producto
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body" data-controller="reschedule-form">
+    <%# Info del producto %>
+    <div class="mb-3 p-3 bg-light rounded-3 border">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-box-seam text-primary fs-5"></i>
+        <div>
+          <div class="fw-semibold small"><%= @delivery_item.order_item.product_name %></div>
+          <div class="text-muted" style="font-size: 0.75rem;">
+            Cantidad: <%= @delivery_item.quantity_delivered %>
+          </div>
+        </div>
+      </div>
+    </div>
+    <%= form_with url: reschedule_delivery_item_path(@delivery_item),
+          method: :patch,
+          data: { turbo_stream: true },
+          id: "reschedule_form_#{@delivery_item.id}" do |f| %>
+      <%# Opción A: Nueva entrega %>
+      <div class="mb-3">
+        <div class="form-check mb-2">
+          <%= radio_button_tag :new_delivery, "true", true,
+                class: "form-check-input",
+                id: "opt_new_#{@delivery_item.id}",
+                data: { action: "change->reschedule-form#toggleMode" } %>
+          <label class="form-check-label fw-semibold" for="opt_new_<%= @delivery_item.id %>">
+            Crear nueva entrega
+          </label>
+        </div>
+        <div data-reschedule-form-target="newSection">
+          <label class="form-label small text-muted">Nueva fecha de entrega</label>
+          <%= date_field_tag :new_date,
+                Date.current + 7.days,
+                class: "form-control form-control-sm",
+                min: Date.current + 1.day %>
+        </div>
+      </div>
+      <%# Opción B: Entrega existente (solo si hay) %>
+      <% if @future_deliveries.any? %>
+        <hr class="my-3">
+        <div class="mb-3">
+          <div class="form-check mb-2">
+            <%= radio_button_tag :new_delivery, "false", false,
+                  class: "form-check-input",
+                  id: "opt_existing_#{@delivery_item.id}",
+                  data: { action: "change->reschedule-form#toggleMode" } %>
+            <label class="form-check-label fw-semibold" for="opt_existing_<%= @delivery_item.id %>">
+              Agregar a entrega existente
+            </label>
+          </div>
+          <div data-reschedule-form-target="existingSection" class="d-none">
+            <label class="form-label small text-muted">Seleccionar entrega</label>
+            <%# FIX: target_delivery_id es lo que espera DeliveryItems::Rescheduler %>
+            <%= select_tag :target_delivery_id,
+                  options_from_collection_for_select(
+                    @future_deliveries,
+                    :id,
+                    ->(d) { "#{I18n.l(d.delivery_date, format: :long)} — #{d.status.humanize}" }
+                  ),
+                  class: "form-select form-select-sm",
+                  include_blank: "Seleccionar..." %>
+          </div>
+        </div>
+      <% end %>
+      <div class="modal-footer px-0 pb-0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <%= f.submit "Reagendar",
+              class: "btn btn-sm btn-warning fw-semibold",
+              data: { disable_with: "Reagendando..." } %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

@@ -5,18 +5,14 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-    <!-- CSS compilado -->
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="manifest" href="/manifest.json">
-    <!-- JavaScript con Importmap -->
     <%= javascript_importmap_tags %>
-    <!-- Google Maps -->
     <%= javascript_include_tag "https://maps.googleapis.com/maps/api/js?key=#{ENV['GOOGLE_MAPS_API_KEY']}&libraries=places&callback=Function.prototype", async: true, defer: true %>
   </head>
   <body class="bg-light" data-controller="bootstrap">
-    <%= turbo_frame_tag "modal" %>
-    <!-- 🚩 Navbar persistente (no se destruye con Turbo) -->
+    <!-- Navbar persistente -->
     <div id="navbar-container" data-turbo-permanent>
       <%= render "layouts/navbar" %>
     </div>
@@ -24,42 +20,40 @@
       <%= render "layouts/flashes" %>
       <%= yield %>
     </main>
-    <!-- Modal global controlado por Stimulus -->
-    <div class="modal fade" id="noteModal" tabindex="-1" aria-hidden="true" data-controller="modal">
-      <div class="modal-dialog">
+    <%# Modal global unificado — turbo-frame "modal" vive DENTRO del modal de Bootstrap %>
+    <div class="modal fade" id="globalModal" tabindex="-1" aria-hidden="true"
+         data-controller="modal"
+         data-turbo-permanent>
+      <div class="modal-dialog modal-dialog-centered" data-modal-target="dialog">
         <div class="modal-content">
-          <turbo-frame id="note_modal"></turbo-frame>
+          <%= turbo_frame_tag "modal" %>
         </div>
       </div>
     </div>
-    <!-- Expone la API key al front -->
     <script>
       window.GOOGLE_MAPS_API_KEY = "<%= ENV['GOOGLE_MAPS_API_KEY'] %>";
-      // Registrar Service Worker SOLO en /driver/*
-        if ('serviceWorker' in navigator && window.location.pathname.startsWith('/driver')) {
-          window.addEventListener('load', async () => {
-      try {
-        const reg = await navigator.serviceWorker.register('/service-worker.js', {
-          scope: '/driver/',
-          updateViaCache: 'none' // 🔥 Fuerza revalidación siempre
+      if ('serviceWorker' in navigator && window.location.pathname.startsWith('/driver')) {
+        window.addEventListener('load', async () => {
+          try {
+            const reg = await navigator.serviceWorker.register('/service-worker.js', {
+              scope: '/driver/',
+              updateViaCache: 'none'
+            })
+            console.log('[SW] Registered for /driver/', reg)
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('[SW] New version available, reloading...')
+                  window.location.reload()
+                }
+              })
+            })
+          } catch (e) {
+            console.warn('[SW] Registration failed', e)
+          }
         })
-        console.log('[SW] Registered for /driver/', reg)
-
-        // Forzar actualización si hay nueva versión
-        reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('[SW] New version available, reloading...')
-              window.location.reload()
-            }
-          })
-        })
-      } catch (e) {
-        console.warn('[SW] Registration failed', e)
       }
-          })
-        }
     </script>
   </body>
 </html>

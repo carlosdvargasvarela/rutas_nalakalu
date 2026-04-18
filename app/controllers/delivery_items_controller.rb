@@ -2,14 +2,31 @@
 class DeliveryItemsController < ApplicationController
   include ActionView::RecordIdentifier
 
-  before_action :set_delivery_item, only: [:show, :confirm, :mark_delivered, :reschedule, :cancel, :update_notes]
+  before_action :set_delivery_item, only: [
+    :show, :confirm, :mark_delivered, :reschedule,
+    :cancel, :update_notes, :reschedule_form
+  ]
 
   def show
+    authorize @delivery_item, :show?
     @delivery = @delivery_item.delivery
   end
 
+  def reschedule_form
+    authorize @delivery_item, :confirm?
+
+    @delivery = @delivery_item.delivery
+    @future_deliveries = Delivery
+      .where(delivery_address: @delivery.delivery_address)
+      .where("delivery_date >= ?", Date.current)
+      .where.not(id: @delivery.id)
+      .order(:delivery_date)
+
+    render layout: false
+  end
+
   def confirm
-    authorize DeliveryItem, :confirm?
+    authorize @delivery_item, :confirm?
 
     DeliveryItems::StatusUpdater.new(
       delivery_item: @delivery_item,
@@ -24,7 +41,7 @@ class DeliveryItemsController < ApplicationController
   end
 
   def mark_delivered
-    authorize DeliveryItem, :confirm?
+    authorize @delivery_item, :confirm?
 
     DeliveryItems::StatusUpdater.new(
       delivery_item: @delivery_item,
@@ -39,7 +56,7 @@ class DeliveryItemsController < ApplicationController
   end
 
   def reschedule
-    authorize DeliveryItem, :confirm?
+    authorize @delivery_item, :confirm?
 
     DeliveryItems::Rescheduler.new(
       delivery_item: @delivery_item,
@@ -57,11 +74,15 @@ class DeliveryItemsController < ApplicationController
 
     respond_with_delivery_update(delivery, notice: notice)
   rescue => e
-    handle_item_error(e, fallback: delivery_path(@delivery_item.delivery), prefix: "Error al reagendar")
+    handle_item_error(
+      e,
+      fallback: delivery_path(@delivery_item.delivery),
+      prefix: "Error al reagendar"
+    )
   end
 
   def cancel
-    authorize DeliveryItem, :confirm?
+    authorize @delivery_item, :confirm?
 
     DeliveryItems::StatusUpdater.new(
       delivery_item: @delivery_item,
@@ -76,7 +97,7 @@ class DeliveryItemsController < ApplicationController
   end
 
   def update_notes
-    authorize DeliveryItem, :confirm?
+    authorize @delivery_item, :confirm?
 
     DeliveryItems::NotesUpdater.new(
       delivery_item: @delivery_item,
@@ -87,8 +108,11 @@ class DeliveryItemsController < ApplicationController
     delivery = @delivery_item.delivery.reload
     respond_with_delivery_update(delivery, notice: "Nota actualizada correctamente.")
   rescue => e
-    handle_item_error(e, fallback: delivery_path(@delivery_item.delivery),
-      prefix: "Error al actualizar la nota")
+    handle_item_error(
+      e,
+      fallback: delivery_path(@delivery_item.delivery),
+      prefix: "Error al actualizar la nota"
+    )
   end
 
   def bulk_add_notes
@@ -186,16 +210,6 @@ class DeliveryItemsController < ApplicationController
     handle_item_error(e, fallback: delivery_path(delivery), prefix: "Error al reagendar")
   end
 
-  def reschedule_form
-    @delivery_item = DeliveryItem.find(params[:id])
-    @delivery = @delivery_item.delivery
-    @future_deliveries = Delivery.where(
-      delivery_address: @delivery.delivery_address
-    ).where("delivery_date >= ?", Date.current).where.not(id: @delivery.id).order(:delivery_date)
-
-    render layout: false
-  end
-
   private
 
   def set_delivery_item
@@ -212,6 +226,13 @@ class DeliveryItemsController < ApplicationController
         flash.now[:notice] = notice
 
         render turbo_stream: [
+          # 1. Flash primero (siempre visible)
+          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+
+          # 2. Vaciar frame → el observer cierra el modal
+          turbo_stream.update("modal", ""),
+
+          # 3. Actualizar datos
           turbo_stream.replace(
             "delivery_items_list",
             partial: "deliveries/show_partials/product_table",
@@ -224,10 +245,7 @@ class DeliveryItemsController < ApplicationController
           )
         ]
       end
-
-      format.html do
-        redirect_back fallback_location: delivery_path(delivery), notice: notice
-      end
+      format.html { redirect_back fallback_location: deliveries_path, notice: notice }
     end
   end
 
@@ -238,9 +256,12 @@ class DeliveryItemsController < ApplicationController
     respond_to do |format|
       format.turbo_stream do
         flash.now[:alert] = message
-        render turbo_stream: [], status: :unprocessable_entity
+        # FIX: también actualizar el flash en errores, y cerrar modal si estaba abierto
+        render turbo_stream: [
+          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          turbo_stream.update("modal", "")
+        ], status: :unprocessable_entity
       end
-
       format.html do
         redirect_back fallback_location: fallback, alert: message
       end

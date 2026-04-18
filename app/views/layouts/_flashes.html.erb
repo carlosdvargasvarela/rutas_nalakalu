@@ -1,12 +1,17 @@
-<% if notice %>
-  <div class="alert alert-success alert-dismissible fade show">
-    <%= notice %>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  </div>
-<% end %>
-<% if alert %>
-  <div class="alert alert-danger alert-dismissible fade show">
-    <%= alert %>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  </div>
-<% end %>
+<%# app/views/layouts/_flashes.html.erb %>
+<div id="flash_messages">
+  <% if notice %>
+    <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-3">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      <%= notice %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <% end %>
+  <% if alert %>
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-3">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <%= alert %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <% end %>
+</div>

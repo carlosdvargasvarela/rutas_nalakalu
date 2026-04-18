@@ -1,5 +1,5 @@
 <%# app/views/deliveries/show_partials/_product_item.html.erb %>
-<div id="<​%= dom_id(item) %>" class="border rounded-3 bg-white shadow-sm overflow-hidden">
+<div id="<%= dom_id(item) %>" class="border rounded-3 bg-white shadow-sm overflow-hidden">
   <div class="d-flex align-items-stretch">
     <div class="flex-shrink-0"
          style="width: 4px; background-color: <%= delivery_status_border_color(item.status) %>;"></div>
@@ -48,11 +48,17 @@
       <% if item.delivered? || item.cancelled? || item.rescheduled? %>
         <div class="pt-2 border-top text-end">
           <% if item.delivered? %>
-            <span class="small text-success"><i class="bi bi-check2-circle me-1"></i>Entregado</span>
+            <span class="small text-success">
+              <i class="bi bi-check2-circle me-1"></i>Entregado
+            </span>
           <% elsif item.rescheduled? %>
-            <span class="small text-warning"><i class="bi bi-calendar-x me-1"></i>Reagendado</span>
+            <span class="small text-warning">
+              <i class="bi bi-calendar-x me-1"></i>Reagendado
+            </span>
           <% elsif item.cancelled? %>
-            <span class="small text-danger"><i class="bi bi-x-circle me-1"></i>Cancelado</span>
+            <span class="small text-danger">
+              <i class="bi bi-x-circle me-1"></i>Cancelado
+            </span>
           <% end %>
         </div>
       <% elsif policy(delivery).edit? %>
@@ -73,12 +79,12 @@
               <i class="bi bi-truck me-1"></i>Entregado
             <% end %>
           <% end %>
-          <button type="button"
-                  class="btn btn-xs btn-outline-warning"
-                  data-bs-toggle="modal"
-                  data-bs-target="#rescheduleItemModal<%= item.id %>">
+          <%# Botón reagendar — carga modal via Turbo Frame %>
+          <%= link_to reschedule_form_delivery_item_path(item),
+                class: "btn btn-xs btn-outline-warning",
+                data: { turbo_frame: "modal" } do %>
             <i class="bi bi-calendar-event me-1"></i>Reagendar
-          </button>
+          <% end %>
           <%= button_to cancel_delivery_item_path(item),
                 method: :patch,
                 class: "btn btn-xs btn-outline-danger",
@@ -90,6 +96,3 @@
     </div>
   </div>
 </div>
-<% if policy(delivery).edit? && !item.delivered? && !item.cancelled? %>
-  <%= render "delivery_items/reschedule_modal", item: item, future_deliveries: @future_deliveries %>
-<% end %>

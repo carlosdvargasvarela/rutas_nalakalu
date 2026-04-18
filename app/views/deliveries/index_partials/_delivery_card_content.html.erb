@@ -1,5 +1,5 @@
 <%# app/views/deliveries/index_partials/_delivery_card_content.html.erb %>
-<div id="<​%= dom_id(delivery, :card_content) %>">
+<div id="<%= dom_id(delivery, :card_content) %>">
   <div class="card card-hover border-0 shadow-sm mb-2 <%= delivery.address_error? ? 'border-start border-start-danger border-3' : 'border-start border-start-primary border-3' %>"
        style="border-radius: 10px; cursor: pointer;">
     <div class="card-body p-3">

@@ -3,7 +3,7 @@
   <% if delivery.delivery_items.any? %>
     <% if policy(delivery).edit? %>
       <div class="d-flex flex-wrap gap-2 mb-3 p-2 bg-light rounded-3 border">
-        <%= form_with url: bulk_confirm_production_delivery_items_path,
+        <%= form_with url: bulk_confirm_delivery_items_path,
               method: :patch,
               data: { turbo_stream: true } do |f| %>
           <%= hidden_field_tag :delivery_id, delivery.id %>
@@ -11,7 +11,7 @@
                 class: "btn btn-sm btn-outline-info",
                 data: { turbo_confirm: "¿Confirmar todos los items pendientes?" } %>
         <% end %>
-        <%= form_with url: bulk_deliver_production_delivery_items_path,
+        <%= form_with url: bulk_deliver_delivery_items_path,
               method: :patch,
               data: { turbo_stream: true } do |f| %>
           <%= hidden_field_tag :delivery_id, delivery.id %>
@@ -19,7 +19,7 @@
                 class: "btn btn-sm btn-outline-success",
                 data: { turbo_confirm: "¿Marcar todos como entregados?" } %>
         <% end %>
-        <%= form_with url: bulk_cancel_production_delivery_items_path,
+        <%= form_with url: bulk_cancel_delivery_items_path,
               method: :patch,
               data: { turbo_stream: true } do |f| %>
           <%= hidden_field_tag :delivery_id, delivery.id %>
