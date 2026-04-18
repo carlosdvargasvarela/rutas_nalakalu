@@ -1,15 +1,63 @@
-# app/helpers/deliveries_helper.rb
 module DeliveriesHelper
-  def status_badge_class(delivery)
-    case delivery.status
-    when "pending" then "bg-warning-subtle text-warning-emphasis border border-warning-subtle"
-    when "confirmed" then "bg-success-subtle text-success-emphasis border border-success-subtle"
-    when "error" then "bg-danger-subtle text-danger-emphasis border border-danger-subtle"
-    when "scheduled" then "bg-info-subtle text-info-emphasis border border-info-subtle"
-    when "delivered" then "bg-primary-subtle text-primary-emphasis border border-primary-subtle"
-    else "bg-secondary-subtle text-secondary-emphasis"
+  # ============================================================================
+  # COLORES DE ESTADO — Unificados y con distinción de flujo
+  # ============================================================================
+
+  def delivery_status_color(status)
+    case status.to_s
+    # --- FLUJO INICIAL / PENDIENTE (Amarillo) ---
+    when "scheduled", "pending", "rescheduled"
+      "warning"
+
+    # --- FLUJO OPERATIVO (Azules) ---
+    when "confirmed", "ready_to_deliver"
+      "info"
+    when "in_plan", "loaded_on_truck"
+      "primary"
+    when "in_route"
+      "primary"
+
+    # --- FINALIZADO EXITOSO (Verde) ---
+    when "delivered"
+      "success"
+
+    # --- FINALIZADO CON ERROR / CANCELADO (Rojo) ---
+    when "cancelled", "failed"
+      "danger"
+
+    # --- OTROS (Gris) ---
+    when "archived"
+      "secondary"
+    else
+      "secondary"
     end
   end
+
+  def delivery_status_badge_class(status)
+    color = delivery_status_color(status)
+    "bg-#{color}-subtle text-#{color}-emphasis border border-#{color}-subtle"
+  end
+
+  def delivery_status_border_color(status)
+    case delivery_status_color(status)
+    when "warning" then "#ffc107"
+    when "info" then "#0dcaf0"
+    when "primary" then "#0d6efd"
+    when "success" then "#198754"
+    when "danger" then "#dc3545"
+    when "secondary" then "#6c757d"
+    else "#6c757d"
+    end
+  end
+
+  # Mantenido por compatibilidad con vistas existentes
+  def status_badge_class(delivery)
+    delivery_status_badge_class(delivery.status)
+  end
+
+  # ============================================================================
+  # WHATSAPP
+  # ============================================================================
 
   def whatsapp_tracking_link(delivery)
     token = delivery.tracking_token
@@ -17,12 +65,8 @@ module DeliveriesHelper
 
     url = public_tracking_url(token: token)
     message = "¡Hola! Soy de NaLakalu 🚚. Te comparto el enlace para que sigas tu entrega en tiempo real: #{url}"
-
-    # Codificar para URL
     encoded_message = ERB::Util.url_encode(message)
-
-    # Si tiene teléfono, lo incluimos en el link
-    phone = delivery.contact_phone&.gsub(/\D/, "") # Limpiar caracteres no numéricos
+    phone = delivery.contact_phone&.gsub(/\D/, "")
 
     "https://wa.me/#{phone}?text=#{encoded_message}"
   end

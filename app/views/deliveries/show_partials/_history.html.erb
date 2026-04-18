@@ -1,45 +1,70 @@
 <%# app/views/deliveries/show_partials/_history.html.erb %>
 <% history = local_assigns[:delivery_history] || local_assigns[:history] || [] %>
-<% unless history.empty? %>
-  <div class="accordion" id="deliveryHistoryAccordion">
+<% if history.any? %>
+  <div class="d-flex flex-column gap-2">
     <% history.each do |d| %>
-      <div class="accordion-item border-0 mb-2 rounded shadow-sm">
-        <h2 class="accordion-header">
-          <button class="accordion-button rounded <%= d == delivery ? '' : 'collapsed' %> small"
-                  type="button"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#collapse-<%= d.id %>">
-            <span class="me-2"><%= d.delivery_date ? l(d.delivery_date, format: :short) : '—' %></span>
-            <span class="badge bg-<%= delivery_status_color(d.status) %>">
-              <%= d.display_status %>
-            </span>
-            <% if d == delivery %>
-              <small class="ms-2 text-primary">(actual)</small>
-            <% end %>
-          </button>
-        </h2>
-        <div id="collapse-<%= d.id %>"
-             class="accordion-collapse collapse <%= d == delivery ? 'show' : '' %>">
-          <div class="accordion-body p-2">
-            <% if d.delivery_items.any? %>
-              <ul class="list-group list-group-flush small">
-                <% d.delivery_items.each do |item| %>
-                  <li class="list-group-item px-0 d-flex justify-content-between">
-                    <span><%= item.order_item.product %></span>
-                    <span class="badge bg-<%= delivery_item_status_color(item.status) %>">
-                      <%= item.display_status %>
-                    </span>
-                  </li>
+      <div class="border rounded-3 bg-white shadow-sm overflow-hidden <%= 'border-primary border-2' if d == delivery %>">
+        <div class="d-flex align-items-stretch">
+          <%# Franja lateral de color por estado %>
+          <div class="flex-shrink-0"
+               style="width: 4px; background-color: <%= delivery_status_border_color(d.status) %>;"></div>
+          <div class="flex-grow-1">
+            <%# Header colapsable %>
+            <div class="d-flex justify-content-between align-items-center px-3 py-2 bg-light border-bottom"
+                 data-bs-toggle="collapse"
+                 data-bs-target="#history-collapse-<%= d.id %>"
+                 style="cursor: pointer;">
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <i class="bi bi-calendar3 text-muted" style="font-size: 0.8rem;"></i>
+                <span class="fw-semibold small">
+                  <%= d.delivery_date ? l(d.delivery_date, format: :short) : '—' %>
+                </span>
+                <span class="badge rounded-pill <%= delivery_status_badge_class(d.status) %>"
+                      style="font-size: 0.65rem;">
+                  <%= d.display_status %>
+                </span>
+                <% if d == delivery %>
+                  <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle rounded-pill"
+                        style="font-size: 0.6rem;">
+                    actual
+                  </span>
                 <% end %>
-              </ul>
-            <% else %>
-              <span class="text-muted small">Sin productos</span>
-            <% end %>
+              </div>
+              <i class="bi bi-chevron-down text-muted" style="font-size: 0.75rem;"></i>
+            </div>
+            <%# Cuerpo colapsable %>
+            <div id="history-collapse-<%= d.id %>"
+                 class="collapse <%= 'show' if d == delivery %>">
+              <div class="px-3 py-2">
+                <% if d.delivery_items.any? %>
+                  <div class="d-flex flex-column gap-1">
+                    <% d.delivery_items.each do |item| %>
+                      <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light-subtle">
+                        <span class="small text-dark">
+                          <i class="bi bi-box text-muted me-1"></i>
+                          <%= item.order_item&.product_name || 'Producto' %>
+                          <span class="text-muted ms-1">x<%= item.quantity %></span>
+                        </span>
+                        <span class="badge rounded-pill <%= delivery_status_badge_class(item.status) %>"
+                              style="font-size: 0.6rem;">
+                          <%= item.display_status %>
+                        </span>
+                      </div>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <span class="text-muted small fst-italic">Sin productos registrados.</span>
+                <% end %>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     <% end %>
   </div>
 <% else %>
-  <p class="text-muted small text-center py-3">Sin historial disponible.</p>
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-clock-history" style="font-size: 2.5rem; opacity: 0.3;"></i>
+    <p class="mt-2 mb-0 small">Sin historial de reagendamientos.</p>
+  </div>
 <% end %>

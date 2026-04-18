@@ -1,25 +1,28 @@
 <%# app/views/deliveries/show_partials/_product_table.html.erb %>
 <div id="delivery_items_list">
   <% if delivery.delivery_items.any? %>
-    <%# ── Toolbar de acciones bulk ── %>
+    <%# ── Toolbar bulk ── %>
     <% if policy(delivery).edit? %>
       <div class="d-flex flex-wrap gap-2 mb-3 p-2 bg-light rounded-3 border">
+        <%# Confirmar todos → destino: confirmed → info %>
         <%= form_with url: bulk_confirm_production_delivery_items_path,
               method: :patch,
               data: { turbo_stream: true } do |f| %>
           <%= hidden_field_tag :delivery_id, delivery.id %>
           <%= f.submit "✓ Confirmar todos",
-                class: "btn btn-sm btn-outline-success",
+                class: "btn btn-sm btn-outline-info",
                 data: { turbo_confirm: "¿Confirmar todos los items pendientes?" } %>
         <% end %>
+        <%# Marcar entregados → destino: delivered → success %>
         <%= form_with url: bulk_deliver_production_delivery_items_path,
               method: :patch,
               data: { turbo_stream: true } do |f| %>
           <%= hidden_field_tag :delivery_id, delivery.id %>
           <%= f.submit "✓ Marcar entregados",
-                class: "btn btn-sm btn-outline-primary",
+                class: "btn btn-sm btn-outline-success",
                 data: { turbo_confirm: "¿Marcar todos como entregados?" } %>
         <% end %>
+        <%# Cancelar todos → destino: cancelled → danger %>
         <%= form_with url: bulk_cancel_production_delivery_items_path,
               method: :patch,
               data: { turbo_stream: true } do |f| %>
@@ -33,71 +36,73 @@
     <%# ── Lista de items ── %>
     <div class="d-flex flex-column gap-2">
       <% delivery.delivery_items.includes(order_item: [:order, :order_item_notes]).each do |item| %>
-        <div class="card border-0 shadow-sm" id="<%= dom_id(item) %>">
-          <div class="card-body p-3">
-            <%# Fila 1: Nombre + badge de estado %>
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <div class="fw-semibold text-dark" style="font-size: 0.9rem;">
-                <%= item.order_item&.product_name || "Producto sin nombre" %>
-              </div>
-              <span class="badge rounded-pill ms-2 flex-shrink-0
-                <%= case item.status
-                    when 'pending'   then 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
-                    when 'confirmed' then 'bg-success-subtle text-success-emphasis border border-success-subtle'
-                    when 'delivered' then 'bg-primary-subtle text-primary-emphasis border border-primary-subtle'
-                    when 'cancelled' then 'bg-danger-subtle text-danger-emphasis border border-danger-subtle'
-                    else 'bg-secondary-subtle text-secondary-emphasis'
-                    end %>"
-                    style="font-size: 0.65rem;">
-                <%= item.status.humanize %>
-              </span>
-            </div>
-            <%# Fila 2: Cantidad + notas %>
-            <div class="d-flex gap-3 mb-2 small text-secondary">
-              <span>
-                <i class="bi bi-box me-1"></i>
-                Cant: <strong class="text-dark"><%= item.quantity %></strong>
-              </span>
-              <% if item.order_item&.order_item_notes&.any? %>
-                <span class="text-warning-emphasis">
-                  <i class="bi bi-sticky me-1"></i>
-                  <%= item.order_item.order_item_notes.first.content&.truncate(40) %>
+        <div class="border rounded-3 bg-white shadow-sm overflow-hidden" id="<​%= dom_id(item) %>">
+          <div class="d-flex align-items-stretch">
+            <%# Franja lateral de color por estado %>
+            <div class="flex-shrink-0"
+                 style="width: 4px; background-color: <%= delivery_status_border_color(item.status) %>;"></div>
+            <div class="p-3 flex-grow-1">
+              <%# Fila 1: Nombre + badge estado %>
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="fw-semibold text-dark" style="font-size: 0.9rem;">
+                  <%= item.order_item&.product_name || "Producto sin nombre" %>
                 </span>
+                <span class="badge rounded-pill ms-2 flex-shrink-0 <%= delivery_status_badge_class(item.status) %>"
+                      style="font-size: 0.65rem;">
+                  <%= item.display_status %>
+                </span>
+              </div>
+              <%# Fila 2: Cantidad + notas %>
+              <div class="d-flex gap-3 mb-2 small text-secondary">
+                <span>
+                  <i class="bi bi-box me-1"></i>
+                  Cant: <strong class="text-dark"><%= item.quantity %></strong>
+                </span>
+                <% if item.order_item&.order_item_notes&.any? %>
+                  <span class="text-warning-emphasis">
+                    <i class="bi bi-sticky me-1"></i>
+                    <%= item.order_item.order_item_notes.first.content&.truncate(40) %>
+                  </span>
+                <% end %>
+              </div>
+              <%# Fila 3: Acciones %>
+              <% if policy(delivery).edit? && !item.delivered? && !item.cancelled? %>
+                <div class="d-flex flex-wrap gap-1 pt-2 border-top">
+                  <%# Confirmar → destino: confirmed → info %>
+                  <% if item.pending? %>
+                    <%= button_to confirm_delivery_item_path(item),
+                          method: :patch,
+                          class: "btn btn-xs btn-outline-info",
+                          data: { turbo_stream: true, turbo_confirm: "¿Confirmar este item?" } do %>
+                      <i class="bi bi-check-lg me-1"></i>Confirmar
+                    <% end %>
+                  <% end %>
+                  <%# Entregado → destino: delivered → success %>
+                  <% if item.confirmed? || item.pending? %>
+                    <%= button_to mark_delivered_delivery_item_path(item),
+                          method: :patch,
+                          class: "btn btn-xs btn-outline-success",
+                          data: { turbo_stream: true, turbo_confirm: "¿Marcar como entregado?" } do %>
+                      <i class="bi bi-truck me-1"></i>Entregado
+                    <% end %>
+                  <% end %>
+                  <%# Reagendar → destino: rescheduled → warning %>
+                  <button type="button"
+                          class="btn btn-xs btn-outline-warning"
+                          data-bs-toggle="modal"
+                          data-bs-target="#rescheduleItemModal<%= item.id %>">
+                    <i class="bi bi-calendar-event me-1"></i>Reagendar
+                  </button>
+                  <%# Cancelar → destino: cancelled → danger %>
+                  <%= button_to cancel_delivery_item_path(item),
+                        method: :patch,
+                        class: "btn btn-xs btn-outline-danger",
+                        data: { turbo_stream: true, turbo_confirm: "¿Cancelar este item?" } do %>
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                  <% end %>
+                </div>
               <% end %>
             </div>
-            <%# Fila 3: Acciones %>
-            <% if policy(delivery).edit? && !item.delivered? && !item.cancelled? %>
-              <div class="d-flex flex-wrap gap-1 pt-2 border-top">
-                <% if item.pending? %>
-                  <%= button_to confirm_delivery_item_path(item),
-                        method: :patch,
-                        class: "btn btn-xs btn-outline-success",
-                        data: { turbo_stream: true, turbo_confirm: "¿Confirmar este item?" } do %>
-                    <i class="bi bi-check-lg me-1"></i> Confirmar
-                  <% end %>
-                <% end %>
-                <% if item.confirmed? || item.pending? %>
-                  <%= button_to mark_delivered_delivery_item_path(item),
-                        method: :patch,
-                        class: "btn btn-xs btn-outline-primary",
-                        data: { turbo_stream: true, turbo_confirm: "¿Marcar como entregado?" } do %>
-                    <i class="bi bi-truck me-1"></i> Entregado
-                  <% end %>
-                <% end %>
-                <button type="button"
-                        class="btn btn-xs btn-outline-warning"
-                        data-bs-toggle="modal"
-                        data-bs-target="#rescheduleItemModal<%= item.id %>">
-                  <i class="bi bi-calendar-event me-1"></i> Reagendar
-                </button>
-                <%= button_to cancel_delivery_item_path(item),
-                      method: :patch,
-                      class: "btn btn-xs btn-outline-danger",
-                      data: { turbo_stream: true, turbo_confirm: "¿Cancelar este item?" } do %>
-                  <i class="bi bi-x-circle me-1"></i> Cancelar
-                <% end %>
-              </div>
-            <% end %>
           </div>
         </div>
         <% if policy(delivery).edit? && !item.delivered? && !item.cancelled? %>
@@ -106,8 +111,8 @@
       <% end %>
     </div>
   <% else %>
-    <div class="text-center py-4 text-muted">
-      <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-inbox" style="font-size: 2.5rem; opacity: 0.3;"></i>
       <p class="mt-2 mb-0 small">No hay productos en esta entrega.</p>
     </div>
   <% end %>

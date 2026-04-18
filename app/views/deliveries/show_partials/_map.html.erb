@@ -1,27 +1,56 @@
 <%# app/views/deliveries/show_partials/_map.html.erb %>
 <% if delivery.delivery_address.latitude.present? && delivery.delivery_address.longitude.present? %>
+  <%# Metadata de dirección sobre el mapa %>
+  <div class="d-flex align-items-center gap-2 mb-2 px-1">
+    <i class="bi bi-geo-alt-fill text-danger" style="font-size: 0.85rem;"></i>
+    <span class="small text-muted text-truncate">
+      <%= delivery.delivery_address.address %>
+    </span>
+    <% if delivery.delivery_address.plus_code.present? %>
+      <span class="badge bg-light text-secondary border ms-auto flex-shrink-0" style="font-size: 0.6rem;">
+        <%= delivery.delivery_address.plus_code %>
+      </span>
+    <% end %>
+  </div>
+  <%# Mapa %>
   <div id="delivery-map"
        data-controller="delivery-map"
        data-delivery-map-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
     data-delivery-map-points-value="<%= [{
-         lat: delivery.delivery_address.latitude,
-         lng: delivery.delivery_address.longitude,
-         client: delivery.order&.client&.name,
-         address: delivery.delivery_address.address,
-         order_number: delivery.order&.number
-       }].to_json %>"
-      style="min-height: 280px; height: 35vh; border: 1px solid #ddd; border-radius: 8px;">
+           lat: delivery.delivery_address.latitude,
+           lng: delivery.delivery_address.longitude,
+           client: delivery.order&.client&.name,
+           address: delivery.delivery_address.address,
+           order_number: delivery.order&.number
+         }].to_json %>"
+      style="min-height: 280px; height: 35vh; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6;">
   </div>
+  <%# Alerta de error de dirección %>
+  <% if delivery.address_error? %>
+    <div class="alert alert-warning d-flex align-items-center gap-2 mt-2 mb-0 py-2 px-3 border-0 border-start border-4 border-warning bg-warning-subtle"
+         style="font-size: 0.8rem;">
+      <i class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0"></i>
+      <div>
+        <strong>Dirección no verificada.</strong>
+        Las coordenadas podrían no coincidir con la dirección escrita.
+        <% if policy(delivery).edit? %>
+          <%= link_to "Revisar", edit_delivery_path(delivery),
+                class: "fw-bold text-warning-emphasis ms-1",
+                data: { turbo_frame: "_top" } %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 <% else %>
-  <div class="text-center py-4 text-muted">
-    <i class="bi bi-geo-alt display-6 d-block mb-2"></i>
-    <span class="small">Sin coordenadas registradas para esta dirección.</span>
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-geo-alt display-5 d-block mb-2 opacity-25"></i>
+    <p class="small mb-0">Sin coordenadas registradas para esta dirección.</p>
     <% if policy(delivery).edit? %>
-      <div class="mt-2">
+      <div class="mt-3">
         <%= link_to edit_delivery_path(delivery),
               class: "btn btn-sm btn-outline-secondary",
               data: { turbo_frame: "_top" } do %>
-          <i class="bi bi-pencil me-1"></i> Editar dirección
+          <i class="bi bi-pencil me-1"></i>Editar dirección
         <% end %>
       </div>
     <% end %>

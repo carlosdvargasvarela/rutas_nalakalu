@@ -1,0 +1,30 @@
+.delivery-card-link {
+  display: block;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+}
+
+.delivery-card {
+  transition: all 0.2s ease;
+  border: 1px solid #edf2f7;
+  border-radius: 12px !important;
+}
+
+.delivery-card:hover {
+  transform: scale(1.01);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Estado Activo (Seleccionado) */
+.active-card .delivery-card {
+  background-color: #f0f7ff !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15) !important;
+}
+
+.delivery-card .card-title {
+  color: #1a202c;
+  font-weight: 700;
+  font-size: 0.95rem;
+}

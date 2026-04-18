@@ -1,28 +1,43 @@
-/* Workspace — delivery cards */
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
-  border-color: var(--bs-primary) !important;
+/* Layout y Animaciones */
+#delivery_detail {
+  animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.border-start-danger {
-  border-left: 4px solid var(--bs-danger) !important;
-}
-.border-start-primary {
-  border-left: 4px solid var(--bs-primary) !important;
-}
-
-/* Card activa — Stimulus agrega .active-card al <a> */
-.active-card .card {
-  background-color: #eef3ff !important;
-  border-color: var(--bs-primary) !important;
-  border-left-width: 5px !important;
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-/* Workspace — items */
+.workspace-container {
+  height: calc(100vh - 65px);
+  overflow: hidden;
+  background-color: #f8f9fa;
+}
+
+.scroll-panel {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.scroll-panel::-webkit-scrollbar {
+  width: 4px;
+}
+.scroll-panel::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 10px;
+}
+
+/* Botones miniatura */
 .btn-xs {
-  padding: 0.15rem 0.4rem;
-  font-size: 0.75rem;
-  border-radius: 0.2rem;
-  line-height: 1.4;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }

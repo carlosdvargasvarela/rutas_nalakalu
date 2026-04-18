@@ -1,0 +1,31 @@
+/* Definición de bordes laterales por estado */
+.state-border-warning {
+  border-left: 4px solid var(--bs-warning) !important;
+}
+.state-border-primary {
+  border-left: 4px solid var(--bs-primary) !important;
+}
+.state-border-success {
+  border-left: 4px solid var(--bs-success) !important;
+}
+.state-border-danger {
+  border-left: 4px solid var(--bs-danger) !important;
+}
+.state-border-info {
+  border-left: 4px solid var(--bs-info) !important;
+}
+.state-border-dark {
+  border-left: 4px solid var(--bs-dark) !important;
+}
+.state-border-secondary {
+  border-left: 4px solid var(--bs-secondary) !important;
+}
+
+/* Badges estilizados */
+.status-badge-soft {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.35em 0.8em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+}

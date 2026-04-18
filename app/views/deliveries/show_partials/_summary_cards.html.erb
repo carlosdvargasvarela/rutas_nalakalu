@@ -1,121 +1,153 @@
 <%# app/views/deliveries/show_partials/_summary_cards.html.erb %>
-<div class="d-flex flex-column gap-3">
-  <%# Información General %>
-  <div class="p-3 border rounded bg-light-subtle">
-    <h6 class="small text-uppercase text-secondary fw-bold mb-2">
-      <i class="bi bi-info-circle me-1"></i> General
-    </h6>
-    <div class="d-flex flex-column gap-1 small">
-      <div>
-        <span class="text-muted">Fecha:</span>
-        <strong><%= l delivery.delivery_date, format: :long %></strong>
-      </div>
-      <div>
-        <span class="text-muted">Estado:</span>
-        <span class="badge bg-<%= delivery_status_color(delivery.status) %>">
-          <%= delivery.display_status %>
+<div class="row g-3">
+  <%# ══ CARD: Información de Entrega ══ %>
+  <div class="col-md-6">
+    <div class="border rounded-3 overflow-hidden h-100 bg-white shadow-sm">
+      <div class="px-3 py-2 border-bottom bg-light d-flex align-items-center gap-2">
+        <i class="bi bi-truck text-primary" style="font-size: 0.8rem;"></i>
+        <span style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">
+          Información de Entrega
         </span>
-        <% if delivery.approved? %>
-          <span class="badge bg-success ms-1">
-            <i class="bi bi-shield-check"></i> Aprobada
-          </span>
-        <% end %>
       </div>
-      <div>
-        <span class="text-muted">Preferencia horaria:</span>
-        <%= delivery.delivery_time_preference.presence || 'No especificado' %>
+      <div class="p-3">
+        <p class="fw-bold fs-6 mb-0"><%= delivery.order&.client&.name || delivery.client_name %></p>
+        <% if delivery.contact_phone.present? %>
+          <a href="tel:<%= delivery.contact_phone %>" class="text-muted small text-decoration-none d-block mb-3">
+            <i class="bi bi-telephone me-1 text-success"></i><%= delivery.contact_phone %>
+          </a>
+        <% else %>
+          <p class="text-muted small mb-3 fst-italic">Sin teléfono</p>
+        <% end %>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="bg-primary-subtle text-primary rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px; height:32px;">
+            <i class="bi bi-calendar-event"></i>
+          </span>
+          <div>
+            <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Fecha programada</div>
+            <div class="fw-semibold small"><%= l delivery.delivery_date, format: :long %></div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="bg-info-subtle text-info rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px; height:32px;">
+            <i class="bi bi-clock"></i>
+          </span>
+          <div>
+            <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Preferencia horaria</div>
+            <div class="fw-semibold small"><%= delivery.delivery_time_preference.presence || 'Sin especificar' %></div>
+          </div>
+        </div>
+        <% if delivery.approved? %>
+          <div class="d-flex align-items-center gap-2">
+            <span class="bg-success-subtle text-success rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px; height:32px;">
+              <i class="bi bi-shield-check"></i>
+            </span>
+            <div>
+              <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Producción</div>
+              <div class="fw-semibold small text-success">Aprobada para entrega</div>
+            </div>
+          </div>
+        <% end %>
       </div>
     </div>
   </div>
-  <%# Pedido %>
-  <div class="p-3 border rounded bg-light-subtle">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="small text-uppercase text-secondary fw-bold mb-0">
-        <i class="bi bi-receipt me-1"></i> Pedido
-      </h6>
-      <div class="d-flex gap-1">
-        <% if policy(delivery).take_order? && current_user.seller? && delivery.order.seller_id != current_user.seller&.id %>
-          <%= button_to take_order_delivery_path(delivery), method: :patch,
-                class: "btn btn-xs btn-outline-primary",
-                data: { turbo_confirm: "¿Tomar este pedido?" } do %>
-            <i class="bi bi-hand-index-thumb"></i>
-          <% end %>
-        <% end %>
+  <%# ══ CARD: Detalles del Pedido ══ %>
+  <div class="col-md-6">
+    <div class="border rounded-3 overflow-hidden h-100 bg-white shadow-sm d-flex flex-column">
+      <div class="px-3 py-2 border-bottom bg-light d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-receipt text-dark" style="font-size: 0.8rem;"></i>
+          <span style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">
+            Detalles del Pedido
+          </span>
+        </div>
         <% if policy(delivery).reassign_seller? %>
-          <button class="btn btn-xs btn-outline-secondary"
+          <button class="btn btn-xs btn-outline-secondary border-0"
                   data-bs-toggle="modal"
-                  data-bs-target="#reassignSellerModal">
+                  data-bs-target="#reassignSellerModal"
+                  title="Reasignar vendedor">
             <i class="bi bi-arrow-left-right"></i>
           </button>
         <% end %>
       </div>
-    </div>
-    <div class="d-flex flex-column gap-1 small">
-      <div>
-        <span class="text-muted">Número:</span>
-        <%= link_to delivery.order.number, order_path(delivery.order), class: "fw-semibold" %>
-      </div>
-      <div>
-        <span class="text-muted">Cliente:</span>
-        <strong><%= delivery.order.client.name %></strong>
-      </div>
-      <div>
-        <span class="text-muted">Vendedor:</span>
-        <%= delivery.order.seller.name %>
-        <span class="text-muted">(<%=  delivery.order.seller.seller_code %>)</span>
-        <% if current_user.seller? && delivery.order.seller_id == current_user.seller&.id %>
-          <span class="badge bg-success ms-1">Tu pedido</span>
-        <% end %>
-      </div>
-    </div>
-  </div>
-  <%# Dirección %>
-  <div class="p-3 border rounded bg-light-subtle">
-    <h6 class="small text-uppercase text-secondary fw-bold mb-2">
-      <i class="bi bi-geo-alt me-1"></i> Entrega
-    </h6>
-    <div class="d-flex flex-column gap-1 small">
-      <div><span class="text-muted">Dirección:</span> <%= delivery.delivery_address.address %></div>
-      <% if delivery.delivery_address.description.present? %>
-        <div><span class="text-muted">Referencia:</span> <%= delivery.delivery_address.description %></div>
-      <% end %>
-      <div><span class="text-muted">Contacto:</span> <%= delivery.contact_name %></div>
-      <div><span class="text-muted">Teléfono:</span> <%= delivery.contact_phone.presence || 'No especificado' %></div>
-      <% if delivery.delivery_notes.present? %>
-        <div class="mt-1 p-2 bg-white border rounded">
-          <i class="bi bi-sticky me-1 text-warning"></i><%= delivery.delivery_notes %>
+      <div class="p-3 flex-grow-1 d-flex flex-column">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span class="badge bg-dark px-3 py-2" style="font-size: 0.85rem;">#<%= delivery.order.number %></span>
+          <%= status_badge(delivery.order, with_icon: false, classes: "status-badge-soft rounded-pill") %>
         </div>
-      <% end %>
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span class="bg-light text-secondary rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px; height:32px; border: 1px solid #e2e8f0;">
+            <i class="bi bi-person-badge"></i>
+          </span>
+          <div>
+            <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Vendedor</div>
+            <div class="fw-semibold small"><%= delivery.order.seller.name %></div>
+            <div class="text-muted" style="font-size: 0.7rem;">Cód: <%= delivery.order.seller.seller_code %></div>
+          </div>
+        </div>
+        <div class="mt-auto">
+          <%= link_to order_path(delivery.order),
+                class: "btn btn-sm btn-outline-secondary w-100",
+                data: { turbo_frame: "_top" } do %>
+            <i class="bi bi-box-arrow-up-right me-1"></i>Ver Pedido Original
+          <% end %>
+        </div>
+      </div>
     </div>
   </div>
-  <%# Plan de Entrega (solo si existe) %>
+  <%# ══ CARD: Ubicación ══ %>
+  <div class="col-12">
+    <div class="border rounded-3 bg-white shadow-sm" style="border-left: 4px solid var(--bs-danger) !important;">
+      <div class="p-3 d-flex align-items-start gap-3">
+        <span class="bg-danger-subtle text-danger rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px; height:36px;">
+          <i class="bi bi-geo-alt-fill fs-5"></i>
+        </span>
+        <div>
+          <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">Ubicación de Destino</div>
+          <div class="fw-bold" style="font-size: 0.9rem;"><%= delivery.delivery_address.address %></div>
+          <% if delivery.delivery_address.description.present? %>
+            <div class="text-muted small fst-italic mt-1"><%= delivery.delivery_address.description %></div>
+          <% end %>
+          <% if delivery.address_error? %>
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle mt-2 d-inline-flex align-items-center gap-1" style="font-size: 0.65rem;">
+              <i class="bi bi-exclamation-triangle-fill"></i> Coordenadas no verificadas
+            </span>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <%# ══ CARD: Plan de Entrega (condicional) ══ %>
   <% if delivery.delivery_plan_assignment.present? %>
     <% dpa = delivery.delivery_plan_assignment %>
     <% plan = dpa.delivery_plan %>
-    <div class="p-3 border rounded bg-light-subtle">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="small text-uppercase text-secondary fw-bold mb-0">
-          <i class="bi bi-diagram-3 me-1"></i> Plan de Entrega
-        </h6>
-        <% if plan.truck.present? %>
-          <span class="badge bg-secondary">
-            <i class="bi bi-truck me-1"></i><%= plan.truck %>
-          </span>
-        <% end %>
-      </div>
-      <div class="d-flex flex-column gap-1 small">
-        <div>
-          <span class="text-muted">Plan:</span>
-          <%= link_to plan.full_name, delivery_plan_path(plan), class: "fw-semibold" %>
+    <div class="col-12">
+      <div class="border rounded-3 bg-white shadow-sm" style="border-left: 4px solid var(--bs-info) !important;">
+        <div class="p-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Plan de Entrega</div>
+            <% if plan.truck.present? %>
+              <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill" style="font-size: 0.65rem;">
+                <i class="bi bi-truck me-1"></i><%= plan.truck %>
+              </span>
+            <% end %>
+          </div>
+          <div class="row g-2 text-center">
+            <div class="col-4 border-end">
+              <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase;">Plan</div>
+              <%= link_to plan.full_name, delivery_plan_path(plan), class: "fw-bold small d-block text-truncate" %>
+            </div>
+            <div class="col-4 border-end">
+              <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase;">Conductor</div>
+              <div class="fw-bold small"><%= plan.driver&.name.presence || '—' %></div>
+            </div>
+            <div class="col-4">
+              <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase;">Parada</div>
+              <div class="fw-bold small">#<%= dpa.stop_order || '—' %></div>
+            </div>
+          </div>
         </div>
-        <div>
-          <span class="text-muted">Conductor:</span>
-          <%= plan.driver&.name.presence || content_tag(:span, "Sin asignar", class: "text-muted") %>
-        </div>
-        <div><span class="text-muted">Parada:</span> #<%= dpa.stop_order || "-" %></div>
       </div>
     </div>
   <% end %>
-  <%# Modal de reasignación %>
   <%= render "deliveries/show_partials/reassign_seller_modal", delivery: delivery %>
 </div>

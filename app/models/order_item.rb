@@ -28,7 +28,6 @@ class OrderItem < ApplicationRecord
   after_save :update_status_based_on_deliveries
   after_update :update_order_status
 
-  # ✅ MÉTODOS DE AYUDA PARA CLARIDAD (Capa 2)
   def delivered_quantity
     delivery_items.sum(:quantity_delivered)
   end
