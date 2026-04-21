@@ -104,6 +104,20 @@ class Delivery < ApplicationRecord
   }
 
   # ============================================================================
+  # BULK ACTIONS
+  # ============================================================================
+
+  BULK_LOCKED_STATUSES = %w[delivered rescheduled cancelled archived failed].freeze
+
+  def bulk_locked?
+    status.in?(BULK_LOCKED_STATUSES)
+  end
+
+  def bulk_available?
+    !bulk_locked? && delivery_items.bulk_actionable.exists?
+  end
+
+  # ============================================================================
   # RANSACK
   # ============================================================================
 
@@ -427,10 +441,14 @@ class Delivery < ApplicationRecord
   # TURBO STREAM BROADCASTING
   # ============================================================================
 
+  # ============================================================================
+  # TURBO STREAM BROADCASTING
+  # ============================================================================
+
   after_update_commit -> {
     broadcast_replace_to(
       "deliveries",
-      target: dom_id(self, :card_content),
+      target: "#{dom_id(self)}_card_content",
       partial: "deliveries/index_partials/delivery_card_content",
       locals: {delivery: self}
     )

@@ -1,12 +1,13 @@
 <%# app/views/deliveries/index_partials/_delivery_card.html.erb %>
 <div id="<%= dom_id(delivery, :card) %>"
-  data-workspace-target="card"
-  data-action="click->workspace#select">
+     data-workspace-target="card"
+     data-action="click->workspace#select">
   <%= link_to delivery_path(delivery),
-      class: "text-decoration-none d-block",
-      data: {
-        turbo_frame: "delivery_detail"
-      } do %>
+        class: "text-decoration-none d-block",
+        data: {
+          card_link: true,
+          turbo_frame: "delivery_detail"
+        } do %>
     <%= render "deliveries/index_partials/delivery_card_content", delivery: delivery %>
   <% end %>
 </div>

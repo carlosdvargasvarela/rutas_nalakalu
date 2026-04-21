@@ -2,7 +2,7 @@
 <%= turbo_frame_tag "modal" do %>
   <div class="modal-header bg-warning-subtle">
     <h5 class="modal-title fw-semibold">
-      <i class="bi bi-calendar2-plus me-2"></i> Reagendar producto
+      <i class="bi bi-calendar2-plus me-2"></i>Reagendar producto
     </h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
   </div>
@@ -12,9 +12,11 @@
       <div class="d-flex align-items-center gap-2">
         <i class="bi bi-box-seam text-primary fs-5"></i>
         <div>
-          <div class="fw-semibold small"><%= @delivery_item.order_item.product_name %></div>
+          <div class="fw-semibold small">
+            <%= @delivery_item.order_item.product_name || @delivery_item.order_item.product %>
+          </div>
           <div class="text-muted" style="font-size: 0.75rem;">
-            Cantidad: <%= @delivery_item.quantity_delivered %>
+            Disponible: <strong><%= @delivery_item.quantity_delivered %></strong> unidades
           </div>
         </div>
       </div>
@@ -23,6 +25,27 @@
           method: :patch,
           data: { turbo_stream: true },
           id: "reschedule_form_#{@delivery_item.id}" do |f| %>
+      <%# Cantidad a reagendar %>
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">
+          Cantidad a reagendar
+          <span class="text-muted fw-normal">(máx. <%= @delivery_item.quantity_delivered %>)</span>
+        </label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-light text-muted">
+            <i class="bi bi-hash"></i>
+          </span>
+          <%= number_field_tag :quantity_to_reschedule,
+                @delivery_item.quantity_delivered,
+                min: 1,
+                max: @delivery_item.quantity_delivered,
+                class: "form-control",
+                required: true %>
+        </div>
+        <% if @delivery_item.quantity_delivered.to_i > 1 %>
+          <div class="form-text">Podés reagendar una parte. El resto queda en esta entrega.</div>
+        <% end %>
+      </div>
       <%# Opción A: Nueva entrega %>
       <div class="mb-3">
         <div class="form-check mb-2">
@@ -30,11 +53,11 @@
                 class: "form-check-input",
                 id: "opt_new_#{@delivery_item.id}",
                 data: { action: "change->reschedule-form#toggleMode" } %>
-          <label class="form-check-label fw-semibold" for="opt_new_<%= @delivery_item.id %>">
+          <label class="form-check-label fw-semibold small" for="opt_new_<%= @delivery_item.id %>">
             Crear nueva entrega
           </label>
         </div>
-        <div data-reschedule-form-target="newSection">
+        <div data-reschedule-form-target="newSection" class="ps-4">
           <label class="form-label small text-muted">Nueva fecha de entrega</label>
           <%= date_field_tag :new_date,
                 Date.current + 7.days,
@@ -42,7 +65,7 @@
                 min: Date.current + 1.day %>
         </div>
       </div>
-      <%# Opción B: Entrega existente (solo si hay) %>
+      <%# Opción B: Entrega existente %>
       <% if @future_deliveries.any? %>
         <hr class="my-3">
         <div class="mb-3">
@@ -51,24 +74,34 @@
                   class: "form-check-input",
                   id: "opt_existing_#{@delivery_item.id}",
                   data: { action: "change->reschedule-form#toggleMode" } %>
-            <label class="form-check-label fw-semibold" for="opt_existing_<%= @delivery_item.id %>">
+            <label class="form-check-label fw-semibold small" for="opt_existing_<%= @delivery_item.id %>">
               Agregar a entrega existente
             </label>
           </div>
-          <div data-reschedule-form-target="existingSection" class="d-none">
+          <div data-reschedule-form-target="existingSection" class="d-none ps-4">
             <label class="form-label small text-muted">Seleccionar entrega</label>
-            <%# FIX: target_delivery_id es lo que espera DeliveryItems::Rescheduler %>
             <%= select_tag :target_delivery_id,
                   options_from_collection_for_select(
                     @future_deliveries,
                     :id,
-                    ->(d) { "#{I18n.l(d.delivery_date, format: :long)} — #{d.status.humanize}" }
+                    ->(d) { "#{I18n.l(d.delivery_date, format: :long)} — #{d.display_status}" }
                   ),
                   class: "form-select form-select-sm",
                   include_blank: "Seleccionar..." %>
           </div>
         </div>
       <% end %>
+      <%# Motivo %>
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">
+          Motivo <span class="text-muted fw-normal">(opcional)</span>
+        </label>
+        <%= text_area_tag :reason,
+              nil,
+              rows: 2,
+              class: "form-control form-control-sm",
+              placeholder: "Ej: Cliente solicitó cambio de fecha..." %>
+      </div>
       <div class="modal-footer px-0 pb-0">
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
           Cancelar

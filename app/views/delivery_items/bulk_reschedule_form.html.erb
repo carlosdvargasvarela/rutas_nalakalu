@@ -1,0 +1,101 @@
+<%# app/views/delivery_items/bulk_reschedule_form.html.erb %>
+<%= turbo_frame_tag "modal" do %>
+  <div class="modal-header bg-warning bg-opacity-10 border-bottom">
+    <h5 class="modal-title">
+      <i class="bi bi-calendar-event me-2 text-warning"></i>
+      Reagendar Productos Seleccionados
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <%= form_with url: bulk_reschedule_delivery_items_path,
+                method: :patch,
+                data: {turbo_stream: true} do |f| %>
+    <div class="modal-body">
+      <%# Resumen de productos seleccionados %>
+      <div class="mb-3">
+        <p class="text-muted small mb-2 fw-bold text-uppercase">Productos a reagendar</p>
+        <ul class="list-group list-group-flush border rounded">
+          <% @items.each do |item| %>
+            <li class="list-group-item py-2 px-3 small">
+              <i class="bi bi-box me-2 text-muted"></i>
+              <span class="fw-semibold"><%= item.product %></span>
+              <span class="text-muted ms-1">(x<%= item.quantity_delivered %>)</span>
+              <%= hidden_field_tag "item_ids", @item_ids.join(",") %>
+              <%= hidden_field_tag "delivery_id", @delivery.id %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+      <%# Destino %>
+      <div class="mb-3">
+        <p class="text-muted small mb-2 fw-bold text-uppercase">¿A dónde moverlos?</p>
+        <div class="form-check mb-2">
+          <input type="radio" name="new_delivery" value="true"
+                 class="form-check-input" id="bulk_new_true" checked>
+          <label class="form-check-label" for="bulk_new_true">
+            Nueva entrega en otra fecha
+          </label>
+        </div>
+        <div id="bulk_date_selector" class="ms-4 mb-3">
+          <label class="form-label small text-muted">Fecha de la nueva entrega</label>
+          <%= f.date_field :new_date,
+              class: "form-control form-control-sm",
+              min: Date.today + 1,
+              value: Date.today + 1,
+              required: true %>
+        </div>
+        <% if @future_deliveries.any? %>
+          <div class="form-check">
+            <input type="radio" name="new_delivery" value="false"
+                   class="form-check-input" id="bulk_new_false">
+            <label class="form-check-label" for="bulk_new_false">
+              Unir a una entrega existente del mismo pedido
+            </label>
+          </div>
+          <div id="bulk_existing_selector" class="ms-4 mt-2 d-none">
+            <label class="form-label small text-muted">Seleccionar entrega destino</label>
+            <%= f.select :target_delivery_id,
+                @future_deliveries.map { |d|
+                  ["#{d.delivery_date.strftime('%d/%m/%Y')} — #{d.display_status}", d.id]
+                },
+                {include_blank: "Seleccionar..."},
+                {class: "form-select form-select-sm"} %>
+          </div>
+        <% end %>
+      </div>
+      <%# Motivo %>
+      <div class="mb-0">
+        <label class="form-label small text-muted fw-bold text-uppercase">Motivo del cambio</label>
+        <%= f.text_area :reason,
+            class: "form-control form-control-sm",
+            rows: 2,
+            placeholder: "Ej: Cliente no puede recibir todo hoy..." %>
+      </div>
+    </div>
+    <div class="modal-footer bg-light">
+      <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+        Cancelar
+      </button>
+      <%= f.submit "Reagendar #{@items.count} producto(s)",
+          class: "btn btn-sm btn-warning fw-bold" %>
+    </div>
+  <% end %>
+  <script>
+    (function() {
+      const radioNew = document.getElementById('bulk_new_true');
+      const radioExisting = document.getElementById('bulk_new_false');
+      const dateSelector = document.getElementById('bulk_date_selector');
+      const existingSelector = document.getElementById('bulk_existing_selector');
+
+      radioNew?.addEventListener('change', () => {
+        dateSelector?.classList.remove('d-none');
+        existingSelector?.classList.add('d-none');
+      });
+
+      radioExisting?.addEventListener('change', () => {
+        dateSelector?.classList.add('d-none');
+        existingSelector?.classList.remove('d-none');
+      });
+    })();
+  </script>
+<% end %>

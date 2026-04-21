@@ -79,10 +79,13 @@
               <i class="bi bi-truck me-1"></i>Entregado
             <% end %>
           <% end %>
-          <%# Botón reagendar — carga modal via Turbo Frame %>
+          <%# Botón reagendar:
+              1. data-turbo-frame="modal"  → Turbo carga la respuesta en el <turbo-frame id="modal">
+              2. data-bs-toggle / target   → Bootstrap abre el #globalModal
+          %>
           <%= link_to reschedule_form_delivery_item_path(item),
-                class: "btn btn-xs btn-outline-warning",
-                data: { turbo_frame: "modal" } do %>
+              class: "btn btn-xs btn-outline-warning",
+              data: { turbo_frame: "modal" } do %>
             <i class="bi bi-calendar-event me-1"></i>Reagendar
           <% end %>
           <%= button_to cancel_delivery_item_path(item),

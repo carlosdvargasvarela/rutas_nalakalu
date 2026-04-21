@@ -1,4 +1,6 @@
 <%# app/views/deliveries/show_partials/_alerts.html.erb %>
+<%# ⚠️ Este partial SÍ usa policy() — SOLO se renderiza desde controller %>
+<%# Alerta de aprobación pendiente %>
 <% if policy(delivery).approve? && !delivery.approved? %>
   <div class="alert alert-warning d-flex justify-content-between align-items-center gap-2 py-2 mb-0 shadow-sm">
     <span class="small">
@@ -14,12 +16,14 @@
     <% end %>
   </div>
 <% end %>
+<%# Alerta de reagendamiento %>
 <% if delivery.rescheduled? && delivery.reschedule_reason.present? %>
   <div class="alert alert-info py-2 mb-0 small">
     <i class="bi bi-calendar-x me-1"></i>
     Reagendada — <strong>Motivo:</strong> <%= delivery.reschedule_reason %>
   </div>
 <% end %>
+<%# Alerta de error de dirección %>
 <% if delivery.address_error? %>
   <div class="alert alert-danger py-2 mb-0 small">
     <i class="bi bi-geo-alt me-1"></i>

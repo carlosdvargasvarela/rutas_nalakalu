@@ -1,4 +1,5 @@
 <%# app/views/deliveries/show_partials/_actions.html.erb %>
+<%# ⚠️ Este partial SÍ usa policy() — SOLO se renderiza desde controller %>
 <div class="d-flex gap-2 align-items-center">
   <%# ── Aprobar ── %>
   <% if policy(delivery).approve? && !delivery.approved? %>
@@ -29,7 +30,8 @@
             title="Más acciones">
       <i class="bi bi-three-dots-vertical"></i>
     </button>
-    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 py-2" style="min-width: 210px;">
+    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 py-2"
+        style="min-width: 210px;">
       <%# Reasignar vendedor %>
       <% if policy(delivery).reassign_seller? %>
         <li>
@@ -55,7 +57,7 @@
         <% end %>
       </li>
       <li><hr class="dropdown-divider my-1"></li>
-      <%# Archivar — acción destructiva al final %>
+      <%# Archivar %>
       <li>
         <%= button_to archive_delivery_path(delivery),
               method: :patch,

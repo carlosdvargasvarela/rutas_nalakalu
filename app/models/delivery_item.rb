@@ -42,6 +42,12 @@ class DeliveryItem < ApplicationRecord
   scope :loaded_items, -> { where(load_status: :loaded) }
   scope :unloaded_items, -> { where(load_status: :unloaded) }
   scope :missing_items, -> { where(load_status: :missing) }
+  scope :bulk_actionable, -> { where.not(status: %i[delivered rescheduled cancelled failed]) }
+  scope :bulk_confirmable, -> { where(status: :pending) }
+  scope :bulk_deliverable, -> { where(status: %i[pending confirmed in_plan in_route loaded_on_truck]) }
+  scope :bulk_cancellable, -> { where(status: %i[pending confirmed in_plan]) }
+  scope :bulk_reschedulable, -> { where(status: %i[pending confirmed in_plan]) }
+  scope :bulk_reschedulable, -> { where(status: %i[pending confirmed in_plan]) }
 
   # ============================================================================
   # VALIDACIONES
@@ -126,6 +132,10 @@ class DeliveryItem < ApplicationRecord
       update!(status: :delivered)
       delivery.update_status_based_on_items
     end
+  end
+
+  def bulk_reschedulable?
+    status.in?(%w[pending confirmed in_plan])
   end
 
   # Información para el reporte de logística

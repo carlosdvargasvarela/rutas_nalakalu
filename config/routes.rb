@@ -124,6 +124,7 @@ Rails.application.routes.draw do
       patch :bulk_cancel
       patch :bulk_reschedule
       patch :bulk_add_notes
+      get :bulk_reschedule_form
     end
   end
 

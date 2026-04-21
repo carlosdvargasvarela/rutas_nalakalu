@@ -1,61 +1,42 @@
 import { Controller } from "@hotwired/stimulus";
+import { Modal } from "bootstrap";
 
 export default class extends Controller {
   connect() {
-    this.modal = new window.bootstrap.Modal(this.element, {
-      backdrop: true,
-      keyboard: true,
-    });
+    this._modal = new Modal(this.element);
 
-    const frame = this.element.querySelector('turbo-frame[id="modal"]');
-    if (!frame) return;
-
-    this.frame = frame;
-    this._isOpen = false;
-
-    this.observer = new MutationObserver(() => {
-      const hasContent = frame.innerHTML.trim() !== "";
-
-      if (hasContent && !this._isOpen) {
-        // Contenido nuevo → abrir modal
-        this._isOpen = true;
-        this.modal.show();
-
-        this.element.addEventListener(
-          "hidden.bs.modal",
-          () => {
-            this._isOpen = false;
-            // Solo limpiar si el frame aún tiene contenido
-            // (no limpiar si ya fue vaciado por Turbo Stream)
-            if (frame.innerHTML.trim() !== "") {
-              frame.innerHTML = "";
-            }
-          },
-          { once: true },
-        );
-      } else if (!hasContent && this._isOpen) {
-        // Turbo Stream vació el frame → cerrar modal sin limpiar
-        this._isOpen = false;
-        this.modal.hide();
-        this._cleanup();
+    // Abrir modal cuando el frame recibe contenido (navegación por URL)
+    this._frameLoadHandler = (event) => {
+      if (event.target.id === "modal" && event.target.innerHTML.trim() !== "") {
+        this._modal.show();
       }
-    });
+    };
+    document.addEventListener("turbo:frame-load", this._frameLoadHandler);
 
-    this.observer.observe(frame, { childList: true, subtree: true });
-  }
+    const frame = document.getElementById("modal");
+    if (frame) {
+      this._observer = new MutationObserver(() => {
+        if (frame.innerHTML.trim() === "") {
+          this._modal.hide();
+        }
+      });
+      this._observer.observe(frame, { childList: true, subtree: true });
+    }
 
-  _cleanup() {
-    // Pequeño delay para que Bootstrap termine su animación
-    setTimeout(() => {
+    // Limpiar backdrop al cerrar
+    this.element.addEventListener("hidden.bs.modal", () => {
+      if (frame) {
+        frame.removeAttribute("src");
+        frame.innerHTML = "";
+      }
       document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
       document.body.classList.remove("modal-open");
-      document.body.style.removeProperty("overflow");
-      document.body.style.removeProperty("padding-right");
-    }, 300);
+      document.body.style = "";
+    });
   }
 
   disconnect() {
-    this.observer?.disconnect();
-    this.modal?.dispose();
+    document.removeEventListener("turbo:frame-load", this._frameLoadHandler);
+    this._observer?.disconnect();
   }
 }

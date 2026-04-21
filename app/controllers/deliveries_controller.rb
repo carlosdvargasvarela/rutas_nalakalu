@@ -60,6 +60,10 @@ class DeliveriesController < ApplicationController
     authorize @delivery
     load_delivery_for_panel
     set_delivery_panel_data
+
+    if turbo_frame_request?
+      render layout: false
+    end
   end
 
   def new
@@ -230,10 +234,23 @@ class DeliveriesController < ApplicationController
 
   def confirm_all_items
     authorize @delivery, :edit?
-    updated = @delivery.delivery_items.where(status: :pending).update_all(status: :confirmed, updated_at: Time.current)
+
+    if @delivery.bulk_locked?
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:alert] = "Esta entrega no permite acciones masivas en su estado actual."
+          render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+            status: :unprocessable_entity
+        end
+        format.html { redirect_to @delivery, alert: "Esta entrega no permite acciones masivas." }
+      end
+      return
+    end
+
+    items = @delivery.delivery_items.bulk_confirmable
+    updated = items.update_all(status: DeliveryItem.statuses[:confirmed], updated_at: Time.current)
     @delivery.mark_as_confirmed_by_vendor!
-    @delivery.status = :ready_to_deliver
-    @delivery.save!
+    @delivery.reload.update_status_based_on_items
 
     respond_to do |format|
       format.turbo_stream do
@@ -253,7 +270,7 @@ class DeliveriesController < ApplicationController
           )
         ]
       end
-      format.html { redirect_to delivery_path(@delivery), notice: "#{updated} productos confirmados para entrega." }
+      format.html { redirect_to delivery_path(@delivery), notice: "#{updated} producto(s) confirmado(s) para entrega." }
     end
   end
 

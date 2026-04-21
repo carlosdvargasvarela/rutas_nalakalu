@@ -1,0 +1,16 @@
+<%# app/views/deliveries/shared_partials/_item_status_badge.html.erb %>
+<% badge_class = case item.status
+   when "pending"        then "bg-secondary"
+   when "confirmed"      then "bg-info text-dark"
+   when "in_plan"        then "bg-primary"
+   when "in_route"       then "bg-warning text-dark"
+   when "delivered"      then "bg-success"
+   when "rescheduled"    then "bg-warning text-dark"
+   when "cancelled"      then "bg-danger"
+   when "failed"         then "bg-danger"
+   when "loaded_on_truck" then "bg-primary"
+   else "bg-secondary"
+   end %>
+<span class="badge <%= badge_class %> rounded-pill" style="font-size: 0.7rem;">
+  <%= item.display_status %>
+</span>

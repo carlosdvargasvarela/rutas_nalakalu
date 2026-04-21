@@ -1,45 +1,98 @@
 <%# app/views/deliveries/show_partials/_product_table.html.erb %>
-<div id="delivery_items_list">
-  <% if delivery.delivery_items.any? %>
-    <% if policy(delivery).edit? %>
-      <div class="d-flex flex-wrap gap-2 mb-3 p-2 bg-light rounded-3 border">
-        <%= form_with url: bulk_confirm_delivery_items_path,
-              method: :patch,
-              data: { turbo_stream: true } do |f| %>
-          <%= hidden_field_tag :delivery_id, delivery.id %>
-          <%= f.submit "✓ Confirmar todos",
-                class: "btn btn-sm btn-outline-info",
-                data: { turbo_confirm: "¿Confirmar todos los items pendientes?" } %>
+<%# app/views/deliveries/show_partials/_product_table.html.erb %>
+<div id="delivery_items_list" data-controller="delivery-items-selection">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="text-muted small fw-bold text-uppercase">Productos</span>
+    <button class="btn btn-sm btn-outline-warning"
+            data-delivery-items-selection-target="bulkButton"
+            data-action="click->delivery-items-selection#prepareReschedule"
+      data-url="<%= bulk_reschedule_form_delivery_items_path(delivery_id: delivery.id) %>"
+      disabled>
+      <i class="bi bi-calendar-event me-1"></i>
+      Reagendar (<span data-delivery-items-selection-target="count">0</span>)
+    </button>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 36px;">
+            <input type="checkbox"
+                   class="form-check-input"
+                   data-action="change->delivery-items-selection#toggleAll"
+            title="Seleccionar todos">
+          </th>
+          <th>Producto</th>
+          <th class="text-center" style="width: 60px;">Cant.</th>
+          <th style="width: 140px;">Estado</th>
+          <th style="width: 80px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% delivery.delivery_items.includes(:order_item).each do |item| %>
+          <tr id="<%= dom_id(item) %>">
+            <td>
+              <% if item.bulk_reschedulable? %>
+                <input type="checkbox"
+                       value="<%= item.id %>"
+                  class="form-check-input"
+                  data-delivery-items-selection-target="checkbox"
+                  data-action="change->delivery-items-selection#updateUI">
+              <% end %>
+            </td>
+            <td>
+              <div class="fw-semibold small"><%= item.product %></div>
+              <% if item.notes.present? %>
+                <div class="text-muted" style="font-size: 0.75rem;">
+                  <i class="bi bi-chat-left-text me-1"></i><%= item.notes %>
+                </div>
+              <% end %>
+            </td>
+            <td class="text-center fw-bold"><%= item.quantity_delivered %></td>
+            <td>
+              <%= render "deliveries/shared_partials/item_status_badge", item: item %>
+            </td>
+            <td class="text-end">
+              <% if policy(item).confirm? %>
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    <% unless item.confirmed? || item.delivered? || item.rescheduled? || item.cancelled? %>
+                      <li>
+                        <%= button_to "Confirmar", confirm_delivery_item_path(item),
+                            method: :patch, class: "dropdown-item text-success",
+                            data: {turbo_stream: true} %>
+                      </li>
+                    <% end %>
+                    <% unless item.delivered? || item.rescheduled? || item.cancelled? %>
+                      <li>
+                        <%= button_to "Marcar entregado", mark_delivered_delivery_item_path(item),
+                            method: :patch, class: "dropdown-item text-primary",
+                            data: {turbo_stream: true} %>
+                      </li>
+                      <li>
+                        <%= link_to "Reagendar", reschedule_form_delivery_item_path(item),
+                            class: "dropdown-item text-warning",
+                            data: {turbo_frame: "modal"} %>
+                      </li>
+                      <li>
+                        <%= button_to "Cancelar", cancel_delivery_item_path(item),
+                            method: :patch, class: "dropdown-item text-danger",
+                            data: {turbo_stream: true,
+                                   turbo_confirm: "¿Cancelar este producto?"} %>
+                      </li>
+                    <% end %>
+                  </ul>
+                </div>
+              <% end %>
+            </td>
+          </tr>
         <% end %>
-        <%= form_with url: bulk_deliver_delivery_items_path,
-              method: :patch,
-              data: { turbo_stream: true } do |f| %>
-          <%= hidden_field_tag :delivery_id, delivery.id %>
-          <%= f.submit "✓ Marcar entregados",
-                class: "btn btn-sm btn-outline-success",
-                data: { turbo_confirm: "¿Marcar todos como entregados?" } %>
-        <% end %>
-        <%= form_with url: bulk_cancel_delivery_items_path,
-              method: :patch,
-              data: { turbo_stream: true } do |f| %>
-          <%= hidden_field_tag :delivery_id, delivery.id %>
-          <%= f.submit "✗ Cancelar todos",
-                class: "btn btn-sm btn-outline-danger",
-                data: { turbo_confirm: "¿Cancelar todos los items?" } %>
-        <% end %>
-      </div>
-    <% end %>
-    <div class="d-flex flex-column gap-2">
-      <% delivery.delivery_items.includes(order_item: [:order, :order_item_notes]).each do |item| %>
-        <%= render "deliveries/show_partials/product_item", item: item, delivery: delivery %>
-      <% end %>
-    </div>
-  <% else %>
-    <div class="text-center py-5 text-muted">
-      <i class="bi bi-inbox" style="font-size: 2.5rem; opacity: 0.3;"></i>
-      <p class="mt-2 mb-0 small">No hay productos en esta entrega.</p>
-    </div>
-  <% end %>
+      </tbody>
+    </table>
+  </div>
 </div>
 <style>
   .btn-xs {

@@ -1,3 +1,4 @@
+<%# app/views/layouts/application.html.erb %>
 <!DOCTYPE html>
 <html>
   <head>
@@ -22,8 +23,8 @@
     </main>
     <%# Modal global unificado — turbo-frame "modal" vive DENTRO del modal de Bootstrap %>
     <div class="modal fade" id="globalModal" tabindex="-1" aria-hidden="true"
-         data-controller="modal"
-         data-turbo-permanent>
+     data-controller="modal"
+     data-turbo-permanent>
       <div class="modal-dialog modal-dialog-centered" data-modal-target="dialog">
         <div class="modal-content">
           <%= turbo_frame_tag "modal" %>

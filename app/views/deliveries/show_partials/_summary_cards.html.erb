@@ -1,4 +1,5 @@
 <%# app/views/deliveries/show_partials/_summary_cards.html.erb %>
+<%# ⚠️ Este partial SÍ usa policy() — SOLO se renderiza desde controller (vía _detail_data) %>
 <div class="row g-3">
   <%# ══ CARD: Información de Entrega ══ %>
   <div class="col-md-6">
@@ -10,16 +11,18 @@
         </span>
       </div>
       <div class="p-3">
-        <p class="fw-bold fs-6 mb-0"><%= delivery.order&.client&.name || delivery.client_name %></p>
+        <p class="fw-bold fs-6 mb-0"><%= delivery.client_name %></p>
         <% if delivery.contact_phone.present? %>
-          <a href="tel:<%= delivery.contact_phone %>" class="text-muted small text-decoration-none d-block mb-3">
+          <a href="tel:<%= delivery.contact_phone %>"
+             class="text-muted small text-decoration-none d-block mb-3">
             <i class="bi bi-telephone me-1 text-success"></i><%= delivery.contact_phone %>
           </a>
         <% else %>
           <p class="text-muted small mb-3 fst-italic">Sin teléfono</p>
         <% end %>
         <div class="d-flex align-items-center gap-2 mb-2">
-          <span class="bg-primary-subtle text-primary rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px; height:32px;">
+          <span class="bg-primary-subtle text-primary rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
+                style="width:32px; height:32px;">
             <i class="bi bi-calendar-event"></i>
           </span>
           <div>
@@ -28,7 +31,8 @@
           </div>
         </div>
         <div class="d-flex align-items-center gap-2 mb-2">
-          <span class="bg-info-subtle text-info rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px; height:32px;">
+          <span class="bg-info-subtle text-info rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
+                style="width:32px; height:32px;">
             <i class="bi bi-clock"></i>
           </span>
           <div>
@@ -38,7 +42,8 @@
         </div>
         <% if delivery.approved? %>
           <div class="d-flex align-items-center gap-2">
-            <span class="bg-success-subtle text-success rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px; height:32px;">
+            <span class="bg-success-subtle text-success rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
+                  style="width:32px; height:32px;">
               <i class="bi bi-shield-check"></i>
             </span>
             <div>
@@ -75,7 +80,8 @@
           <%= status_badge(delivery.order, with_icon: false, classes: "status-badge-soft rounded-pill") %>
         </div>
         <div class="d-flex align-items-center gap-2 mb-3">
-          <span class="bg-light text-secondary rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px; height:32px; border: 1px solid #e2e8f0;">
+          <span class="bg-light text-secondary rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
+                style="width:32px; height:32px; border: 1px solid #e2e8f0;">
             <i class="bi bi-person-badge"></i>
           </span>
           <div>
@@ -96,19 +102,24 @@
   </div>
   <%# ══ CARD: Ubicación ══ %>
   <div class="col-12">
-    <div class="border rounded-3 bg-white shadow-sm" style="border-left: 4px solid var(--bs-danger) !important;">
+    <div class="border rounded-3 bg-white shadow-sm"
+         style="border-left: 4px solid var(--bs-danger) !important;">
       <div class="p-3 d-flex align-items-start gap-3">
-        <span class="bg-danger-subtle text-danger rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px; height:36px;">
+        <span class="bg-danger-subtle text-danger rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
+              style="width:36px; height:36px;">
           <i class="bi bi-geo-alt-fill fs-5"></i>
         </span>
         <div>
-          <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">Ubicación de Destino</div>
+          <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">
+            Ubicación de Destino
+          </div>
           <div class="fw-bold" style="font-size: 0.9rem;"><%= delivery.delivery_address.address %></div>
           <% if delivery.delivery_address.description.present? %>
             <div class="text-muted small fst-italic mt-1"><%= delivery.delivery_address.description %></div>
           <% end %>
           <% if delivery.address_error? %>
-            <span class="badge bg-danger-subtle text-danger border border-danger-subtle mt-2 d-inline-flex align-items-center gap-1" style="font-size: 0.65rem;">
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle mt-2 d-inline-flex align-items-center gap-1"
+                  style="font-size: 0.65rem;">
               <i class="bi bi-exclamation-triangle-fill"></i> Coordenadas no verificadas
             </span>
           <% end %>
@@ -116,17 +127,21 @@
       </div>
     </div>
   </div>
-  <%# ══ CARD: Plan de Entrega (condicional) ══ %>
+  <%# ══ CARD: Plan de Entrega ══ %>
   <% if delivery.delivery_plan_assignment.present? %>
     <% dpa = delivery.delivery_plan_assignment %>
     <% plan = dpa.delivery_plan %>
     <div class="col-12">
-      <div class="border rounded-3 bg-white shadow-sm" style="border-left: 4px solid var(--bs-info) !important;">
+      <div class="border rounded-3 bg-white shadow-sm"
+           style="border-left: 4px solid var(--bs-info) !important;">
         <div class="p-3">
           <div class="d-flex align-items-center justify-content-between mb-2">
-            <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Plan de Entrega</div>
+            <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">
+              Plan de Entrega
+            </div>
             <% if plan.truck.present? %>
-              <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill" style="font-size: 0.65rem;">
+              <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill"
+                    style="font-size: 0.65rem;">
                 <i class="bi bi-truck me-1"></i><%= plan.truck %>
               </span>
             <% end %>
@@ -149,5 +164,6 @@
       </div>
     </div>
   <% end %>
+  <%# Modal reasignación (solo si tiene permisos) %>
   <%= render "deliveries/show_partials/reassign_seller_modal", delivery: delivery %>
 </div>

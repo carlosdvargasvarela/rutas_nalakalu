@@ -1,4 +1,3 @@
-# app/controllers/delivery_items_controller.rb
 class DeliveryItemsController < ApplicationController
   include ActionView::RecordIdentifier
 
@@ -60,25 +59,14 @@ class DeliveryItemsController < ApplicationController
 
     DeliveryItems::Rescheduler.new(
       delivery_item: @delivery_item,
-      params: params,
+      params: reschedule_params,
       current_user: current_user
     ).call
 
     delivery = @delivery_item.delivery.reload
-
-    notice = if params[:new_delivery] == "true"
-      "Producto reagendado en una nueva entrega."
-    else
-      "Producto reagendado en una entrega existente."
-    end
-
-    respond_with_delivery_update(delivery, notice: notice)
+    respond_with_delivery_update(delivery, notice: "Producto reagendado correctamente.")
   rescue => e
-    handle_item_error(
-      e,
-      fallback: delivery_path(@delivery_item.delivery),
-      prefix: "Error al reagendar"
-    )
+    handle_item_error(e, fallback: delivery_path(@delivery_item.delivery), prefix: "Error al reagendar")
   end
 
   def cancel
@@ -115,37 +103,13 @@ class DeliveryItemsController < ApplicationController
     )
   end
 
-  def bulk_add_notes
-    authorize DeliveryItem, :confirm?
-
-    delivery = Delivery.find(params[:delivery_id])
-
-    DeliveryItems::NotesUpdater.new(
-      delivery: delivery,
-      note_text: params.dig(:note, :body),
-      target: params[:target],
-      current_user: current_user
-    ).call
-
-    notice = if params[:target] == "all"
-      "Nota agregada a todos los productos de la entrega."
-    else
-      "Nota agregada al producto."
-    end
-
-    respond_with_delivery_update(delivery.reload, notice: notice)
-  rescue ActiveRecord::RecordNotFound
-    redirect_back fallback_location: delivery_plans_path, alert: "Entrega o producto no encontrado."
-  rescue => e
-    handle_item_error(e, fallback: delivery_path(params[:delivery_id]))
-  end
-
   def bulk_confirm
     authorize DeliveryItem, :confirm?
-
     delivery = Delivery.find(params[:delivery_id])
-    items = delivery.delivery_items.where(status: :pending)
 
+    return render_bulk_locked(delivery) if delivery.bulk_locked?
+
+    items = delivery.delivery_items.bulk_confirmable
     items.each do |item|
       DeliveryItems::StatusUpdater.new(
         delivery_item: item,
@@ -154,15 +118,16 @@ class DeliveryItemsController < ApplicationController
       ).call
     end
 
-    respond_with_delivery_update(delivery.reload, notice: "Items confirmados.")
+    respond_with_delivery_update(delivery.reload, notice: "#{items.count} producto(s) confirmado(s).")
   end
 
   def bulk_deliver
     authorize DeliveryItem, :confirm?
-
     delivery = Delivery.find(params[:delivery_id])
-    items = delivery.delivery_items
 
+    return render_bulk_locked(delivery) if delivery.bulk_locked?
+
+    items = delivery.delivery_items.bulk_deliverable
     items.each do |item|
       DeliveryItems::StatusUpdater.new(
         delivery_item: item,
@@ -171,15 +136,41 @@ class DeliveryItemsController < ApplicationController
       ).call
     end
 
-    respond_with_delivery_update(delivery.reload, notice: "Items marcados como entregados.")
+    respond_with_delivery_update(delivery.reload, notice: "#{items.count} producto(s) marcado(s) como entregado(s).")
+  end
+
+  def bulk_reschedule_form
+    authorize DeliveryItem, :confirm?
+
+    @delivery = Delivery.find(params[:delivery_id])
+    # Convertimos el string "524,525" en un array de IDs
+    @item_ids = params[:item_ids].to_s.split(",").map(&:strip)
+
+    @items = @delivery.delivery_items
+      .where(id: @item_ids)
+      .includes(:order_item)
+
+    @future_deliveries = Delivery
+      .where(
+        order_id: @delivery.order_id,
+        delivery_address_id: @delivery.delivery_address_id
+      )
+      .where("delivery_date >= ?", Date.current)
+      .where.not(id: @delivery.id)
+      .where.not(status: %i[rescheduled cancelled archived])
+      .order(:delivery_date)
+
+    # Usamos layout: false porque Turbo Frame lo insertará en el modal existente
+    render layout: false
   end
 
   def bulk_cancel
     authorize DeliveryItem, :confirm?
-
     delivery = Delivery.find(params[:delivery_id])
-    items = delivery.delivery_items
 
+    return render_bulk_locked(delivery) if delivery.bulk_locked?
+
+    items = delivery.delivery_items.bulk_cancellable
     items.each do |item|
       DeliveryItems::StatusUpdater.new(
         delivery_item: item,
@@ -188,14 +179,20 @@ class DeliveryItemsController < ApplicationController
       ).call
     end
 
-    respond_with_delivery_update(delivery.reload, notice: "Items cancelados.")
+    respond_with_delivery_update(delivery.reload, notice: "#{items.count} producto(s) cancelado(s).")
   end
 
   def bulk_reschedule
     authorize DeliveryItem, :confirm?
-
     delivery = Delivery.find(params[:delivery_id])
-    items = DeliveryItem.where(id: params[:item_ids])
+
+    return render_bulk_locked(delivery) if delivery.bulk_locked?
+
+    item_ids = params[:item_ids].to_s.split(",").map(&:strip)
+
+    items = delivery.delivery_items
+      .bulk_reschedulable
+      .where(id: item_ids)
 
     items.each do |item|
       DeliveryItems::Rescheduler.new(
@@ -205,7 +202,7 @@ class DeliveryItemsController < ApplicationController
       ).call
     end
 
-    respond_with_delivery_update(delivery.reload, notice: "Items reagendados.")
+    respond_with_delivery_update(delivery.reload, notice: "#{items.count} producto(s) reagendado(s).")
   rescue => e
     handle_item_error(e, fallback: delivery_path(delivery), prefix: "Error al reagendar")
   end
@@ -220,19 +217,18 @@ class DeliveryItemsController < ApplicationController
     params.require(:delivery_item).permit(:notes)
   end
 
+  def reschedule_params
+    params.permit(:new_delivery, :new_date, :target_delivery_id, :quantity_to_reschedule, :reason)
+  end
+
   def respond_with_delivery_update(delivery, notice:)
     respond_to do |format|
       format.turbo_stream do
         flash.now[:notice] = notice
 
         render turbo_stream: [
-          # 1. Flash primero (siempre visible)
           turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-
-          # 2. Vaciar frame → el observer cierra el modal
           turbo_stream.update("modal", ""),
-
-          # 3. Actualizar datos
           turbo_stream.replace(
             "delivery_items_list",
             partial: "deliveries/show_partials/product_table",
@@ -249,6 +245,19 @@ class DeliveryItemsController < ApplicationController
     end
   end
 
+  def render_bulk_locked(delivery)
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:alert] = "Esta entrega no permite acciones masivas en su estado actual."
+        render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          status: :unprocessable_entity
+      end
+      format.html do
+        redirect_to delivery_path(delivery), alert: "Esta entrega no permite acciones masivas."
+      end
+    end
+  end
+
   def handle_item_error(exception, fallback:, prefix: nil)
     message = prefix.present? ? "#{prefix}: #{exception.message}" : exception.message
     Rails.logger.error("❌ Error DeliveryItemsController: #{message}")
@@ -256,7 +265,6 @@ class DeliveryItemsController < ApplicationController
     respond_to do |format|
       format.turbo_stream do
         flash.now[:alert] = message
-        # FIX: también actualizar el flash en errores, y cerrar modal si estaba abierto
         render turbo_stream: [
           turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
           turbo_stream.update("modal", "")
