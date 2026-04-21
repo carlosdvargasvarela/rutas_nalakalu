@@ -11,6 +11,8 @@ class DeliveriesController < ApplicationController
 
   def index
     authorize Delivery
+
+    @sellers = Seller.order(:name)
     session[:deliveries_return_to] = request.fullpath
 
     base_scope = if params[:show_rescheduled] == "1"

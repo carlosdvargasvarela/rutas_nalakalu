@@ -1,32 +1,28 @@
 <%# app/views/deliveries/show.html.erb %>
 <div class="d-lg-none px-3 pt-3 pb-1">
-  <%= link_to deliveries_path,
-        class: "btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" do %>
+  <%= link_to deliveries_path, class: "btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" do %>
     <i class="bi bi-arrow-left"></i> Volver a entregas
   <% end %>
 </div>
-<%= turbo_frame_tag "delivery_detail" do %>
-  <%= turbo_frame_tag "delivery_detail_actions" do %>
-    <%= render "deliveries/show_partials/actions", delivery: @delivery %>
-  <% end %>
-  <%= turbo_frame_tag dom_id(@delivery, :detail_data) do %>
-    <%= render "deliveries/show_partials/detail_data",
-          delivery: @delivery,
-          future_deliveries: @future_deliveries,
-          delivery_history: @delivery_history %>
-  <% end %>
+<%= turbo_frame_tag "delivery_detail", class: "h-100 d-flex flex-column" do %>
+  <%= render "deliveries/show_partials/detail_data", 
+        delivery: @delivery, 
+        future_deliveries: @future_deliveries, 
+        delivery_history: @delivery_history %>
 <% end %>
 <style>
-  @media (max-width: 991.98px) {
-    turbo-frame#delivery_detail { height: auto !important; display: block !important; }
-    turbo-frame#delivery_detail > div { height: auto !important; }
-    .detail-header { position: static !important; }
-    .tab-content { overflow: visible !important; height: auto !important; }
-  }
+  /* Altura completa del panel en Desktop */
   @media (min-width: 992px) {
-    turbo-frame#delivery_detail > div { height: 100%; }
+    turbo-frame#delivery_detail { height: 100%; overflow: hidden; }
+    .detail-panel-body { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+    .detail-tab-content { flex: 1; overflow-y: auto; overflow-x: hidden; }
   }
-  .nav-underline .nav-link.active { color: var(--bs-primary); font-weight: 600 !important; }
-  .nav-link { color: var(--bs-secondary); }
-  #info-pane .card { border: 1px solid #eee; box-shadow: none !important; }
+
+  /* Ajustes UX */
+  .nav-underline .nav-link.active { font-weight: 600; color: var(--bs-primary); border-bottom-width: 3px; }
+  .status-badge-soft { font-size: 0.7rem; padding: 0.35em 0.8em; }
+  .section-label { letter-spacing: 0.05em; }
+
+  /* Botón extra pequeño manual ya que BS5 no lo trae */
+  .btn-xs { padding: 0.125rem 0.4rem; font-size: 0.75rem; border-radius: 0.2rem; }
 </style>

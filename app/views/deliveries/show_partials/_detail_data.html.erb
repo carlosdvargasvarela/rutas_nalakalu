@@ -1,178 +1,83 @@
 <%# app/views/deliveries/show_partials/_detail_data.html.erb %>
-<%# ⚠️ Este partial NO debe usar policy(), current_user, ni helpers de Devise %>
-<%# Es renderizado por broadcast desde el modelo — fuera del request HTTP %>
-
-<div class="d-flex flex-column detail-panel-body bg-white">
-
-  <%# ═══ HEADER ═══ %>
-  <div class="detail-header px-3 px-md-4 py-3 border-bottom flex-shrink-0">
-    <div class="d-flex justify-content-between align-items-start gap-2">
-      <div class="min-w-0 flex-grow-1">
-
-        <%# Badges de estado %>
-        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+<div class="detail-panel-body bg-white">
+  <%# ═══ HEADER UNIFICADO (Información + Acciones) ═══ %>
+  <div class="detail-header px-3 px-md-4 py-3 border-bottom shadow-sm">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div class="min-w-0">
+        <div class="d-flex align-items-center gap-2 mb-1">
           <%= status_badge(delivery, with_icon: true, classes: "status-badge-soft rounded-pill") %>
-          <% if delivery.approved? %>
-            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle rounded-pill status-badge-soft">
-              <i class="bi bi-shield-check me-1"></i>Aprobada
-            </span>
-          <% end %>
         </div>
-
-        <%# Nombre cliente %>
-        <h5 class="fw-bold text-dark mb-0 text-truncate" style="font-size: 1rem;">
-          <%= delivery.client_name %>
-        </h5>
-
-        <%# Meta info %>
-        <div class="detail-meta mt-1 d-flex flex-wrap gap-2" style="font-size: 0.8rem;">
-          <span>
-            <i class="bi bi-hash text-primary"></i>
-            <strong><%= delivery.order_number %></strong>
-          </span>
-          <span>
-            <i class="bi bi-calendar-event text-primary"></i>
-            <%= delivery.delivery_date ? l(delivery.delivery_date, format: :long) : 'Fecha no definida' %>
-          </span>
-          <% if delivery.delivery_time_preference.present? %>
-            <span>
-              <i class="bi bi-clock text-secondary"></i>
-              <%= delivery.delivery_time_preference %>
-            </span>
-          <% end %>
+        <h5 class="fw-bold text-dark mb-0"><%= delivery.client_name %></h5>
+        <div class="detail-meta text-muted" style="font-size: 0.8rem;">
+          <span class="me-2"><i class="bi bi-hash text-primary"></i> <strong><%= delivery.order_number %></strong></span>
+          <span><i class="bi bi-calendar-event me-1"></i><%= l(delivery.delivery_date, format: :long) if delivery.delivery_date %></span>
         </div>
       </div>
-
-      <%# Botón editar — sin policy, solo link directo %>
-      <%= link_to edit_delivery_path(delivery),
-            class: "btn btn-sm btn-outline-secondary flex-shrink-0",
-            title: "Editar entrega",
-            data: { turbo_frame: "_top" } do %>
-        <i class="bi bi-pencil"></i>
+      <div class="d-flex gap-1">
+        <%= link_to edit_delivery_path(delivery), class: "btn btn-sm btn-outline-secondary", data: { turbo_frame: "_top" } do %>
+          <i class="bi bi-pencil"></i>
+        <% end %>
+      </div>
+    </div>
+    <%# Fila de Acciones Principales (Inyectamos _actions aquí) %>
+    <div class="d-flex justify-content-between align-items-center">
+      <div id="delivery_actions_container">
+        <%= render "deliveries/show_partials/actions", delivery: delivery %>
+      </div>
+      <% if delivery.delivery_time_preference.present? %>
+        <span class="badge bg-light text-secondary border small fw-normal">
+          <i class="bi bi-clock me-1"></i><%= delivery.delivery_time_preference %>
+        </span>
       <% end %>
     </div>
-
-    <%# Alertas de datos puros (sin policy) %>
+    <%# Alertas Críticas %>
     <% if delivery.rescheduled? || delivery.address_error? %>
-      <div class="mt-2 d-flex flex-column gap-2">
-        <% if delivery.rescheduled? && delivery.reschedule_reason.present? %>
-          <div class="alert alert-info py-2 mb-0 small">
-            <i class="bi bi-calendar-x me-1"></i>
-            Reagendada — <strong>Motivo:</strong> <%= delivery.reschedule_reason %>
+      <div class="mt-3">
+        <% if delivery.rescheduled? %>
+          <div class="alert alert-info py-2 mb-1 small border-0 bg-info-subtle">
+            <i class="bi bi-info-circle-fill me-2"></i>Reagendada: <%= delivery.reschedule_reason %>
           </div>
         <% end %>
         <% if delivery.address_error? %>
-          <div class="alert alert-danger py-2 mb-0 small">
-            <i class="bi bi-geo-alt me-1"></i>
-            Error en la dirección — verificar antes de asignar al plan.
+          <div class="alert alert-danger py-2 mb-0 small border-0 bg-danger-subtle">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Error de geolocalización detectado.
           </div>
         <% end %>
       </div>
     <% end %>
   </div>
-
-  <%# ═══ TABS ═══ %>
-  <ul class="detail-tabs nav nav-underline px-3 px-md-4 border-bottom flex-shrink-0"
-      role="tablist"
-      style="font-size: 0.85rem;">
+  <%# ═══ TABS NAV ═══ %>
+  <ul class="nav nav-underline px-3 px-md-4 border-bottom bg-light" role="tablist" style="font-size: 0.85rem;">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#info-pane" type="button">Info</button></li>
     <li class="nav-item">
-      <button class="nav-link active px-2 px-md-3"
-              data-bs-toggle="tab"
-              data-bs-target="#info-pane"
-              type="button">
-        <i class="bi bi-info-circle me-1"></i>
-        <span class="d-none d-sm-inline">Información</span>
-        <span class="d-sm-none">Info</span>
-      </button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link position-relative px-2 px-md-3"
-              data-bs-toggle="tab"
-              data-bs-target="#products-pane"
-              type="button">
-        <i class="bi bi-box-seam me-1"></i>
-        <span class="d-none d-sm-inline">Productos</span>
-        <span class="d-sm-none">Prod.</span>
-        <% pending_count = delivery.delivery_items.pending.count %>
-        <% if pending_count > 0 %>
-          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                style="font-size: 0.55rem;">
-            <%= pending_count %>
-          </span>
+      <button class="nav-link position-relative" data-bs-toggle="tab" data-bs-target="#products-pane" type="button">
+        Productos
+        <% if delivery.delivery_items.pending.any? %>
+          <span class="ms-1 badge rounded-pill bg-danger" style="font-size: 0.6rem;"><%= delivery.delivery_items.pending.count %></span>
         <% end %>
       </button>
     </li>
-    <li class="nav-item">
-      <button class="nav-link px-2 px-md-3"
-              data-bs-toggle="tab"
-              data-bs-target="#map-pane"
-              type="button">
-        <i class="bi bi-map me-1"></i>Mapa
-      </button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link px-2 px-md-3"
-              data-bs-toggle="tab"
-              data-bs-target="#history-pane"
-              type="button">
-        <i class="bi bi-clock-history me-1"></i>
-        <span class="d-none d-sm-inline">Historial</span>
-        <span class="d-sm-none">Hist.</span>
-      </button>
-    </li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#map-pane" type="button">Mapa</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#history-pane" type="button">Historial</button></li>
   </ul>
-
-  <%# ═══ CONTENIDO TABS ═══ %>
-  <div class="tab-content detail-tab-content overflow-auto custom-scrollbar p-3 p-md-4">
-
-    <%# INFO %>
-    <div class="tab-pane fade show active" id="info-pane" role="tabpanel">
+  <%# ═══ CONTENIDO DINÁMICO ═══ %>
+  <div class="tab-content detail-tab-content p-3 p-md-4">
+    <div class="tab-pane fade show active" id="info-pane">
       <%= render "deliveries/show_partials/summary_cards", delivery: delivery %>
       <% if delivery.delivery_notes.present? %>
-        <div class="detail-notes mt-3 p-3 rounded-3 border-start border-warning border-4 bg-warning-subtle">
-          <div class="section-label text-warning-emphasis mb-1"
-               style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">
-            <i class="bi bi-sticky me-1"></i>Notas de Entrega
-          </div>
-          <p class="mb-0 small text-warning-emphasis"><%= delivery.delivery_notes %></p>
+        <div class="mt-3 p-3 rounded bg-warning-subtle text-warning-emphasis small border-start border-warning border-4">
+          <strong>Notas:</strong> <%= delivery.delivery_notes %>
         </div>
       <% end %>
     </div>
-
-    <%# PRODUCTOS %>
-    <div class="tab-pane fade" id="products-pane" role="tabpanel">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="fw-bold mb-0" style="font-size: 0.9rem;">
-          <i class="bi bi-box-seam me-1 text-primary"></i>Productos
-        </h6>
-        <span class="badge bg-light text-dark border">
-          <%= delivery.delivery_items.count %> items
-        </span>
-      </div>
-      <div id="delivery_items_list">
-        <%= render "deliveries/show_partials/product_table",
-              delivery: delivery,
-              future_deliveries: future_deliveries %>
-      </div>
+    <div class="tab-pane fade" id="products-pane">
+      <%= render "deliveries/show_partials/product_table", delivery: delivery, future_deliveries: future_deliveries %>
     </div>
-
-    <%# MAPA %>
-    <div class="tab-pane fade" id="map-pane" role="tabpanel">
-      <div class="mb-3 p-3 rounded-3 bg-light border d-flex align-items-center gap-2">
-        <i class="bi bi-geo-alt-fill text-danger fs-5"></i>
-        <span class="small fw-medium"><%= delivery.address %></span>
-      </div>
+    <div class="tab-pane fade" id="map-pane">
       <%= render "deliveries/show_partials/map", delivery: delivery %>
     </div>
-
-    <%# HISTORIAL %>
-    <div class="tab-pane fade" id="history-pane" role="tabpanel">
-      <%= render "deliveries/show_partials/history",
-            delivery: delivery,
-            delivery_history: delivery_history %>
+    <div class="tab-pane fade" id="history-pane">
+      <%= render "deliveries/show_partials/history", delivery: delivery, delivery_history: delivery_history %>
     </div>
-
   </div>
-
-  <%# ═══ FOOTER ═══ %>
-  <div class="detail-footer px-3 px
+</div>
