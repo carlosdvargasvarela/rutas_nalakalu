@@ -23,6 +23,12 @@
       <i class="bi bi-calendar-event me-1"></i>
       Reagendar <span class="badge bg-white text-dark ms-1" data-delivery-items-selection-target="count">0</span>
     </button>
+    <button type="button"
+        class="btn btn-sm btn-outline-danger"
+        data-action="click->delivery-items-selection#prepareSalaPickup"
+      data-url="<%= sala_pickup_form_delivery_path(@delivery) %>">
+      <i class="bi bi-shop me-1"></i> Recogida en Sala
+    </button>
   </div>
   <%# ═══ TABLA ═══ %>
   <%# Sin table-responsive — el scroll lo maneja el tab-pane padre %>

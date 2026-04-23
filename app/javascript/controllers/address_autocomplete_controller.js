@@ -28,6 +28,7 @@ export default class extends Controller {
     this._initAttempts = 0;
     this._descriptionWasManuallyEdited = false;
     this._lastInputSource = null;
+    this._pacObserver = null;
 
     if (this.hasDescriptionTarget) {
       this.descriptionTarget.addEventListener("input", () => {
@@ -39,6 +40,17 @@ export default class extends Controller {
   }
 
   disconnect() {
+    if (this._pacObserver) {
+      this._pacObserver.disconnect();
+      this._pacObserver = null;
+    }
+    if (this._repositionPac) {
+      const modalBody =
+        this.element.closest(".modal-body") || this.element.closest(".modal");
+      if (modalBody)
+        modalBody.removeEventListener("scroll", this._repositionPac);
+      window.removeEventListener("resize", this._repositionPac);
+    }
     if (this.autocomplete)
       google.maps.event.clearInstanceListeners(this.autocomplete);
     if (this.marker) google.maps.event.clearInstanceListeners(this.marker);
@@ -167,6 +179,50 @@ export default class extends Controller {
       types: [],
     });
 
+    // ✅ FIX: Evitar que el input pierda foco al hacer click en sugerencia
+    this._preventBlur = (e) => e.preventDefault();
+
+    // ✅ FIX DEFINITIVO pac-container: mover al body + position fixed + z-index
+    this._pacObserver = new MutationObserver(() => {
+      const pac = document.querySelector(".pac-container");
+      if (!pac) return;
+
+      if (pac.parentElement !== document.body) {
+        document.body.appendChild(pac);
+        // Prevenir que el click en sugerencias quite el foco del input
+        pac.addEventListener("mousedown", this._preventBlur);
+      }
+
+      pac.style.setProperty("z-index", "9999", "important");
+      pac.style.setProperty("position", "fixed", "important");
+
+      const inputRect = this.inputTarget.getBoundingClientRect();
+      pac.style.setProperty("top", `${inputRect.bottom}px`, "important");
+      pac.style.setProperty("left", `${inputRect.left}px`, "important");
+      pac.style.setProperty("width", `${inputRect.width}px`, "important");
+    });
+
+    this._pacObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style"],
+    });
+
+    this._repositionPac = () => {
+      const pac = document.querySelector(".pac-container");
+      if (!pac || pac.style.display === "none") return;
+      const inputRect = this.inputTarget.getBoundingClientRect();
+      pac.style.setProperty("top", `${inputRect.bottom}px`, "important");
+      pac.style.setProperty("left", `${inputRect.left}px`, "important");
+      pac.style.setProperty("width", `${inputRect.width}px`, "important");
+    };
+
+    const modalBody =
+      this.element.closest(".modal-body") || this.element.closest(".modal");
+    if (modalBody) modalBody.addEventListener("scroll", this._repositionPac);
+    window.addEventListener("resize", this._repositionPac);
+
     this.autocomplete.addListener("place_changed", () => {
       const place = this.autocomplete.getPlace();
       if (!place?.geometry?.location) {
@@ -202,7 +258,6 @@ export default class extends Controller {
         this.plusDisplayTarget.textContent = plusCode;
     }
 
-    // Enriquecer con Place Details si tenemos place_id
     let enriched = {
       placeName,
       formattedAddress,
@@ -234,20 +289,13 @@ export default class extends Controller {
     this.validateStatus();
   }
 
-  // ─── PLACE DETAILS (enriquecimiento) ─────────────────────────────────────────
+  // ─── PLACE DETAILS ────────────────────────────────────────────────────────────
 
-  /**
-   * Llama a Place Details (Legacy) para obtener datos adicionales del lugar.
-   * Campos básicos solicitados: name, formatted_address, address_components,
-   * vicinity, url, plus_code, types.
-   * Ref: https://developers.google.com/maps/documentation/places/web-service/legacy/details
-   */
   async _fetchPlaceDetails(placeId) {
     if (!placeId) return null;
 
     return new Promise((resolve) => {
       const service = new google.maps.places.PlacesService(this.mapTarget);
-
       service.getDetails(
         {
           placeId,
@@ -279,8 +327,6 @@ export default class extends Controller {
     const detailComponents = this._extractComponents(
       details.address_components || [],
     );
-
-    // Fusionar componentes: los de details tienen prioridad si son más ricos
     const mergedComponents = { ...base.components };
     Object.entries(detailComponents).forEach(([key, value]) => {
       if (value && !mergedComponents[key]) mergedComponents[key] = value;
@@ -301,7 +347,7 @@ export default class extends Controller {
     };
   }
 
-  // ─── ENTRADA MANUAL (coords / plus code) ─────────────────────────────────────
+  // ─── ENTRADA MANUAL ───────────────────────────────────────────────────────────
 
   async handleSmartInput(event) {
     const rawText = event.target.value.trim();
@@ -368,7 +414,7 @@ export default class extends Controller {
     }
   }
 
-  // ─── REVERSE GEOCODE ─────────────────────────────────────────────────────────
+  // ─── REVERSE GEOCODE ──────────────────────────────────────────────────────────
 
   async reverseGeocode(position) {
     if (!this.geocoder) return;
@@ -489,46 +535,27 @@ export default class extends Controller {
     return "";
   }
 
-  // ─── CONSTRUCCIÓN DE DIRECCIÓN PRINCIPAL ─────────────────────────────────────
+  // ─── CONSTRUCCIÓN DE DIRECCIÓN ────────────────────────────────────────────────
 
-  /**
-   * Dirección corta y legible para el campo "address".
-   * Formato: [Nombre del lugar], [Barrio/Distrito], [Cantón], [Provincia]
-   */
   _buildDriverAddress({ placeName, formattedAddress, vicinity, components }) {
     const parts = [];
-
     const name = this._cleanPlaceName(placeName);
-    if (name && !this._isAdministrativeOnly(name, components)) {
-      parts.push(name);
-    }
+    if (name && !this._isAdministrativeOnly(name, components)) parts.push(name);
 
-    // Usar vicinity si aporta algo que no esté ya
     if (vicinity) {
       const vicinityFirst = vicinity.split(",")[0]?.trim();
       if (
         vicinityFirst &&
         !this._isAdministrativeOnly(vicinityFirst, components)
-      ) {
+      )
         this._pushUniquePart(parts, vicinityFirst);
-      }
     }
 
     this._appendAdministrativeHierarchy(parts, components);
-
     if (parts.length > 0) return parts.join(", ").trim();
-
     return this._cleanFormattedAddress(formattedAddress);
   }
 
-  // ─── CONSTRUCCIÓN DE REFERENCIA RICA ─────────────────────────────────────────
-
-  /**
-   * Referencia completa para el campo "description".
-   * Incluye todo lo útil: nombre, vicinity, segmentos de formatted_address,
-   * jerarquía administrativa, código postal.
-   * Sin duplicados. Sin Plus Codes visibles.
-   */
   _buildRichReference({
     placeName,
     formattedAddress,
@@ -538,24 +565,17 @@ export default class extends Controller {
     adrAddress,
   }) {
     const parts = [];
-
-    // 1. Nombre del lugar (POI, negocio, edificio)
     const name = this._cleanPlaceName(placeName);
-    if (name && !this._isAdministrativeOnly(name, components)) {
-      parts.push(name);
-    }
+    if (name && !this._isAdministrativeOnly(name, components)) parts.push(name);
 
-    // 2. Vicinity (referencia vial cercana que Google genera)
     if (vicinity) {
       vicinity.split(",").forEach((seg) => {
         const s = seg.trim();
-        if (s && !this._looksLikePlusCode(s) && !/^costa rica$/i.test(s)) {
+        if (s && !this._looksLikePlusCode(s) && !/^costa rica$/i.test(s))
           this._pushUniquePart(parts, s);
-        }
       });
     }
 
-    // 3. Segmentos útiles de formatted_address (no administrativos, no Plus Codes)
     if (formattedAddress) {
       const adminCandidates = this._buildAdminCandidates(components);
       formattedAddress.split(",").forEach((seg) => {
@@ -570,12 +590,10 @@ export default class extends Controller {
       });
     }
 
-    // 4. Premise / subpremise (edificio, apartamento, local)
     if (components.premise) this._pushUniquePart(parts, components.premise);
     if (components.subpremise)
       this._pushUniquePart(parts, components.subpremise);
 
-    // 5. Ruta / calle si existe
     if (components.route) {
       const routeStr = components.street_number
         ? `${components.route} ${components.street_number}`
@@ -583,17 +601,12 @@ export default class extends Controller {
       this._pushUniquePart(parts, routeStr);
     }
 
-    // 6. Jerarquía administrativa completa
     this._appendAdministrativeHierarchy(parts, components);
-
-    // 7. Código postal al final si aporta
     if (components.postal_code)
       this._pushUniquePart(parts, components.postal_code);
 
     return parts.join(", ").trim();
   }
-
-  // ─── JERARQUÍA ADMINISTRATIVA ─────────────────────────────────────────────────
 
   _appendAdministrativeHierarchy(parts, components) {
     const district =
@@ -658,13 +671,11 @@ export default class extends Controller {
             this.descriptionTarget.value = data.description;
             this._descriptionWasManuallyEdited = true;
           }
-
           if (data.plus_code && this.hasPlusTarget) {
             this.plusTarget.value = data.plus_code;
             if (this.hasPlusDisplayTarget)
               this.plusDisplayTarget.textContent = data.plus_code;
           }
-
           if (data.address && this.hasAddressNameTarget) {
             this.addressNameTarget.value = data.address;
             if (this.hasAddressDisplayTarget)
@@ -680,7 +691,7 @@ export default class extends Controller {
       );
   }
 
-  // ─── MAPA / COORDS ───────────────────────────────────────────────────────────
+  // ─── MAPA / COORDS ────────────────────────────────────────────────────────────
 
   updateFromCoords(lat, lng) {
     const pos = { lat, lng };
@@ -715,7 +726,7 @@ export default class extends Controller {
       this.map.setCenter({ lat, lng });
   }
 
-  // ─── UI ──────────────────────────────────────────────────────────────────────
+  // ─── UI ───────────────────────────────────────────────────────────────────────
 
   _showGeoDetails({
     placeName,
@@ -831,7 +842,6 @@ export default class extends Controller {
         ? "Coordenadas: OK"
         : "Coordenadas: pendiente";
     }
-
     if (this.hasDescStatusTarget) {
       this.descStatusTarget.className = hasDescription
         ? "badge bg-success"
@@ -840,7 +850,6 @@ export default class extends Controller {
         ? "Descripción: OK"
         : "Descripción: pendiente";
     }
-
     if (this.hasStatusBadgeTarget) {
       this.statusBadgeTarget.className =
         hasCoords && hasDescription
@@ -851,7 +860,7 @@ export default class extends Controller {
     }
   }
 
-  // ─── HELPERS ─────────────────────────────────────────────────────────────────
+  // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
   _extractComponents(components) {
     const find = (type) =>

@@ -84,6 +84,8 @@ Rails.application.routes.draw do
 
       patch :reassign_seller
       patch :take_order
+      get :sala_pickup_form
+      post :create_sala_pickup
     end
   end
 

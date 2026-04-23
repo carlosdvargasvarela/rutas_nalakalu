@@ -45,6 +45,19 @@
         <% end %>
       </div>
     <% end %>
+    <% if delivery.requires_sala_pickup? %>
+      <div class="alert alert-danger d-flex justify-content-between align-items-center py-2 mb-3 shadow-sm border-start border-4 border-danger">
+        <div class="small">
+          <i class="bi bi-shop-window me-2"></i>
+          <strong>Atención:</strong> Existen productos de stock de sala que requieren recogida.
+        </div>
+        <%= link_to sala_pickup_form_delivery_path(delivery),
+      class: "btn btn-sm btn-danger",
+      data: { turbo_frame: "modal" } do %>
+          <i class="bi bi-plus-circle me-1"></i> Generar Recogida
+        <% end %>
+      </div>
+    <% end %>
   </div>
   <%# ═══ TABS NAV ═══ %>
   <ul class="nav nav-underline px-3 px-md-4 border-bottom bg-light" role="tablist" style="font-size: 0.85rem;">

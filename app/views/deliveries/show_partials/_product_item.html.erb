@@ -8,6 +8,11 @@
       <div class="d-flex justify-content-between align-items-start mb-2">
         <span class="fw-semibold text-dark" style="font-size: 0.9rem;">
           <%= item.order_item&.product_name || item.order_item&.product || "Producto sin nombre" %>
+          <% if Deliveries::SalaPickupDetector.new(item.delivery).actionable_items.include?(item) %>
+            <span class="ms-2 badge bg-danger-subtle text-danger border border-danger-subtle" title="Requiere recogida en sala">
+              <i class="bi bi-shop"></i>
+            </span>
+          <% end %>
           <% if item.service_case? %>
             <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">
               <i class="bi bi-tools"></i> Servicio

@@ -1,0 +1,92 @@
+<%# app/views/deliveries/sala_pickup_form.html.erb %>
+<style>
+  .pac-container { z-index: 9999 !important; }
+</style>
+<%= turbo_frame_tag "modal" do %>
+  <div class="modal-header bg-danger text-white">
+    <h5 class="modal-title"><i class="bi bi-shop me-2"></i>Nueva Recogida en Sala</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+  </div>
+  <%= simple_form_for @pickup_delivery, url: create_sala_pickup_delivery_path(@delivery), method: :post do |f| %>
+    <%# ⚠️ SIN overflow aquí — el overflow lo maneja el modal de Bootstrap %>
+    <div class="modal-body">
+      <div class="alert alert-warning small mb-4">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        Define la ubicación de la <strong>Sala</strong> donde se debe recoger el producto <strong>antes</strong> de la entrega al cliente.
+      </div>
+      <%# 1. Productos por Sala %>
+      <div class="mb-4">
+        <label class="form-label fw-bold small text-uppercase text-muted">Productos a recoger</label>
+        <div class="list-group list-group-flush shadow-sm rounded-3 border overflow-hidden">
+          <% @items_by_sala.each do |sala, items| %>
+            <div class="list-group-item bg-dark text-white fw-semibold py-2 small d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-shop me-2"></i>SALA: <%= sala %></span>
+              <span class="badge bg-danger">RECOGER AQUÍ</span>
+            </div>
+            <% items.each do |item| %>
+              <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+                <div class="d-flex align-items-center gap-2">
+                  <%= check_box_tag "item_ids[]", item.id, true, class: "form-check-input flex-shrink-0" %>
+                  <span class="small text-body"><%= item.product %></span>
+                </div>
+                <span class="badge bg-secondary rounded-pill">x<%= item.quantity_delivered %></span>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+      <%# 2. Fecha de recogida %>
+      <div class="mb-4">
+        <%= f.input :delivery_date,
+              as: :date,
+              html5: true,
+              label: "Fecha de recogida",
+              hint: "Debe ser anterior al #{@delivery.delivery_date.strftime("%d/%m/%Y")} (fecha de entrega al cliente)",
+              input_html: {
+                max: (@delivery.delivery_date - 1.day),
+                min: Date.current,
+                value: (@delivery.delivery_date - 1.day),
+                class: "form-control border-primary"
+              } %>
+      </div>
+      <%# 3. Dirección de la Sala (con Google Maps) %>
+      <div class="card border-primary shadow-sm mb-4"
+           data-controller="address-autocomplete"
+           data-address-autocomplete-api-key-value="<​%= ENV.fetch('GOOGLE_MAPS_API_KEY', '') %>">
+        <div class="card-header bg-primary-subtle text-primary-emphasis py-2 d-flex align-items-center gap-2">
+          <i class="bi bi-geo-alt-fill"></i>
+          <span class="fw-semibold small">Ubicación de la Sala</span>
+        </div>
+        <div class="card-body">
+          <%= render "deliveries/upsert_partials/address_fields",
+                f: f,
+                addresses: @addresses,
+                delivery: @pickup_delivery %>
+        </div>
+      </div>
+      <%# 4. Contacto en Sala %>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= f.input :contact_name,
+                label: "Nombre contacto en Sala",
+                input_html: { class: "form-control-sm", placeholder: "Ej: Encargado de Sala" } %>
+        </div>
+        <div class="col-md-6">
+          <%= f.input :contact_phone,
+                label: "Teléfono Sala",
+                input_html: { class: "form-control-sm", placeholder: "Ej: 2222-3333" } %>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer bg-light d-flex justify-content-between align-items-center">
+      <span class="text-muted small">
+        <i class="bi bi-info-circle me-1"></i>
+        Se creará una entrega de tipo <strong>Solo Recogida</strong>
+      </span>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <%= f.submit "Generar Orden de Recogida", class: "btn btn-danger px-4 shadow-sm" %>
+      </div>
+    </div>
+  <% end %>
+<% end %>

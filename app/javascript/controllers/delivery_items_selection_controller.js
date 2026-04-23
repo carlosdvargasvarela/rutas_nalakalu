@@ -45,4 +45,23 @@ export default class extends Controller {
       modalFrame.src = url.toString();
     }
   }
+
+  prepareSalaPickup(event) {
+    const selectedIds = this.checkboxTargets
+      .filter((c) => c.checked)
+      .map((c) => c.value);
+
+    if (selectedIds.length === 0) return;
+
+    const url = new URL(
+      event.currentTarget.dataset.url,
+      window.location.origin,
+    );
+    url.searchParams.set("item_ids", selectedIds.join(","));
+
+    const modalFrame = document.getElementById("modal");
+    if (modalFrame) {
+      modalFrame.src = url.toString();
+    }
+  }
 }

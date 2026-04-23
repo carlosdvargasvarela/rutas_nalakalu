@@ -5,7 +5,8 @@ class DeliveriesController < ApplicationController
   before_action :set_delivery, only: [
     :show, :edit, :update, :mark_as_delivered, :confirm_all_items,
     :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing,
-    :update_status, :reassign_seller, :take_order
+    :update_status, :reassign_seller, :take_order, :sala_pickup_form,
+    :create_sala_pickup
   ]
   before_action :set_addresses, only: [:new, :edit, :create, :update]
 
@@ -232,6 +233,75 @@ class DeliveriesController < ApplicationController
     end
   rescue => e
     handle_service_case_existing_error(e, parent_delivery)
+  end
+
+  def sala_pickup_form
+    authorize @delivery, :edit?
+    @detector = Deliveries::SalaPickupDetector.new(@delivery)
+    @items_by_sala = @detector.items_by_sala
+
+    # Si vienen IDs por bulk, filtramos solo esos
+    if params[:item_ids].present?
+      ids = params[:item_ids].split(",").map(&:to_i)
+      @items_by_sala.each do |sala, items|
+        @items_by_sala[sala] = items.select { |i| ids.include?(i.id) }
+      end
+      @items_by_sala.reject! { |_, items| items.empty? }
+    end
+
+    # --- AGREGA ESTO AQUÍ ---
+    # Inicializamos un objeto dummy para que simple_form y los partials de dirección no rompan
+    @pickup_delivery = Delivery.new(
+      delivery_date: @delivery.delivery_date - 1.day,
+      contact_name: "Encargado de Sala",
+      order: @delivery.order
+    )
+    # Construimos una dirección vacía asociada al cliente para evitar NOP sobre delivery_address
+    @pickup_delivery.build_delivery_address(client: @delivery.order.client)
+
+    # Cargamos las direcciones existentes del cliente para el select
+    @addresses = @delivery.order.client.delivery_addresses.to_a
+    # -----------------------
+
+    render layout: false
+  end
+
+  def create_sala_pickup
+    authorize @delivery, :edit?
+
+    @pickup_delivery = Deliveries::SalaPickupCreator.new(
+      original_delivery: @delivery,
+      params: params,
+      current_user: current_user
+    ).call
+
+    respond_to do |format|
+      format.turbo_stream do
+        # 1. Cargamos el contexto del panel (setea @future_deliveries y @delivery_history)
+        load_delivery_for_panel
+        set_delivery_panel_data
+
+        flash.now[:notice] = "Orden de recogida ##{@pickup_delivery.id} creada correctamente."
+
+        render turbo_stream: [
+          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          turbo_stream.update("modal", ""),
+          turbo_stream.replace(
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              # 2. Pasamos las variables requeridas por el partial
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
+          )
+        ]
+      end
+      format.html { redirect_to @delivery, notice: "Recogida creada." }
+    end
+  rescue => e
+    handle_sala_pickup_error(e)
   end
 
   def confirm_all_items
@@ -483,6 +553,23 @@ class DeliveriesController < ApplicationController
       client.orders.build(params.require(:order).permit(:number, :seller_id))
     else
       Order.new
+    end
+  end
+
+  def handle_sala_pickup_error(e)
+    Rails.logger.error "❌ Error sala pickup: #{e.message}"
+
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:alert] = "Error al crear recogida: #{e.message}"
+        render turbo_stream: turbo_stream.replace(
+          "flash_messages",
+          partial: "layouts/flashes"
+        ), status: :unprocessable_entity
+      end
+      format.html do
+        redirect_to delivery_path(@delivery), alert: "Error al crear recogida: #{e.message}"
+      end
     end
   end
 

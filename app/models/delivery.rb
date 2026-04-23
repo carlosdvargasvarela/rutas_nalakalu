@@ -247,7 +247,18 @@ class Delivery < ApplicationRecord
     ((loaded.to_f / total) * 100).round
   end
 
-  # ✅ FIX: update en vez de update_column para disparar after_update_commit y el broadcast
+  def sala_pickup_items
+    @sala_pickup_items ||= Deliveries::SalaPickupDetector.new(self).actionable_items
+  end
+
+  def items_by_sala
+    @items_by_sala ||= Deliveries::SalaPickupDetector.new(self).items_by_sala
+  end
+
+  def requires_sala_pickup?
+    sala_pickup_items.any?
+  end
+
   def update_status_based_on_items
     statuses = delivery_items.pluck(:status).map(&:to_s)
 
