@@ -1,16 +1,18 @@
 <%# app/views/deliveries/show_partials/_product_table.html.erb %>
-<div id="delivery_items_list" 
-     data-controller="delivery-items-selection" 
+<%= turbo_stream_from "delivery_#{delivery.id}_items" %>
+<% can_confirm = policy(delivery).edit? %>
+<div id="delivery_items_list"
+     data-controller="delivery-items-selection"
      class="product-table-workspace">
   <%# ═══ TOOLBAR ═══ %>
   <div class="d-flex justify-content-between align-items-center mb-3 bg-light p-2 rounded-3 border">
     <div class="form-check mb-0 ms-1">
-      <input type="checkbox" 
-             class="form-check-input select-all-checkbox" 
+      <input type="checkbox"
+             class="form-check-input select-all-checkbox"
              data-action="change->delivery-items-selection#toggleAll"
       id="selectAllItems">
-      <label class="form-check-label small fw-bold text-muted text-uppercase" 
-             for="selectAllItems" 
+      <label class="form-check-label small fw-bold text-muted text-uppercase"
+             for="selectAllItems"
              style="font-size: 0.65rem; cursor: pointer;">
         Todos
       </label>
@@ -21,142 +23,37 @@
       data-url="<%= bulk_reschedule_form_delivery_items_path(delivery_id: delivery.id) %>"
       disabled>
       <i class="bi bi-calendar-event me-1"></i>
-      Reagendar <span class="badge bg-white text-dark ms-1" data-delivery-items-selection-target="count">0</span>
+      Reagendar
+      <span class="badge bg-white text-dark ms-1" data-delivery-items-selection-target="count">0</span>
     </button>
-    <button type="button"
-        class="btn btn-sm btn-outline-danger"
-        data-action="click->delivery-items-selection#prepareSalaPickup"
-      data-url="<%= sala_pickup_form_delivery_path(@delivery) %>">
-      <i class="bi bi-shop me-1"></i> Recogida en Sala
-    </button>
+    <% if can_confirm %>
+      <button type="button"
+              class="btn btn-sm btn-outline-danger"
+              data-action="click->delivery-items-selection#prepareSalaPickup"
+        data-url="<%= sala_pickup_form_delivery_path(delivery) %>">
+        <i class="bi bi-shop me-1"></i> Recogida en Sala
+      </button>
+    <% else %>
+      <div></div>
+    <% end %>
   </div>
   <%# ═══ TABLA ═══ %>
-  <%# Sin table-responsive — el scroll lo maneja el tab-pane padre %>
   <table class="table table-hover align-middle mb-0 w-100">
     <thead class="bg-white sticky-top" style="top: 0; z-index: 1;">
-      <tr class="text-muted border-bottom" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">
+      <tr class="text-muted border-bottom"
+          style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">
         <th style="width: 36px;" class="border-0 pb-2"></th>
         <th class="border-0 pb-2">Producto / Notas</th>
         <th style="width: 55px;" class="text-center border-0 pb-2">Cant.</th>
         <th style="width: 48px;" class="text-end border-0 pb-2"></th>
       </tr>
     </thead>
-    <tbody>
+    <tbody id="delivery_items_rows_<%= delivery.id %>">
       <% delivery.delivery_items.includes(:order_item).each do |item| %>
-        <tr id="<%= dom_id(item) %>" 
-            class="<%= 'item-with-notes' if item.notes.present? %>">
-          <%# Checkbox %>
-          <td class="text-center align-top pt-3">
-            <% if item.bulk_reschedulable? %>
-              <input type="checkbox"
-                     value="<%= item.id %>"
-                  class="form-check-input item-checkbox"
-                  data-delivery-items-selection-target="checkbox"
-                  data-action="change->delivery-items-selection#updateUI">
-            <% end %>
-          </td>
-          <%# Producto + Notas %>
-          <td class="py-2">
-            <div class="d-flex flex-column gap-1">
-              <%# Nombre + badges %>
-              <div class="fw-bold text-dark d-flex align-items-center flex-wrap gap-1" 
-                   style="font-size: 0.85rem;">
-                <%= item.product %>
-                <% if item.service_case? %>
-                  <span class="badge bg-info-subtle text-info border border-info-subtle" 
-                        style="font-size: 0.6rem;">
-                    <i class="bi bi-tools"></i> Servicio
-                  </span>
-                <% end %>
-                <%= render "deliveries/shared_partials/item_status_badge", item: item %>
-              </div>
-              <%# Nota logística (alta prioridad) %>
-              <% if item.notes.present? %>
-                <div class="px-2 py-1 rounded-2 border-start border-3 border-warning bg-warning bg-opacity-10">
-                  <span class="text-warning-emphasis fw-medium" style="font-size: 0.72rem; line-height: 1.3;">
-                    <i class="bi bi-chat-right-dots-fill me-1"></i><%= item.notes %>
-                  </span>
-                </div>
-              <% end %>
-              <%# Nota producción (contexto) %>
-              <% if item.order_item&.notes.present? %>
-                <div class="px-2 py-1 rounded-2 border-start border-3 border-secondary bg-light">
-                  <span class="text-muted" style="font-size: 0.72rem; line-height: 1.3;">
-                    <i class="bi bi-hammer me-1"></i><%= item.order_item.notes %>
-                  </span>
-                </div>
-              <% end %>
-              <%# Alerta producción pendiente %>
-              <% if item.order_item&.notes_open? %>
-                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 align-self-start" 
-                      style="font-size: 0.65rem;">
-                  <i class="bi bi-exclamation-triangle-fill me-1"></i>Pendiente de producción
-                </span>
-              <% end %>
-            </div>
-          </td>
-          <%# Cantidad %>
-          <td class="text-center align-top pt-3">
-            <span class="fw-bold text-primary" style="font-size: 1rem;">
-              <%= item.quantity_delivered %>
-            </span>
-          </td>
-          <%# Acciones %>
-          <td class="text-end align-top pt-2">
-            <% if policy(item).confirm? %>
-              <div class="dropdown">
-                <button class="btn btn-sm btn-light border" 
-                        type="button" 
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                  <i class="bi bi-three-dots"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0" 
-                    style="font-size: 0.85rem; min-width: 160px;">
-                  <% unless item.confirmed? || item.delivered? || item.rescheduled? || item.cancelled? %>
-                    <li>
-                      <%= button_to confirm_delivery_item_path(item),
-                          method: :patch, 
-                          class: "dropdown-item py-2 text-success",
-                          data: { turbo_stream: true } do %>
-                        <i class="bi bi-check2-all me-2"></i>Confirmar
-                      <% end %>
-                    </li>
-                  <% end %>
-                  <% unless item.delivered? || item.rescheduled? || item.cancelled? %>
-                    <li>
-                      <%= button_to mark_delivered_delivery_item_path(item),
-                          method: :patch, 
-                          class: "dropdown-item py-2 text-primary",
-                          data: { turbo_stream: true } do %>
-                        <i class="bi bi-truck me-2"></i>Entregar
-                      <% end %>
-                    </li>
-                    <li>
-                      <%= link_to reschedule_form_delivery_item_path(item),
-                          class: "dropdown-item py-2 text-warning",
-                          data: { turbo_frame: "modal" } do %>
-                        <i class="bi bi-calendar-event me-2"></i>Reagendar
-                      <% end %>
-                    </li>
-                    <li><hr class="dropdown-divider my-1"></li>
-                    <li>
-                      <%= button_to cancel_delivery_item_path(item),
-                          method: :patch, 
-                          class: "dropdown-item py-2 text-danger",
-                          data: { 
-                            turbo_stream: true, 
-                            turbo_confirm: "¿Cancelar este producto?" 
-                          } do %>
-                        <i class="bi bi-x-circle me-2"></i>Cancelar
-                      <% end %>
-                    </li>
-                  <% end %>
-                </ul>
-              </div>
-            <% end %>
-          </td>
-        </tr>
+        <%= render "deliveries/show_partials/product_item_row",
+              item: item,
+              delivery: delivery,
+              can_confirm: can_confirm %>
       <% end %>
     </tbody>
   </table>

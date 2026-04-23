@@ -5,13 +5,6 @@
       <i class="bi bi-speedometer2 me-1"></i> Dashboard
     <% end %>
   </li>
-  <% if current_user.admin? || current_user.production_manager? %>
-    <li class="nav-item">
-      <%= link_to orders_path, class: "nav-link" do %>
-        <i class="bi bi-box-seam me-1"></i> Pedidos
-      <% end %>
-    </li>
-  <% end %>
   <li class="nav-item">
     <%= link_to(
       (current_user.production_manager? || current_user.logistics?) ?
@@ -58,6 +51,13 @@
             <i class="bi bi-person-badge me-1"></i> Vendedores
           <% end %>
         </li>
+        <% if current_user.admin? || current_user.production_manager? %>
+          <li >
+            <%= link_to orders_path, class: "dropdown-item" do %>
+              <i class="bi bi-box-seam me-1"></i> Pedidos
+            <% end %>
+          </li>
+        <% end %>
       </ul>
     </li>
     <% if policy(:audit_log).index? %>

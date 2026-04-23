@@ -35,17 +35,15 @@
               </div>
             </div>
           </div>
-          <%# Filtros Ransack Corregidos %>
+          <%# Filtros Ransack %>
           <%= search_form_for @q, url: deliveries_path, html: { data: { turbo_action: "advance" } } do |f| %>
             <div class="d-flex flex-column gap-2">
-              <%# Fila 1: Cliente + N° pedido %>
               <div class="input-group input-group-sm">
                 <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
                 <%= f.search_field :order_client_name_cont, class: "form-control bg-light border-start-0 border-end-0", placeholder: "Cliente..." %>
                 <span class="input-group-text bg-light border-start-0 border-end-0 text-muted"><i class="bi bi-hash"></i></span>
                 <%= f.search_field :order_number_cont, class: "form-control bg-light border-start-0", placeholder: "N°..." %>
               </div>
-              <%# Fila 2: Vendedor %>
               <div class="input-group input-group-sm">
                 <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person-badge"></i></span>
                 <%= f.select :order_seller_id_eq,
@@ -53,12 +51,10 @@
                     { include_blank: "Todos los vendedores" },
                     { class: "form-select form-select-sm bg-light border-start-0" } %>
               </div>
-              <%# Fila 3: Estado %>
               <%= f.select :status_eq,
                   Delivery.statuses.map { |k, _v| [t("activerecord.attributes.delivery.statuses.#{k}"), k] },
                   { include_blank: "Todos los estados" },
                   { class: "form-select form-select-sm bg-light" } %>
-              <%# Fila 4: Fechas %>
               <div class="d-flex gap-2 align-items-center">
                 <div class="input-group input-group-sm flex-grow-1">
                   <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-calendar-range"></i></span>
@@ -69,14 +65,13 @@
                   <%= f.date_field :delivery_date_lteq, class: "form-control form-control-sm bg-light", placeholder: "Hasta" %>
                 </div>
               </div>
-              <%# Fila 5: Botones Acción %>
               <div class="d-flex gap-2 mt-1">
                 <%= f.submit "Filtrar Resultados", class: "btn btn-sm btn-primary flex-fill fw-bold" %>
                 <%= link_to "Limpiar", deliveries_path, class: "btn btn-sm btn-outline-secondary flex-fill" %>
               </div>
             </div>
           <% end %>
-          <%# Filtros rápidos (Badges) %>
+          <%# Filtros rápidos %>
           <div class="d-flex gap-1 mt-3 flex-wrap">
             <%= link_to deliveries_path(no_plan: 1), class: "btn btn-xs btn-outline-secondary #{params[:no_plan].present? ? 'active' : ''}" do %>
               <i class="bi bi-calendar-x me-1"></i>Sin plan

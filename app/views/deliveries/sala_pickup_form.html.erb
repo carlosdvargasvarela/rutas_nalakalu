@@ -52,7 +52,7 @@
       <%# 3. Dirección de la Sala (con Google Maps) %>
       <div class="card border-primary shadow-sm mb-4"
            data-controller="address-autocomplete"
-           data-address-autocomplete-api-key-value="<​%= ENV.fetch('GOOGLE_MAPS_API_KEY', '') %>">
+           data-address-autocomplete-api-key-value="<%= ENV.fetch('GOOGLE_MAPS_API_KEY', '') %>">
         <div class="card-header bg-primary-subtle text-primary-emphasis py-2 d-flex align-items-center gap-2">
           <i class="bi bi-geo-alt-fill"></i>
           <span class="fw-semibold small">Ubicación de la Sala</span>

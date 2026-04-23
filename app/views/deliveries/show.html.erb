@@ -5,24 +5,19 @@
   <% end %>
 </div>
 <%= turbo_frame_tag "delivery_detail", class: "h-100 d-flex flex-column" do %>
-  <%= render "deliveries/show_partials/detail_data", 
-        delivery: @delivery, 
-        future_deliveries: @future_deliveries, 
+  <%= render "deliveries/show_partials/detail_data",
+        delivery: @delivery,
+        future_deliveries: @future_deliveries,
         delivery_history: @delivery_history %>
 <% end %>
 <style>
-  /* Altura completa del panel en Desktop */
   @media (min-width: 992px) {
     turbo-frame#delivery_detail { height: 100%; overflow: hidden; }
     .detail-panel-body { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
     .detail-tab-content { flex: 1; overflow-y: auto; overflow-x: hidden; }
   }
-
-  /* Ajustes UX */
   .nav-underline .nav-link.active { font-weight: 600; color: var(--bs-primary); border-bottom-width: 3px; }
   .status-badge-soft { font-size: 0.7rem; padding: 0.35em 0.8em; }
   .section-label { letter-spacing: 0.05em; }
-
-  /* Botón extra pequeño manual ya que BS5 no lo trae */
   .btn-xs { padding: 0.125rem 0.4rem; font-size: 0.75rem; border-radius: 0.2rem; }
 </style>

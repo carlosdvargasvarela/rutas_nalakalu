@@ -13,6 +13,7 @@ class Delivery < ApplicationRecord
   accepts_nested_attributes_for :delivery_items, allow_destroy: true
 
   before_validation :generate_tracking_token, on: :create
+  after_update_commit :broadcast_delivery_updates
 
   delegate :latitude, :longitude, :address, :plus_code, to: :delivery_address, allow_nil: true
   delegate :client, to: :delivery_address, allow_nil: true
@@ -185,7 +186,7 @@ class Delivery < ApplicationRecord
     missing_count = items.load_missing.count
     total_count = items.count
 
-    new_status = if missing_count > 0
+    new_load_status = if missing_count > 0
       :some_missing
     elsif loaded_count == total_count
       :all_loaded
@@ -195,11 +196,11 @@ class Delivery < ApplicationRecord
       :empty
     end
 
-    # update_column está bien acá porque load_status no necesita disparar el broadcast
-    update_column(:load_status, Delivery.load_statuses[new_status])
-
-    if new_status == :all_loaded
-      update_column(:status, Delivery.statuses[:loaded_on_truck])
+    # update en lugar de update_column para disparar callbacks y broadcast
+    if new_load_status == :all_loaded
+      update(load_status: new_load_status, status: :loaded_on_truck)
+    else
+      update(load_status: new_load_status)
     end
   end
 
@@ -452,16 +453,21 @@ class Delivery < ApplicationRecord
   # TURBO STREAM BROADCASTING
   # ============================================================================
 
-  # ============================================================================
-  # TURBO STREAM BROADCASTING
-  # ============================================================================
-
-  after_update_commit -> {
+  def broadcast_delivery_updates
+    # Tarjeta en el índice (workspace izquierdo)
     broadcast_replace_to(
       "deliveries",
       target: "#{dom_id(self)}_card_content",
       partial: "deliveries/index_partials/delivery_card_content",
       locals: {delivery: self}
     )
-  }
+
+    # Header del panel de detalle (estado, acciones, alertas)
+    broadcast_replace_to(
+      "delivery_#{id}_detail",
+      target: "delivery_detail_header_#{id}",
+      partial: "deliveries/show_partials/detail_header",
+      locals: {delivery: self}
+    )
+  end
 end

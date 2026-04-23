@@ -1,5 +1,7 @@
 # app/models/delivery_item.rb
 class DeliveryItem < ApplicationRecord
+  include ActionView::RecordIdentifier
+
   # ============================================================================
   # CONFIGURACIÓN Y RELACIONES
   # ============================================================================
@@ -64,6 +66,7 @@ class DeliveryItem < ApplicationRecord
   after_update :notify_reschedule, if: :saved_change_to_delivery_id?
   after_commit :recalculate_delivery_status, on: [:create, :update]
   after_update :trigger_delivery_recalculation, if: :saved_change_to_load_status?
+  after_update_commit :broadcast_item_row_update
 
   # ============================================================================
   # MÉTODOS PÚBLICOS
@@ -188,5 +191,14 @@ class DeliveryItem < ApplicationRecord
   def recalculate_delivery_status
     return unless delivery.present?
     delivery.update_status_based_on_items
+  end
+
+  def broadcast_item_row_update
+    broadcast_replace_to(
+      "delivery_#{delivery_id}_items",
+      target: dom_id(self),
+      partial: "deliveries/show_partials/product_item_row",
+      locals: {item: self, delivery: delivery}
+    )
   end
 end
