@@ -7,100 +7,89 @@
           action: "submit->address-validator#validateBeforeSubmit"
         }
       } do |f| %>
-  <div class="accordion" id="deliveryFormAccordion">
-    <!-- SECCIÓN 1: CLIENTE -->
-    <div class="accordion-item">
-      <h2 class="accordion-header" id="headingClient">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseClient" aria-expanded="true" aria-controls="collapseClient">
-          <i class="bi bi-person-fill me-2"></i>
-          <strong>Cliente</strong>
-          <span class="badge bg-warning ms-2" data-delivery-form-target="clientBadge">!</span>
-        </button>
-      </h2>
-      <div id="collapseClient" class="accordion-collapse collapse show" aria-labelledby="headingClient">
-        <div class="accordion-body">
-          <%= render "deliveries/upsert_partials/client_fields", f: f, clients: clients, delivery: delivery %>
-        </div>
+  <%# ── HEADER DE PROGRESO ── %>
+  <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1"
+            data-delivery-form-target="clientBadge">!</span>
+      <span class="small text-muted">Cliente</span>
+    </div>
+    <i class="bi bi-chevron-right text-muted small"></i>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1"
+            data-delivery-form-target="orderBadge">!</span>
+      <span class="small text-muted">Pedido</span>
+    </div>
+    <i class="bi bi-chevron-right text-muted small"></i>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1"
+            data-delivery-form-target="deliveryDataBadge">!</span>
+      <span class="small text-muted">Datos</span>
+    </div>
+    <i class="bi bi-chevron-right text-muted small"></i>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1"
+            data-delivery-form-target="productsBadge">!</span>
+      <span class="small text-muted">Productos</span>
+    </div>
+    <i class="bi bi-chevron-right text-muted small"></i>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1"
+            data-delivery-form-target="addressBadge">!</span>
+      <span class="small text-muted">Dirección</span>
+    </div>
+  </div>
+  <%# ── LAYOUT DOS COLUMNAS ── %>
+  <div class="row g-4 align-items-start">
+    <%# ── COLUMNA IZQUIERDA: Cliente / Pedido / Datos / Productos ── %>
+    <div class="col-lg-7">
+      <%# Sección: Cliente %>
+      <div class="mb-4">
+        <h6 class="text-uppercase text-muted fw-semibold small mb-3 d-flex align-items-center gap-2">
+          <i class="bi bi-person-fill text-primary"></i> Cliente
+        </h6>
+        <%= render "deliveries/upsert_partials/client_fields", f: f, clients: clients, delivery: delivery %>
+      </div>
+      <%# Sección: Pedido %>
+      <div class="mb-4">
+        <h6 class="text-uppercase text-muted fw-semibold small mb-3 d-flex align-items-center gap-2">
+          <i class="bi bi-receipt text-primary"></i> Pedido
+        </h6>
+        <%= render "deliveries/upsert_partials/order_fields", f: f, delivery: delivery %>
+      </div>
+      <%# Sección: Datos de entrega %>
+      <div class="mb-4">
+        <h6 class="text-uppercase text-muted fw-semibold small mb-3 d-flex align-items-center gap-2">
+          <i class="bi bi-calendar-check text-primary"></i> Datos de entrega
+        </h6>
+        <%= render "deliveries/upsert_partials/delivery_data_fields", f: f, delivery: delivery %>
+      </div>
+      <%# Sección: Productos %>
+      <div class="mb-4">
+        <h6 class="text-uppercase text-muted fw-semibold small mb-3 d-flex align-items-center gap-2">
+          <i class="bi bi-box-seam text-primary"></i> Productos
+        </h6>
+        <%= render "deliveries/upsert_partials/order_items_fields", f: f %>
       </div>
     </div>
-    <!-- SECCIÓN 2: PEDIDO -->
-    <div class="accordion-item">
-      <h2 class="accordion-header" id="headingOrder">
-        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOrder" aria-expanded="false" aria-controls="collapseOrder">
-          <i class="bi bi-receipt me-2"></i>
-          <strong>Pedido</strong>
-          <span class="badge bg-warning ms-2" data-delivery-form-target="orderBadge">!</span>
-        </button>
-      </h2>
-      <div id="collapseOrder" class="accordion-collapse collapse" aria-labelledby="headingOrder">
-        <div class="accordion-body">
-          <%= render "deliveries/upsert_partials/order_fields", f: f, delivery: delivery %>
-        </div>
-      </div>
-    </div>
-    <!-- SECCIÓN 3: DIRECCIÓN DE ENTREGA -->
-    <div class="accordion-item">
-      <h2 class="accordion-header" id="headingAddress">
-        <button class="accordion-button collapsed" type="button"
-                data-bs-toggle="collapse" data-bs-target="#collapseAddress"
-                aria-expanded="false" aria-controls="collapseAddress">
-          <i class="bi bi-geo-alt-fill me-2"></i>
-          <strong>Dirección de entrega</strong>
-          <span class="badge bg-warning ms-2" data-delivery-form-target="addressBadge">!</span>
-        </button>
-      </h2>
-      <%# data-action dispara resizeMap al expandir, para que el mapa se renderice correctamente %>
-      <div id="collapseAddress" class="accordion-collapse collapse" aria-labelledby="headingAddress"
-           data-action="shown.bs.collapse->address-autocomplete#resizeMap">
-        <div class="accordion-body">
-          <%= render "deliveries/upsert_partials/address_fields", f: f, addresses: addresses, delivery: delivery %>
-        </div>
-      </div>
-    </div>
-    <!-- SECCIÓN 4: DATOS DE ENTREGA -->
-    <div class="accordion-item">
-      <h2 class="accordion-header" id="headingDeliveryData">
-        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDeliveryData" aria-expanded="false" aria-controls="collapseDeliveryData">
-          <i class="bi bi-calendar-check me-2"></i>
-          <strong>Datos de entrega</strong>
-          <span class="badge bg-warning ms-2" data-delivery-form-target="deliveryDataBadge">!</span>
-        </button>
-      </h2>
-      <div id="collapseDeliveryData" class="accordion-collapse collapse" aria-labelledby="headingDeliveryData">
-        <div class="accordion-body">
-          <%= render "deliveries/upsert_partials/delivery_data_fields", f: f, delivery: delivery %>
-        </div>
-      </div>
-    </div>
-    <!-- SECCIÓN 5: PRODUCTOS -->
-    <div class="accordion-item">
-      <h2 class="accordion-header" id="headingProducts">
-        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProducts" aria-expanded="false" aria-controls="collapseProducts">
-          <i class="bi bi-box-seam me-2"></i>
-          <strong>Productos</strong>
-          <span class="badge bg-warning ms-2" data-delivery-form-target="productsBadge">!</span>
-        </button>
-      </h2>
-      <div id="collapseProducts" class="accordion-collapse collapse" aria-labelledby="headingProducts">
-        <div class="accordion-body">
-          <%= render "deliveries/upsert_partials/order_items_fields", f: f %>
-        </div>
+    <%# ── COLUMNA DERECHA: Dirección + Mapa (sticky) ── %>
+    <div class="col-lg-5">
+      <div class="sticky-top" style="top: 1rem;">
+        <h6 class="text-uppercase text-muted fw-semibold small mb-3 d-flex align-items-center gap-2">
+          <i class="bi bi-geo-alt-fill text-primary"></i> Dirección de entrega
+        </h6>
+        <%= render "deliveries/upsert_partials/address_fields",
+              f: f, addresses: addresses, delivery: delivery %>
       </div>
     </div>
   </div>
-  <!-- BOTONES DE ACCIÓN -->
-  <div class="card mt-4">
-    <div class="card-body">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <%= link_to "Cancelar", deliveries_path, class: "btn btn-outline-secondary" %>
-        </div>
-        <div>
-          <%= f.submit "Guardar entrega",
-              class: "btn btn-primary btn-lg px-5",
-              data: { "address-validator-target": "submitButton" } %>
-        </div>
-      </div>
-    </div>
+  <%# ── FOOTER DE ACCIONES ── %>
+  <div class="d-flex justify-content-between align-items-center pt-4 mt-2 border-top">
+    <%= link_to deliveries_path, class: "btn btn-outline-secondary" do %>
+      <i class="bi bi-x-lg me-1"></i> Cancelar
+    <% end %>
+    <%= f.submit delivery.new_record? ? "Crear entrega" : "Guardar cambios",
+          class: "btn btn-primary px-5",
+          data: { "address-validator-target": "submitButton" } %>
   </div>
 <% end %>

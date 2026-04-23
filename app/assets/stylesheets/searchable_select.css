@@ -1,0 +1,37 @@
+.ss-trigger {
+  cursor: pointer;
+  min-height: 38px;
+  user-select: none;
+  background-color: #fff;
+}
+
+.ss-trigger.disabled {
+  background-color: #e9ecef;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.ss-trigger:focus {
+  outline: 0;
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.ss-option {
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.ss-option:hover,
+.ss-option.ss-active {
+  background-color: var(--bs-primary-bg-subtle);
+}
+
+.ss-option.ss-selected {
+  background-color: var(--bs-primary-bg-subtle);
+}
+
+.ss-search:focus {
+  box-shadow: none;
+  border-color: #dee2e6 !important;
+}
