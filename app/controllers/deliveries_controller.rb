@@ -44,7 +44,7 @@ class DeliveriesController < ApplicationController
     @q = base_scope.ransack(params[:q])
     deliveries_scope = @q.result.includes(order: [:client, :seller], delivery_address: :client)
 
-    @deliveries = deliveries_scope.order(delivery_date: :asc).page(params[:page])
+    @deliveries = deliveries_scope.order(delivery_date: :asc).page(params[:page]).per(5)
 
     @all_deliveries = deliveries_scope
       .includes(delivery_items: {order_item: :order})

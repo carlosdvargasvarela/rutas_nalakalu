@@ -1,85 +1,84 @@
-<%# app/views/deliveries/show_partials/_detail_data.html.erb %>
-<div class="detail-panel-body bg-white">
-  <%# ═══ HEADER UNIFICADO (Información + Acciones) ═══ %>
-  <div class="detail-header px-3 px-md-4 py-3 border-bottom shadow-sm">
-    <div class="d-flex justify-content-between align-items-start mb-3">
-      <div class="min-w-0">
-        <div class="d-flex align-items-center gap-2 mb-1">
-          <%= status_badge(delivery, with_icon: true, classes: "status-badge-soft rounded-pill") %>
+<div class="detail-panel-body bg-white h-100 d-flex flex-column">
+  <%# ═══ SECTION 1: IDENTITY & MAIN ACTIONS ═══ %>
+  <header class="bg-white border-bottom p-4">
+    <div class="row align-items-center g-3">
+      <div class="col-md">
+        <div class="d-flex align-items-center gap-3 mb-2">
+          <%= status_badge(delivery, with_icon: true, classes: "status-badge-soft rounded-pill px-3 py-1") %>
+          <small class="text-muted"><i class="bi bi-hash text-primary"></i> <strong><%= delivery.order_number %></strong></small>
         </div>
-        <h5 class="fw-bold text-dark mb-0"><%= delivery.client_name %></h5>
-        <div class="detail-meta text-muted" style="font-size: 0.8rem;">
-          <span class="me-2"><i class="bi bi-hash text-primary"></i> <strong><%= delivery.order_number %></strong></span>
-          <span><i class="bi bi-calendar-event me-1"></i><%= l(delivery.delivery_date, format: :long) if delivery.delivery_date %></span>
+        <h4 class="fw-bold text-dark mb-1"><%= delivery.client_name %></h4>
+        <div class="d-flex flex-wrap gap-3 text-muted small">
+          <span><i class="bi bi-calendar3 me-1"></i> <%= l(delivery.delivery_date, format: :long) if delivery.delivery_date %></span>
+          <% if delivery.delivery_time_preference.present? %>
+            <span><i class="bi bi-clock me-1 text-primary"></i> <%= delivery.delivery_time_preference %></span>
+          <% end %>
         </div>
       </div>
-      <div class="d-flex gap-1">
-        <%= link_to edit_delivery_path(delivery), class: "btn btn-sm btn-outline-secondary", data: { turbo_frame: "_top" } do %>
-          <i class="bi bi-pencil"></i>
+      <div class="col-md-auto">
+        <div id="delivery_actions_container">
+          <%= render "deliveries/show_partials/actions", delivery: delivery %>
+        </div>
+      </div>
+    </div>
+    <%# ═══ SECTION 2: CONTEXTUAL ALERTS (Solo si existen) ═══ %>
+    <% if delivery.rescheduled? || delivery.address_error? || (delivery.requires_sala_pickup? && policy(delivery).edit?) %>
+      <div class="mt-4 space-y-2">
+        <% if delivery.requires_sala_pickup? && policy(delivery).edit? %>
+          <div class="alert alert-danger border-0 shadow-sm d-flex justify-content-between align-items-center mb-2 px-3 py-2">
+            <div class="small fw-medium"><i class="bi bi-shop-window me-2"></i>Requiere Recogida en Sala</div>
+            <%= link_to sala_pickup_form_delivery_path(delivery), class: "btn btn-xs btn-danger text-uppercase fw-bold", style: "font-size: 0.65rem;", data: { turbo_frame: "modal" } do %>
+              Generar Ahora
+            <% end %>
+          </div>
         <% end %>
-      </div>
-    </div>
-    <%# Fila de Acciones Principales (Inyectamos _actions aquí) %>
-    <div class="d-flex justify-content-between align-items-center">
-      <div id="delivery_actions_container">
-        <%= render "deliveries/show_partials/actions", delivery: delivery %>
-      </div>
-      <% if delivery.delivery_time_preference.present? %>
-        <span class="badge bg-light text-secondary border small fw-normal">
-          <i class="bi bi-clock me-1"></i><%= delivery.delivery_time_preference %>
-        </span>
-      <% end %>
-    </div>
-    <%# Alertas Críticas %>
-    <% if delivery.rescheduled? || delivery.address_error? %>
-      <div class="mt-3">
         <% if delivery.rescheduled? %>
-          <div class="alert alert-info py-2 mb-1 small border-0 bg-info-subtle">
-            <i class="bi bi-info-circle-fill me-2"></i>Reagendada: <%= delivery.reschedule_reason %>
+          <div class="alert alert-info border-0 bg-info-subtle small py-2 mb-2">
+            <i class="bi bi-info-circle me-2"></i><strong>Reagendada:</strong> <%= delivery.reschedule_reason %>
           </div>
         <% end %>
         <% if delivery.address_error? %>
-          <div class="alert alert-danger py-2 mb-0 small border-0 bg-danger-subtle">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>Error de geolocalización detectado.
+          <div class="alert alert-warning border-0 bg-warning-subtle small py-2 mb-0">
+            <i class="bi bi-geo-alt-fill me-2"></i>Revisar dirección: Error de geolocalización.
           </div>
         <% end %>
       </div>
     <% end %>
-    <% if delivery.requires_sala_pickup? %>
-      <div class="alert alert-danger d-flex justify-content-between align-items-center py-2 mb-3 shadow-sm border-start border-4 border-danger">
-        <div class="small">
-          <i class="bi bi-shop-window me-2"></i>
-          <strong>Atención:</strong> Existen productos de stock de sala que requieren recogida.
-        </div>
-        <%= link_to sala_pickup_form_delivery_path(delivery),
-      class: "btn btn-sm btn-danger",
-      data: { turbo_frame: "modal" } do %>
-          <i class="bi bi-plus-circle me-1"></i> Generar Recogida
-        <% end %>
-      </div>
-    <% end %>
-  </div>
-  <%# ═══ TABS NAV ═══ %>
-  <ul class="nav nav-underline px-3 px-md-4 border-bottom bg-light" role="tablist" style="font-size: 0.85rem;">
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#info-pane" type="button">Info</button></li>
-    <li class="nav-item">
-      <button class="nav-link position-relative" data-bs-toggle="tab" data-bs-target="#products-pane" type="button">
-        Productos
-        <% if delivery.delivery_items.pending.any? %>
-          <span class="ms-1 badge rounded-pill bg-danger" style="font-size: 0.6rem;"><%= delivery.delivery_items.pending.count %></span>
-        <% end %>
-      </button>
-    </li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#map-pane" type="button">Mapa</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#history-pane" type="button">Historial</button></li>
-  </ul>
-  <%# ═══ CONTENIDO DINÁMICO ═══ %>
-  <div class="tab-content detail-tab-content p-3 p-md-4">
+  </header>
+  <%# ═══ SECTION 3: NAVIGATION TABS ═══ %>
+  <nav class="bg-light border-bottom sticky-top shadow-sm" style="z-index: 10;">
+    <ul class="nav nav-pills nav-fill px-4 py-2" id="deliveryTab" role="tablist" style="max-width: 600px;">
+      <li class="nav-item">
+        <button class="nav-link active small py-1" data-bs-toggle="tab" data-bs-target="#info-pane" type="button">Resumen</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link small py-1 position-relative" data-bs-toggle="tab" data-bs-target="#products-pane" type="button">
+          Productos
+          <% if delivery.delivery_items.pending.any? %>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+              <%= delivery.delivery_items.pending.count %>
+            </span>
+          <% end %>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link small py-1" data-bs-toggle="tab" data-bs-target="#map-pane" type="button">Mapa</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link small py-1" data-bs-toggle="tab" data-bs-target="#history-pane" type="button">Historial</button>
+      </li>
+    </ul>
+  </nav>
+  <%# ═══ SECTION 4: CONTENT ═══ %>
+  <main class="tab-content flex-grow-1 overflow-auto bg-white p-4">
     <div class="tab-pane fade show active" id="info-pane">
       <%= render "deliveries/show_partials/summary_cards", delivery: delivery %>
       <% if delivery.delivery_notes.present? %>
-        <div class="mt-3 p-3 rounded bg-warning-subtle text-warning-emphasis small border-start border-warning border-4">
-          <strong>Notas:</strong> <%= delivery.delivery_notes %>
+        <div class="mt-4">
+          <label class="text-muted small fw-bold text-uppercase mb-2 d-block">Instrucciones de Entrega</label>
+          <div class="p-3 rounded bg-light border-start border-primary border-4 small">
+            <%= delivery.delivery_notes %>
+          </div>
         </div>
       <% end %>
     </div>
@@ -92,5 +91,5 @@
     <div class="tab-pane fade" id="history-pane">
       <%= render "deliveries/show_partials/history", delivery: delivery, delivery_history: delivery_history %>
     </div>
-  </div>
+  </main>
 </div>

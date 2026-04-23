@@ -1,44 +1,65 @@
-<%# app/views/deliveries/show_partials/_actions.html.erb %>
-<div class="d-flex gap-2">
-  <% if policy(delivery).approve? && !delivery.approved? %>
-    <%= button_to approve_delivery_path(delivery),
-          method: :patch,
-          class: "btn btn-sm btn-success fw-bold px-3",
-          data: { turbo_confirm: "¿Aprobar para producción?" } do %>
-      <i class="bi bi-check-circle-fill me-1"></i>Aprobar
-    <% end %>
-  <% end %>
+<div class="d-flex align-items-center gap-2">
+  <%# Botón de Confirmación: Solo si hay pendientes %>
   <% if policy(delivery).edit? && delivery.delivery_items.pending.any? %>
     <%= button_to confirm_all_items_delivery_path(delivery),
           method: :patch,
-          class: "btn btn-sm btn-primary fw-bold px-3",
+          class: "btn btn-sm btn-primary d-inline-flex align-items-center gap-2 px-3 shadow-sm",
           data: { turbo_confirm: "¿Confirmar todos los productos?" } do %>
-      <i class="bi bi-box-seam-fill me-1"></i>Confirmar Todos
+      <i class="bi bi-box-seam"></i>
+      <span>Confirmar Productos</span>
     <% end %>
   <% end %>
+  <%# Botón de Aprobación: Solo si no está aprobada %>
+  <% if policy(delivery).approve? && !delivery.approved? %>
+    <%= button_to approve_delivery_path(delivery),
+          method: :patch,
+          class: "btn btn-sm btn-success d-inline-flex align-items-center gap-2 px-3 shadow-sm",
+          data: { turbo_confirm: "¿Aprobar para producción?" } do %>
+      <i class="bi bi-check2-all"></i>
+      <span>Aprobar Ruta</span>
+    <% end %>
+  <% end %>
+  <%# Dropdown de Acciones Secundarias %>
   <div class="dropdown">
-    <button class="btn btn-sm btn-outline-secondary dropdown-toggle-split" data-bs-toggle="dropdown">
-      <i class="bi bi-three-dots"></i>
+    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+      Acciones
     </button>
-    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0">
+    <ul class="dropdown-menu dropdown-menu-end shadow border-0 m-0">
+      <% if policy(delivery).edit? %>
+        <li>
+          <%= link_to edit_delivery_path(delivery), class: "dropdown-item d-flex align-items-center gap-2 py-2", data: { turbo_frame: "_top" } do %>
+            <i class="bi bi-pencil text-muted"></i> Editar Datos
+          <% end %>
+        </li>
+      <% end %>
       <% if policy(delivery).reassign_seller? %>
         <li>
           <button class="dropdown-item d-flex align-items-center gap-2 py-2" data-bs-toggle="modal" data-bs-target="#reassignSellerModal">
-            <i class="bi bi-person-gear text-muted"></i>Reasignar Vendedor
+            <i class="bi bi-person-gear text-muted"></i> Reasignar Vendedor
           </button>
         </li>
       <% end %>
-      <li>
-        <%= link_to new_service_case_for_existing_delivery_path(delivery), class: "dropdown-item d-flex align-items-center gap-2 py-2", data: { turbo_frame: "_top" } do %>
-          <i class="bi bi-headset text-warning"></i>Caso de Servicio
-        <% end %>
-      </li>
-      <li><hr class="dropdown-divider"></li>
-      <li>
-        <%= button_to archive_delivery_path(delivery), method: :patch, class: "dropdown-item text-danger d-flex align-items-center gap-2 py-2", data: { turbo_confirm: "¿Archivar?" } do %>
-          <i class="bi bi-archive"></i>Archivar Entrega
-        <% end %>
-      </li>
+      <% if policy(delivery).new_service_case? && !current_user&.seller? %>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <%= link_to new_service_case_for_existing_delivery_path(delivery), 
+                class: "dropdown-item d-flex align-items-center gap-2 py-2", 
+                data: { turbo_frame: "_top" } do %>
+            <i class="bi bi-headset text-warning"></i> Crear Caso Servicio
+          <% end %>
+        </li>
+      <% end %>
+      <% if current_user&.admin? %>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <%= button_to archive_delivery_path(delivery), 
+                method: :patch, 
+                class: "dropdown-item text-danger d-flex align-items-center gap-2 py-2", 
+                data: { turbo_confirm: "¿Archivar?" } do %>
+            <i class="bi bi-archive"></i> Archivar Entrega
+          <% end %>
+        </li>
+      <% end %>
     </ul>
   </div>
 </div>
