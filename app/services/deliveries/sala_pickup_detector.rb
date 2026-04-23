@@ -15,7 +15,10 @@ module Deliveries
       "entregado en sala",
       "entregado en sp",
       "entregado en se",
-      "entregado en sg"
+      "entregado en sg",
+      "entregado sp",
+      "entregado se",
+      "entregado sg"
     ].freeze
 
     SALA_MAP = {
