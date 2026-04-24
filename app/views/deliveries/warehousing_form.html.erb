@@ -1,0 +1,41 @@
+<%= turbo_frame_tag "modal" do %>
+  <div class="modal-header text-white" style="background-color:#6f42c1;">
+    <h5 class="modal-title">
+      <i class="bi bi-building me-2"></i>
+      <%= @delivery.warehousing? ? "Cambiar fecha de bodegaje" : "Pasar a Bodegaje" %>
+    </h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+  </div>
+  <%= form_with url: start_warehousing_delivery_path(@delivery), method: :patch do |f| %>
+    <div class="modal-body">
+      <div class="alert alert-secondary small mb-3 d-flex align-items-start gap-2">
+        <i class="bi bi-info-circle-fill mt-1 flex-shrink-0"></i>
+        <span>
+          La entrega quedará <strong>desactivada para planificación</strong> hasta la fecha indicada.
+          Se generará una alerta <strong>8 días antes</strong> del vencimiento.
+        </span>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Fecha de fin de bodegaje</label>
+        <%= f.date_field :warehousing_until,
+              min: (Date.current + 1.day).iso8601,
+              value: @delivery.warehousing_until || (Date.current + 30.days),
+              class: "form-control",
+              required: true %>
+        <div class="form-text text-muted">
+          Indicá hasta cuándo estará el mueble en bodega.
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+        Cancelar
+      </button>
+      <%= f.submit(
+            @delivery.warehousing? ? "Actualizar fecha" : "Confirmar bodegaje",
+            class: "btn px-4 text-white fw-semibold",
+            style: "background-color:#6f42c1;"
+          ) %>
+    </div>
+  <% end %>
+<% end %>

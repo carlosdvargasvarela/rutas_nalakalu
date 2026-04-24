@@ -40,7 +40,8 @@ class Delivery < ApplicationRecord
     cancelled: 6,
     archived: 7,
     failed: 8,
-    loaded_on_truck: 9
+    loaded_on_truck: 9,
+    warehousing: 10
   }
 
   enum :delivery_type, {
@@ -103,12 +104,19 @@ class Delivery < ApplicationRecord
   scope :with_service_cases, -> {
     joins(:delivery_items).where(delivery_items: {service_case: true}).distinct
   }
+  scope :eligible_for_plan, -> {
+    where.not(status: [:delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived, :failed, :loaded_on_truck, :warehousing])
+  }
+  scope :warehousing_expiring_soon, -> {
+    where(status: :warehousing)
+      .where(warehousing_until: Date.current..(Date.current + 8.days))
+  }
 
   # ============================================================================
   # BULK ACTIONS
   # ============================================================================
 
-  BULK_LOCKED_STATUSES = %w[delivered rescheduled cancelled archived failed].freeze
+  BULK_LOCKED_STATUSES = %w[delivered rescheduled cancelled archived failed warehousing].freeze
 
   def bulk_locked?
     status.in?(BULK_LOCKED_STATUSES)
@@ -137,6 +145,23 @@ class Delivery < ApplicationRecord
   # ============================================================================
   # MÉTODOS PÚBLICOS
   # ============================================================================
+
+  def warehousing_expiring_soon?
+    warehousing? && warehousing_until.present? && warehousing_until <= Date.current + 8.days
+  end
+
+  def warehousing_days_remaining
+    return nil unless warehousing? && warehousing_until.present?
+    (warehousing_until - Date.current).to_i
+  end
+
+  def start_warehousing!(until_date)
+    update!(status: :warehousing, warehousing_until: until_date)
+  end
+
+  def end_warehousing!
+    update!(status: :scheduled, warehousing_until: nil)
+  end
 
   def client_name
     order.client.name
@@ -418,7 +443,7 @@ class Delivery < ApplicationRecord
   def calculate_delivery_status(statuses)
     statuses = statuses.map(&:to_s)
 
-    terminal = %w[delivered cancelled rescheduled failed loaded_on_truck]
+    terminal = %w[delivered cancelled rescheduled failed loaded_on_truck warehousing]
     non_terminal = %w[pending confirmed in_plan in_route]
 
     return :delivered if statuses.all? { |s| s == "delivered" }

@@ -14,7 +14,7 @@
               <i class="bi bi-truck me-2 text-primary"></i>Entregas
             </h5>
             <div class="d-flex gap-1">
-              <% if policy(Delivery).create? && !current_user&.seller? %>
+              <% if policy(Delivery).create? %>
                 <%= link_to new_delivery_path, class: "btn btn-sm btn-primary" do %>
                   <i class="bi bi-plus-lg"></i>
                   <span class="d-none d-sm-inline">Nueva</span>

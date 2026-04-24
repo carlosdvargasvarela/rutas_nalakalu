@@ -89,6 +89,9 @@ Rails.application.routes.draw do
 
       get :service_case_form
       post :create_service_case_from_workspace
+      get :warehousing_form
+      patch :start_warehousing
+      patch :end_warehousing
     end
   end
 

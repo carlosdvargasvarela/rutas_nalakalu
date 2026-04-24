@@ -1,8 +1,55 @@
-<%# app/views/deliveries/show_partials/_alerts.html.erb %>
 <%# ⚠️ Este partial SÍ usa policy() — SOLO se renderiza desde controller %>
-<%# Alerta de aprobación pendiente %>
+<%# ── ALERTA BODEGAJE ── %>
+<% if delivery.warehousing? %>
+  <% days = delivery.warehousing_days_remaining.to_i %>
+  <div class="alert d-flex align-items-start gap-2 py-2 px-3 mb-2 rounded-3 border-0 shadow-sm"
+       style="background-color:#f3e8ff; border-left: 4px solid #6f42c1 !important;">
+    <i class="bi bi-building fs-5 mt-1 flex-shrink-0" style="color:#6f42c1;"></i>
+    <div class="flex-grow-1">
+      <% if days <= 0 %>
+        <strong class="d-block" style="color:#4a148c;">⚠️ Bodegaje vencido</strong>
+        <span class="small text-muted">
+          El bodegaje venció el <strong><%= I18n.l delivery.warehousing_until, format: :long %></strong>.
+          Definí una nueva fecha o finalizá el bodegaje.
+        </span>
+        <div class="mt-2">
+          <%= button_to warehousing_form_delivery_path(delivery),
+                method: :get,
+                form: { data: { turbo_frame: "modal" } },
+                class: "btn btn-sm",
+                style: "color:#6f42c1; border:1px solid #6f42c1; background-color:transparent;" do %>
+            <i class="bi bi-calendar-range me-1"></i> Actualizar fecha
+          <% end %>
+        </div>
+      <% elsif delivery.warehousing_expiring_soon? %>
+        <strong class="d-block" style="color:#4a148c;">⚠️ Bodegaje por vencer</strong>
+        <span class="small text-muted">
+          Vence en <strong><%= days %> día(s)</strong>
+          (<%= I18n.l delivery.warehousing_until, format: :long %>).
+          Coordiná la entrega o extendé la fecha.
+        </span>
+        <div class="mt-2">
+          <%= button_to warehousing_form_delivery_path(delivery),
+                method: :get,
+                form: { data: { turbo_frame: "modal" } },
+                class: "btn btn-sm",
+                style: "color:#6f42c1; border:1px solid #6f42c1; background-color:transparent;" do %>
+            <i class="bi bi-calendar-range me-1"></i> Extender fecha
+          <% end %>
+        </div>
+      <% else %>
+        <strong class="d-block" style="color:#4a148c;">📦 En Bodegaje</strong>
+        <span class="small text-muted">
+          Productos en bodega hasta el <strong><%= I18n.l delivery.warehousing_until, format: :long %></strong>
+          (<%= days %> días restantes).
+        </span>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+<%# ── ALERTA APROBACIÓN PENDIENTE ── %>
 <% if policy(delivery).approve? && !delivery.approved? %>
-  <div class="alert alert-warning d-flex justify-content-between align-items-center gap-2 py-2 mb-0 shadow-sm">
+  <div class="alert alert-warning d-flex justify-content-between align-items-center gap-2 py-2 mb-2 shadow-sm">
     <span class="small">
       <i class="bi bi-exclamation-triangle me-1"></i>
       Esta entrega requiere aprobación de producción.
@@ -16,29 +63,31 @@
     <% end %>
   </div>
 <% end %>
+<%# ── ALERTA CASO DE SERVICIO ── %>
 <% if delivery.requires_service_case_action? %>
-  <div class="alert alert-warning d-flex justify-content-between align-items-center">
-    <div>
+  <div class="alert alert-warning d-flex justify-content-between align-items-center gap-2 py-2 mb-2 shadow-sm">
+    <div class="small">
       <i class="bi bi-tools me-2"></i>
       Esta entrega contiene productos de <strong>caso de servicio</strong>.
     </div>
-    <%= button_to "Gestionar",
-          service_case_form_delivery_path(delivery),
+    <%= button_to service_case_form_delivery_path(delivery),
           method: :get,
           form: { data: { turbo_frame: "modal" } },
-          class: "btn btn-sm btn-warning" %>
+          class: "btn btn-sm btn-warning flex-shrink-0" do %>
+      <i class="bi bi-tools me-1"></i> Gestionar
+    <% end %>
   </div>
 <% end %>
-<%# Alerta de reagendamiento %>
+<%# ── ALERTA REAGENDAMIENTO ── %>
 <% if delivery.rescheduled? && delivery.reschedule_reason.present? %>
-  <div class="alert alert-info py-2 mb-0 small">
+  <div class="alert alert-info py-2 mb-2 small">
     <i class="bi bi-calendar-x me-1"></i>
     Reagendada — <strong>Motivo:</strong> <%= delivery.reschedule_reason %>
   </div>
 <% end %>
-<%# Alerta de error de dirección %>
+<%# ── ALERTA ERROR DE DIRECCIÓN ── %>
 <% if delivery.address_error? %>
-  <div class="alert alert-danger py-2 mb-0 small">
+  <div class="alert alert-danger py-2 mb-2 small">
     <i class="bi bi-geo-alt me-1"></i>
     Error en la dirección — verificar antes de asignar al plan.
   </div>

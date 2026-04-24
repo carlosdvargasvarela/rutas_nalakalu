@@ -25,6 +25,9 @@ module DeliveriesHelper
     when "cancelled", "failed"
       "danger"
 
+    when "warehousing"
+      "warehousing"
+
     # --- OTROS (Gris) ---
     when "archived"
       "secondary"
@@ -46,6 +49,7 @@ module DeliveriesHelper
     when "success" then "#198754"
     when "danger" then "#dc3545"
     when "secondary" then "#6c757d"
+    when "warehousing" then "#6f42c1"
     else "#6c757d"
     end
   end
@@ -53,6 +57,12 @@ module DeliveriesHelper
   # Mantenido por compatibilidad con vistas existentes
   def status_badge_class(delivery)
     delivery_status_badge_class(delivery.status)
+  end
+
+  def warehousing_badge_html
+    content_tag(:span, "📦 En Bodegaje",
+      class: "badge rounded-pill px-2 py-1 small fw-semibold",
+      style: "background-color: #6f42c1; color: white;")
   end
 
   # ============================================================================

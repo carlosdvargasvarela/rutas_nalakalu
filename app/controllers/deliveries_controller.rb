@@ -6,7 +6,8 @@ class DeliveriesController < ApplicationController
     :show, :edit, :update, :mark_as_delivered, :confirm_all_items,
     :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing,
     :update_status, :reassign_seller, :take_order, :sala_pickup_form,
-    :create_sala_pickup, :service_case_form, :create_service_case_from_workspace
+    :create_sala_pickup, :service_case_form, :create_service_case_from_workspace,
+    :warehousing_form, :start_warehousing, :end_warehousing
   ]
   before_action :set_addresses, only: [:new, :edit, :create, :update]
 
@@ -304,6 +305,95 @@ class DeliveriesController < ApplicationController
     handle_sala_pickup_error(e)
   end
 
+  def warehousing_form
+    authorize @delivery, :edit?
+
+    respond_to do |format|
+      format.html { render :warehousing_form }
+    end
+  end
+
+  def start_warehousing
+    authorize @delivery, :edit?
+
+    until_date = safe_date(params[:warehousing_until])
+
+    unless until_date.present? && until_date > Date.current
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:alert] = "Debes indicar una fecha futura de fin de bodegaje."
+          render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+            status: :unprocessable_entity
+        end
+      end
+      return
+    end
+
+    @delivery.start_warehousing!(until_date)
+
+    respond_to do |format|
+      format.turbo_stream do
+        load_delivery_for_panel
+        set_delivery_panel_data
+
+        flash.now[:notice] = "Entrega en bodegaje hasta el #{I18n.l until_date, format: :long}."
+
+        render turbo_stream: [
+          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          turbo_stream.update("modal", ""),
+          turbo_stream.replace(
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
+          ),
+          turbo_stream.replace(
+            dom_id(@delivery, :card),
+            partial: "deliveries/index_partials/delivery_card",
+            locals: {delivery: @delivery}
+          )
+        ]
+      end
+      format.html { redirect_to @delivery, notice: "Entrega en bodegaje." }
+    end
+  end
+
+  def end_warehousing
+    authorize @delivery, :edit?
+    @delivery.end_warehousing!
+
+    respond_to do |format|
+      format.turbo_stream do
+        load_delivery_for_panel
+        set_delivery_panel_data
+
+        flash.now[:notice] = "Bodegaje finalizado. Entrega vuelve a estado pendiente."
+
+        render turbo_stream: [
+          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          turbo_stream.replace(
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
+          ),
+          turbo_stream.replace(
+            dom_id(@delivery, :card),
+            partial: "deliveries/index_partials/delivery_card",
+            locals: {delivery: @delivery}
+          )
+        ]
+      end
+      format.html { redirect_to @delivery, notice: "Bodegaje finalizado." }
+    end
+  end
+
   def confirm_all_items
     authorize @delivery, :edit?
 
@@ -331,9 +421,13 @@ class DeliveriesController < ApplicationController
 
         render turbo_stream: [
           turbo_stream.replace(
-            "delivery_detail",
-            partial: "deliveries/show_partials/detail",
-            locals: {delivery: @delivery}
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
           ),
           turbo_stream.replace(
             dom_id(@delivery, :card),
@@ -357,9 +451,13 @@ class DeliveriesController < ApplicationController
 
         render turbo_stream: [
           turbo_stream.replace(
-            "delivery_detail",
-            partial: "deliveries/show_partials/detail",
-            locals: {delivery: @delivery}
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
           ),
           turbo_stream.replace(
             dom_id(@delivery, :card),
@@ -446,9 +544,13 @@ class DeliveriesController < ApplicationController
           set_delivery_panel_data
 
           render turbo_stream: turbo_stream.replace(
-            "delivery_detail",
-            partial: "deliveries/show_partials/detail",
-            locals: {delivery: @delivery}
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
           )
         end
         format.html { redirect_to @delivery, alert: "No se pudo archivar la entrega." }

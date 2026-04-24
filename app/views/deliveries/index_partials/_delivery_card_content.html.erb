@@ -1,16 +1,33 @@
-<%# app/views/deliveries/index_partials/_delivery_card_content.html.erb %>
 <div id="<%= dom_id(delivery, :card_content) %>">
-  <div class="card card-hover border-0 shadow-sm mb-2 <%= delivery.address_error? ? 'border-start border-start-danger border-3' : 'border-start border-start-primary border-3' %>"
-       style="border-radius: 10px; cursor: pointer;">
+  <%# Borde izquierdo: rojo si error de dirección, morado si bodegaje, azul por defecto %>
+  <% border_class = if delivery.address_error?
+       "border-start border-3 border-danger"
+     elsif delivery.warehousing?
+       "border-start border-3"
+     else
+       "border-start border-3 border-primary"
+     end %>
+  <div class="card card-hover border-0 shadow-sm mb-2 <%= border_class %>"
+       style="border-radius: 10px; cursor: pointer; <%= delivery.warehousing? ? 'border-color:#6f42c1 !important;' : '' %>">
     <div class="card-body p-3">
       <%# Fila 1: N° pedido + estado %>
       <div class="d-flex justify-content-between align-items-center mb-1">
         <span class="fw-bold text-primary small">
           <i class="bi bi-hash"></i><%= delivery.order&.number || "S/N" %>
         </span>
-        <span class="badge <%= status_badge_class(delivery) %> rounded-pill" style="font-size: 0.65rem;">
-          <%= delivery.display_status %>
-        </span>
+        <div class="d-flex align-items-center gap-1">
+          <%# Badge bodegaje (reemplaza el badge de status cuando aplica) %>
+          <% if delivery.warehousing? %>
+            <span class="badge rounded-pill px-2 py-1 small fw-semibold"
+                  style="background-color:#6f42c1; color:white; font-size:0.65rem;">
+              <i class="bi bi-building me-1"></i>Bodegaje
+            </span>
+          <% else %>
+            <span class="badge <%= status_badge_class(delivery) %> rounded-pill" style="font-size: 0.65rem;">
+              <%= delivery.display_status %>
+            </span>
+          <% end %>
+        </div>
       </div>
       <%# Fila 2: Cliente %>
       <div class="fw-semibold text-dark mb-2 text-truncate" style="font-size: 0.95rem;">
@@ -33,6 +50,13 @@
             <%= delivery.delivery_address&.address&.truncate(35) || "Sin dirección" %>
           </span>
         </div>
+        <%# Fecha de fin de bodegaje %>
+        <% if delivery.warehousing? && delivery.warehousing_until.present? %>
+          <div class="small d-flex align-items-center gap-1" style="color:#6f42c1;">
+            <i class="bi bi-building" style="font-size: 0.75rem;"></i>
+            <span>Bodega hasta: <strong><%= l(delivery.warehousing_until, format: :short) %></strong></span>
+          </div>
+        <% end %>
       </div>
       <%# Fila 4: Vendedor + badges %>
       <div class="d-flex justify-content-between align-items-center pt-2 border-top">
@@ -66,13 +90,34 @@
               <i class="bi bi-shop me-1"></i>Recoger en Sala
             </span>
           <% end %>
+          <% if delivery.warehousing? && delivery.warehousing_expiring_soon? %>
+            <span class="badge rounded-pill"
+                  style="font-size:0.6rem; background-color:#fce4ec; color:#880e4f; border:1px solid #f48fb1;">
+              <i class="bi bi-exclamation-triangle me-1"></i>Vence pronto
+            </span>
+          <% end %>
         </div>
       </div>
+      <%# Alertas inline al pie de la tarjeta %>
       <%# Alerta dirección %>
       <% if delivery.address_error? %>
         <div class="mt-2 px-2 py-1 bg-danger-subtle text-danger rounded-2 small d-flex align-items-center gap-1"
              style="font-size: 0.72rem;">
           <i class="bi bi-exclamation-triangle-fill"></i> Dirección requiere revisión
+        </div>
+      <% end %>
+      <%# Alerta Bodegaje vencido o por vencer %>
+      <% if delivery.warehousing? %>
+        <% days = delivery.warehousing_days_remaining.to_i %>
+        <div class="mt-2 px-2 py-1 rounded-2 small d-flex align-items-center gap-1"
+             style="font-size: 0.72rem; background-color:#f3e8ff; color:#4a148c;">
+          <% if days <= 0 %>
+            <i class="bi bi-exclamation-triangle-fill"></i> Bodegaje vencido
+          <% elsif delivery.warehousing_expiring_soon? %>
+            <i class="bi bi-building"></i> Bodegaje vence en <%= days %> día(s)
+          <% else %>
+            <i class="bi bi-building"></i> En bodegaje — <%= days %> días restantes
+          <% end %>
         </div>
       <% end %>
       <%# Alerta Sala Pickup %>
