@@ -16,6 +16,19 @@
     <% end %>
   </div>
 <% end %>
+<% if delivery.requires_service_case_action? %>
+  <div class="alert alert-warning d-flex justify-content-between align-items-center">
+    <div>
+      <i class="bi bi-tools me-2"></i>
+      Esta entrega contiene productos de <strong>caso de servicio</strong>.
+    </div>
+    <%= button_to "Gestionar",
+          service_case_form_delivery_path(delivery),
+          method: :get,
+          form: { data: { turbo_frame: "modal" } },
+          class: "btn btn-sm btn-warning" %>
+  </div>
+<% end %>
 <%# Alerta de reagendamiento %>
 <% if delivery.rescheduled? && delivery.reschedule_reason.present? %>
   <div class="alert alert-info py-2 mb-0 small">

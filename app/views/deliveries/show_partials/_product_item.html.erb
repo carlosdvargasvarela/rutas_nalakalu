@@ -1,20 +1,24 @@
 <%# app/views/deliveries/show_partials/_product_item.html.erb %>
+<%# Locals esperados: item, delivery, sala_items (array), can_confirm %>
 <div id="<%= dom_id(item) %>" class="border rounded-3 bg-white shadow-sm overflow-hidden">
   <div class="d-flex align-items-stretch">
     <div class="flex-shrink-0"
          style="width: 4px; background-color: <%= delivery_status_border_color(item.status) %>;"></div>
     <div class="p-3 flex-grow-1">
-      <%# Fila 1: Nombre + badge estado %>
+      <%# Fila 1: Nombre + badges %>
       <div class="d-flex justify-content-between align-items-start mb-2">
         <span class="fw-semibold text-dark" style="font-size: 0.9rem;">
           <%= item.order_item&.product_name || item.order_item&.product || "Producto sin nombre" %>
-          <% if Deliveries::SalaPickupDetector.new(item.delivery).actionable_items.include?(item) %>
-            <span class="ms-2 badge bg-danger-subtle text-danger border border-danger-subtle" title="Requiere recogida en sala">
-              <i class="bi bi-shop"></i>
+          <% if local_assigns[:sala_items]&.include?(item) %>
+            <span class="ms-1 badge bg-danger-subtle text-danger border border-danger-subtle"
+                  style="font-size: 0.65rem;"
+                  title="Requiere recogida en sala">
+              <i class="bi bi-shop"></i> Sala
             </span>
           <% end %>
           <% if item.service_case? %>
-            <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">
+            <span class="ms-1 badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"
+                  style="font-size: 0.65rem;">
               <i class="bi bi-tools"></i> Servicio
             </span>
           <% end %>
@@ -66,7 +70,7 @@
             </span>
           <% end %>
         </div>
-      <% elsif policy(delivery).edit? %>
+      <% elsif local_assigns[:can_confirm] %>
         <div class="d-flex flex-wrap gap-1 pt-2 border-top">
           <% if item.pending? %>
             <%= button_to confirm_delivery_item_path(item),
@@ -84,10 +88,6 @@
               <i class="bi bi-truck me-1"></i>Entregado
             <% end %>
           <% end %>
-          <%# Botón reagendar:
-              1. data-turbo-frame="modal"  → Turbo carga la respuesta en el <turbo-frame id="modal">
-              2. data-bs-toggle / target   → Bootstrap abre el #globalModal
-          %>
           <%= link_to reschedule_form_delivery_item_path(item),
               class: "btn btn-xs btn-outline-warning",
               data: { turbo_frame: "modal" } do %>

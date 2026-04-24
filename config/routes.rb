@@ -86,6 +86,9 @@ Rails.application.routes.draw do
       patch :take_order
       get :sala_pickup_form
       post :create_sala_pickup
+
+      get :service_case_form
+      post :create_service_case_from_workspace
     end
   end
 

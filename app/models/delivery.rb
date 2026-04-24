@@ -256,6 +256,14 @@ class Delivery < ApplicationRecord
     @items_by_sala ||= Deliveries::SalaPickupDetector.new(self).items_by_sala
   end
 
+  def service_case_items
+    @service_case_items ||= Deliveries::ServiceCaseDetector.new(self).actionable_items
+  end
+
+  def requires_service_case_action?
+    service_case_items.any?
+  end
+
   def requires_sala_pickup?
     sala_pickup_items.any?
   end

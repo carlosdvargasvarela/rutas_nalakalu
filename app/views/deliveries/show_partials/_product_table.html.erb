@@ -1,11 +1,13 @@
 <%# app/views/deliveries/show_partials/_product_table.html.erb %>
 <%= turbo_stream_from "delivery_#{delivery.id}_items" %>
 <% can_confirm = policy(delivery).edit? %>
+<% sala_items = Deliveries::SalaPickupDetector.new(delivery).actionable_items %>
+<% service_case_items = Deliveries::ServiceCaseDetector.new(delivery).actionable_items %>
 <div id="delivery_items_list"
      data-controller="delivery-items-selection"
      class="product-table-workspace">
   <%# ═══ TOOLBAR ═══ %>
-  <div class="d-flex justify-content-between align-items-center mb-3 bg-light p-2 rounded-3 border">
+  <div class="d-flex justify-content-between align-items-center mb-3 bg-light p-2 rounded-3 border gap-2 flex-wrap">
     <div class="form-check mb-0 ms-1">
       <input type="checkbox"
              class="form-check-input select-all-checkbox"
@@ -17,25 +19,41 @@
         Todos
       </label>
     </div>
-    <button class="btn btn-sm btn-warning shadow-sm border-0 px-3"
-            data-delivery-items-selection-target="bulkButton"
-            data-action="click->delivery-items-selection#prepareReschedule"
-      data-url="<%= bulk_reschedule_form_delivery_items_path(delivery_id: delivery.id) %>"
-      disabled>
-      <i class="bi bi-calendar-event me-1"></i>
-      Reagendar
-      <span class="badge bg-white text-dark ms-1" data-delivery-items-selection-target="count">0</span>
-    </button>
-    <% if can_confirm %>
-      <button type="button"
-              class="btn btn-sm btn-outline-danger"
-              data-action="click->delivery-items-selection#prepareSalaPickup"
-        data-url="<%= sala_pickup_form_delivery_path(delivery) %>">
-        <i class="bi bi-shop me-1"></i> Recogida en Sala
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <%# Reagendar bulk %>
+      <button class="btn btn-sm btn-warning shadow-sm border-0 px-3"
+              data-delivery-items-selection-target="bulkButton"
+              data-action="click->delivery-items-selection#prepareReschedule"
+        data-url="<%= bulk_reschedule_form_delivery_items_path(delivery_id: delivery.id) %>"
+        disabled>
+        <i class="bi bi-calendar-event me-1"></i>
+        Reagendar
+        <span class="badge bg-white text-dark ms-1"
+              data-delivery-items-selection-target="count">0</span>
       </button>
-    <% else %>
-      <div></div>
-    <% end %>
+      <% if can_confirm %>
+        <%# Sala Pickup bulk %>
+        <% if delivery.requires_sala_pickup? %>
+          <button type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  data-action="click->delivery-items-selection#prepareSalaPickup"
+            data-url="<%= sala_pickup_form_delivery_path(delivery) %>"
+            data-preselect-ids="<%= sala_items.map(&:id).join(',') %>">
+            <i class="bi bi-shop me-1"></i> Recogida en Sala
+          </button>
+        <% end %>
+        <%# Caso de Servicio bulk %>
+        <% if delivery.requires_service_case_action? %>
+          <button type="button"
+                  class="btn btn-sm btn-outline-warning"
+                  data-action="click->delivery-items-selection#prepareServiceCase"
+            data-url="<%= service_case_form_delivery_path(delivery) %>"
+            data-preselect-ids="<%= service_case_items.map(&:id).join(',') %>">
+            <i class="bi bi-tools me-1"></i> Caso de Servicio
+          </button>
+        <% end %>
+      <% end %>
+    </div>
   </div>
   <%# ═══ TABLA ═══ %>
   <table class="table table-hover align-middle mb-0 w-100">
@@ -53,7 +71,9 @@
         <%= render "deliveries/show_partials/product_item_row",
               item: item,
               delivery: delivery,
-              can_confirm: can_confirm %>
+              can_confirm: can_confirm,
+              sala_items: sala_items,
+              service_case_items: service_case_items %>
       <% end %>
     </tbody>
   </table>

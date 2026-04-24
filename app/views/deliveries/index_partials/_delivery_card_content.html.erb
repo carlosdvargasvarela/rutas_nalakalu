@@ -53,10 +53,11 @@
               <i class="bi bi-truck"></i>
             </span>
           <% end %>
-          <% if delivery.has_service_cases? %>
+          <% if delivery.requires_service_case_action? %>
             <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill"
-                  style="font-size: 0.6rem;">
-              <i class="bi bi-tools"></i>
+                  style="font-size: 0.6rem;"
+                  title="Contiene casos de servicio">
+              <i class="bi bi-tools me-1"></i>Servicio
             </span>
           <% end %>
           <% if delivery.requires_sala_pickup? %>
@@ -72,6 +73,20 @@
         <div class="mt-2 px-2 py-1 bg-danger-subtle text-danger rounded-2 small d-flex align-items-center gap-1"
              style="font-size: 0.72rem;">
           <i class="bi bi-exclamation-triangle-fill"></i> Dirección requiere revisión
+        </div>
+      <% end %>
+      <%# Alerta Sala Pickup %>
+      <% if delivery.requires_sala_pickup? %>
+        <div class="mt-2 px-2 py-1 bg-danger-subtle text-danger rounded-2 small d-flex align-items-center gap-1"
+             style="font-size: 0.72rem;">
+          <i class="bi bi-shop"></i> Requiere recogida en sala antes de entregar
+        </div>
+      <% end %>
+      <%# Alerta Caso de Servicio %>
+      <% if delivery.requires_service_case_action? %>
+        <div class="mt-2 px-2 py-1 bg-warning-subtle text-warning-emphasis rounded-2 small d-flex align-items-center gap-1"
+             style="font-size: 0.72rem;">
+          <i class="bi bi-tools"></i> Contiene productos de caso de servicio
         </div>
       <% end %>
     </div>

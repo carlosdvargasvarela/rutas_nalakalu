@@ -27,37 +27,61 @@ export default class extends Controller {
     }
   }
 
+  // ─── Acciones bulk ───────────────────────────────────────────────────────────
+
   prepareReschedule(event) {
-    const selectedIds = this.checkboxTargets
-      .filter((c) => c.checked)
-      .map((c) => c.value);
-
+    const selectedIds = this._selectedIds();
     if (selectedIds.length === 0) return;
-
-    const url = new URL(
-      event.currentTarget.dataset.url,
-      window.location.origin,
-    );
-    url.searchParams.set("item_ids", selectedIds.join(","));
-
-    const modalFrame = document.getElementById("modal");
-    if (modalFrame) {
-      modalFrame.src = url.toString();
-    }
+    this._openModal(event.currentTarget.dataset.url, selectedIds);
   }
 
   prepareSalaPickup(event) {
-    const selectedIds = this.checkboxTargets
-      .filter((c) => c.checked)
-      .map((c) => c.value);
+    const btn = event.currentTarget;
+    const preselected = this._preselectedIds(btn);
+    this._applyPreselection(preselected);
+    const ids = preselected.length > 0 ? preselected : this._selectedIds();
+    if (ids.length === 0) return;
+    this._openModal(btn.dataset.url, ids);
+  }
 
-    if (selectedIds.length === 0) return;
+  prepareServiceCase(event) {
+    const btn = event.currentTarget;
+    const preselected = this._preselectedIds(btn);
+    this._applyPreselection(preselected);
+    const ids = preselected.length > 0 ? preselected : this._selectedIds();
+    if (ids.length === 0) return;
+    this._openModal(btn.dataset.url, ids);
+  }
 
-    const url = new URL(
-      event.currentTarget.dataset.url,
-      window.location.origin,
-    );
-    url.searchParams.set("item_ids", selectedIds.join(","));
+  // ─── Privados ────────────────────────────────────────────────────────────────
+
+  _selectedIds() {
+    return this.checkboxTargets.filter((c) => c.checked).map((c) => c.value);
+  }
+
+  // Lee data-preselect-ids del botón y devuelve array de strings
+  _preselectedIds(btn) {
+    const raw = btn.dataset.preselectIds || "";
+    return raw
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
+  }
+
+  // Marca los checkboxes cuyos values están en ids, desmarca el resto
+  _applyPreselection(ids) {
+    if (ids.length === 0) return;
+
+    this.checkboxTargets.forEach((checkbox) => {
+      checkbox.checked = ids.includes(checkbox.value);
+    });
+    this.updateUI();
+  }
+
+  // Construye la URL con item_ids y la carga en el turbo-frame "modal"
+  _openModal(rawUrl, ids) {
+    const url = new URL(rawUrl, window.location.origin);
+    url.searchParams.set("item_ids", ids.join(","));
 
     const modalFrame = document.getElementById("modal");
     if (modalFrame) {

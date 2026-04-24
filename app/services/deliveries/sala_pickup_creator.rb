@@ -29,12 +29,9 @@ module Deliveries
 
     attr_reader :original_delivery, :params, :current_user
 
-    # app/services/deliveries/sala_pickup_creator.rb
-
     def validate_params!
       raise StandardError, "Debe seleccionar al menos un producto." if params[:item_ids].blank?
 
-      # ✅ FIX: la fecha viene en params[:delivery][:delivery_date]
       delivery_date = params.dig(:delivery, :delivery_date)
       raise StandardError, "Debe seleccionar una fecha de recogida." if delivery_date.blank?
 

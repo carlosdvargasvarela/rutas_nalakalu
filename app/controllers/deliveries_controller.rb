@@ -6,7 +6,7 @@ class DeliveriesController < ApplicationController
     :show, :edit, :update, :mark_as_delivered, :confirm_all_items,
     :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing,
     :update_status, :reassign_seller, :take_order, :sala_pickup_form,
-    :create_sala_pickup
+    :create_sala_pickup, :service_case_form, :create_service_case_from_workspace
   ]
   before_action :set_addresses, only: [:new, :edit, :create, :update]
 
@@ -369,6 +369,59 @@ class DeliveriesController < ApplicationController
         ]
       end
       format.html { redirect_to @delivery, notice: "Entrega aprobada correctamente para esta semana." }
+    end
+  end
+
+  def service_case_form
+    authorize @delivery, :edit?
+
+    @detector = Deliveries::ServiceCaseDetector.new(@delivery)
+    @items = @detector.actionable_items
+
+    @service_delivery = Delivery.new(
+      order: @delivery.order,
+      delivery_address: @delivery.delivery_address,
+      contact_name: @delivery.contact_name,
+      contact_phone: @delivery.contact_phone,
+      delivery_date: Date.current,
+      delivery_type: :pickup_with_return
+    )
+
+    @addresses = @delivery.order.client.delivery_addresses.to_a
+
+    render layout: false
+  end
+
+  def create_service_case_from_workspace
+    authorize @delivery, :edit?
+
+    result = Deliveries::ServiceCaseFromWorkspaceCreator.new(
+      original_delivery: @delivery,
+      params: params,
+      current_user: current_user
+    ).call
+
+    respond_to do |format|
+      format.turbo_stream do
+        load_delivery_for_panel
+        set_delivery_panel_data
+
+        flash.now[:notice] = "Caso de servicio creado correctamente."
+
+        render turbo_stream: [
+          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          turbo_stream.update("modal", ""),
+          turbo_stream.replace(
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
+          )
+        ]
+      end
     end
   end
 
