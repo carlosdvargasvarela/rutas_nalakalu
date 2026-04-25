@@ -394,52 +394,6 @@ class DeliveriesController < ApplicationController
     end
   end
 
-  def confirm_all_items
-    authorize @delivery, :edit?
-
-    if @delivery.bulk_locked?
-      respond_to do |format|
-        format.turbo_stream do
-          flash.now[:alert] = "Esta entrega no permite acciones masivas en su estado actual."
-          render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-            status: :unprocessable_entity
-        end
-        format.html { redirect_to @delivery, alert: "Esta entrega no permite acciones masivas." }
-      end
-      return
-    end
-
-    items = @delivery.delivery_items.bulk_confirmable
-    updated = items.update_all(status: DeliveryItem.statuses[:confirmed], updated_at: Time.current)
-    @delivery.mark_as_confirmed_by_vendor!
-    @delivery.reload.update_status_based_on_items
-
-    respond_to do |format|
-      format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-
-        render turbo_stream: [
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
-      end
-      format.html { redirect_to delivery_path(@delivery), notice: "#{updated} producto(s) confirmado(s) para entrega." }
-    end
-  end
-
   def approve
     authorize @delivery, :approve?
     @delivery.approve!
@@ -560,9 +514,102 @@ class DeliveriesController < ApplicationController
 
   def mark_as_delivered
     authorize @delivery, :edit?
+
     @delivery.mark_as_delivered!
-    @delivery.update_status_based_on_items
-    redirect_to @delivery, notice: "Entrega marcada como completada."
+    @delivery.reload
+
+    respond_to do |format|
+      format.turbo_stream do
+        load_delivery_for_panel
+        set_delivery_panel_data
+
+        flash.now[:notice] = "Entrega marcada como completada."
+
+        render turbo_stream: [
+          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          turbo_stream.replace(
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
+          ),
+          turbo_stream.replace(
+            "delivery_items_list",
+            partial: "deliveries/show_partials/product_table",
+            locals: {delivery: @delivery}
+          ),
+          turbo_stream.replace(
+            dom_id(@delivery, :card),
+            partial: "deliveries/index_partials/delivery_card",
+            locals: {delivery: @delivery}
+          )
+        ]
+      end
+      format.html { redirect_to @delivery, notice: "Entrega marcada como completada." }
+    end
+  end
+
+  def confirm_all_items
+    authorize @delivery, :edit?
+
+    if @delivery.bulk_locked?
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:alert] = "Esta entrega no permite acciones masivas en su estado actual."
+          render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+            status: :unprocessable_entity
+        end
+        format.html { redirect_to @delivery, alert: "Esta entrega no permite acciones masivas." }
+      end
+      return
+    end
+
+    items = @delivery.delivery_items.bulk_confirmable
+    # update_all bypassa callbacks — actualizamos uno a uno para que
+    # after_update_commit :broadcast_item_row_update se dispare correctamente
+    items.each do |item|
+      item.update!(status: :confirmed)
+    end
+
+    @delivery.mark_as_confirmed_by_vendor!
+    @delivery.reload.update_status_based_on_items
+    @delivery.reload
+
+    respond_to do |format|
+      format.turbo_stream do
+        load_delivery_for_panel
+        set_delivery_panel_data
+
+        flash.now[:notice] = "#{items.count} producto(s) confirmado(s) para entrega."
+
+        render turbo_stream: [
+          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          turbo_stream.replace(
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
+          ),
+          turbo_stream.replace(
+            "delivery_items_list",
+            partial: "deliveries/show_partials/product_table",
+            locals: {delivery: @delivery}
+          ),
+          turbo_stream.replace(
+            dom_id(@delivery, :card),
+            partial: "deliveries/index_partials/delivery_card",
+            locals: {delivery: @delivery}
+          )
+        ]
+      end
+      format.html { redirect_to delivery_path(@delivery), notice: "Producto(s) confirmado(s) para entrega." }
+    end
   end
 
   def by_week

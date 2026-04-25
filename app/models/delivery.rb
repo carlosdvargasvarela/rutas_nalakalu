@@ -1,4 +1,3 @@
-# app/models/delivery.rb
 class Delivery < ApplicationRecord
   include ActionView::RecordIdentifier
 
@@ -65,6 +64,7 @@ class Delivery < ApplicationRecord
   # ============================================================================
 
   SERVICE_CASE_TYPES = %w[pickup_with_return return_delivery onsite_repair only_pickup].freeze
+  BULK_LOCKED_STATUSES = %w[delivered rescheduled cancelled archived failed warehousing].freeze
 
   # ============================================================================
   # VALIDACIONES
@@ -84,7 +84,7 @@ class Delivery < ApplicationRecord
       .where.not(status: [statuses[:delivered], statuses[:rescheduled], statuses[:cancelled], statuses[:loaded_on_truck]])
   }
   scope :eligible_for_plan, -> {
-    where.not(status: [:delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived, :failed, :loaded_on_truck])
+    where.not(status: [:delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived, :failed, :loaded_on_truck, :warehousing])
   }
   scope :not_assigned_to_plan, -> { where.not(id: DeliveryPlanAssignment.select(:delivery_id)) }
   scope :available_for_plan, -> { eligible_for_plan.not_assigned_to_plan }
@@ -104,9 +104,6 @@ class Delivery < ApplicationRecord
   scope :with_service_cases, -> {
     joins(:delivery_items).where(delivery_items: {service_case: true}).distinct
   }
-  scope :eligible_for_plan, -> {
-    where.not(status: [:delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived, :failed, :loaded_on_truck, :warehousing])
-  }
   scope :warehousing_expiring_soon, -> {
     where(status: :warehousing)
       .where(warehousing_until: Date.current..(Date.current + 8.days))
@@ -115,8 +112,6 @@ class Delivery < ApplicationRecord
   # ============================================================================
   # BULK ACTIONS
   # ============================================================================
-
-  BULK_LOCKED_STATUSES = %w[delivered rescheduled cancelled archived failed warehousing].freeze
 
   def bulk_locked?
     status.in?(BULK_LOCKED_STATUSES)
@@ -134,11 +129,11 @@ class Delivery < ApplicationRecord
     parent.table[:status]
   end
 
-  def self.ransackable_attributes(auth_object = nil)
+  def self.ransackable_attributes(_auth_object = nil)
     %w[delivery_date status delivery_type contact_name contact_phone delivery_notes delivery_time_preference reschedule_reason]
   end
 
-  def self.ransackable_associations(auth_object = nil)
+  def self.ransackable_associations(_auth_object = nil)
     %w[order delivery_address delivery_items]
   end
 
@@ -187,6 +182,7 @@ class Delivery < ApplicationRecord
     when "archived" then "Archivada"
     when "failed" then "Entrega fracasada"
     when "loaded_on_truck" then "Cargada en camión"
+    when "warehousing" then "En bodegaje"
     else status.to_s.humanize
     end
   end
@@ -221,7 +217,6 @@ class Delivery < ApplicationRecord
       :empty
     end
 
-    # update en lugar de update_column para disparar callbacks y broadcast
     if new_load_status == :all_loaded
       update(load_status: new_load_status, status: :loaded_on_truck)
     else
@@ -250,7 +245,10 @@ class Delivery < ApplicationRecord
 
   def reset_load_status!
     transaction do
-      delivery_items.update_all(load_status: DeliveryItem.load_statuses[:unloaded], updated_at: Time.current)
+      delivery_items.update_all(
+        load_status: DeliveryItem.load_statuses[:unloaded],
+        updated_at: Time.current
+      )
       recalculate_load_status!
     end
   end
@@ -294,20 +292,22 @@ class Delivery < ApplicationRecord
   end
 
   def update_status_based_on_items
-    statuses = delivery_items.pluck(:status).map(&:to_s)
+    return if archived? || warehousing?
 
-    return if archived?
-    return if statuses.empty?
+    item_statuses = delivery_items.reload.map(&:status)
+    return if item_statuses.empty?
 
     if (in_plan? || in_route?) && delivery_plan.present?
-      has_problems = statuses.any? { |s| %w[cancelled rescheduled failed].include?(s) }
-      all_delivered = statuses.all? { |s| s == "delivered" }
+      has_problems = item_statuses.any? { |s| %w[cancelled rescheduled failed].include?(s) }
+      all_delivered = item_statuses.all? { |s| s == "delivered" }
 
       return unless has_problems || all_delivered
     end
 
-    new_status = calculate_delivery_status(statuses)
-    update(status: new_status) if new_status
+    new_status = calculate_delivery_status(item_statuses)
+    return if new_status.blank? || new_status.to_s == status.to_s
+
+    update(status: new_status)
   end
 
   def active_items_for_plan
@@ -328,13 +328,16 @@ class Delivery < ApplicationRecord
 
   def mark_as_delivered!
     transaction do
-      delivery_items.where(status: [:pending, :confirmed, :in_plan, :in_route, :loaded_on_truck]).find_each(&:mark_as_delivered!)
+      delivery_items
+        .where(status: [:pending, :confirmed, :in_plan, :in_route, :loaded_on_truck])
+        .find_each(&:mark_as_delivered!)
 
-      update_status_based_on_items
+      reload
 
-      if delivery_items.where.not(status: :delivered).none?
-        # update para disparar broadcast
-        update(status: :delivered)
+      if delivery_items.reload.where.not(status: :delivered).none?
+        update!(status: :delivered)
+      else
+        update_status_based_on_items
       end
     end
   end
@@ -392,6 +395,7 @@ class Delivery < ApplicationRecord
   def self.to_csv(scope = all)
     CSV.generate(headers: true) do |csv|
       csv << ["Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo"]
+
       scope.includes(order: [:client, :seller], delivery_address: :client, delivery_items: {order_item: :order}).find_each do |delivery|
         delivery.delivery_items.each do |delivery_item|
           csv << [
@@ -414,7 +418,7 @@ class Delivery < ApplicationRecord
   # MÉTODOS PARA CONFIRMACIÓN POR VENDEDOR
   # ============================================================================
 
-  def mark_as_confirmed_by_vendor!(user = nil)
+  def mark_as_confirmed_by_vendor!(_user = nil)
     update!(
       confirmed_by_vendor: true,
       confirmed_by_vendor_at: Time.current,
@@ -434,46 +438,37 @@ class Delivery < ApplicationRecord
     where(confirmed_by_vendor: false)
   end
 
-  # ============================================================================
-  # MÉTODOS PRIVADOS
-  # ============================================================================
-
   private
 
   def calculate_delivery_status(statuses)
     statuses = statuses.map(&:to_s)
-
-    terminal = %w[delivered cancelled rescheduled failed loaded_on_truck warehousing]
-    non_terminal = %w[pending confirmed in_plan in_route]
 
     return :delivered if statuses.all? { |s| s == "delivered" }
     return :cancelled if statuses.all? { |s| s == "cancelled" }
     return :rescheduled if statuses.all? { |s| s == "rescheduled" }
     return :failed if statuses.all? { |s| s == "failed" }
 
-    non_terminal_statuses = statuses.select { |s| non_terminal.include?(s) }
-    terminal_statuses = statuses.select { |s| terminal.include?(s) }
+    active_statuses = statuses.reject { |s| %w[cancelled rescheduled failed].include?(s) }
+    return nil if active_statuses.empty?
 
-    if non_terminal_statuses.empty?
-      return :delivered if terminal_statuses.any? { |s| s == "delivered" }
-      return nil
-    end
-
-    if non_terminal_statuses.any? { |s| s == "loaded_on_truck" } &&
-        terminal_statuses.none? { |s| s == "delivered" }
+    if active_statuses.all? { |s| %w[loaded_on_truck delivered].include?(s) } &&
+        active_statuses.any? { |s| s == "loaded_on_truck" }
       return :loaded_on_truck
     end
 
-    return :in_route if non_terminal_statuses.any? { |s| s == "in_route" }
+    if active_statuses.any? { |s| s == "in_route" }
+      return :in_route
+    end
 
-    if non_terminal_statuses.all? { |s| s == "confirmed" }
+    if active_statuses.all? { |s| %w[confirmed in_plan delivered].include?(s) } &&
+        active_statuses.any? { |s| %w[confirmed in_plan].include?(s) }
       unless delivery_plan.present?
-        mark_as_confirmed_by_vendor!
+        mark_as_confirmed_by_vendor! unless ready_to_deliver?
       end
       return delivery_plan.present? ? :in_plan : :ready_to_deliver
     end
 
-    return :scheduled if non_terminal_statuses.all? { |s| s == "pending" }
+    return :scheduled if active_statuses.all? { |s| s == "pending" }
 
     nil
   end
@@ -487,7 +482,6 @@ class Delivery < ApplicationRecord
   # ============================================================================
 
   def broadcast_delivery_updates
-    # Tarjeta en el índice (workspace izquierdo)
     broadcast_replace_to(
       "deliveries",
       target: "#{dom_id(self)}_card_content",
@@ -495,7 +489,6 @@ class Delivery < ApplicationRecord
       locals: {delivery: self}
     )
 
-    # Header del panel de detalle (estado, acciones, alertas)
     broadcast_replace_to(
       "delivery_#{id}_detail",
       target: "delivery_detail_header_#{id}",

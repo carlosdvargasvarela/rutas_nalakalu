@@ -1,7 +1,7 @@
 <%# ── ACCIONES DEL PANEL DE DETALLE ── %>
 <div class="d-flex align-items-center gap-2 flex-wrap">
   <% if delivery.warehousing? %>
-    <%# ── MODO BODEGAJE: solo mostrar cambio de fecha y salir de bodegaje ── %>
+    <%# ── MODO BODEGAJE ── %>
     <%= button_to warehousing_form_delivery_path(delivery),
           method: :get,
           form: { data: { turbo_frame: "modal" } },
@@ -19,7 +19,7 @@
     <% end %>
   <% else %>
     <%# ── FLUJO NORMAL ── %>
-    <%# Botón de Confirmación: Solo si hay pendientes %>
+    <%# Botón Confirmar Productos: solo si hay pendientes %>
     <% if policy(delivery).edit? && delivery.delivery_items.pending.any? %>
       <%= button_to confirm_all_items_delivery_path(delivery),
             method: :patch,
@@ -29,11 +29,21 @@
         <span>Confirmar Productos</span>
       <% end %>
     <% end %>
-    <%# Botón de Aprobación: Solo si no está aprobada %>
+    <%# Botón Marcar como Entregada: solo si no está en estado terminal %>
+    <% if policy(delivery).edit? && !delivery.delivered? && !delivery.cancelled? && !delivery.archived? && !delivery.rescheduled? %>
+      <%= button_to mark_as_delivered_delivery_path(delivery),
+            method: :patch,
+            class: "btn btn-sm btn-success d-inline-flex align-items-center gap-2 px-3 shadow-sm",
+            data: { turbo_confirm: "¿Marcar esta entrega y todos sus productos como entregados?" } do %>
+        <i class="bi bi-check-circle-fill"></i>
+        <span>Marcar como Entregada</span>
+      <% end %>
+    <% end %>
+    <%# Botón Aprobación: solo si no está aprobada %>
     <% if policy(delivery).approve? && !delivery.approved? %>
       <%= button_to approve_delivery_path(delivery),
             method: :patch,
-            class: "btn btn-sm btn-success d-inline-flex align-items-center gap-2 px-3 shadow-sm",
+            class: "btn btn-sm btn-warning d-inline-flex align-items-center gap-2 px-3 shadow-sm",
             data: { turbo_confirm: "¿Aprobar para producción?" } do %>
         <i class="bi bi-check2-all"></i>
         <span>Aprobar Ruta</span>
