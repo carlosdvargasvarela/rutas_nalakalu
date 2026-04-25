@@ -27,12 +27,21 @@ export default class extends Controller {
     this.build();
     this.bindEvents();
     this.syncFromSelect();
+
+    // ← Exponer el controller en el elemento <select> para acceso externo
+    this.selectElement.searchableSelectController = this;
   }
 
   disconnect() {
     this.unbindEvents();
     this.destroy();
     this.initialized = false;
+  }
+
+  // Método público para que otros controllers fuercen el re-render
+  refreshFromSelect() {
+    this.renderOptions();
+    this.syncFromSelect();
   }
 
   // Compatibilidad con código que espera select.tomselect
@@ -112,8 +121,6 @@ export default class extends Controller {
     this.wrapper.appendChild(this.trigger);
     this.wrapper.appendChild(this.dropdown);
 
-    // IMPORTANTE:
-    // no movemos el select; insertamos el wrapper después
     this.selectElement.insertAdjacentElement("afterend", this.wrapper);
 
     this.renderOptions();

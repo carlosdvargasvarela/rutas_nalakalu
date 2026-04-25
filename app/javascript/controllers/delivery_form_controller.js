@@ -1,3 +1,4 @@
+// app/javascript/controllers/delivery_form_controller.js
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
@@ -47,13 +48,9 @@ export default class extends Controller {
       return;
     }
 
-    // Cargar pedidos del cliente
     await this.loadOrdersForClient(clientId);
-
-    // Cargar direcciones del cliente
     await this.loadAddressesForClient(clientId);
 
-    // Actualizar client_id en el campo oculto de nueva dirección
     if (this.hasNewAddressClientIdTarget) {
       this.newAddressClientIdTarget.value = clientId;
     }
@@ -64,10 +61,9 @@ export default class extends Controller {
 
     try {
       const response = await fetch(
-        `${this.ordersUrlValue}?client_id=${clientId}`
+        `${this.ordersUrlValue}?client_id=${clientId}`,
       );
       const orders = await response.json();
-
       this.updateOrderSelect(orders);
     } catch (error) {
       console.error("Error loading orders:", error);
@@ -79,89 +75,75 @@ export default class extends Controller {
 
     try {
       const response = await fetch(
-        `${this.addressesUrlValue}?client_id=${clientId}`
+        `${this.addressesUrlValue}?client_id=${clientId}`,
       );
       const addresses = await response.json();
-
       this.updateAddressSelect(addresses);
     } catch (error) {
       console.error("Error loading addresses:", error);
     }
   }
 
+  // ← Helper para obtener el searchable-select controller de un <select>
+  _getSSController(selectElement) {
+    return selectElement?.searchableSelectController || null;
+  }
+
   updateOrderSelect(orders) {
     if (!this.hasOrderSelectTarget) return;
 
     const select = this.orderSelectTarget;
-    const tomSelect = select.tomselect;
 
-    if (tomSelect) {
-      tomSelect.clearOptions();
-      tomSelect.addOption({ value: "", text: "Selecciona un pedido" });
+    // Actualizar el <select> nativo directamente
+    select.innerHTML = '<option value="">Selecciona un pedido</option>';
+    orders.forEach((order) => {
+      const option = document.createElement("option");
+      option.value = order.id;
+      option.textContent = order.number;
+      select.appendChild(option);
+    });
 
-      orders.forEach((order) => {
-        tomSelect.addOption({
-          value: order.id,
-          text: `${order.number} - ${order.seller_name || "Sin vendedor"}`,
-        });
-      });
-
-      tomSelect.refreshOptions(false);
-    } else {
-      // Fallback sin TomSelect
-      select.innerHTML = '<option value="">Selecciona un pedido</option>';
-      orders.forEach((order) => {
-        const option = document.createElement("option");
-        option.value = order.id;
-        option.textContent = `${order.number} - ${
-          order.seller_name || "Sin vendedor"
-        }`;
-        select.appendChild(option);
-      });
+    // Notificar al searchable-select para que re-renderice su dropdown
+    const ssController = this._getSSController(select);
+    if (ssController) {
+      ssController.refreshFromSelect();
     }
+
+    this.validateOrder();
   }
 
   updateAddressSelect(addresses) {
     if (!this.hasAddressSelectTarget) return;
 
     const select = this.addressSelectTarget;
-    const tomSelect = select.tomselect;
 
-    if (tomSelect) {
-      tomSelect.clearOptions();
-      tomSelect.addOption({ value: "", text: "Selecciona una dirección" });
+    // Actualizar el <select> nativo directamente
+    select.innerHTML = '<option value="">Selecciona una dirección</option>';
+    addresses.forEach((address) => {
+      const option = document.createElement("option");
+      option.value = address.id;
+      option.textContent = address.address;
+      select.appendChild(option);
+    });
 
-      addresses.forEach((address) => {
-        tomSelect.addOption({
-          value: address.id,
-          text: address.address,
-        });
-      });
-
-      tomSelect.refreshOptions(false);
-    } else {
-      // Fallback sin TomSelect
-      select.innerHTML = '<option value="">Selecciona una dirección</option>';
-      addresses.forEach((address) => {
-        const option = document.createElement("option");
-        option.value = address.id;
-        option.textContent = address.address;
-        select.appendChild(option);
-      });
+    // Notificar al searchable-select para que re-renderice su dropdown
+    const ssController = this._getSSController(select);
+    if (ssController) {
+      ssController.refreshFromSelect();
     }
+
+    this.validateAddress();
   }
 
   clearOrderSelect() {
     if (!this.hasOrderSelectTarget) return;
 
     const select = this.orderSelectTarget;
-    const tomSelect = select.tomselect;
+    select.innerHTML = '<option value="">Selecciona un pedido</option>';
 
-    if (tomSelect) {
-      tomSelect.clear();
-      tomSelect.clearOptions();
-    } else {
-      select.innerHTML = '<option value="">Selecciona un pedido</option>';
+    const ssController = this._getSSController(select);
+    if (ssController) {
+      ssController.refreshFromSelect();
     }
   }
 
@@ -169,13 +151,11 @@ export default class extends Controller {
     if (!this.hasAddressSelectTarget) return;
 
     const select = this.addressSelectTarget;
-    const tomSelect = select.tomselect;
+    select.innerHTML = '<option value="">Selecciona una dirección</option>';
 
-    if (tomSelect) {
-      tomSelect.clear();
-      tomSelect.clearOptions();
-    } else {
-      select.innerHTML = '<option value="">Selecciona una dirección</option>';
+    const ssController = this._getSSController(select);
+    if (ssController) {
+      ssController.refreshFromSelect();
     }
   }
 
@@ -186,12 +166,10 @@ export default class extends Controller {
       const isVisible = this.newClientFieldsTarget.style.display !== "none";
 
       if (isVisible) {
-        // Ocultar formulario de nuevo cliente
         this.newClientFieldsTarget.style.display = "none";
         this.enableClientSelect();
         this.clearNewClientFields();
       } else {
-        // Mostrar formulario de nuevo cliente
         this.newClientFieldsTarget.style.display = "block";
         this.disableClientSelect();
       }
@@ -215,11 +193,10 @@ export default class extends Controller {
     if (!this.hasClientSelectTarget) return;
 
     const select = this.clientSelectTarget;
-    const tomSelect = select.tomselect;
+    const ssController = this._getSSController(select);
 
-    if (tomSelect) {
-      tomSelect.clear();
-      tomSelect.disable();
+    if (ssController) {
+      ssController.disable();
     } else {
       select.value = "";
       select.disabled = true;
@@ -230,10 +207,10 @@ export default class extends Controller {
     if (!this.hasClientSelectTarget) return;
 
     const select = this.clientSelectTarget;
-    const tomSelect = select.tomselect;
+    const ssController = this._getSSController(select);
 
-    if (tomSelect) {
-      tomSelect.enable();
+    if (ssController) {
+      ssController.enable();
     } else {
       select.disabled = false;
     }
@@ -262,7 +239,6 @@ export default class extends Controller {
   // ==================== PEDIDO ====================
 
   orderChanged(event) {
-    // Simplemente validar, no hacer llamadas adicionales
     this.validateOrder();
   }
 
@@ -273,12 +249,10 @@ export default class extends Controller {
       const isVisible = this.newOrderFieldsTarget.style.display !== "none";
 
       if (isVisible) {
-        // Ocultar formulario de nuevo pedido
         this.newOrderFieldsTarget.style.display = "none";
         this.enableOrderSelect();
         this.clearNewOrderFields();
       } else {
-        // Mostrar formulario de nuevo pedido
         this.newOrderFieldsTarget.style.display = "block";
         this.disableOrderSelect();
       }
@@ -302,11 +276,10 @@ export default class extends Controller {
     if (!this.hasOrderSelectTarget) return;
 
     const select = this.orderSelectTarget;
-    const tomSelect = select.tomselect;
+    const ssController = this._getSSController(select);
 
-    if (tomSelect) {
-      tomSelect.clear();
-      tomSelect.disable();
+    if (ssController) {
+      ssController.disable();
     } else {
       select.value = "";
       select.disabled = true;
@@ -317,10 +290,10 @@ export default class extends Controller {
     if (!this.hasOrderSelectTarget) return;
 
     const select = this.orderSelectTarget;
-    const tomSelect = select.tomselect;
+    const ssController = this._getSSController(select);
 
-    if (tomSelect) {
-      tomSelect.enable();
+    if (ssController) {
+      ssController.enable();
     } else {
       select.disabled = false;
     }
@@ -351,7 +324,6 @@ export default class extends Controller {
   // ==================== DIRECCIÓN ====================
 
   addressChanged(event) {
-    // Solo validar, el mapa se actualiza con address-selector controller
     this.validateAddress();
   }
 
@@ -366,7 +338,7 @@ export default class extends Controller {
 
     this.updateBadge(
       this.addressBadgeTarget,
-      hasExistingAddress || hasNewAddress
+      hasExistingAddress || hasNewAddress,
     );
   }
 
@@ -374,16 +346,16 @@ export default class extends Controller {
 
   validateDeliveryData() {
     const deliveryDateField = document.querySelector(
-      "input[name='delivery[delivery_date]']"
+      "input[name='delivery[delivery_date]']",
     );
     const contactNameField = document.querySelector(
-      "input[name='delivery[contact_name]']"
+      "input[name='delivery[contact_name]']",
     );
     const contactPhoneField = document.querySelector(
-      "input[name='delivery[contact_phone]']"
+      "input[name='delivery[contact_phone]']",
     );
     const timePreferenceField = document.querySelector(
-      "select[name='delivery[delivery_time_preference]']"
+      "select[name='delivery[delivery_time_preference]']",
     );
 
     const hasDeliveryDate = deliveryDateField && deliveryDateField.value !== "";
@@ -407,7 +379,6 @@ export default class extends Controller {
 
     if (!this.hasItemTemplateTarget || !this.hasItemsContainerTarget) return;
 
-    // Ocultar mensaje "no hay productos"
     if (this.hasNoItemsRowTarget) {
       this.noItemsRowTarget.style.display = "none";
     }
@@ -416,7 +387,6 @@ export default class extends Controller {
     template.classList.remove("delivery-item-template");
     template.style.display = "";
 
-    // Reemplazar NEW_RECORD con un timestamp único
     const timestamp = new Date().getTime() + this.itemCounter++;
     template.innerHTML = template.innerHTML.replace(/NEW_RECORD/g, timestamp);
 
@@ -434,17 +404,14 @@ export default class extends Controller {
     const destroyField = row.querySelector(".destroy-flag");
 
     if (destroyField && destroyField.name.includes("[id]")) {
-      // Item existente: marcar para destruir
       destroyField.value = "1";
       row.style.display = "none";
     } else {
-      // Item nuevo: eliminar del DOM
       row.remove();
     }
 
-    // Mostrar mensaje si no quedan items visibles
     const visibleItems = this.itemsContainerTarget.querySelectorAll(
-      ".delivery-item-row:not([style*='display: none'])"
+      ".delivery-item-row:not([style*='display: none'])",
     );
     if (visibleItems.length === 0 && this.hasNoItemsRowTarget) {
       this.noItemsRowTarget.style.display = "";
@@ -455,7 +422,7 @@ export default class extends Controller {
 
   validateProducts() {
     const visibleRows = this.itemsContainerTarget.querySelectorAll(
-      ".delivery-item-row:not([style*='display: none'])"
+      ".delivery-item-row:not([style*='display: none'])",
     );
 
     let hasValidProducts = false;
@@ -464,7 +431,7 @@ export default class extends Controller {
       const productInput = row.querySelector("input[name*='[product]']");
       const quantityInput = row.querySelector("input[name*='[quantity]']");
       const quantityDeliveredInput = row.querySelector(
-        "input[name*='[quantity_delivered]']"
+        "input[name*='[quantity_delivered]']",
       );
 
       if (
