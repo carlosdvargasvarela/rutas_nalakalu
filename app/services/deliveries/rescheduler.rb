@@ -1,4 +1,3 @@
-# app/services/deliveries/rescheduler.rb
 module Deliveries
   class Rescheduler
     def initialize(delivery:, new_date:, current_user:, reason: nil)
@@ -16,37 +15,26 @@ module Deliveries
       old_status = delivery.status.to_sym
 
       ActiveRecord::Base.transaction do
-        # 1. Buscar o crear la entrega destino (reutiliza rescheduled si existe)
         @target_delivery = find_or_create_target_delivery
-
-        # 2. Migrar items elegibles a la entrega destino
         migrate_items_to_target
-
-        # 3. Limpiar assignments del delivery original si quedó vacío o sin items activos
-        cleanup_original_delivery_assignments
-
-        # 4. Recalcular estados de ambas entregas
+        # ✅ NO se elimina el assignment del plan — la entrega queda en el plan como reagendada
+        finalize_original_delivery_status
         delivery.reload.update_status_based_on_items
         target_delivery.reload.update_status_based_on_items
       end
 
-      # 5. Notificaciones
       notify_users(old_date, old_status)
       notify_current_week_if_needed(old_date)
 
       target_delivery
     rescue => e
       Rails.logger.error("❌ Error en Deliveries::Rescheduler: #{e.message}")
-      raise e
+      raise
     end
 
     private
 
     attr_reader :delivery, :new_date, :current_user, :reason, :target_delivery
-
-    # ============================================================================
-    # VALIDACIONES
-    # ============================================================================
 
     def validate_new_date!
       raise ArgumentError, "Debes seleccionar una nueva fecha" if new_date.blank?
@@ -54,41 +42,32 @@ module Deliveries
     end
 
     def validate_can_reschedule!
-      # No permitir reagendar si hay items en ruta (deben completarse o fallar primero)
       if delivery.delivery_items.exists?(status: :in_route)
-        raise StandardError, "No se puede reagendar una entrega con productos en ruta. Completa o marca como fallida primero."
+        raise StandardError, "No se puede reagendar una entrega con productos en ruta."
       end
     end
 
-    # ============================================================================
-    # BUSCAR O CREAR ENTREGA DESTINO (REUTILIZA RESCHEDULED)
-    # ============================================================================
-
     def find_or_create_target_delivery
-      # 1. Buscar entrega activa (no terminal) con la misma combinación
-      active_delivery = Delivery.where(
+      active = Delivery.where(
         order_id: delivery.order_id,
         delivery_address_id: delivery.delivery_address_id,
         delivery_date: new_date
-      ).where.not(status: [:rescheduled, :cancelled, :archived, :delivered]).first
+      ).where.not(status: %i[rescheduled cancelled archived delivered]).first
 
-      return active_delivery if active_delivery.present?
+      return active if active.present?
 
-      # 2. Buscar entrega rescheduled y "revivirla"
-      rescheduled_delivery = Delivery.find_by(
+      rescheduled = Delivery.find_by(
         order_id: delivery.order_id,
         delivery_address_id: delivery.delivery_address_id,
         delivery_date: new_date,
         status: :rescheduled
       )
 
-      if rescheduled_delivery.present?
-        # Revivir: cambiar a scheduled para que vuelva a ser usable
-        rescheduled_delivery.update_column(:status, Delivery.statuses[:scheduled])
-        return rescheduled_delivery
+      if rescheduled.present?
+        rescheduled.update_column(:status, Delivery.statuses[:scheduled])
+        return rescheduled
       end
 
-      # 3. Si no existe ninguna, crear una nueva
       Delivery.create!(
         order: delivery.order,
         delivery_address: delivery.delivery_address,
@@ -103,87 +82,57 @@ module Deliveries
       )
     end
 
-    # ============================================================================
-    # MIGRACIÓN DE ITEMS
-    # ============================================================================
-
     def migrate_items_to_target
-      # Items migrables: vivos en el ORIGEN (pending, confirmed, in_plan). NO in_route ni terminales.
-      items_to_migrate = delivery.delivery_items.where(status: [:pending, :confirmed, :in_plan])
+      items_to_migrate = delivery.delivery_items.where(status: %i[pending confirmed in_plan])
 
       items_to_migrate.find_each do |item|
-        # Buscar item destino del mismo order_item
-        existing_item = target_delivery.delivery_items.find_by(order_item_id: item.order_item_id)
+        existing = target_delivery.delivery_items.find_by(order_item_id: item.order_item_id)
 
-        if existing_item.present?
-          if existing_item.status.in?(%w[pending confirmed in_plan])
-            # Consolidar SOLO si el existente está "vivo"
-            existing_qty = existing_item.quantity_delivered.to_i
-            moving_qty = item.quantity_delivered.to_i
-
-            existing_item.update!(
-              quantity_delivered: existing_qty + moving_qty,
-              notes: [existing_item.notes, item.notes].compact_blank.join(" | ")
+        if existing.present?
+          if existing.status.in?(%w[pending confirmed in_plan])
+            existing.update!(
+              quantity_delivered: existing.quantity_delivered.to_i + item.quantity_delivered.to_i,
+              notes: [existing.notes, item.notes].compact_blank.join(" | ")
             )
-          elsif existing_item.rescheduled?
-            # Si el existente está rescheduled, NO sumar su cantidad.
-            # Revivirlo y reemplazar su cantidad con la del item que estamos moviendo.
-            existing_item.update!(
+          elsif existing.rescheduled?
+            existing.update!(
               status: :pending,
               quantity_delivered: item.quantity_delivered.to_i,
-              notes: [existing_item.notes, item.notes].compact_blank.join(" | ")
+              notes: [existing.notes, item.notes].compact_blank.join(" | ")
             )
           else
-            # Si es terminal (delivered/cancelled/failed) no sumamos nunca.
-            # Creamos un NUEVO item en destino para no tocar históricos.
-            DeliveryItem.create!(
-              delivery: target_delivery,
-              order_item: item.order_item,
-              quantity_delivered: item.quantity_delivered.to_i,
-              status: :pending,
-              service_case: item.service_case,
-              notes: item.notes
-            )
+            create_item_in_target(item)
           end
         else
-          # No existe en destino: crear uno nuevo "vivo"
-          DeliveryItem.create!(
-            delivery: target_delivery,
-            order_item: item.order_item,
-            quantity_delivered: item.quantity_delivered.to_i,
-            status: :pending,
-            service_case: item.service_case,
-            notes: item.notes
-          )
+          create_item_in_target(item)
         end
 
-        # Marcar el original como rescheduled
         item.update_column(:status, DeliveryItem.statuses[:rescheduled])
       end
     end
 
-    # ============================================================================
-    # LIMPIEZA DE ASSIGNMENTS Y PLANES
-    # ============================================================================
-
-    def cleanup_original_delivery_assignments
-      # Si el delivery original no tiene items activos (todos rescheduled/cancelled/delivered),
-      # remover sus assignments de planes
-      active_items = delivery.delivery_items.where.not(status: [:delivered, :cancelled, :rescheduled])
-
-      if active_items.empty?
-        # Remover assignments
-        delivery.delivery_plan_assignment.destroy if !delivery.delivery_plan_assignment.nil?
-
-        # Marcar el delivery como rescheduled si todos sus items fueron movidos
-        all_rescheduled = delivery.delivery_items.all? { |di| di.status.in?(%w[rescheduled cancelled delivered]) }
-        delivery.update_column(:status, Delivery.statuses[:rescheduled]) if all_rescheduled
-      end
+    def create_item_in_target(item)
+      DeliveryItem.create!(
+        delivery: target_delivery,
+        order_item: item.order_item,
+        quantity_delivered: item.quantity_delivered.to_i,
+        status: :pending,
+        service_case: item.service_case,
+        notes: item.notes
+      )
     end
 
-    # ============================================================================
-    # NOTIFICACIONES
-    # ============================================================================
+    # ✅ Solo marca el delivery como rescheduled si todos sus items son terminales.
+    # NO toca el delivery_plan_assignment — la entrega permanece en el plan.
+    def finalize_original_delivery_status
+      all_terminal = delivery.delivery_items.reload.all? do |di|
+        di.status.in?(%w[rescheduled cancelled delivered failed])
+      end
+
+      if all_terminal
+        delivery.update_column(:status, Delivery.statuses[:rescheduled])
+      end
+    end
 
     def notify_users(old_date, old_status)
       NotificationService.notify_delivery_rescheduled(
@@ -197,7 +146,6 @@ module Deliveries
     end
 
     def notify_current_week_if_needed(old_date)
-      # Si la nueva fecha cae en la semana ISO actual, notificar extra
       if new_date.cweek == Date.current.cweek && new_date.cwyear == Date.current.cwyear
         NotificationService.notify_current_week_delivery_rescheduled(
           target_delivery,

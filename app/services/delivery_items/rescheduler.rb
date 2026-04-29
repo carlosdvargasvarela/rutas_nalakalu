@@ -12,8 +12,6 @@ module DeliveryItems
       @original_delivery = delivery_item.delivery
       @quantity_to_reschedule = resolve_quantity
 
-      # FIX: envolver todo con PaperTrail.request para evitar que
-      # los callbacks after_commit intenten resolver whodunnit vía Warden
       PaperTrail.request(whodunnit: current_user.id.to_s) do
         ActiveRecord::Base.transaction do
           if params[:new_delivery] == "true"
@@ -27,14 +25,14 @@ module DeliveryItems
           apply_origin_changes
           original_delivery.reload.update_status_based_on_items
           target_delivery.reload.update_status_based_on_items
-          cleanup_original_delivery_if_empty
+          finalize_original_if_all_terminal
         end
       end
 
       delivery_item
     rescue => e
       Rails.logger.error("❌ Error en DeliveryItems::Rescheduler: #{e.message}")
-      raise e
+      raise
     end
 
     private
@@ -45,13 +43,8 @@ module DeliveryItems
     def resolve_quantity
       qty = params[:quantity_to_reschedule].to_i
       total = delivery_item.quantity_delivered.to_i
-
       return total if qty <= 0
-
-      if qty > total
-        raise ArgumentError, "No podés reagendar más de #{total} unidades (solicitado: #{qty})."
-      end
-
+      raise ArgumentError, "No podés reagendar más de #{total} unidades (solicitado: #{qty})." if qty > total
       qty
     end
 
@@ -60,37 +53,21 @@ module DeliveryItems
     end
 
     def validate_can_reschedule!
-      if delivery_item.rescheduled?
-        raise StandardError, "No se puede reagendar un producto ya reagendado."
-      end
-
-      if delivery_item.in_route?
-        raise StandardError, "No se puede reagendar un producto en ruta. Completa o marca como fallido primero."
-      end
-
-      if delivery_item.delivered?
-        raise StandardError, "No se puede reagendar un producto ya entregado."
-      end
+      raise StandardError, "No se puede reagendar un producto ya reagendado." if delivery_item.rescheduled?
+      raise StandardError, "No se puede reagendar un producto en ruta." if delivery_item.in_route?
+      raise StandardError, "No se puede reagendar un producto ya entregado." if delivery_item.delivered?
     end
 
     def reschedule_to_new_delivery
       new_date = parse_new_date
-
-      if new_date == original_delivery.delivery_date
-        raise StandardError, "La nueva fecha no puede ser igual a la actual."
-      end
-
+      raise StandardError, "La nueva fecha no puede ser igual a la actual." if new_date == original_delivery.delivery_date
       @target_delivery = find_or_create_target_delivery(new_date)
       move_quantity_to_target
     end
 
     def reschedule_to_existing_delivery
       @target_delivery = Delivery.find(params[:target_delivery_id])
-
-      if target_delivery.id == original_delivery.id
-        raise StandardError, "No podés reagendar a la misma entrega."
-      end
-
+      raise StandardError, "No podés reagendar a la misma entrega." if target_delivery.id == original_delivery.id
       validate_target_delivery_compatibility!
       move_quantity_to_target
     end
@@ -105,26 +82,20 @@ module DeliveryItems
     end
 
     def move_quantity_to_target
-      existing_item = target_delivery.delivery_items.find_by(order_item_id: delivery_item.order_item_id)
+      existing = target_delivery.delivery_items.find_by(order_item_id: delivery_item.order_item_id)
 
-      if existing_item.present?
-        # CASO 1: item "vivo" en el destino → sumar (ej: ya había 1 unidad confirmada y agregamos 1 más)
-        if existing_item.status.in?(%w[pending confirmed in_plan])
-          existing_item.update!(
-            quantity_delivered: existing_item.quantity_delivered.to_i + quantity_to_reschedule,
-            notes: [existing_item.notes, delivery_item.notes].compact_blank.join(" | ")
+      if existing.present?
+        if existing.status.in?(%w[pending confirmed in_plan])
+          existing.update!(
+            quantity_delivered: existing.quantity_delivered.to_i + quantity_to_reschedule,
+            notes: [existing.notes, delivery_item.notes].compact_blank.join(" | ")
           )
-
-        # CASO 2: item "muerto" en el destino → REEMPLAZAR, no sumar
-        # Esto cubre el re-reagendamiento: el item viejo quedó como rescheduled/cancelled/failed
-        # y ahora volvemos a moverle productos → la cantidad correcta es la que viene, no la suma
-        elsif existing_item.status.in?(%w[rescheduled cancelled failed])
-          existing_item.update!(
+        elsif existing.status.in?(%w[rescheduled cancelled failed])
+          existing.update!(
             status: :pending,
             quantity_delivered: quantity_to_reschedule,
             notes: delivery_item.notes
           )
-
         else
           create_item_in_target
         end
@@ -192,16 +163,14 @@ module DeliveryItems
       end
     end
 
-    def cleanup_original_delivery_if_empty
-      active_items = original_delivery.delivery_items.where.not(status: %i[delivered cancelled rescheduled])
-      return unless active_items.empty?
-
-      original_delivery.delivery_plan_assignment&.destroy
-
+    def finalize_original_if_all_terminal
       all_terminal = original_delivery.delivery_items.reload.all? do |di|
-        di.status.in?(%w[rescheduled cancelled delivered])
+        di.status.in?(%w[rescheduled cancelled delivered failed])
       end
-      original_delivery.update_column(:status, Delivery.statuses[:rescheduled]) if all_terminal
+
+      if all_terminal
+        original_delivery.update_column(:status, Delivery.statuses[:rescheduled])
+      end
     end
   end
 end

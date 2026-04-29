@@ -1,10 +1,5 @@
-# app/models/delivery_item.rb
 class DeliveryItem < ApplicationRecord
   include ActionView::RecordIdentifier
-
-  # ============================================================================
-  # CONFIGURACIÓN Y RELACIONES
-  # ============================================================================
 
   has_paper_trail
   belongs_to :delivery
@@ -49,7 +44,6 @@ class DeliveryItem < ApplicationRecord
   scope :bulk_deliverable, -> { where(status: %i[pending confirmed in_plan in_route loaded_on_truck]) }
   scope :bulk_cancellable, -> { where(status: %i[pending confirmed in_plan]) }
   scope :bulk_reschedulable, -> { where(status: %i[pending confirmed in_plan]) }
-  scope :bulk_reschedulable, -> { where(status: %i[pending confirmed in_plan]) }
 
   # ============================================================================
   # VALIDACIONES
@@ -89,9 +83,7 @@ class DeliveryItem < ApplicationRecord
 
   def mark_loaded!
     transaction do
-      # Para logística: cargado en camión (no es "entregado" todavía)
       update!(load_status: :loaded, status: :loaded_on_truck)
-
       delivery.recalculate_load_status!
     end
   end
@@ -124,24 +116,20 @@ class DeliveryItem < ApplicationRecord
     eligible_for_plan_for_others
   end
 
-  # Actualiza el estado del order_item basado en los delivery_items
   def update_order_item_status
     order_item.update_status_based_on_deliveries if order_item.present?
   end
 
-  # Marca como entregado (esto lo usará la PWA del conductor en el futuro)
   def mark_as_delivered!
-    transaction do
-      update!(status: :delivered)
-      delivery.update_status_based_on_items
-    end
+    # No usar transaction aquí — el caller (Delivery#mark_as_delivered!) ya abre una
+    update!(status: :delivered)
+    # El callback after_commit :recalculate_delivery_status se encarga del resto
   end
 
   def bulk_reschedulable?
     status.in?(%w[pending confirmed in_plan])
   end
 
-  # Información para el reporte de logística
   def logistics_info
     {
       product: order_item.product,
@@ -163,19 +151,13 @@ class DeliveryItem < ApplicationRecord
   # ============================================================================
 
   def order_item_must_be_ready_to_confirm
-    # Descomenta si necesitas validar que el order_item esté "ready"
     # unless order_item.ready?
-    #   errors.add(:base, "El producto aún no está listo para entrega (Producción no lo ha marcado como listo).")
+    #   errors.add(:base, "El producto aún no está listo para entrega.")
     # end
   end
 
-  # ============================================================================
-  # MÉTODOS PRIVADOS
-  # ============================================================================
-
   private
 
-  # Notifica cuando un item es movido a otra entrega (reagendado)
   def notify_reschedule
     users = User.where(role: [:logistics, :admin]).to_a
     users << delivery.delivery_plan.driver if delivery.delivery_plan&.driver
@@ -184,13 +166,11 @@ class DeliveryItem < ApplicationRecord
   end
 
   def trigger_delivery_recalculation
-    return unless delivery.present?
-    delivery.recalculate_load_status!
+    delivery&.recalculate_load_status!
   end
 
   def recalculate_delivery_status
-    return unless delivery.present?
-    delivery.update_status_based_on_items
+    delivery&.update_status_based_on_items
   end
 
   def broadcast_item_row_update

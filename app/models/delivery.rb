@@ -66,6 +66,11 @@ class Delivery < ApplicationRecord
   SERVICE_CASE_TYPES = %w[pickup_with_return return_delivery onsite_repair only_pickup].freeze
   BULK_LOCKED_STATUSES = %w[delivered rescheduled cancelled archived failed warehousing].freeze
 
+  # Estados terminales de items — no participan en el flujo activo
+  ITEM_TERMINAL_STATUSES = %w[delivered cancelled rescheduled failed].freeze
+  # Estados activos de items — determinan el estado de la entrega
+  ITEM_ACTIVE_STATUSES = %w[pending confirmed in_plan in_route loaded_on_truck].freeze
+
   # ============================================================================
   # VALIDACIONES
   # ============================================================================
@@ -233,7 +238,6 @@ class Delivery < ApplicationRecord
           status: DeliveryItem.statuses[:loaded_on_truck],
           updated_at: Time.current
         )
-
       recalculate_load_status!
       update_status_based_on_items
     end
@@ -266,7 +270,6 @@ class Delivery < ApplicationRecord
   def load_percentage
     total = delivery_items.count
     return 0 if total.zero?
-
     loaded = delivery_items.load_loaded.count
     ((loaded.to_f / total) * 100).round
   end
@@ -291,23 +294,22 @@ class Delivery < ApplicationRecord
     sala_pickup_items.any?
   end
 
+  # ============================================================================
+  # RECÁLCULO DE ESTADO BASADO EN ITEMS
+  # ============================================================================
+
+  # Punto de entrada principal. Siempre refleja el estado real de los items.
+  # No bloquea por estado actual de la entrega (excepto archived/warehousing).
   def update_status_based_on_items
     return if archived? || warehousing?
 
     item_statuses = delivery_items.reload.map(&:status)
     return if item_statuses.empty?
 
-    if (in_plan? || in_route?) && delivery_plan.present?
-      has_problems = item_statuses.any? { |s| %w[cancelled rescheduled failed].include?(s) }
-      all_delivered = item_statuses.all? { |s| s == "delivered" }
-
-      return unless has_problems || all_delivered
-    end
-
     new_status = calculate_delivery_status(item_statuses)
     return if new_status.blank? || new_status.to_s == status.to_s
 
-    update(status: new_status)
+    update!(status: new_status)
   end
 
   def active_items_for_plan
@@ -329,11 +331,12 @@ class Delivery < ApplicationRecord
   def mark_as_delivered!
     transaction do
       delivery_items
-        .where(status: [:pending, :confirmed, :in_plan, :in_route, :loaded_on_truck])
+        .where(status: %i[pending confirmed in_plan in_route loaded_on_truck])
         .find_each(&:mark_as_delivered!)
 
       reload
 
+      # Forzar delivered si todos los items lo están
       if delivery_items.reload.where.not(status: :delivered).none?
         update!(status: :delivered)
       else
@@ -373,12 +376,9 @@ class Delivery < ApplicationRecord
 
   def status_i18n(status_value, type)
     case type
-    when :delivery
-      Delivery.statuses.key(status_value).humanize
-    when :order
-      Order.statuses.key(status_value).humanize
-    else
-      status_value.to_s.humanize
+    when :delivery then Delivery.statuses.key(status_value).humanize
+    when :order then Order.statuses.key(status_value).humanize
+    else status_value.to_s.humanize
     end
   end
 
@@ -387,22 +387,19 @@ class Delivery < ApplicationRecord
   # ============================================================================
 
   def self.status_options_for_select
-    statuses.keys.map do |s|
-      [Delivery.new(status: s).display_status, s.to_s]
-    end
+    statuses.keys.map { |s| [Delivery.new(status: s).display_status, s.to_s] }
   end
 
   def self.to_csv(scope = all)
     CSV.generate(headers: true) do |csv|
       csv << ["Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo"]
-
       scope.includes(order: [:client, :seller], delivery_address: :client, delivery_items: {order_item: :order}).find_each do |delivery|
-        delivery.delivery_items.each do |delivery_item|
+        delivery.delivery_items.each do |di|
           csv << [
             delivery.delivery_date.strftime("%d/%m/%Y"),
             delivery.order.number,
-            delivery_item.order_item.product,
-            delivery_item.order_item.quantity,
+            di.order_item.product,
+            di.order_item.quantity,
             delivery.order.seller.seller_code,
             delivery.order.client.name,
             delivery.delivery_address.address,
@@ -415,7 +412,7 @@ class Delivery < ApplicationRecord
   end
 
   # ============================================================================
-  # MÉTODOS PARA CONFIRMACIÓN POR VENDEDOR
+  # CONFIRMACIÓN POR VENDEDOR
   # ============================================================================
 
   def mark_as_confirmed_by_vendor!(_user = nil)
@@ -427,10 +424,7 @@ class Delivery < ApplicationRecord
   end
 
   def unconfirm_by_vendor!
-    update!(
-      confirmed_by_vendor: false,
-      confirmed_by_vendor_at: nil
-    )
+    update!(confirmed_by_vendor: false, confirmed_by_vendor_at: nil)
     Rails.logger.info "[Delivery##{id}] Confirmación de vendedor removida"
   end
 
@@ -440,37 +434,57 @@ class Delivery < ApplicationRecord
 
   private
 
-  def calculate_delivery_status(statuses)
-    statuses = statuses.map(&:to_s)
+  # ============================================================================
+  # CÁLCULO DE ESTADO — lógica centralizada
+  # ============================================================================
+  #
+  # Jerarquía de decisión:
+  #   1. Todos los items en el mismo estado terminal → ese estado
+  #   2. Todos terminales pero mezclados → rescheduled > delivered > cancelled > failed
+  #   3. Hay items activos → flujo operativo (in_route > loaded_on_truck > confirmed/in_plan > pending)
+  #   4. Mezcla activos + terminales → se decide por los activos (los terminales son histórico)
+  #
+  def calculate_delivery_status(raw_statuses)
+    statuses = raw_statuses.map(&:to_s)
 
+    # ── 1. Todos iguales ──────────────────────────────────────────────────────
     return :delivered if statuses.all? { |s| s == "delivered" }
     return :cancelled if statuses.all? { |s| s == "cancelled" }
     return :rescheduled if statuses.all? { |s| s == "rescheduled" }
     return :failed if statuses.all? { |s| s == "failed" }
 
-    active_statuses = statuses.reject { |s| %w[cancelled rescheduled failed].include?(s) }
-    return nil if active_statuses.empty?
-
-    if active_statuses.all? { |s| %w[loaded_on_truck delivered].include?(s) } &&
-        active_statuses.any? { |s| s == "loaded_on_truck" }
-      return :loaded_on_truck
+    # ── 2. Todos terminales pero mezclados ────────────────────────────────────
+    if statuses.all? { |s| ITEM_TERMINAL_STATUSES.include?(s) }
+      return :rescheduled if statuses.any? { |s| s == "rescheduled" }
+      return :delivered if statuses.any? { |s| s == "delivered" }
+      return :cancelled if statuses.any? { |s| s == "cancelled" }
+      return :failed
     end
 
-    if active_statuses.any? { |s| s == "in_route" }
-      return :in_route
-    end
+    # ── 3 & 4. Hay items activos — los terminales son solo histórico ──────────
+    active = statuses.select { |s| ITEM_ACTIVE_STATUSES.include?(s) }
 
-    if active_statuses.all? { |s| %w[confirmed in_plan delivered].include?(s) } &&
-        active_statuses.any? { |s| %w[confirmed in_plan].include?(s) }
-      unless delivery_plan.present?
+    # in_route tiene máxima prioridad operativa
+    return :in_route if active.any? { |s| s == "in_route" }
+
+    # cargado en camión
+    return :loaded_on_truck if active.any? { |s| s == "loaded_on_truck" }
+
+    # todos los activos están confirmados o en plan
+    if active.all? { |s| %w[confirmed in_plan].include?(s) }
+      if delivery_plan.present?
+        return :in_plan
+      else
         mark_as_confirmed_by_vendor! unless ready_to_deliver?
+        return :ready_to_deliver
       end
-      return delivery_plan.present? ? :in_plan : :ready_to_deliver
     end
 
-    return :scheduled if active_statuses.all? { |s| s == "pending" }
+    # mezcla pending + confirmed → volver a scheduled (hay items sin confirmar)
+    return :scheduled if active.any? { |s| s == "pending" }
 
-    nil
+    # fallback seguro
+    :scheduled
   end
 
   def generate_tracking_token
@@ -488,7 +502,6 @@ class Delivery < ApplicationRecord
       partial: "deliveries/index_partials/delivery_card_content",
       locals: {delivery: self}
     )
-
     broadcast_replace_to(
       "delivery_#{id}_detail",
       target: "delivery_detail_header_#{id}",
