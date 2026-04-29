@@ -1,5 +1,11 @@
 <%# app/views/deliveries/show_partials/_detail_header.html.erb %>
-<% can_edit = local_assigns.fetch(:can_edit, false) %>
+<%# Locals esperados: delivery, can_edit (bool), can_approve (bool), %>
+<%# can_reassign_seller (bool), can_new_service_case (bool), is_admin (bool) %>
+<% can_edit             = local_assigns.fetch(:can_edit, false) %>
+<% can_approve          = local_assigns.fetch(:can_approve, false) %>
+<% can_reassign_seller  = local_assigns.fetch(:can_reassign_seller, false) %>
+<% can_new_service_case = local_assigns.fetch(:can_new_service_case, false) %>
+<% is_admin             = local_assigns.fetch(:is_admin, false) %>
 <header id="delivery_detail_header_<%= delivery.id %>" class="bg-white border-bottom p-4">
   <div class="row align-items-center g-3">
     <div class="col-md">
@@ -25,15 +31,21 @@
       </div>
     </div>
     <div class="col-md-auto">
-      <% if can_edit %>
+      <% if can_edit || can_approve || can_reassign_seller || can_new_service_case || is_admin %>
         <div id="delivery_actions_container">
-          <%= render "deliveries/show_partials/actions", delivery: delivery %>
+          <%= render "deliveries/show_partials/actions",
+                delivery:             delivery,
+                can_edit:             can_edit,
+                can_approve:          can_approve,
+                can_reassign_seller:  can_reassign_seller,
+                can_new_service_case: can_new_service_case,
+                is_admin:             is_admin %>
         </div>
       <% end %>
     </div>
   </div>
   <%# ═══ ALERTAS CONTEXTUALES ═══ %>
-  <% if delivery.rescheduled? || delivery.address_error? || delivery.requires_sala_pickup? %>
+  <% if delivery.rescheduled? || delivery.address_error? || delivery.requires_sala_pickup? || delivery.requires_service_case_action? %>
     <div class="mt-4">
       <% if delivery.requires_sala_pickup? %>
         <div class="alert alert-danger border-0 shadow-sm d-flex justify-content-between align-items-center mb-2 px-3 py-2">
@@ -46,6 +58,22 @@
                   style: "font-size: 0.65rem;",
                   data: { turbo_frame: "modal" } do %>
               Generar Ahora
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+      <% if delivery.requires_service_case_action? %>
+        <div class="alert alert-warning border-0 shadow-sm d-flex justify-content-between align-items-center mb-2 px-3 py-2">
+          <div class="small fw-medium">
+            <i class="bi bi-tools me-2"></i>Contiene productos de caso de servicio
+          </div>
+          <% if can_edit %>
+            <%= button_to service_case_form_delivery_path(delivery),
+                  method: :get,
+                  form: { data: { turbo_frame: "modal" } },
+                  class: "btn btn-sm btn-warning text-uppercase fw-bold",
+                  style: "font-size: 0.65rem;" do %>
+              Gestionar
             <% end %>
           <% end %>
         </div>

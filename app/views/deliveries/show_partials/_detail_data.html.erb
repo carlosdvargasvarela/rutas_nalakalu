@@ -1,10 +1,14 @@
 <%# app/views/deliveries/show_partials/_detail_data.html.erb %>
 <%= turbo_stream_from "delivery_#{delivery.id}_detail" %>
 <div class="detail-panel-body bg-white h-100 d-flex flex-column">
-  <%# Header con alertas — pasamos can_edit desde el contexto HTTP %>
+  <%# Header con alertas — resolvemos permisos aquí (contexto HTTP con policy disponible) %>
   <%= render "deliveries/show_partials/detail_header",
-        delivery: delivery,
-        can_edit: policy(delivery).edit? %>
+        delivery:             delivery,
+        can_edit:             policy(delivery).edit?,
+        can_approve:          policy(delivery).approve?,
+        can_reassign_seller:  policy(delivery).reassign_seller?,
+        can_new_service_case: policy(delivery).new_service_case?,
+        is_admin:             current_user&.admin? %>
   <%# ═══ TABS NAV ═══ %>
   <nav class="bg-light border-bottom sticky-top shadow-sm" style="z-index: 10;">
     <ul class="nav nav-pills nav-fill px-4 py-2" id="deliveryTab" role="tablist" style="max-width: 600px;">
@@ -38,6 +42,7 @@
   </nav>
   <%# ═══ CONTENIDO ═══ %>
   <main class="tab-content flex-grow-1 overflow-auto bg-white p-4">
+    <%# ── Tab: Resumen ── %>
     <div class="tab-pane fade show active" id="info-pane">
       <%= render "deliveries/show_partials/summary_cards", delivery: delivery %>
       <% if delivery.delivery_notes.present? %>
@@ -51,17 +56,20 @@
         </div>
       <% end %>
     </div>
+    <%# ── Tab: Productos ── %>
     <div class="tab-pane fade" id="products-pane">
       <%= render "deliveries/show_partials/product_table",
-            delivery: delivery,
+            delivery:          delivery,
             future_deliveries: future_deliveries %>
     </div>
+    <%# ── Tab: Mapa ── %>
     <div class="tab-pane fade" id="map-pane">
       <%= render "deliveries/show_partials/map", delivery: delivery %>
     </div>
+    <%# ── Tab: Historial ── %>
     <div class="tab-pane fade" id="history-pane">
       <%= render "deliveries/show_partials/history",
-            delivery: delivery,
+            delivery:         delivery,
             delivery_history: delivery_history %>
     </div>
   </main>

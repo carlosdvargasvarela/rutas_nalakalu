@@ -1,26 +1,35 @@
-<%# ── ACCIONES DEL PANEL DE DETALLE ── %>
+<%# app/views/deliveries/show_partials/_actions.html.erb %>
+<%# Locals esperados (todos opcionales, default false/nil): %>
+<%# can_edit, can_approve, can_reassign_seller, can_new_service_case, is_admin %>
+<% can_edit             = local_assigns.fetch(:can_edit, false) %>
+<% can_approve          = local_assigns.fetch(:can_approve, false) %>
+<% can_reassign_seller  = local_assigns.fetch(:can_reassign_seller, false) %>
+<% can_new_service_case = local_assigns.fetch(:can_new_service_case, false) %>
+<% is_admin             = local_assigns.fetch(:is_admin, false) %>
 <div class="d-flex align-items-center gap-2 flex-wrap">
   <% if delivery.warehousing? %>
     <%# ── MODO BODEGAJE ── %>
-    <%= button_to warehousing_form_delivery_path(delivery),
-          method: :get,
-          form: { data: { turbo_frame: "modal" } },
-          class: "btn btn-sm d-inline-flex align-items-center gap-2 px-3",
-          style: "background-color:#f3e8ff; color:#6f42c1; border:1px solid #ce93d8;" do %>
-      <i class="bi bi-calendar-range"></i>
-      <span>Cambiar fecha de bodegaje</span>
-    <% end %>
-    <%= button_to end_warehousing_delivery_path(delivery),
-          method: :patch,
-          class: "btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2 px-3",
-          data: { turbo_confirm: "¿Finalizar el bodegaje y devolver a estado pendiente?" } do %>
-      <i class="bi bi-box-arrow-up"></i>
-      <span>Salir de Bodegaje</span>
+    <% if can_edit %>
+      <%= button_to warehousing_form_delivery_path(delivery),
+            method: :get,
+            form: { data: { turbo_frame: "modal" } },
+            class: "btn btn-sm d-inline-flex align-items-center gap-2 px-3",
+            style: "background-color:#f3e8ff; color:#6f42c1; border:1px solid #ce93d8;" do %>
+        <i class="bi bi-calendar-range"></i>
+        <span>Cambiar fecha de bodegaje</span>
+      <% end %>
+      <%= button_to end_warehousing_delivery_path(delivery),
+            method: :patch,
+            class: "btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2 px-3",
+            data: { turbo_confirm: "¿Finalizar el bodegaje y devolver a estado pendiente?" } do %>
+        <i class="bi bi-box-arrow-up"></i>
+        <span>Salir de Bodegaje</span>
+      <% end %>
     <% end %>
   <% else %>
     <%# ── FLUJO NORMAL ── %>
-    <%# Botón Confirmar Productos: solo si hay pendientes %>
-    <% if policy(delivery).edit? && delivery.delivery_items.pending.any? %>
+    <%# Confirmar Productos %>
+    <% if can_edit && delivery.delivery_items.pending.any? %>
       <%= button_to confirm_all_items_delivery_path(delivery),
             method: :patch,
             class: "btn btn-sm btn-primary d-inline-flex align-items-center gap-2 px-3 shadow-sm",
@@ -29,8 +38,8 @@
         <span>Confirmar Productos</span>
       <% end %>
     <% end %>
-    <%# Botón Marcar como Entregada: solo si no está en estado terminal %>
-    <% if policy(delivery).edit? && !delivery.delivered? && !delivery.cancelled? && !delivery.archived? && !delivery.rescheduled? %>
+    <%# Marcar como Entregada %>
+    <% if can_edit && !delivery.delivered? && !delivery.cancelled? && !delivery.archived? && !delivery.rescheduled? %>
       <%= button_to mark_as_delivered_delivery_path(delivery),
             method: :patch,
             class: "btn btn-sm btn-success d-inline-flex align-items-center gap-2 px-3 shadow-sm",
@@ -39,8 +48,8 @@
         <span>Marcar como Entregada</span>
       <% end %>
     <% end %>
-    <%# Botón Aprobación: solo si no está aprobada %>
-    <% if policy(delivery).approve? && !delivery.approved? %>
+    <%# Aprobar Ruta %>
+    <% if can_approve && !delivery.approved? %>
       <%= button_to approve_delivery_path(delivery),
             method: :patch,
             class: "btn btn-sm btn-warning d-inline-flex align-items-center gap-2 px-3 shadow-sm",
@@ -50,62 +59,63 @@
       <% end %>
     <% end %>
     <%# Dropdown de Acciones Secundarias %>
-    <div class="dropdown">
-      <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
-              data-bs-toggle="dropdown" aria-expanded="false">
-        Acciones
-      </button>
-      <ul class="dropdown-menu dropdown-menu-end shadow border-0 m-0">
-        <% if policy(delivery).edit? %>
-          <li>
-            <%= link_to edit_delivery_path(delivery),
-                  class: "dropdown-item d-flex align-items-center gap-2 py-2",
-                  data: { turbo_frame: "_top" } do %>
-              <i class="bi bi-pencil text-muted"></i> Editar Datos
-            <% end %>
-          </li>
-        <% end %>
-        <% if policy(delivery).edit? %>
-          <li>
-            <%= button_to warehousing_form_delivery_path(delivery),
-                  method: :get,
-                  form: { data: { turbo_frame: "modal" }, class: "w-100" },
-                  class: "dropdown-item d-flex align-items-center gap-2 py-2 border-0 bg-transparent text-start" do %>
-              <i class="bi bi-building text-muted"></i> Pasar a Bodegaje
-            <% end %>
-          </li>
-        <% end %>
-        <% if policy(delivery).reassign_seller? %>
-          <li>
-            <button class="dropdown-item d-flex align-items-center gap-2 py-2"
-                    data-bs-toggle="modal"
-                    data-bs-target="#reassignSellerModal">
-              <i class="bi bi-person-gear text-muted"></i> Reasignar Vendedor
-            </button>
-          </li>
-        <% end %>
-        <% if policy(delivery).new_service_case? && !current_user&.seller? %>
-          <li><hr class="dropdown-divider"></li>
-          <li>
-            <%= link_to new_service_case_for_existing_delivery_path(delivery),
-                  class: "dropdown-item d-flex align-items-center gap-2 py-2",
-                  data: { turbo_frame: "_top" } do %>
-              <i class="bi bi-headset text-warning"></i> Crear Caso Servicio
-            <% end %>
-          </li>
-        <% end %>
-        <% if current_user&.admin? %>
-          <li><hr class="dropdown-divider"></li>
-          <li>
-            <%= button_to archive_delivery_path(delivery),
-                  method: :patch,
-                  class: "dropdown-item text-danger d-flex align-items-center gap-2 py-2",
-                  data: { turbo_confirm: "¿Archivar esta entrega?" } do %>
-              <i class="bi bi-archive"></i> Archivar Entrega
-            <% end %>
-          </li>
-        <% end %>
-      </ul>
-    </div>
+    <% show_dropdown = can_edit || can_reassign_seller || can_new_service_case || is_admin %>
+    <% if show_dropdown %>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false">
+          Acciones
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow border-0 m-0">
+          <% if can_edit %>
+            <li>
+              <%= link_to edit_delivery_path(delivery),
+                    class: "dropdown-item d-flex align-items-center gap-2 py-2",
+                    data: { turbo_frame: "_top" } do %>
+                <i class="bi bi-pencil text-muted"></i> Editar Datos
+              <% end %>
+            </li>
+            <li>
+              <%= button_to warehousing_form_delivery_path(delivery),
+                    method: :get,
+                    form: { data: { turbo_frame: "modal" }, class: "w-100" },
+                    class: "dropdown-item d-flex align-items-center gap-2 py-2 border-0 bg-transparent text-start" do %>
+                <i class="bi bi-building text-muted"></i> Pasar a Bodegaje
+              <% end %>
+            </li>
+          <% end %>
+          <% if can_reassign_seller %>
+            <li>
+              <button class="dropdown-item d-flex align-items-center gap-2 py-2"
+                      data-bs-toggle="modal"
+                      data-bs-target="#reassignSellerModal">
+                <i class="bi bi-person-gear text-muted"></i> Reasignar Vendedor
+              </button>
+            </li>
+          <% end %>
+          <% if can_new_service_case %>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <%= link_to new_service_case_for_existing_delivery_path(delivery),
+                    class: "dropdown-item d-flex align-items-center gap-2 py-2",
+                    data: { turbo_frame: "_top" } do %>
+                <i class="bi bi-headset text-warning"></i> Crear Caso Servicio
+              <% end %>
+            </li>
+          <% end %>
+          <% if is_admin %>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <%= button_to archive_delivery_path(delivery),
+                    method: :patch,
+                    class: "dropdown-item text-danger d-flex align-items-center gap-2 py-2",
+                    data: { turbo_confirm: "¿Archivar esta entrega?" } do %>
+                <i class="bi bi-archive"></i> Archivar Entrega
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
   <% end %>
 </div>

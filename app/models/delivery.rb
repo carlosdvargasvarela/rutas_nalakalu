@@ -498,15 +498,23 @@ class Delivery < ApplicationRecord
   def broadcast_delivery_updates
     broadcast_replace_to(
       "deliveries",
-      target: "#{dom_id(self)}_card_content",
-      partial: "deliveries/index_partials/delivery_card_content",
+      target: dom_id(self, :card),
+      partial: "deliveries/index_partials/delivery_card",
       locals: {delivery: self}
     )
+
     broadcast_replace_to(
       "delivery_#{id}_detail",
       target: "delivery_detail_header_#{id}",
       partial: "deliveries/show_partials/detail_header",
-      locals: {delivery: self}
+      locals: {
+        delivery: self,
+        can_edit: true,
+        can_approve: true,
+        can_reassign_seller: true,
+        can_new_service_case: true,
+        is_admin: true
+      }
     )
   end
 end
