@@ -113,4 +113,19 @@ module DeliveryEventsHelper
       "internal_delivery" => "Mandado interno"
     }[type.to_s] || type.to_s.humanize
   end
+
+  COLOR_MAP = {
+    "primary" => {bg: "#e8f0fe", text: "#3b5bdb", border: "#c5d3f8"},
+    "success" => {bg: "#d3f9d8", text: "#2f9e44", border: "#b2f2bb"},
+    "danger" => {bg: "#ffe3e3", text: "#c92a2a", border: "#ffc9c9"},
+    "warning" => {bg: "#fff3bf", text: "#e67700", border: "#ffec99"},
+    "info" => {bg: "#e3fafc", text: "#0c8599", border: "#99e9f2"},
+    "secondary" => {bg: "#f1f3f5", text: "#495057", border: "#dee2e6"},
+    "dark" => {bg: "#e9ecef", text: "#212529", border: "#ced4da"}
+  }.freeze
+
+  def delivery_event_badge_style(event)
+    colors = COLOR_MAP.fetch(event.color.to_s, COLOR_MAP["secondary"])
+    "background-color:#{colors[:bg]};color:#{colors[:text]};border:1px solid #{colors[:border]};border-radius:6px;padding:3px 8px;"
+  end
 end

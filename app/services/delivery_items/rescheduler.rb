@@ -26,6 +26,9 @@ module DeliveryItems
           original_delivery.reload.update_status_based_on_items
           target_delivery.reload.update_status_based_on_items
           finalize_original_if_all_terminal
+
+          # 🔹 Registrar evento
+          record_event
         end
       end
 
@@ -171,6 +174,24 @@ module DeliveryItems
       if all_terminal
         original_delivery.update_column(:status, Delivery.statuses[:rescheduled])
       end
+    end
+
+    def record_event
+      DeliveryEvent.record(
+        delivery: original_delivery,
+        action: "item_rescheduled",
+        actor: current_user,
+        payload: {
+          delivery_item_id: delivery_item.id,
+          product: delivery_item.order_item&.product,
+          quantity_rescheduled: quantity_to_reschedule,
+          partial: partial?,
+          from_date: original_delivery.delivery_date.to_s,
+          new_date: target_delivery.delivery_date.to_s,
+          target_delivery_id: target_delivery.id,
+          reason: params[:reason].presence
+        }
+      )
     end
   end
 end

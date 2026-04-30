@@ -4,7 +4,8 @@
           controller: "delivery-form address-validator",
           "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
           "delivery-form-orders-url-value": orders_for_client_deliveries_path,
-          action: "submit->address-validator#validateBeforeSubmit"
+          action: "submit->address-validator#validateBeforeSubmit",
+          turbo: true
         }
       } do |f| %>
   <%# ── HEADER DE PROGRESO ── %>
@@ -83,13 +84,15 @@
       </div>
     </div>
   </div>
+  <%= f.hidden_field :_return_to_panel, value: params[:return_to_panel] || "1" %>
   <%# ── FOOTER DE ACCIONES ── %>
   <div class="d-flex justify-content-between align-items-center pt-4 mt-2 border-top">
-    <%= link_to deliveries_path, class: "btn btn-outline-secondary" do %>
+    <% cancel_url = local_assigns[:cancel_url] || deliveries_path %>
+    <%= link_to cancel_url, class: "btn btn-outline-secondary" do %>
       <i class="bi bi-x-lg me-1"></i> Cancelar
     <% end %>
     <%= f.submit delivery.new_record? ? "Crear entrega" : "Guardar cambios",
-          class: "btn btn-primary px-5",
-          data: { "address-validator-target": "submitButton" } %>
+        class: "btn btn-primary px-5",
+        data: { "address-validator-target": "submitButton" } %>
   </div>
 <% end %>

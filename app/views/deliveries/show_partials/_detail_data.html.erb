@@ -68,9 +68,31 @@
     </div>
     <%# ── Tab: Historial ── %>
     <div class="tab-pane fade" id="history-pane">
-      <%= render "deliveries/show_partials/history",
-            delivery:         delivery,
-            delivery_history: delivery_history %>
+      <%# ── Seguimiento de eventos ── %>
+      <%= render "deliveries/show_partials/delivery_timeline", delivery: delivery %>
+      <%# ── Entregas relacionadas ── %>
+      <% if delivery_history.any? %>
+        <div class="mt-4">
+          <button class="btn btn-link btn-sm p-0 text-muted d-flex align-items-center gap-1 mb-3"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#related-deliveries-collapse">
+            <i class="bi bi-diagram-3 text-secondary"></i>
+            <span class="fw-semibold text-secondary" style="font-size: 0.82rem;">
+              Entregas relacionadas
+            </span>
+            <span class="badge bg-secondary bg-opacity-10 text-secondary ms-1" style="font-size: 0.7rem;">
+              <%= delivery_history.count %>
+            </span>
+            <i class="bi bi-chevron-down ms-1" style="font-size: 0.7rem;"></i>
+          </button>
+          <div class="collapse" id="related-deliveries-collapse">
+            <%= render "deliveries/show_partials/history",
+              delivery:         delivery,
+              delivery_history: delivery_history %>
+          </div>
+        </div>
+      <% end %>
     </div>
   </main>
 </div>

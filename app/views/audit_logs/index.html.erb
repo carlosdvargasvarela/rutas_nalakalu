@@ -120,8 +120,7 @@
                         class: "small fw-semibold text-decoration-none text-primary" %>
                   </td>
                   <td class="py-3">
-                    <span class="badge bg-<%= event.color %> bg-opacity-15 text-<%= event.color %> border border-<%= event.color %> border-opacity-25"
-                          style="font-size:0.72rem;">
+                    <span class="badge" style="<%= delivery_event_badge_style(event) %>; font-size:0.72rem;">
                       <i class="bi <%= event.icon %> me-1"></i><%= event.label %>
                     </span>
                   </td>

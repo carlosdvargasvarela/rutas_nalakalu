@@ -6,6 +6,10 @@
 </div>
 <div class="card shadow-sm">
   <div class="card-body">
-    <%= render "deliveries/upsert_partials/form", delivery: @delivery, clients: [@client], addresses: @addresses %>
+    <%= render "deliveries/upsert_partials/form",
+      delivery: @delivery,
+      clients: [@client],
+      addresses: @addresses,
+      cancel_url: session[:deliveries_return_to] || deliveries_path %>
   </div>
 </div>

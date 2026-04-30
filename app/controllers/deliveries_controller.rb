@@ -116,7 +116,39 @@ class DeliveriesController < ApplicationController
     sanitize_delivery_address_param!
     sanitize_order_id_param!
     @delivery = Deliveries::Updater.new(delivery: @delivery, params: params, current_user: current_user).call
-    redirect_to @delivery, notice: "Entrega actualizada correctamente."
+
+    respond_to do |format|
+      format.turbo_stream do
+        load_delivery_for_panel
+        set_delivery_panel_data
+
+        flash.now[:notice] = "Entrega actualizada correctamente."
+
+        render turbo_stream: [
+          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          turbo_stream.replace(
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
+          ),
+          turbo_stream.replace(
+            dom_id(@delivery, :card),
+            partial: "deliveries/index_partials/delivery_card",
+            locals: {delivery: @delivery}
+          )
+        ]
+      end
+      format.html do
+        redirect_to(
+          session.delete(:deliveries_return_to) || deliveries_path,
+          notice: "Entrega actualizada correctamente."
+        )
+      end
+    end
   rescue => e
     handle_update_error(e)
   end
@@ -591,13 +623,18 @@ class DeliveriesController < ApplicationController
 
     respond_to do |format|
       if @delivery.update(status: :archived)
+        # 🔹 Registrar evento
+        DeliveryEvent.record(
+          delivery: @delivery,
+          action: "archived",
+          actor: current_user,
+          payload: {archived_at: Time.current.to_s}
+        )
+
         format.turbo_stream do
           render turbo_stream: [
             turbo_stream.remove(dom_id(@delivery, :card)),
-            turbo_stream.replace(
-              "delivery_detail",
-              partial: "deliveries/shared_partials/detail_empty_state"
-            )
+            turbo_stream.replace("delivery_detail", partial: "deliveries/shared_partials/detail_empty_state")
           ]
         end
         format.html { redirect_to deliveries_path, notice: "La entrega fue archivada correctamente." }
@@ -605,15 +642,10 @@ class DeliveriesController < ApplicationController
         format.turbo_stream do
           load_delivery_for_panel
           set_delivery_panel_data
-
           render turbo_stream: turbo_stream.replace(
             dom_id(@delivery, :detail),
             partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
+            locals: {delivery: @delivery, future_deliveries: @future_deliveries, delivery_history: @delivery_history}
           )
         end
         format.html { redirect_to @delivery, alert: "No se pudo archivar la entrega." }
@@ -637,33 +669,35 @@ class DeliveriesController < ApplicationController
     end
 
     items = @delivery.delivery_items.bulk_confirmable
-    # update_all bypassa callbacks — actualizamos uno a uno para que
-    # after_update_commit :broadcast_item_row_update se dispare correctamente
-    items.each do |item|
-      item.update!(status: :confirmed)
-    end
+    items.each { |item| item.update!(status: :confirmed) }
 
     @delivery.mark_as_confirmed_by_vendor!
     @delivery.reload.update_status_based_on_items
     @delivery.reload
 
+    # 🔹 Registrar evento
+    DeliveryEvent.record(
+      delivery: @delivery,
+      action: "items_bulk_confirmed",
+      actor: current_user,
+      payload: {
+        items_count: items.count,
+        item_ids: items.map(&:id),
+        products: items.map { |i| i.order_item&.product }.compact
+      }
+    )
+
     respond_to do |format|
       format.turbo_stream do
         load_delivery_for_panel
         set_delivery_panel_data
-
         flash.now[:notice] = "#{items.count} producto(s) confirmado(s) para entrega."
-
         render turbo_stream: [
           turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
           turbo_stream.replace(
             dom_id(@delivery, :detail),
             partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
+            locals: {delivery: @delivery, future_deliveries: @future_deliveries, delivery_history: @delivery_history}
           ),
           turbo_stream.replace(
             "delivery_items_list",

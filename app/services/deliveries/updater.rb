@@ -13,16 +13,11 @@ module Deliveries
         @client = @order.client
         @address = find_or_create_address(@client)
 
-        # Aplicar la nueva dirección a la entrega antes de validar
         @delivery.delivery_address = @address
-
-        # Actualizar / reconstruir los delivery_items si vienen en params
         update_delivery_items if delivery_params[:delivery_items_attributes].present?
 
-        # Fecha "nueva" que se quiere para la entrega
         new_date = delivery_params[:delivery_date].presence || @delivery.delivery_date
 
-        # Validar que no se dupliquen productos respecto a OTRAS entregas
         validate_no_duplicate_products!(
           order: @order,
           address: @address,
@@ -31,8 +26,24 @@ module Deliveries
           excluding_delivery: @delivery
         )
 
-        # Finalmente, actualizar los demás atributos de la entrega
+        # Capturar campos cambiados antes de guardar
+        changed_fields = @delivery.changed
+
         @delivery.update!(delivery_params.except(:delivery_items_attributes, :delivery_address_id, :order_id))
+
+        # 🔹 Registrar evento solo si hubo cambios reales
+        if changed_fields.any?
+          DeliveryEvent.record(
+            delivery: @delivery,
+            action: "updated",
+            actor: current_user,
+            payload: {
+              changed_fields: changed_fields,
+              delivery_date: @delivery.delivery_date.to_s,
+              delivery_type: @delivery.delivery_type
+            }
+          )
+        end
       end
 
       @delivery
