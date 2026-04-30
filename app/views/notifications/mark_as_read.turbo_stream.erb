@@ -1,0 +1,8 @@
+<%# Reemplazar la card con la versión "leída" %>
+<%= turbo_stream.replace dom_id(@notification) do %>
+  <%= render @notification %>
+<% end %>
+<%# Actualizar badge del navbar %>
+<%= turbo_stream.update "navbar_unread_count" do %>
+  <%= current_user.notifications.unread.count %>
+<% end %>

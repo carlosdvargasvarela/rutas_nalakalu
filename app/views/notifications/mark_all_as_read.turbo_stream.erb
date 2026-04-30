@@ -1,0 +1,8 @@
+<%# Recargar toda la lista ya sin badges "NUEVA" %>
+<%= turbo_stream.replace "notifications_list" do %>
+  <div id="notifications_list" class="vstack gap-2">
+    <%= render policy_scope(Notification).recent.includes(:notifiable).limit(15) %>
+  </div>
+<% end %>
+<%# Resetear badge del navbar a 0 %>
+<%= turbo_stream.update "navbar_unread_count", "0" %>

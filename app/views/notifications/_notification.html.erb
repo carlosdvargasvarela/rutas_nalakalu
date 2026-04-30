@@ -1,0 +1,75 @@
+<% config = notification.type_config %>
+<div id="<%= dom_id(notification) %>"
+  class="card border-0 shadow-sm notification-card <%= 'unread' unless notification.read %>"
+  style="border-left: 3px solid <%= notification.read ? '#dee2e6' : "var(--bs-#{config[:color]})" %> !important;">
+  <div class="card-body p-3">
+    <div class="d-flex align-items-start gap-3">
+      <%# Icono %>
+      <div class="rounded-3 p-2 d-flex flex-shrink-0"
+           style="background-color: var(--bs-<%= config[:color] %>-bg, rgba(0,0,0,0.05));">
+        <i class="bi <%= config[:icon] %> fs-5 text-<%= config[:color] %>"></i>
+      </div>
+      <%# Contenido %>
+      <div class="flex-grow-1 min-w-0">
+        <%# Tipo + Tiempo %>
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="fw-bold text-uppercase opacity-60"
+                style="font-size: 0.62rem; letter-spacing: 0.07em; color: var(--bs-<%= config[:color] %>);">
+            <%= config[:label] %>
+          </span>
+          <span class="text-muted" style="font-size: 0.72rem; white-space: nowrap;">
+            <i class="bi bi-clock me-1"></i><%= time_ago_in_words(notification.created_at) %> atrás
+          </span>
+        </div>
+        <%# Mensaje %>
+        <div class="mb-2" style="font-size: 0.88rem; <%= 'font-weight: 500;' unless notification.read %>">
+          <%= link_to notification.target_path,
+                class: "text-decoration-none text-dark stretched-link-off" do %>
+            <%= notification.message %>
+          <% end %>
+        </div>
+        <%# Footer: fecha + badge + acción %>
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <small class="text-muted" style="font-size: 0.7rem;">
+              <i class="bi bi-calendar3 me-1"></i>
+              <%= l(notification.created_at, format: :short) %>
+            </small>
+            <% unless notification.read %>
+              <span class="badge rounded-pill bg-primary"
+                    style="font-size: 0.58rem; letter-spacing: 0.04em;">
+                NUEVA
+              </span>
+            <% end %>
+          </div>
+          <% unless notification.read %>
+            <%= button_to mark_as_read_notification_path(notification),
+                  method: :patch,
+                  class: "btn btn-link btn-sm text-decoration-none p-0 text-success fw-semibold d-flex align-items-center gap-1",
+                  style: "font-size: 0.75rem;",
+                  form: { data: { turbo_stream: true } } do %>
+              <i class="bi bi-check-circle"></i> Marcar leída
+            <% end %>
+          <% else %>
+            <span class="text-success d-flex align-items-center gap-1"
+                  style="font-size: 0.72rem;">
+              <i class="bi bi-check-circle-fill"></i> Leída
+            </span>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  .notification-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .notification-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.08) !important;
+  }
+  .notification-card.unread {
+    background-color: #f8faff;
+  }
+</style>
