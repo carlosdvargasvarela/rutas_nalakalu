@@ -250,7 +250,6 @@ Rails.application.routes.draw do
   resources :audit_logs, only: [:index] do
     collection do
       get :resource_history
-      get :compare
     end
   end
 

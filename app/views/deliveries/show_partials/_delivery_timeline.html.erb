@@ -1,0 +1,135 @@
+<%# app/views/deliveries/show_partials/_delivery_timeline.html.erb %>
+<%# Locals: delivery (Delivery), limit: (Integer, default 20), show_header: (Boolean, default true) %>
+<% limit        ||= 20 %>
+<% show_header  ||= true %>
+<% events = delivery.delivery_events.recent.limit(limit) %>
+<% if show_header %>
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-clock-history text-primary"></i>
+      <span class="fw-semibold">Seguimiento de entrega</span>
+    </div>
+    <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1">
+      <%= delivery.delivery_events.count %> evento<%= delivery.delivery_events.count == 1 ? "" : "s" %>
+    </span>
+  </div>
+<% end %>
+<% if events.any? %>
+  <div class="delivery-timeline">
+    <% events.each_with_index do |event, index| %>
+      <div class="dt-item <%= 'dt-item-last' if index == events.size - 1 %>">
+        <%# Dot %>
+        <div class="dt-dot bg-<%= event.color %>">
+          <i class="bi <%= event.icon %> text-white" style="font-size:0.75rem;"></i>
+        </div>
+        <%# Contenido %>
+        <div class="dt-body">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+            <div>
+              <span class="badge bg-<%= event.color %> bg-opacity-15 text-<%= event.color %> border border-<%= event.color %> border-opacity-25"
+                    style="font-size:0.7rem;">
+                <%= event.label %>
+              </span>
+            </div>
+            <div class="text-end flex-shrink-0">
+              <div class="small text-muted" style="font-size:0.72rem;">
+                <%= event.created_at.in_time_zone("America/Costa_Rica").strftime("%d/%m/%Y") %>
+              </div>
+              <div class="text-muted" style="font-size:0.68rem;">
+                <%= event.created_at.in_time_zone("America/Costa_Rica").strftime("%H:%M") %>
+              </div>
+            </div>
+          </div>
+          <%# Descripción legible %>
+          <p class="small text-dark mb-1">
+            <%= delivery_event_description(event) %>
+          </p>
+          <%# Actor %>
+          <div class="d-flex align-items-center gap-1" style="font-size:0.72rem;">
+            <i class="bi bi-person text-muted"></i>
+            <span class="text-muted"><%= event.actor_name %></span>
+          </div>
+          <%# Payload extra — colapsable si hay datos adicionales %>
+          <% data = event.payload_data.except("reason", "from_date", "new_date", "to_date",
+                                               "product", "sala", "items_count", "item_ids",
+                                               "new_delivery_id", "delivery_type", "delivery_date",
+                                               "changed_fields", "from_seller", "to_seller", "until_date") %>
+          <% if data.any? %>
+            <div class="mt-2">
+              <button class="btn btn-link btn-sm p-0 text-muted"
+                      style="font-size:0.7rem;"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#dt-payload-<%= event.id %>">
+                <i class="bi bi-chevron-down me-1"></i>Ver datos adicionales
+              </button>
+              <div class="collapse mt-1" id="dt-payload-<%= event.id %>">
+                <div class="p-2 rounded-2 bg-light border" style="font-size:0.7rem;">
+                  <% data.each do |key, val| %>
+                    <div class="d-flex gap-2 mb-1">
+                      <span class="text-muted fw-semibold text-nowrap"><%= key %>:</span>
+                      <code class="text-dark"><%= val %></code>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  <% if delivery.delivery_events.count > limit %>
+    <div class="text-center mt-3">
+      <%= link_to resource_history_audit_logs_path(item_type: "Delivery", item_id: delivery.id),
+          class: "btn btn-sm btn-outline-secondary" do %>
+        <i class="bi bi-clock-history me-1"></i>
+        Ver historial completo (<%= delivery.delivery_events.count %> eventos)
+      <% end %>
+    </div>
+  <% end %>
+<% else %>
+  <div class="text-center py-4">
+    <i class="bi bi-clock text-muted opacity-50 d-block fs-3 mb-2"></i>
+    <p class="text-muted small mb-0">Sin eventos registrados aún</p>
+  </div>
+<% end %>
+<style>
+  .delivery-timeline { position: relative; }
+  .dt-item {
+    position: relative;
+    padding-left: 44px;
+    padding-bottom: 20px;
+  }
+  .dt-item::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 30px;
+    bottom: -4px;
+    width: 2px;
+    background: #e9ecef;
+  }
+  .dt-item-last::before { display: none; }
+  .dt-dot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 3px #fff, 0 0 0 5px #e9ecef;
+    flex-shrink: 0;
+  }
+  .dt-body {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 10px 12px;
+    transition: box-shadow 0.15s ease;
+  }
+  .dt-body:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+</style>

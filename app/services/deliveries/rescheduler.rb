@@ -17,10 +17,35 @@ module Deliveries
       ActiveRecord::Base.transaction do
         @target_delivery = find_or_create_target_delivery
         migrate_items_to_target
-        # ✅ NO se elimina el assignment del plan — la entrega queda en el plan como reagendada
         finalize_original_delivery_status
         delivery.reload.update_status_based_on_items
         target_delivery.reload.update_status_based_on_items
+
+        # 🔹 Registrar evento en la entrega original
+        DeliveryEvent.record(
+          delivery: delivery,
+          action: "rescheduled",
+          actor: current_user,
+          payload: {
+            target_delivery_id: target_delivery.id,
+            reason: reason,
+            new_date: target_delivery.delivery_date.to_s,
+            old_date: old_date.to_s,
+            items_count: delivery.delivery_items.where(status: :rescheduled).count
+          }
+        )
+
+        # 🔹 Registrar evento en la nueva entrega
+        DeliveryEvent.record(
+          delivery: target_delivery,
+          action: "created",
+          actor: current_user,
+          payload: {
+            source_delivery_id: delivery.id,
+            context: "reschedule",
+            old_date: old_date.to_s
+          }
+        )
       end
 
       notify_users(old_date, old_status)
@@ -122,8 +147,6 @@ module Deliveries
       )
     end
 
-    # ✅ Solo marca el delivery como rescheduled si todos sus items son terminales.
-    # NO toca el delivery_plan_assignment — la entrega permanece en el plan.
     def finalize_original_delivery_status
       all_terminal = delivery.delivery_items.reload.all? do |di|
         di.status.in?(%w[rescheduled cancelled delivered failed])

@@ -153,6 +153,226 @@ class DeliveriesController < ApplicationController
     authorize @delivery
   end
 
+  def approve
+    authorize @delivery, :approve?
+    @delivery.approve!
+
+    # 🔹 Registrar evento
+    DeliveryEvent.record(
+      delivery: @delivery,
+      action: "approved",
+      actor: current_user,
+      payload: {approved_at: Time.current.to_s}
+    )
+
+    respond_to do |format|
+      format.turbo_stream do
+        load_delivery_for_panel
+        set_delivery_panel_data
+
+        render turbo_stream: [
+          turbo_stream.replace(
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
+          ),
+          turbo_stream.replace(
+            dom_id(@delivery, :card),
+            partial: "deliveries/index_partials/delivery_card",
+            locals: {delivery: @delivery}
+          )
+        ]
+      end
+      format.html { redirect_to @delivery, notice: "Entrega aprobada correctamente para esta semana." }
+    end
+  end
+
+  def mark_as_delivered
+    authorize @delivery, :edit?
+
+    @delivery.mark_as_delivered!
+    @delivery.reload
+
+    # 🔹 Registrar evento
+    DeliveryEvent.record(
+      delivery: @delivery,
+      action: "delivered",
+      actor: current_user,
+      payload: {delivered_at: Time.current.to_s}
+    )
+
+    respond_to do |format|
+      format.turbo_stream do
+        load_delivery_for_panel
+        set_delivery_panel_data
+
+        flash.now[:notice] = "Entrega marcada como completada."
+
+        render turbo_stream: [
+          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          turbo_stream.replace(
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
+          ),
+          turbo_stream.replace(
+            "delivery_items_list",
+            partial: "deliveries/show_partials/product_table",
+            locals: {delivery: @delivery}
+          ),
+          turbo_stream.replace(
+            dom_id(@delivery, :card),
+            partial: "deliveries/index_partials/delivery_card",
+            locals: {delivery: @delivery}
+          )
+        ]
+      end
+      format.html { redirect_to @delivery, notice: "Entrega marcada como completada." }
+    end
+  end
+
+  def start_warehousing
+    authorize @delivery, :edit?
+
+    until_date = safe_date(params[:warehousing_until])
+
+    unless until_date.present? && until_date > Date.current
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:alert] = "Debes indicar una fecha futura de fin de bodegaje."
+          render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+            status: :unprocessable_entity
+        end
+      end
+      return
+    end
+
+    @delivery.start_warehousing!(until_date)
+
+    # 🔹 Registrar evento
+    DeliveryEvent.record(
+      delivery: @delivery,
+      action: "warehousing_started",
+      actor: current_user,
+      payload: {
+        warehousing_until: until_date.to_s,
+        started_at: Time.current.to_s
+      }
+    )
+
+    respond_to do |format|
+      format.turbo_stream do
+        load_delivery_for_panel
+        set_delivery_panel_data
+
+        flash.now[:notice] = "Entrega en bodegaje hasta el #{I18n.l until_date, format: :long}."
+
+        render turbo_stream: [
+          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          turbo_stream.update("modal", ""),
+          turbo_stream.replace(
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
+          ),
+          turbo_stream.replace(
+            dom_id(@delivery, :card),
+            partial: "deliveries/index_partials/delivery_card",
+            locals: {delivery: @delivery}
+          )
+        ]
+      end
+      format.html { redirect_to @delivery, notice: "Entrega en bodegaje." }
+    end
+  end
+
+  def end_warehousing
+    authorize @delivery, :edit?
+    @delivery.end_warehousing!
+
+    # 🔹 Registrar evento
+    DeliveryEvent.record(
+      delivery: @delivery,
+      action: "warehousing_ended",
+      actor: current_user,
+      payload: {ended_at: Time.current.to_s}
+    )
+
+    respond_to do |format|
+      format.turbo_stream do
+        load_delivery_for_panel
+        set_delivery_panel_data
+
+        flash.now[:notice] = "Bodegaje finalizado. Entrega vuelve a estado pendiente."
+
+        render turbo_stream: [
+          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          turbo_stream.replace(
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
+          ),
+          turbo_stream.replace(
+            dom_id(@delivery, :card),
+            partial: "deliveries/index_partials/delivery_card",
+            locals: {delivery: @delivery}
+          )
+        ]
+      end
+      format.html { redirect_to @delivery, notice: "Bodegaje finalizado." }
+    end
+  end
+
+  def reassign_seller
+    authorize @delivery, :reassign_seller?
+
+    seller_id = params[:seller_id].presence
+    unless seller_id
+      redirect_to delivery_path(@delivery), alert: "Debes seleccionar un vendedor."
+      return
+    end
+
+    old_seller = @delivery.order.seller
+    seller = Seller.find(seller_id)
+    @delivery.order.reassign_to_seller!(seller)
+
+    # 🔹 Registrar evento
+    DeliveryEvent.record(
+      delivery: @delivery,
+      action: "seller_reassigned",
+      actor: current_user,
+      payload: {
+        old_seller_id: old_seller&.id,
+        old_seller_name: old_seller&.name,
+        new_seller_id: seller.id,
+        new_seller_name: seller.name,
+        new_seller_code: seller.seller_code
+      }
+    )
+
+    redirect_to delivery_path(@delivery),
+      notice: "El pedido #{@delivery.order.number} fue reasignado al vendedor #{seller.name} (#{seller.seller_code})."
+  rescue => e
+    redirect_to delivery_path(@delivery),
+      alert: "No se pudo reasignar el pedido: #{e.message}"
+  end
+
   def create_internal_delivery
     authorize Delivery
     @delivery = Deliveries::InternalCreator.new(params: params, current_user: current_user).call
@@ -313,117 +533,6 @@ class DeliveriesController < ApplicationController
     end
   end
 
-  def start_warehousing
-    authorize @delivery, :edit?
-
-    until_date = safe_date(params[:warehousing_until])
-
-    unless until_date.present? && until_date > Date.current
-      respond_to do |format|
-        format.turbo_stream do
-          flash.now[:alert] = "Debes indicar una fecha futura de fin de bodegaje."
-          render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-            status: :unprocessable_entity
-        end
-      end
-      return
-    end
-
-    @delivery.start_warehousing!(until_date)
-
-    respond_to do |format|
-      format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-
-        flash.now[:notice] = "Entrega en bodegaje hasta el #{I18n.l until_date, format: :long}."
-
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.update("modal", ""),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
-      end
-      format.html { redirect_to @delivery, notice: "Entrega en bodegaje." }
-    end
-  end
-
-  def end_warehousing
-    authorize @delivery, :edit?
-    @delivery.end_warehousing!
-
-    respond_to do |format|
-      format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-
-        flash.now[:notice] = "Bodegaje finalizado. Entrega vuelve a estado pendiente."
-
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
-      end
-      format.html { redirect_to @delivery, notice: "Bodegaje finalizado." }
-    end
-  end
-
-  def approve
-    authorize @delivery, :approve?
-    @delivery.approve!
-
-    respond_to do |format|
-      format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-
-        render turbo_stream: [
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
-      end
-      format.html { redirect_to @delivery, notice: "Entrega aprobada correctamente para esta semana." }
-    end
-  end
-
   def service_case_form
     authorize @delivery, :edit?
 
@@ -509,46 +618,6 @@ class DeliveriesController < ApplicationController
         end
         format.html { redirect_to @delivery, alert: "No se pudo archivar la entrega." }
       end
-    end
-  end
-
-  def mark_as_delivered
-    authorize @delivery, :edit?
-
-    @delivery.mark_as_delivered!
-    @delivery.reload
-
-    respond_to do |format|
-      format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-
-        flash.now[:notice] = "Entrega marcada como completada."
-
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
-          ),
-          turbo_stream.replace(
-            "delivery_items_list",
-            partial: "deliveries/show_partials/product_table",
-            locals: {delivery: @delivery}
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
-      end
-      format.html { redirect_to @delivery, notice: "Entrega marcada como completada." }
     end
   end
 
@@ -648,25 +717,6 @@ class DeliveriesController < ApplicationController
     authorize @delivery, :edit?
     @delivery.update_status_based_on_items
     redirect_to @delivery, notice: "El estado de la entrega ha sido actualizado."
-  end
-
-  def reassign_seller
-    authorize @delivery, :reassign_seller?
-
-    seller_id = params[:seller_id].presence
-    unless seller_id
-      redirect_to delivery_path(@delivery), alert: "Debes seleccionar un vendedor."
-      return
-    end
-
-    seller = Seller.find(seller_id)
-    @delivery.order.reassign_to_seller!(seller)
-
-    redirect_to delivery_path(@delivery),
-      notice: "El pedido #{@delivery.order.number} fue reasignado al vendedor #{seller.name} (#{seller.seller_code})."
-  rescue => e
-    redirect_to delivery_path(@delivery),
-      alert: "No se pudo reasignar el pedido: #{e.message}"
   end
 
   def take_order

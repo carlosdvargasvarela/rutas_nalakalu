@@ -1,185 +1,286 @@
-<%# app/views/audit_logs/index.html.erb %>
-<% content_for :title, 'Historial de cambios' %>
-<div class="container-fluid py-4">
-  <!-- Header con estadísticas -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="d-flex align-items-center justify-content-between">
-        <div>
-          <h2 class="mb-1">
-            <i class="bi bi-clock-history me-2 text-primary"></i>
-            Historial de cambios
-          </h2>
-          <p class="text-muted mb-0">
-            Registro completo de modificaciones en el sistema
-          </p>
-        </div>
-        <!-- Estadísticas rápidas -->
-        <div class="d-none d-lg-flex gap-3">
-          <div class="text-center">
-            <div class="fs-4 fw-bold text-success"><%= @versions.total_count %></div>
-            <small class="text-muted">Total cambios</small>
-          </div>
-          <div class="text-center">
-            <div class="fs-4 fw-bold text-primary"><%= @users_by_id.count %></div>
-            <small class="text-muted">Usuarios activos</small>
-          </div>
-        </div>
+<% content_for :title, "Historial de cambios" %>
+<div class="container-fluid py-4 px-4">
+  <%# Header %>
+  <div class="d-flex align-items-end justify-content-between mb-4">
+    <div>
+      <p class="text-uppercase text-muted small fw-semibold mb-1" style="letter-spacing:0.05em;">
+        <i class="bi bi-shield-lock me-1"></i>Auditoría
+      </p>
+      <h3 class="fw-bold mb-0">Historial de cambios</h3>
+      <p class="text-muted mb-0 small">Registro completo de actividad en el sistema.</p>
+    </div>
+    <div class="d-none d-lg-flex gap-3">
+      <div class="text-center px-3 py-2 bg-white rounded-3 border">
+        <div class="fs-5 fw-bold"><%= @total_events %></div>
+        <small class="text-muted">Eventos de negocio</small>
+      </div>
+      <div class="text-center px-3 py-2 bg-white rounded-3 border">
+        <div class="fs-5 fw-bold"><%= @versions.total_count %></div>
+        <small class="text-muted">Cambios técnicos</small>
       </div>
     </div>
   </div>
-  <!-- Filtros mejorados -->
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-white">
-      <h5 class="mb-0">
-        <i class="bi bi-funnel me-2"></i>
-        Filtros de búsqueda
-      </h5>
-    </div>
-    <div class="card-body">
-      <%= search_form_for @q, url: audit_logs_path, method: :get, 
-          html: { class: 'row g-3', data: { controller: 'audit-filters' } } do |f| %>
-        <!-- Búsqueda por texto de recurso -->
-        <div class="col-12 col-md-6 col-lg-4">
-          <%= f.label :by_resource_text, class: 'form-label fw-semibold' do %>
-            <i class="bi bi-search me-1"></i>
-            Buscar recurso
-            <span class="text-muted small d-block fw-normal">
-              Escribe, por ejemplo: <code>Delivery#2323</code>, <code>Order#1001</code>, <code>Delivery</code>
-            </span>
+  <%# Tabs %>
+  <ul class="nav nav-tabs mb-0 border-bottom-0" id="auditTabs" role="tablist">
+    <li class="nav-item">
+      <button class="nav-link <%= 'active' if @active_tab == 'events' %> d-flex align-items-center gap-2"
+              data-bs-toggle="tab" data-bs-target="#tab-events" type="button">
+        <i class="bi bi-activity"></i>Eventos de negocio
+        <span class="badge bg-primary bg-opacity-10 text-primary ms-1"><%= @total_events %></span>
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link <%= 'active' if @active_tab == 'versions' %> d-flex align-items-center gap-2"
+              data-bs-toggle="tab" data-bs-target="#tab-versions" type="button">
+        <i class="bi bi-code-square"></i>Cambios técnicos
+        <span class="badge bg-secondary bg-opacity-10 text-secondary ms-1"><%= @versions.total_count %></span>
+      </button>
+    </li>
+  </ul>
+  <div class="tab-content border border-top-0 rounded-bottom-3 bg-white shadow-sm">
+    <%# ── TAB EVENTOS ── %>
+    <div class="tab-pane fade <%= 'show active' if @active_tab == 'events' %> p-4" id="tab-events">
+      <div class="card border rounded-3 mb-4">
+        <div class="card-header bg-light py-2 px-3 d-flex align-items-center gap-2">
+          <i class="bi bi-sliders2 text-muted small"></i>
+          <span class="small fw-semibold">Filtros</span>
+        </div>
+        <div class="card-body px-3 py-3">
+          <%= form_with url: audit_logs_path, method: :get, html: { class: "row g-2 align-items-end" } do |f| %>
+            <%= f.hidden_field :tab, value: "events" %>
+            <div class="col-12 col-md-3">
+              <%= f.label :delivery_id, class: "form-label small fw-semibold text-muted mb-1" do %>
+                <i class="bi bi-truck me-1"></i>Entrega #
+              <% end %>
+              <%= f.text_field :delivery_id, value: params[:delivery_id],
+                  class: "form-control form-control-sm", placeholder: "Ej: 2323" %>
+            </div>
+            <div class="col-12 col-md-3">
+              <%= f.label :event_action, class: "form-label small fw-semibold text-muted mb-1" do %>
+                <i class="bi bi-lightning me-1"></i>Acción
+              <% end %>
+              <%= f.select :event_action,
+                  options_for_select([["Todas", ""]] + DeliveryEvent::ACTION_LABELS.map { |k, v| [v, k] }, params[:event_action]),
+                  {}, class: "form-select form-select-sm" %>
+            </div>
+            <div class="col-12 col-md-3">
+              <%= f.label :event_actor_id, class: "form-label small fw-semibold text-muted mb-1" do %>
+                <i class="bi bi-person me-1"></i>Actor
+              <% end %>
+              <%= f.select :event_actor_id,
+                  options_for_select([["Todos", ""]] + User.order(:name).pluck(:name, :id), params[:event_actor_id]),
+                  {}, class: "form-select form-select-sm" %>
+            </div>
+            <div class="col-6 col-md-1">
+              <%= f.label :event_from, "Desde", class: "form-label small fw-semibold text-muted mb-1" %>
+              <%= f.date_field :event_from, value: params[:event_from], class: "form-control form-control-sm" %>
+            </div>
+            <div class="col-6 col-md-1">
+              <%= f.label :event_to, "Hasta", class: "form-label small fw-semibold text-muted mb-1" %>
+              <%= f.date_field :event_to, value: params[:event_to], class: "form-control form-control-sm" %>
+            </div>
+            <div class="col-12 d-flex gap-2">
+              <button type="submit" class="btn btn-sm btn-primary px-3">
+                <i class="bi bi-search me-1"></i>Buscar
+              </button>
+              <%= link_to audit_logs_path(tab: "events"), class: "btn btn-sm btn-outline-secondary px-3" do %>
+                <i class="bi bi-x-circle me-1"></i>Limpiar
+              <% end %>
+            </div>
           <% end %>
-          <%= f.text_field :by_resource_text,
-              class: 'form-control',
-              placeholder: 'Ej: Delivery#2323 o Delivery, Order, Client…' %>
         </div>
-        <!-- Tipo de recurso -->
-        <div class="col-12 col-md-6 col-lg-3">
-          <%= f.label :item_type_eq, class: 'form-label fw-semibold' do %>
-            <i class="bi bi-folder me-1"></i> Tipo de recurso
-          <% end %>
-          <%= f.select :item_type_eq, 
-              options_for_select([['Todos los tipos', '']] + @item_types.map { |t| [t, t] }, @q.item_type_eq), 
-              {}, 
-              class: 'form-select',
-              data: { action: 'change->audit-filters#updateCounts' } %>
-        </div>
-        <!-- Evento -->
-        <div class="col-12 col-md-6 col-lg-2">
-          <%= f.label :event_eq, class: 'form-label fw-semibold' do %>
-            <i class="bi bi-lightning me-1"></i> Evento
-          <% end %>
-          <%= f.select :event_eq, 
-              options_for_select([
-                ['Todos', ''],
-                ['Creado', 'create'],
-                ['Actualizado', 'update'],
-                ['Eliminado', 'destroy']
-              ], @q.event_eq), 
-              {}, 
-              class: 'form-select' %>
-        </div>
-        <!-- Usuario -->
-        <div class="col-12 col-md-6 col-lg-3">
-          <%= f.label :whodunnit_eq, class: 'form-label fw-semibold' do %>
-            <i class="bi bi-person me-1"></i> Usuario
-          <% end %>
-          <%= f.select :whodunnit_eq, 
-              options_for_select([['Todos los usuarios', '']] + User.order(:name).pluck(:name, :id).map { |n, id| [n, id.to_s] }, @q.whodunnit_eq), 
-              {}, 
-              class: 'form-select' %>
-        </div>
-        <!-- Fecha desde -->
-        <div class="col-12 col-md-6 col-lg-2">
-          <%= f.label :created_at_gteq, class: 'form-label fw-semibold' do %>
-            <i class="bi bi-calendar-event me-1"></i> Desde
-          <% end %>
-          <%= f.date_field :created_at_gteq, 
-              value: (@q.created_at_gteq&.to_date), 
-              class: 'form-control' %>
-        </div>
-        <!-- Fecha hasta -->
-        <div class="col-12 col-md-6 col-lg-2">
-          <%= f.label :created_at_lteq, class: 'form-label fw-semibold' do %>
-            <i class="bi bi-calendar-check me-1"></i> Hasta
-          <% end %>
-          <%= f.date_field :created_at_lteq, 
-              value: (@q.created_at_lteq&.to_date), 
-              class: 'form-control' %>
-        </div>
-        <!-- Botones de acción -->
-        <div class="col-12">
-          <div class="d-flex gap-2 flex-wrap">
-            <button type="submit" class="btn btn-primary">
-              <i class="bi bi-search me-1"></i> Buscar
-            </button>
-            <%= link_to audit_logs_path, class: 'btn btn-outline-secondary' do %>
-              <i class="bi bi-x-circle me-1"></i> Limpiar filtros
-            <% end %>
-            <%= link_to '#', class: 'btn btn-outline-info', data: { bs_toggle: 'modal', bs_target: '#exportModal' } do %>
-              <i class="bi bi-download me-1"></i> Exportar
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-    </div>
-  </div>
-  <!-- Tabla de cambios -->
-  <div class="card shadow-sm">
-    <div class="card-body p-0">
+      </div>
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
-          <thead class="table-light sticky-top">
+          <thead class="table-light">
             <tr>
-              <th style="width: 180px;">
-                <i class="bi bi-clock me-1"></i> Fecha y hora
-              </th>
-              <th style="width: 200px;">
-                <i class="bi bi-person me-1"></i> Usuario
-              </th>
-              <th>
-                <i class="bi bi-folder me-1"></i> Recurso
-              </th>
-              <th style="width: 120px;" class="text-center">
-                <i class="bi bi-lightning me-1"></i> Evento
-              </th>
-              <th>
-                <i class="bi bi-list-ul me-1"></i> Cambios realizados
-              </th>
-              <th style="width: 100px;" class="text-center">Acciones</th>
+              <th class="ps-3 py-3 text-muted small fw-semibold text-uppercase" style="width:140px;">Fecha</th>
+              <th class="py-3 text-muted small fw-semibold text-uppercase" style="width:110px;">Entrega</th>
+              <th class="py-3 text-muted small fw-semibold text-uppercase" style="width:160px;">Acción</th>
+              <th class="py-3 text-muted small fw-semibold text-uppercase">Descripción</th>
+              <th class="py-3 text-muted small fw-semibold text-uppercase" style="width:160px;">Actor</th>
+              <th class="py-3 pe-3 text-muted small fw-semibold text-uppercase text-center" style="width:70px;"></th>
             </tr>
           </thead>
           <tbody>
-            <% if @versions.any? %>
-              <%= render partial: 'version_row', 
-                  collection: @versions, 
-                  as: :version, 
-                  locals: { users_by_id: @users_by_id } %>
+            <% if @delivery_events.any? %>
+              <% @delivery_events.each do |event| %>
+                <tr>
+                  <td class="ps-3 py-3">
+                    <div class="small fw-semibold">
+                      <%= event.created_at.in_time_zone("America/Costa_Rica").strftime("%d/%m/%Y") %>
+                    </div>
+                    <div class="text-muted" style="font-size:0.72rem;">
+                      <%= event.created_at.in_time_zone("America/Costa_Rica").strftime("%H:%M") %>
+                    </div>
+                  </td>
+                  <td class="py-3">
+                    <%= link_to "##{event.delivery_id}",
+                        resource_history_audit_logs_path(item_type: "Delivery", item_id: event.delivery_id),
+                        class: "small fw-semibold text-decoration-none text-primary" %>
+                  </td>
+                  <td class="py-3">
+                    <span class="badge bg-<%= event.color %> bg-opacity-15 text-<%= event.color %> border border-<%= event.color %> border-opacity-25"
+                          style="font-size:0.72rem;">
+                      <i class="bi <%= event.icon %> me-1"></i><%= event.label %>
+                    </span>
+                  </td>
+                  <td class="py-3">
+                    <span class="small"><%= delivery_event_description(event) %></span>
+                  </td>
+                  <td class="py-3">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="audit-avatar">
+                        <i class="bi bi-person-fill"></i>
+                      </div>
+                      <span class="small fw-semibold"><%= event.actor_name %></span>
+                    </div>
+                  </td>
+                  <td class="py-3 text-center pe-3">
+                    <%= link_to resource_history_audit_logs_path(item_type: "Delivery", item_id: event.delivery_id),
+                        class: "btn btn-sm btn-outline-secondary",
+                        title: "Ver historial",
+                        data: { bs_toggle: "tooltip" } do %>
+                      <i class="bi bi-clock-history"></i>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
             <% else %>
               <tr>
                 <td colspan="6" class="text-center py-5">
-                  <div class="text-muted">
-                    <i class="bi bi-inbox d-block fs-1 mb-3 opacity-50"></i>
-                    <p class="mb-0">No se encontraron cambios con los filtros aplicados</p>
-                    <small>Intenta ajustar los criterios de búsqueda</small>
-                  </div>
+                  <i class="bi bi-inbox d-block fs-1 text-muted opacity-50 mb-3"></i>
+                  <p class="text-muted mb-1">No se encontraron eventos</p>
+                  <small class="text-muted">Ajustá los filtros</small>
                 </td>
               </tr>
             <% end %>
           </tbody>
         </table>
       </div>
+      <% if @delivery_events.any? %>
+        <div class="d-flex justify-content-between align-items-center px-1 pt-3 border-top mt-3">
+          <small class="text-muted">
+            Mostrando <%= @delivery_events.offset_value + 1 %>–<%= [@delivery_events.offset_value + @delivery_events.length, @delivery_events.total_count].min %>
+            de <strong><%= @delivery_events.total_count %></strong>
+          </small>
+          <%= paginate @delivery_events %>
+        </div>
+      <% end %>
     </div>
-    <!-- Paginación -->
-    <% if @versions.any? %>
-      <div class="card-footer bg-white border-top">
-        <div class="d-flex justify-content-between align-items-center">
-          <div class="text-muted small">
-            Mostrando <%= @versions.offset_value + 1 %> - <%= [@versions.offset_value + @versions.length, @versions.total_count].min %>
-            de <%= @versions.total_count %> registros
-          </div>
-          <%= paginate @versions %>
+    <%# ── TAB CAMBIOS TÉCNICOS ── %>
+    <div class="tab-pane fade <%= 'show active' if @active_tab == 'versions' %> p-4" id="tab-versions">
+      <div class="card border rounded-3 mb-4">
+        <div class="card-header bg-light py-2 px-3 d-flex align-items-center gap-2">
+          <i class="bi bi-sliders2 text-muted small"></i>
+          <span class="small fw-semibold">Filtros</span>
+        </div>
+        <div class="card-body px-3 py-3">
+          <%= search_form_for @q, url: audit_logs_path, method: :get,
+              html: { class: "row g-2 align-items-end" } do |f| %>
+            <%= f.hidden_field :tab, value: "versions", name: "tab" %>
+            <div class="col-12 col-md-3">
+              <%= f.label :by_resource_text, class: "form-label small fw-semibold text-muted mb-1" do %>
+                <i class="bi bi-search me-1"></i>Recurso
+              <% end %>
+              <%= f.text_field :by_resource_text,
+                  class: "form-control form-control-sm", placeholder: "Ej: Delivery#2323" %>
+            </div>
+            <div class="col-12 col-md-2">
+              <%= f.label :item_type_eq, class: "form-label small fw-semibold text-muted mb-1" do %>
+                <i class="bi bi-folder me-1"></i>Tipo
+              <% end %>
+              <%= f.select :item_type_eq,
+                  options_for_select([["Todos", ""]] + @item_types.map { |t| [t, t] }, @q.item_type_eq),
+                  {}, class: "form-select form-select-sm" %>
+            </div>
+            <div class="col-12 col-md-2">
+              <%= f.label :event_eq, class: "form-label small fw-semibold text-muted mb-1" do %>
+                <i class="bi bi-lightning me-1"></i>Evento
+              <% end %>
+              <%= f.select :event_eq,
+                  options_for_select([["Todos", ""], ["Creado", "create"], ["Actualizado", "update"], ["Eliminado", "destroy"]], @q.event_eq),
+                  {}, class: "form-select form-select-sm" %>
+            </div>
+            <div class="col-12 col-md-2">
+              <%= f.label :whodunnit_eq, class: "form-label small fw-semibold text-muted mb-1" do %>
+                <i class="bi bi-person me-1"></i>Usuario
+              <% end %>
+              <%= f.select :whodunnit_eq,
+                  options_for_select([["Todos", ""]] + User.order(:name).pluck(:name, :id).map { |n, id| [n, id.to_s] }, @q.whodunnit_eq),
+                  {}, class: "form-select form-select-sm" %>
+            </div>
+            <div class="col-6 col-md-1">
+              <%= f.label :created_at_gteq, "Desde", class: "form-label small fw-semibold text-muted mb-1" %>
+              <%= f.date_field :created_at_gteq, value: @q.created_at_gteq&.to_date, class: "form-control form-control-sm" %>
+            </div>
+            <div class="col-6 col-md-1">
+              <%= f.label :created_at_lteq, "Hasta", class: "form-label small fw-semibold text-muted mb-1" %>
+              <%= f.date_field :created_at_lteq, value: @q.created_at_lteq&.to_date, class: "form-control form-control-sm" %>
+            </div>
+            <div class="col-12 d-flex gap-2">
+              <button type="submit" class="btn btn-sm btn-primary px-3">
+                <i class="bi bi-search me-1"></i>Buscar
+              </button>
+              <%= link_to audit_logs_path(tab: "versions"), class: "btn btn-sm btn-outline-secondary px-3" do %>
+                <i class="bi bi-x-circle me-1"></i>Limpiar
+              <% end %>
+            </div>
+          <% end %>
         </div>
       </div>
-    <% end %>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3 py-3 text-muted small fw-semibold text-uppercase" style="width:150px;">Fecha y hora</th>
+              <th class="py-3 text-muted small fw-semibold text-uppercase" style="width:170px;">Usuario</th>
+              <th class="py-3 text-muted small fw-semibold text-uppercase">Recurso</th>
+              <th class="py-3 text-muted small fw-semibold text-uppercase text-center" style="width:110px;">Evento</th>
+              <th class="py-3 text-muted small fw-semibold text-uppercase">Cambios</th>
+              <th class="py-3 pe-3 text-muted small fw-semibold text-uppercase text-center" style="width:70px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if @versions.any? %>
+              <%= render partial: "audit_logs/version_row",
+                  collection: @versions,
+                  as: :version,
+                  locals: { users_by_id: @users_by_id } %>
+            <% else %>
+              <tr>
+                <td colspan="6" class="text-center py-5">
+                  <i class="bi bi-inbox d-block fs-1 text-muted opacity-50 mb-3"></i>
+                  <p class="text-muted mb-1">No se encontraron cambios técnicos</p>
+                  <small class="text-muted">Ajustá los filtros</small>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <% if @versions.any? %>
+        <div class="d-flex justify-content-between align-items-center px-1 pt-3 border-top mt-3">
+          <small class="text-muted">
+            Mostrando <%= @versions.offset_value + 1 %>–<%= [@versions.offset_value + @versions.length, @versions.total_count].min %>
+            de <strong><%= @versions.total_count %></strong>
+          </small>
+          <%= paginate @versions %>
+        </div>
+      <% end %>
+    </div>
   </div>
 </div>
+<style>
+  .audit-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #e8f0fe;
+    color: #3b5bdb;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .nav-tabs .nav-link { color: #6c757d; border-radius: 8px 8px 0 0; }
+  .nav-tabs .nav-link.active { color: #3b5bdb; font-weight: 600; }
+</style>

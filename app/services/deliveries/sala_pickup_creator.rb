@@ -1,4 +1,3 @@
-# app/services/deliveries/sala_pickup_creator.rb
 module Deliveries
   class SalaPickupCreator
     def initialize(original_delivery:, params:, current_user:)
@@ -16,6 +15,30 @@ module Deliveries
           @pickup_delivery = create_pickup_delivery!
           create_pickup_items!
           update_original_delivery_notes!
+
+          # 🔹 Registrar evento en la entrega original
+          DeliveryEvent.record(
+            delivery: @original_delivery,
+            action: "sala_pickup_created",
+            actor: @current_user,
+            payload: {
+              new_delivery_id: @pickup_delivery.id,
+              pickup_date: @pickup_delivery.delivery_date.to_s,
+              address: @address.description.presence || @address.address,
+              items_count: @pickup_delivery.delivery_items.count
+            }
+          )
+
+          # 🔹 Registrar evento en la nueva entrega de recogida
+          DeliveryEvent.record(
+            delivery: @pickup_delivery,
+            action: "created",
+            actor: @current_user,
+            payload: {
+              source_delivery_id: @original_delivery.id,
+              context: "sala_pickup"
+            }
+          )
         end
       end
 
@@ -61,7 +84,6 @@ module Deliveries
     def find_or_create_address
       addr_params = params[:delivery_address]
 
-      # Intentar reusar si ya existe una dirección con las mismas coordenadas para este cliente
       existing = DeliveryAddress.find_by(
         client_id: original_delivery.order.client_id,
         latitude: addr_params[:latitude],

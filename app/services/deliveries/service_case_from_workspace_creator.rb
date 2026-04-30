@@ -1,4 +1,3 @@
-# app/services/deliveries/service_case_from_workspace_creator.rb
 module Deliveries
   class ServiceCaseFromWorkspaceCreator
     def initialize(original_delivery:, params:, current_user:)
@@ -12,13 +11,39 @@ module Deliveries
         type = params[:delivery][:delivery_type]
 
         base = build_delivery(type, parsed_date)
-
         base.delivery_items = build_items(type)
         base.save!
 
+        return_delivery = nil
         if type == "pickup_with_return"
-          create_return_delivery(base)
+          return_delivery = create_return_delivery(base)
         end
+
+        # 🔹 Registrar evento en la entrega original
+        created_ids = [base.id, return_delivery&.id].compact
+        DeliveryEvent.record(
+          delivery: @original_delivery,
+          action: "service_case_created",
+          actor: @current_user,
+          payload: {
+            new_delivery_ids: created_ids,
+            delivery_type: type,
+            items_count: selected_items.count,
+            delivery_date: base.delivery_date.to_s
+          }
+        )
+
+        # 🔹 Registrar evento en la nueva entrega
+        DeliveryEvent.record(
+          delivery: base,
+          action: "created",
+          actor: @current_user,
+          payload: {
+            source_delivery_id: @original_delivery.id,
+            context: "service_case",
+            delivery_type: type
+          }
+        )
 
         base
       end
@@ -52,8 +77,10 @@ module Deliveries
     end
 
     def selected_items
-      ids = Array(params[:item_ids]).flat_map { |id| id.to_s.split(",") }.map(&:to_i).reject(&:zero?)
-      original_delivery.delivery_items.where(id: ids)
+      @selected_items ||= begin
+        ids = Array(params[:item_ids]).flat_map { |id| id.to_s.split(",") }.map(&:to_i).reject(&:zero?)
+        original_delivery.delivery_items.where(id: ids)
+      end
     end
 
     def duplicate_item(item, type)
@@ -70,7 +97,7 @@ module Deliveries
     end
 
     def create_return_delivery(pickup)
-      Delivery.create!(
+      ret = Delivery.create!(
         order: pickup.order,
         delivery_address: pickup.delivery_address,
         delivery_date: pickup.delivery_date + 15.days,
@@ -79,6 +106,20 @@ module Deliveries
         contact_name: pickup.contact_name,
         contact_phone: pickup.contact_phone
       )
+
+      # 🔹 Registrar evento en la entrega de devolución
+      DeliveryEvent.record(
+        delivery: ret,
+        action: "created",
+        actor: @current_user,
+        payload: {
+          source_delivery_id: @original_delivery.id,
+          context: "service_case_return",
+          pickup_delivery_id: pickup.id
+        }
+      )
+
+      ret
     end
 
     def parsed_date

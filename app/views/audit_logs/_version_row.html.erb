@@ -1,95 +1,90 @@
 <%# app/views/audit_logs/_version_row.html.erb %>
 <tr class="audit-row" data-version-id="<%= version.id %>">
-  <!-- Fecha y hora -->
-  <td class="text-nowrap">
-    <div class="d-flex flex-column">
-      <span class="fw-semibold"><%= version.created_at.strftime('%d/%m/%Y') %></span>
-      <small class="text-muted"><%= version.created_at.strftime('%H:%M:%S') %></small>
-    </div>
+  <%# Fecha %>
+  <td class="ps-4 py-3">
+    <div class="fw-semibold text-dark small"><%= version.created_at.strftime('%d/%m/%Y') %></div>
+    <div class="text-muted" style="font-size:0.75rem;"><%= version.created_at.strftime('%H:%M:%S') %></div>
   </td>
-  <!-- Usuario -->
-  <td>
-    <div class="d-flex align-items-center">
-      <div class="avatar-circle bg-primary bg-opacity-10 text-primary me-2">
+  <%# Usuario %>
+  <td class="py-3">
+    <div class="d-flex align-items-center gap-2">
+      <div class="audit-avatar">
         <i class="bi bi-person-fill"></i>
       </div>
       <div>
-        <div class="fw-semibold"><%= user_name_for(version, users_by_id) %></div>
-        <small class="text-muted">ID: <%= version.whodunnit || 'N/A' %></small>
+        <div class="small fw-semibold text-dark"><%= user_name_for(version, users_by_id) %></div>
+        <div class="text-muted" style="font-size:0.72rem;">ID: <%= version.whodunnit || '—' %></div>
       </div>
     </div>
   </td>
-  <!-- Recurso -->
-  <td>
+  <%# Recurso %>
+  <td class="py-3">
     <% record = safe_find_item(version) %>
-    <div class="d-flex align-items-center">
-      <i class="<%= resource_icon(version.item_type) %> fs-5 me-2 text-secondary"></i>
+    <div class="d-flex align-items-center gap-2">
+      <i class="<%= resource_icon(version.item_type) %> text-muted fs-6"></i>
       <div>
         <% if record.present? %>
           <% path = polymorphic_path(record) rescue nil %>
           <% if path %>
-            <%= link_to path, class: 'text-decoration-none fw-semibold' do %>
+            <%= link_to path, class: 'small fw-semibold text-decoration-none text-dark link-hover' do %>
               <%= item_label(version) %>
-              <i class="bi bi-box-arrow-up-right ms-1 small"></i>
+              <i class="bi bi-box-arrow-up-right ms-1 text-muted" style="font-size:0.7rem;"></i>
             <% end %>
           <% else %>
-            <span class="fw-semibold"><%= item_label(version) %></span>
+            <span class="small fw-semibold"><%= item_label(version) %></span>
           <% end %>
         <% else %>
-          <span class="text-muted">
+          <span class="small text-muted">
             <%= item_label(version) %>
-            <span class="badge bg-secondary">eliminado</span>
+            <span class="badge bg-secondary bg-opacity-10 text-secondary ms-1">eliminado</span>
           </span>
         <% end %>
-        <div>
-          <small class="text-muted"><%= version.item_type %></small>
-        </div>
+        <div class="text-muted" style="font-size:0.72rem;"><%= version.item_type %></div>
       </div>
     </div>
   </td>
-  <!-- Evento -->
-  <td class="text-center">
+  <%# Evento %>
+  <td class="py-3 text-center">
     <%= event_badge(version.event) %>
   </td>
-  <!-- Cambios -->
-  <td>
+  <%# Cambios %>
+  <td class="py-3">
     <% changes = summarize_changes(version, max_keys: 3) %>
     <% if changes.blank? %>
-      <span class="text-muted fst-italic">Sin cambios detectados</span>
+      <span class="text-muted fst-italic small">Sin cambios detectados</span>
     <% else %>
       <div class="changes-summary">
         <% changes.each do |attr, (before, after)| %>
           <div class="change-item mb-2">
-            <span class="badge bg-<%= change_severity(attr) %> bg-opacity-10 text-<%= change_severity(attr) %>">
+            <span class="badge bg-<%= change_severity(attr) %> bg-opacity-10 text-<%= change_severity(attr) %> mb-1">
               <%= attr.humanize %>
             </span>
-            <div class="d-flex align-items-center gap-2 mt-1 small">
-              <code class="bg-light px-2 py-1 rounded"><%= truncate(before.to_s, length: 40) %></code>
-              <%= change_arrow %>
-              <code class="bg-light px-2 py-1 rounded"><%= truncate(after.to_s, length: 40) %></code>
+            <div class="d-flex align-items-center gap-2 small flex-wrap">
+              <code class="change-code text-danger"><%= truncate(before.to_s, length: 35) %></code>
+              <i class="bi bi-arrow-right text-muted"></i>
+              <code class="change-code text-success"><%= truncate(after.to_s, length: 35) %></code>
             </div>
           </div>
         <% end %>
-        <!-- Ver todos los cambios -->
         <% full_changes = summarize_changes(version, max_keys: 100) %>
         <% if full_changes.size > 3 %>
-          <button class="btn btn-sm btn-outline-secondary mt-2" 
-                  type="button" 
-                  data-bs-toggle="collapse" 
+          <button class="btn btn-link btn-sm p-0 text-muted small"
+                  type="button"
+                  data-bs-toggle="collapse"
                   data-bs-target="#changes-<%= version.id %>">
             <i class="bi bi-chevron-down me-1"></i>
-            Ver <%= full_changes.size - 3 %> cambios más
+            Ver <%= full_changes.size - 3 %> más
           </button>
           <div class="collapse mt-2" id="changes-<%= version.id %>">
             <% full_changes.drop(3).each do |attr, (before, after)| %>
               <div class="change-item mb-2">
-                <span class="badge bg-<%= change_severity(attr) %> bg-opacity-10 text-<%= change_severity(attr) %>">
+                <span class="badge bg-<%= change_severity(attr) %> bg-opacity-10 text-<%= change_severity(attr) %> mb-1">
                   <%= attr.humanize %>
                 </span>
-                <div class="d-flex align-items-center gap-2 mt-1 small">
-                  <code class="bg-light px-2 py-1 rounded"><%= truncate(before.to_s, length: 40) %></code>
-                  <%= change_arrow %>
-                  <code class="bg-light px-2 py-1 rounded"><%= truncate(after.to_s, length: 40) %></code>
+                <div class="d-flex align-items-center gap-2 small flex-wrap">
+                  <code class="change-code text-danger"><%= truncate(before.to_s, length: 35) %></code>
+                  <i class="bi bi-arrow-right text-muted"></i>
+                  <code class="change-code text-success"><%= truncate(after.to_s, length: 35) %></code>
                 </div>
               </div>
             <% end %>
@@ -98,36 +93,42 @@
       </div>
     <% end %>
   </td>
-  <!-- Acciones -->
-  <td class="text-center">
-    <div class="btn-group btn-group-sm" role="group">
-      <%= link_to resource_history_audit_logs_path(item_type: version.item_type, item_id: version.item_id), 
-          class: 'btn btn-outline-primary', 
-          title: 'Ver historial completo',
-          data: { bs_toggle: 'tooltip' } do %>
-        <i class="bi bi-clock-history"></i>
-      <% end %>
-    </div>
+  <%# Acciones %>
+  <td class="py-3 text-center pe-4">
+    <%= link_to resource_history_audit_logs_path(item_type: version.item_type, item_id: version.item_id),
+        class: 'btn btn-sm btn-outline-secondary',
+        title: 'Ver historial completo',
+        data: { bs_toggle: 'tooltip' } do %>
+      <i class="bi bi-clock-history"></i>
+    <% end %>
   </td>
 </tr>
 <style>
-  .avatar-circle {
-    width: 36px;
-    height: 36px;
+  .audit-avatar {
+    width: 32px; height: 32px;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: #e8f0fe;
+    color: #3b5bdb;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
   }
-
-  .change-item {
-    padding: 8px;
-    border-left: 3px solid #dee2e6;
+  .change-code {
     background: #f8f9fa;
+    padding: 2px 6px;
     border-radius: 4px;
+    font-size: 0.75rem;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
   }
-
-  .audit-row:hover {
-    background-color: #f8f9fa;
+  .change-item {
+    padding: 6px 8px;
+    border-left: 2px solid #e9ecef;
+    border-radius: 0 4px 4px 0;
   }
+  .audit-row:hover { background-color: #fafbfc; }
+  .link-hover:hover { color: #3b5bdb !important; }
 </style>

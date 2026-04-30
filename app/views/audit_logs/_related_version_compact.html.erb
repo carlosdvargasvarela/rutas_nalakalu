@@ -1,20 +1,16 @@
 <%# app/views/audit_logs/_related_version_compact.html.erb %>
-<div class="related-version-item border-bottom p-3 hover-bg-light">
+<div class="related-version-item px-4 py-3 border-bottom">
   <div class="d-flex justify-content-between align-items-start mb-2">
-    <div class="d-flex align-items-center flex-grow-1">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
       <%= event_badge(version.event) %>
-      <span class="ms-2 small">
-        <i class="<%= resource_icon(version.item_type) %> me-1"></i>
+      <span class="small">
+        <i class="<%= resource_icon(version.item_type) %> text-muted me-1"></i>
         <strong><%= item_label(version) %></strong>
       </span>
     </div>
-    <div class="text-end">
-      <small class="text-muted d-block">
-        <%= version.created_at.strftime('%d/%m/%Y') %>
-      </small>
-      <small class="text-muted">
-        <%= version.created_at.strftime('%H:%M') %>
-      </small>
+    <div class="text-end flex-shrink-0 ms-2">
+      <div class="small text-muted"><%= version.created_at.strftime('%d/%m/%Y') %></div>
+      <div class="text-muted" style="font-size:0.72rem;"><%= version.created_at.strftime('%H:%M') %></div>
     </div>
   </div>
   <div class="small text-muted mb-2">
@@ -24,59 +20,36 @@
   <% if version.event == 'update' %>
     <% changes = summarize_changes(version, max_keys: 3) %>
     <% if changes.any? %>
-      <div class="changes-compact">
+      <div class="p-2 rounded-2 bg-light border-start border-2 border-secondary mb-2">
         <% changes.each do |attr, (before, after)| %>
-          <div class="change-compact-item small mb-1">
-            <span class="badge bg-<%= change_severity(attr) %> bg-opacity-10 text-<%= change_severity(attr) %> me-1">
-              <%= attr %>
-            </span>
-            <code class="text-danger small"><%= truncate(before.to_s, length: 20) %></code>
-            <i class="bi bi-arrow-right mx-1 text-muted"></i>
-            <code class="text-success small"><%= truncate(after.to_s, length: 20) %></code>
+          <div class="small mb-1">
+            <span class="badge bg-secondary bg-opacity-10 text-secondary me-1"><%= attr %></span>
+            <code class="text-danger" style="font-size:0.72rem;"><%= truncate(before.to_s, length: 18) %></code>
+            <i class="bi bi-arrow-right mx-1 text-muted" style="font-size:0.7rem;"></i>
+            <code class="text-success" style="font-size:0.72rem;"><%= truncate(after.to_s, length: 18) %></code>
           </div>
         <% end %>
         <% full_changes = summarize_changes(version, max_keys: 100) %>
         <% if full_changes.size > 3 %>
-          <small class="text-muted fst-italic">
-            + <%= full_changes.size - 3 %> cambios más
-          </small>
+          <small class="text-muted fst-italic">+ <%= full_changes.size - 3 %> más</small>
         <% end %>
       </div>
     <% end %>
   <% elsif version.event == 'create' %>
-    <small class="text-success">
-      <i class="bi bi-plus-circle me-1"></i>
-      Registro creado
-    </small>
+    <div class="small text-success mb-2">
+      <i class="bi bi-plus-circle me-1"></i> Registro creado
+    </div>
   <% elsif version.event == 'destroy' %>
-    <small class="text-danger">
-      <i class="bi bi-trash me-1"></i>
-      Registro eliminado
-    </small>
+    <div class="small text-danger mb-2">
+      <i class="bi bi-trash me-1"></i> Registro eliminado
+    </div>
   <% end %>
-  <div class="mt-2">
-    <%= link_to resource_history_audit_logs_path(item_type: version.item_type, item_id: version.item_id),
-                class: 'btn btn-sm btn-outline-secondary',
-                title: 'Ver historial completo' do %>
-      <i class="bi bi-clock-history me-1"></i>
-      Ver historial
-    <% end %>
-  </div>
+  <%= link_to resource_history_audit_logs_path(item_type: version.item_type, item_id: version.item_id),
+      class: 'btn btn-sm btn-outline-secondary' do %>
+    <i class="bi bi-clock-history me-1"></i> Ver historial
+  <% end %>
 </div>
 <style>
-  .hover-bg-light:hover {
-    background-color: #f8f9fa;
-    transition: background-color 0.2s ease;
-  }
-
-  .change-compact-item {
-    padding: 4px 0;
-  }
-
-  .changes-compact {
-    background: #f8f9fa;
-    padding: 8px;
-    border-radius: 4px;
-    border-left: 3px solid #dee2e6;
-  }
+  .related-version-item:hover { background-color: #fafbfc; transition: background 0.15s ease; }
+  .related-version-item:last-child { border-bottom: none !important; }
 </style>

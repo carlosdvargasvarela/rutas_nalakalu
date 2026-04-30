@@ -8,6 +8,7 @@ class Delivery < ApplicationRecord
   has_many :order_items, through: :delivery_items
   has_one :delivery_plan_assignment, dependent: :destroy
   has_one :delivery_plan, through: :delivery_plan_assignment
+  has_many :delivery_events, dependent: :destroy
 
   accepts_nested_attributes_for :delivery_items, allow_destroy: true
 

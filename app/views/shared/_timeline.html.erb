@@ -1,0 +1,232 @@
+<%# locals: timeline_groups, users_by_id %>
+<div class="modern-timeline">
+  <% timeline_groups.each do |group| %>
+    <% primary   = group[:primary] %>
+    <% secondary = group[:secondary] %>
+    <% critical  = timeline_critical?(primary) %>
+    <div class="timeline-block mb-3 <%= 'timeline-block--critical' if critical %>">
+      <%# Timestamp lateral %>
+      <div class="timeline-time">
+        <span class="time-hour"><%= primary.timestamp.in_time_zone("America/Costa_Rica").strftime("%H:%M") %></span>
+        <span class="time-date"><%= primary.timestamp.in_time_zone("America/Costa_Rica").strftime("%d %b") %></span>
+      </div>
+      <%# Dot + línea vertical %>
+      <div class="timeline-marker">
+        <div class="dot bg-<%= timeline_color(primary) %> <%= 'dot--critical' if critical %>">
+          <i class="bi <%= timeline_icon(primary) %> text-white"></i>
+        </div>
+      </div>
+      <%# Tarjeta principal %>
+      <div class="timeline-card <%= 'timeline-card--critical border-danger border-opacity-50' if critical %>">
+        <%# Header %>
+        <div class="tc-header">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="fw-semibold text-dark" style="font-size:0.9rem;">
+              <%= timeline_title(primary) %>
+            </span>
+            <%= timeline_source_badge(primary) %>
+          </div>
+          <div class="tc-actor">
+            <i class="bi bi-person-circle me-1"></i>
+            <%= timeline_actor(primary, users_by_id) %>
+          </div>
+        </div>
+        <%# Descripción %>
+        <p class="tc-desc mb-0">
+          <%= timeline_description(primary, users_by_id: users_by_id) %>
+        </p>
+        <%# Payload extra (DeliveryEvent) %>
+        <% if primary.delivery_event? %>
+          <% extra = primary.record.payload_data.except(
+              "reason", "from_date", "new_date", "to_date", "product",
+              "sala", "items_count", "item_ids", "new_delivery_id",
+              "delivery_type", "delivery_date", "changed_fields",
+              "from_seller", "to_seller", "until_date"
+            ) %>
+          <% if extra.any? %>
+            <div class="mt-2">
+              <button class="btn btn-link btn-sm p-0 text-muted"
+                      style="font-size:0.72rem;"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#payload-<%= primary.record.id %>">
+                <i class="bi bi-chevron-down me-1"></i>Datos adicionales
+              </button>
+              <div class="collapse mt-1" id="payload-<%= primary.record.id %>">
+                <div class="p-2 rounded-2 bg-light border" style="font-size:0.7rem;">
+                  <% extra.each do |k, v| %>
+                    <div class="d-flex gap-2 mb-1">
+                      <span class="text-muted fw-semibold text-nowrap"><%= k %>:</span>
+                      <code class="text-dark"><%= v %></code>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+        <%# Cambios técnicos agrupados %>
+        <% if secondary.any? %>
+          <div class="tc-secondary mt-2">
+            <p class="tc-secondary-label">
+              <i class="bi bi-code-square me-1"></i>
+              <%= secondary.size %> cambio<%= secondary.size == 1 ? "" : "s" %> técnico<%= secondary.size == 1 ? "" : "s" %> adicional<%= secondary.size == 1 ? "" : "es" %>
+            </p>
+            <ul class="list-unstyled mb-0">
+              <% secondary.each do |entry| %>
+                <li class="tc-secondary-item">
+                  <i class="bi bi-dot text-muted"></i>
+                  <span><%= timeline_description(entry, users_by_id: users_by_id) %></span>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+      </div>
+      <%# /timeline-card %>
+    </div>
+    <%# /timeline-block %>
+  <% end %>
+  <% if timeline_groups.empty? %>
+    <div class="text-center py-5">
+      <i class="bi bi-clock fs-1 text-muted opacity-50 d-block mb-3"></i>
+      <p class="text-muted mb-0">Sin historial disponible</p>
+    </div>
+  <% end %>
+</div>
+<style>
+  .modern-timeline { position: relative; }
+
+  .timeline-block {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    position: relative;
+  }
+
+  /* Línea vertical */
+  .timeline-block:not(:last-child) .timeline-marker::after {
+    content: '';
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    bottom: -16px;
+    background: #f1f3f5;
+  }
+
+  /* Timestamp */
+  .timeline-time {
+    width: 52px;
+    flex-shrink: 0;
+    text-align: right;
+    padding-top: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  .time-hour {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #495057;
+    line-height: 1.2;
+  }
+  .time-date {
+    font-size: 0.68rem;
+    color: #adb5bd;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  /* Dot */
+  .timeline-marker {
+    position: relative;
+    flex-shrink: 0;
+    width: 36px;
+    display: flex;
+    justify-content: center;
+  }
+  .dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    z-index: 1;
+  }
+  .dot--critical {
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(220,53,69,0.15), 0 2px 6px rgba(0,0,0,0.12);
+  }
+
+  /* Tarjeta */
+  .timeline-card {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 12px 14px;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+    margin-bottom: 0;
+  }
+  .timeline-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    transform: translateX(3px);
+  }
+  .timeline-card--critical {
+    background: #fff8f8;
+    border-color: rgba(220,53,69,0.3);
+  }
+
+  /* Header de tarjeta */
+  .tc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .tc-actor {
+    font-size: 0.75rem;
+    color: #6c757d;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Descripción */
+  .tc-desc {
+    font-size: 0.875rem;
+    color: #495057;
+    line-height: 1.5;
+  }
+
+  /* Cambios técnicos secundarios */
+  .tc-secondary {
+    border-top: 1px dashed #dee2e6;
+    padding-top: 8px;
+  }
+  .tc-secondary-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #adb5bd;
+    margin-bottom: 4px;
+  }
+  .tc-secondary-item {
+    font-size: 0.78rem;
+    color: #6c757d;
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    line-height: 1.4;
+    margin-bottom: 2px;
+  }
+
+  /* Bloque crítico */
+  .timeline-block--critical .timeline-time .time-hour { color: #dc3545; }
+</style>
