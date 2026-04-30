@@ -1,4 +1,4 @@
-<!-- app/views/clients/index.html.erb -->
+<%# app/views/clients/index.html.erb %>
 <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
   <h3 class="mb-0">Clientes</h3>
   <div class="d-flex gap-2">
@@ -10,7 +10,6 @@
     <% end %>
   </div>
 </div>
-
 <div id="filters" class="collapse mb-3">
   <div class="card">
     <div class="card-body">
@@ -32,7 +31,6 @@
     </div>
   </div>
 </div>
-
 <div class="card">
   <div class="table-responsive">
     <table class="table table-hover table-sm align-middle mb-0">
@@ -41,6 +39,7 @@
           <th><%= sort_link(@q, :name, "Nombre") %></th>
           <th>Teléfono</th>
           <th>Correo</th>
+          <th class="text-center">Notas</th>
           <th><%= sort_link(@q, :created_at, "Creado") %></th>
           <th class="text-end">Acciones</th>
         </tr>
@@ -49,9 +48,25 @@
         <% if @clients.any? %>
           <% @clients.each do |client| %>
             <tr>
-              <td class="fw-semibold"><%= link_to client.name, client_path(client), class: "link-primary link-underline-opacity-0" %></td>
+              <td class="fw-semibold">
+                <%= link_to client.name, client_path(client), class: "link-primary link-underline-opacity-0" %>
+                <% if client.pinned_notes.any? %>
+                  <i class="bi bi-pin-angle-fill text-warning ms-1" title="Tiene notas fijadas"></i>
+                <% end %>
+              </td>
               <td><%= client.phone.presence || "-" %></td>
               <td><%= client.email.presence || "-" %></td>
+              <td class="text-center">
+                <% count = client.notes_count %>
+                <% if count > 0 %>
+                  <span class="badge rounded-pill bg-warning text-dark d-inline-flex align-items-center gap-1"
+                        style="font-size: 0.7rem;">
+                    <i class="bi bi-sticky-fill"></i> <%= count %>
+                  </span>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
               <td><%= l(client.created_at, format: :short) %></td>
               <td class="text-end">
                 <div class="btn-group btn-group-sm">
@@ -70,7 +85,7 @@
           <% end %>
         <% else %>
           <tr>
-            <td colspan="5">
+            <td colspan="6">
               <div class="p-4 text-center text-muted">
                 <i class="bi bi-people fs-3 d-block mb-2"></i>
                 No hay clientes que coincidan con los filtros.

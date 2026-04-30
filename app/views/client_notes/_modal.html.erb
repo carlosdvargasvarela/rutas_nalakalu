@@ -1,0 +1,71 @@
+<%# app/views/client_notes/_modal.html.erb %>
+<%# Locals: client %>
+<div class="modal fade"
+     id="clientNotesModal_<%= client.id %>"
+     tabindex="-1"
+     aria-labelledby="clientNotesModalLabel_<%= client.id %>"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header border-bottom-0 pb-0">
+        <div>
+          <h5 class="modal-title fw-bold" id="clientNotesModalLabel_<%= client.id %>">
+            <i class="bi bi-sticky-fill text-warning me-2"></i>
+            Notas del Cliente
+          </h5>
+          <p class="text-muted small mb-0"><%= client.name %></p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <%# Banner de pinned %>
+        <% if client.pinned_notes.any? %>
+          <div class="mb-3">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-pin-angle-fill text-warning"></i>
+              <span class="fw-semibold small text-uppercase text-muted" style="letter-spacing: 0.05em;">
+                Notas fijadas
+              </span>
+            </div>
+            <%= render "client_notes/pinned_banner", client: client %>
+          </div>
+          <hr class="my-3">
+        <% end %>
+        <%# Lista de todas las notas %>
+        <div class="mb-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="fw-semibold small text-uppercase text-muted" style="letter-spacing: 0.05em;">
+              Todas las notas
+            </span>
+            <span class="badge bg-secondary bg-opacity-10 text-secondary">
+              <%= client.notes_count %>
+            </span>
+          </div>
+          <div id="client_notes_list">
+            <% if client.client_notes.pinned_first.any? %>
+              <% client.client_notes.pinned_first.each do |note| %>
+                <%= render "client_notes/note", note: note %>
+              <% end %>
+            <% else %>
+              <div class="text-center text-muted py-4">
+                <i class="bi bi-sticky fs-3 d-block mb-2 opacity-25"></i>
+                <small>Sin notas aún. Agregá la primera abajo.</small>
+              </div>
+            <% end %>
+          </div>
+        </div>
+        <hr class="my-3">
+        <%# Formulario nueva nota %>
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-plus-circle text-primary"></i>
+            <span class="fw-semibold small text-uppercase text-muted" style="letter-spacing: 0.05em;">
+              Nueva nota
+            </span>
+          </div>
+          <%= render "client_notes/form", client: client, note: ClientNote.new %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,18 @@
+<%# app/views/client_notes/_pinned_banner.html.erb %>
+<div id="client_pinned_notes_<%= client.id %>">
+  <% pinned = client.client_notes.pinned.order(created_at: :desc) %>
+  <% pinned.each do |note| %>
+    <div class="alert border-0 shadow-sm mb-2 px-3 py-2 d-flex align-items-start gap-2
+                alert-<%= note.category == 'warning' ? 'danger' : 'warning' %>"
+         style="font-size: 0.82rem;">
+      <i class="bi <%= note.category_icon %> flex-shrink-0 mt-1"></i>
+      <div class="flex-grow-1">
+        <span class="fw-semibold"><%= note.category_label %>:</span>
+        <%= note.body %>
+        <div class="text-muted mt-1" style="font-size: 0.72rem;">
+          — <%= note.user.name %>, <%= time_ago_in_words(note.created_at) %> atrás
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

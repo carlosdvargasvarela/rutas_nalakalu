@@ -1,0 +1,57 @@
+<%# app/views/client_notes/_note.html.erb %>
+<div id="client_note_<%= note.id %>"
+     class="border rounded-3 p-3 mb-2 bg-white position-relative"
+     data-controller="client-note"
+     data-client-note-note-id-value="<%= note.id %>"
+  data-client-note-client-id-value="<%= note.client_id %>">
+  <%# Pin indicator %>
+  <% if note.pinned? %>
+    <span class="position-absolute top-0 end-0 mt-2 me-2 text-warning" title="Nota fijada">
+      <i class="bi bi-pin-angle-fill"></i>
+    </span>
+  <% end %>
+  <div class="d-flex align-items-start gap-2 mb-2">
+    <span class="badge d-inline-flex align-items-center gap-1"
+      style="<%= note.category_style %> font-size: 0.7rem;">
+      <i class="bi <%= note.category_icon %>"></i>
+      <%= note.category_label %>
+    </span>
+  </div>
+  <%# Vista normal %>
+  <div data-client-note-target="display">
+    <p class="mb-1 small"><%= note.body %></p>
+    <div class="d-flex align-items-center justify-content-between mt-2">
+      <small class="text-muted">
+        <i class="bi bi-person-circle me-1"></i><%= note.user.name %>
+        · <span title="<%= l(note.created_at, format: :long) %>"><%= time_ago_in_words(note.created_at) %> atrás</span>
+      </small>
+      <% if policy(note).update? || policy(note).destroy? %>
+        <div class="d-flex gap-1">
+          <% if policy(note).update? %>
+            <button class="btn btn-xs btn-outline-secondary border-0"
+                    title="Editar"
+                    data-action="click->client-note#showEdit">
+              <i class="bi bi-pencil"></i>
+            </button>
+          <% end %>
+          <% if policy(note).destroy? %>
+            <%= button_to client_client_note_path(note.client_id, note),
+                  method: :delete,
+                  data: { turbo_confirm: "¿Eliminar esta nota?" },
+                  class: "btn btn-xs btn-outline-danger border-0",
+                  title: "Eliminar",
+                  form: { data: { turbo_stream: true } } do %>
+              <i class="bi bi-trash"></i>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  <%# Formulario de edición (oculto por defecto) %>
+  <% if policy(note).update? %>
+    <div data-client-note-target="editForm" class="d-none">
+      <%= render "client_notes/note_edit_form", client: note.client, note: note %>
+    </div>
+  <% end %>
+</div>

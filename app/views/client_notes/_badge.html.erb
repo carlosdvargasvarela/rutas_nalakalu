@@ -1,0 +1,8 @@
+<%# app/views/client_notes/_badge.html.erb %>
+<% count = client.client_notes.count %>
+<span id="client_notes_badge_<%= client.id %>"
+      class="badge rounded-pill d-inline-flex align-items-center gap-1
+             <%= count > 0 ? 'bg-warning text-dark' : 'bg-secondary bg-opacity-25 text-secondary' %>">
+  <i class="bi bi-sticky<%= count > 0 ? '-fill' : '' %>"></i>
+  <%= count %>
+</span>

@@ -164,6 +164,54 @@
       </div>
     </div>
   <% end %>
+  <%# ══ CARD: Notas del Cliente ══ %>
+  <% client = delivery.order.client %>
+  <div class="col-12">
+    <div class="border rounded-3 bg-white shadow-sm">
+      <div class="px-3 py-2 border-bottom bg-light d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-sticky-fill text-warning" style="font-size: 0.8rem;"></i>
+          <span style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">
+            Notas del Cliente
+          </span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span id="client_notes_badge_<%= client.id %>">
+            <%= render "client_notes/badge", client: client %>
+          </span>
+          <button class="btn btn-xs btn-outline-warning border-0 d-flex align-items-center gap-1"
+                data-bs-toggle="modal"
+                data-bs-target="#clientNotesModal_<%= client.id %>"
+                title="Ver todas las notas">
+            <i class="bi bi-arrow-up-right-square"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-3">
+        <%# Notas pinned directamente visibles %>
+        <div id="client_pinned_notes_<%= client.id %>">
+          <% if client.pinned_notes.any? %>
+            <%= render "client_notes/pinned_banner", client: client %>
+          <% else %>
+            <div class="text-center text-muted py-2" style="font-size: 0.8rem;">
+              <i class="bi bi-sticky opacity-25 d-block fs-4 mb-1"></i>
+              Sin alertas fijadas para este cliente.
+            </div>
+          <% end %>
+        </div>
+        <%# Botón para abrir modal con todas las notas %>
+        <button class="btn btn-sm btn-outline-secondary w-100 mt-2 d-flex align-items-center justify-content-center gap-1"
+              data-bs-toggle="modal"
+              data-bs-target="#clientNotesModal_<%= client.id %>"
+              style="font-size: 0.78rem;">
+          <i class="bi bi-chat-left-text"></i>
+          Ver todas las notas / Agregar nota
+        </button>
+      </div>
+    </div>
+  </div>
+  <%# Modal (se renderiza una sola vez por cliente) %>
+  <%= render "client_notes/modal", client: client %>
   <%# Modal reasignación (solo si tiene permisos) %>
   <%= render "deliveries/show_partials/reassign_seller_modal", delivery: delivery %>
 </div>

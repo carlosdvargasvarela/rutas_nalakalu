@@ -191,7 +191,9 @@ Rails.application.routes.draw do
   # CLIENTES Y VENDEDORES
   # =============================================================================
   # Información de clientes y vendedores (solo lectura)
-  resources :clients, only: [:index, :show, :edit, :update, :new, :create]
+  resources :clients do
+    resources :client_notes, only: [:create, :update, :destroy]
+  end
   resources :sellers, only: [:index, :show]
 
   # =============================================================================
