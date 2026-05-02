@@ -1,20 +1,57 @@
-<div class="card shadow-sm sticky-top" style="top:20px;">
-  <div class="card-header bg-primary text-white"><i class="bi bi-info-circle me-1"></i> Resumen del plan</div>
-  <div class="card-body">
-    <p><i class="bi bi-box-seam me-1"></i> <strong>Total entregas:</strong> <%= assignments.count %></p>
-    <p><i class="bi bi-people me-1"></i> <strong>Clientes únicos:</strong> <%= assignments.map { |a| a.delivery.order.client_id }.uniq.count %></p>
-    <p><strong>Estado:</strong> 
-      <span class="badge bg-<%= delivery_plan_status_color(delivery_plan.status) %>">
-        <%= delivery_plan.display_status %>
+<div class="card shadow-sm border-0 sticky-top" style="top: 20px; border-radius: 14px; overflow: hidden;">
+  <div class="card-header text-white fw-bold py-3"
+       style="background: linear-gradient(135deg, #667eea, #764ba2);">
+    <div class="d-flex align-items-center justify-content-between">
+      <span><i class="bi bi-clipboard-check me-2"></i>Resumen</span>
+      <span class="badge bg-white text-primary rounded-pill">
+        <%= assignments.count %> paradas
       </span>
-    </p>
+    </div>
+  </div>
+  <div class="card-body p-3">
+    <dl class="row mb-3 small">
+      <dt class="col-7 text-muted fw-normal">Clientes únicos</dt>
+      <dd class="col-5 fw-bold text-end">
+        <%= assignments.map { |a| a.delivery.order.client_id }.uniq.count %>
+      </dd>
+      <dt class="col-7 text-muted fw-normal">Estado</dt>
+      <dd class="col-5 text-end">
+        <span class="badge bg-<%= delivery_plan_status_color(delivery_plan.status) %>">
+          <%= delivery_plan.display_status %>
+        </span>
+      </dd>
+      <% if delivery_plan.driver.present? %>
+        <dt class="col-7 text-muted fw-normal">Conductor</dt>
+        <dd class="col-5 fw-bold text-end text-truncate">
+          <%= delivery_plan.driver.name %>
+        </dd>
+      <% end %>
+      <% if delivery_plan.truck.present? %>
+        <dt class="col-7 text-muted fw-normal">Camión</dt>
+        <dd class="col-5 text-end">
+          <span class="badge bg-dark"><%= delivery_plan.truck %></span>
+        </dd>
+      <% end %>
+    </dl>
+    <% service_cases = assignments.count { |a|
+         a.delivery.delivery_items.any?(&:service_case?) } %>
+    <% if service_cases > 0 %>
+      <div class="alert alert-warning py-2 px-3 small mb-3">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+        <strong><%= service_cases %></strong> entrega(s) con caso de servicio
+      </div>
+    <% end %>
     <% if delivery_plan.draft? %>
       <% if delivery_plan.driver.present? && delivery_plan.truck.present? %>
-        <%= button_to "🚚 Enviar a logística", send_to_logistics_delivery_plan_path(delivery_plan),
-              method: :patch, class: "btn btn-success w-100" %>
+        <%= button_to send_to_logistics_delivery_plan_path(delivery_plan),
+              method: :patch,
+              class: "btn btn-success w-100 fw-bold" do %>
+          <i class="bi bi-send me-1"></i>Enviar a logística
+        <% end %>
       <% else %>
-        <div class="alert alert-warning small mt-2">
-          Debes asignar conductor y camión antes de enviar.
+        <div class="alert alert-warning py-2 px-3 small mb-0">
+          <i class="bi bi-info-circle me-1"></i>
+          Asigna conductor y camión para enviar.
         </div>
       <% end %>
     <% end %>

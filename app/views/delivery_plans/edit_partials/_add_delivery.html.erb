@@ -1,23 +1,62 @@
 <% if available_deliveries.any? %>
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-light fw-bold">
-      <i class="bi bi-plus-circle me-1"></i> Agregar entrega al plan
-    </div>
-    <div class="card-body">
-      <%= form_with url: add_delivery_to_plan_delivery_plan_path(delivery_plan), method: :patch, local: true do |f| %>
-        <div class="row g-3">
-          <div class="col-md-9">
-            <%= f.collection_select :delivery_id, available_deliveries, :id,
-                  ->(d) { "#{d.order.number} - #{d.order.client.name} (#{d.delivery_address.address})" },
-                  prompt: "Selecciona una entrega", class: "form-select" %>
-          </div>
-          <div class="col-md-3">
-            <%= f.submit "➕ Agregar", class: "btn btn-success w-100" %>
+  <div class="d-flex flex-column gap-3">
+    <% available_deliveries.each do |d| %>
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-start gap-3">
+            <div class="flex-grow-1">
+              <div class="fw-bold text-primary mb-1">
+                #<%= d.order.number %>
+                <span class="text-dark fw-semibold ms-1">
+                  · <%= d.order.client.name %>
+                </span>
+              </div>
+              <div class="small text-muted mb-2">
+                <i class="bi bi-geo-alt me-1"></i>
+                <%= d.delivery_address.address %>
+              </div>
+              <div class="d-flex flex-wrap gap-1">
+                <% d.delivery_items.includes(:order_item).each do |di| %>
+                  <span class="badge bg-light text-dark border">
+                    <%= di.order_item.product %>
+                    <span class="badge bg-secondary ms-1">x<%= di.quantity_delivered %></span>
+                  </span>
+                <% end %>
+              </div>
+              <% if d.delivery_notes.present? %>
+                <div class="note-block note-orange mt-2">
+                  <i class="bi bi-sticky-fill me-1"></i>
+                  <span class="small"><%= d.delivery_notes %></span>
+                </div>
+              <% end %>
+            </div>
+            <%= button_to add_delivery_to_plan_delivery_plan_path(
+                            delivery_plan,
+                            delivery_id: d.id),
+                  method: :patch,
+                  class: "btn btn-success btn-sm align-self-center flex-shrink-0" do %>
+              <i class="bi bi-plus-lg me-1"></i>Agregar
+            <% end %>
           </div>
         </div>
-      <% end %>
-    </div>
+      </div>
+    <% end %>
   </div>
 <% else %>
-  <div class="alert alert-info">No hay entregas disponibles para agregar.</div>
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-check-circle fs-1 d-block mb-3 opacity-25"></i>
+    <p class="mb-0">No hay entregas disponibles para agregar.</p>
+  </div>
 <% end %>
+<style>
+  .note-block {
+    border-radius: 8px;
+    padding: 6px 10px;
+    border-left: 3px solid;
+  }
+  .note-orange {
+    background: #fff8f0;
+    border-color: #fd7e14;
+    color: #7c3a00;
+  }
+</style>

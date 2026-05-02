@@ -1,25 +1,62 @@
-<div class="card shadow-sm">
-  <div class="card-header bg-light fw-bold">
-    <i class="bi bi-info-circle me-1"></i> Información General
+<div class="card shadow-sm h-100">
+  <div class="card-header bg-white border-bottom fw-bold d-flex align-items-center gap-2">
+    <i class="bi bi-info-circle text-primary"></i>
+    Información General
   </div>
   <div class="card-body">
-    <p><strong><i class="bi bi-calendar-week me-1"></i>Semana:</strong>
-      <span class="badge bg-primary"><%= week_range_label(delivery_plan.year, delivery_plan.week) %></span></p>
-
-    <p><strong><i class="bi bi-calendar me-1"></i>Año:</strong>
-      <span class="badge bg-secondary"><%= delivery_plan.year %></span></p>
-
-    <p><strong><i class="bi bi-person me-1"></i>Conductor:</strong>
-      <%= delivery_plan.driver&.name.presence || content_tag(:span, "No asignado", class: "text-muted") %></p>
-
-    <p><strong><i class="bi bi-truck-front me-1"></i>Camión:</strong>
-      <% if delivery_plan.truck.present? %>
-        <span class="badge bg-dark"><%= delivery_plan.truck %></span>
-      <% else %>
-        <span class="text-muted">No asignado</span>
-      <% end %></p>
-
-    <p><strong><i class="bi bi-flag me-1"></i>Estado:</strong>
-      <span class="badge bg-<%= delivery_plan_status_color(delivery_plan.status) %>"><%= delivery_plan.display_status %></span></p>
+    <dl class="row mb-0">
+      <dt class="col-5 text-muted fw-normal small">
+        <i class="bi bi-calendar-week me-1"></i>Semana
+      </dt>
+      <dd class="col-7">
+        <span class="badge bg-primary">
+          <%= week_range_label(delivery_plan.year, delivery_plan.week) %>
+        </span>
+      </dd>
+      <dt class="col-5 text-muted fw-normal small">
+        <i class="bi bi-flag me-1"></i>Estado
+      </dt>
+      <dd class="col-7">
+        <span class="badge bg-<%= delivery_plan_status_color(delivery_plan.status) %>">
+          <i class="<%= delivery_plan_status_icon(delivery_plan.status) %> me-1"></i>
+          <%= delivery_plan.display_status %>
+        </span>
+      </dd>
+      <dt class="col-5 text-muted fw-normal small">
+        <i class="bi bi-person me-1"></i>Conductor
+      </dt>
+      <dd class="col-7 fw-semibold">
+        <%= delivery_plan.driver&.name.presence ||
+              content_tag(:span, "No asignado", class: "text-muted fst-italic fw-normal") %>
+      </dd>
+      <dt class="col-5 text-muted fw-normal small">
+        <i class="bi bi-truck-front me-1"></i>Camión
+      </dt>
+      <dd class="col-7">
+        <% if delivery_plan.truck.present? %>
+          <span class="badge bg-dark">
+            <i class="bi bi-truck me-1"></i><%= delivery_plan.truck %>
+          </span>
+        <% else %>
+          <span class="text-muted fst-italic">No asignado</span>
+        <% end %>
+      </dd>
+      <dt class="col-5 text-muted fw-normal small">
+        <i class="bi bi-box-seam me-1"></i>Entregas
+      </dt>
+      <dd class="col-7 fw-semibold">
+        <%= delivery_plan.delivery_plan_assignments.size %>
+        <small class="text-muted fw-normal">paradas</small>
+      </dd>
+      <% service_cases = delivery_plan.deliveries.joins(:delivery_items).where(delivery_items: { service_case: true }).distinct.count %>
+      <% if service_cases > 0 %>
+        <dt class="col-5 text-muted fw-normal small">
+          <i class="bi bi-exclamation-triangle me-1 text-warning"></i>Casos servicio
+        </dt>
+        <dd class="col-7">
+          <span class="badge bg-warning text-dark"><%= service_cases %></span>
+        </dd>
+      <% end %>
+    </dl>
   </div>
 </div>

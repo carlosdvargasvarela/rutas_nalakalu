@@ -1,29 +1,34 @@
-<%= simple_form_for delivery_plan, local: true do |f| %>
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-light fw-bold">
-      <i class="bi bi-truck-front me-1"></i> Datos de asignación
+<%= simple_form_for delivery_plan,
+      url: delivery_plan_path(delivery_plan),
+      method: :patch do |f| %>
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-bottom fw-bold d-flex align-items-center gap-2">
+      <i class="bi bi-truck-front text-primary"></i>
+      Datos de asignación
     </div>
     <div class="card-body">
-      <div class="row g-3">
+      <div class="row g-4">
         <div class="col-md-6">
           <%= f.input :driver_id,
-                      label: "Conductor asignado",
-                      collection: User.where(role: :driver),
-                      text_method: :name, value_method: :id,
-                      prompt: "Selecciona un conductor",
-                      input_html: { class: "form-select" } %>
+                label: "Conductor asignado",
+                collection: User.where(role: :driver),
+                text_method: :name,
+                value_method: :id,
+                prompt: "Selecciona un conductor",
+                input_html: { class: "form-select" } %>
         </div>
         <div class="col-md-6">
           <%= f.input :truck,
-                      label: "Camión asignado",
-                      collection: DeliveryPlan.trucks.keys.map { |t| [t, t] },
-                      prompt: "Selecciona un camión",
-                      input_html: { class: "form-select" } %>
+                label: "Camión asignado",
+                collection: DeliveryPlan.trucks.keys.map { |t| [t.tr("_", " "), t] },
+                prompt: "Selecciona un camión",
+                input_html: { class: "form-select" } %>
         </div>
       </div>
     </div>
-    <div class="card-footer text-end">
-      <%= f.submit "💾 Guardar cambios", class: "btn btn-primary" %>
+    <div class="card-footer bg-white text-end border-top">
+      <%= f.submit "Guardar cambios",
+            class: "btn btn-primary px-4" %>
     </div>
   </div>
 <% end %>

@@ -1,4 +1,3 @@
-// app/javascript/controllers/sortable_controller.js
 import { Controller } from "@hotwired/stimulus";
 import Sortable from "sortablejs";
 
@@ -10,68 +9,63 @@ export default class extends Controller {
     this.sortable = Sortable.create(this.listTarget, {
       animation: 150,
       handle: ".drag-handle",
+      draggable: ".stop-group",
       ghostClass: "sortable-ghost",
       chosenClass: "sortable-chosen",
-      dragClass: "sortable-drag",
-      draggable: ".stop-group-header",
-
-      onEnd: () => {
-        this.updateStopOrder();
-      },
+      onEnd: () => this.updateStopOrder(),
     });
   }
 
   disconnect() {
-    if (this.sortable) {
-      this.sortable.destroy();
-    }
+    this.sortable?.destroy();
   }
 
   updateStopOrder() {
-    // Obtener todos los headers de grupo en el nuevo orden
-    const headers = this.listTarget.querySelectorAll(".stop-group-header");
     const stopOrders = {};
-    let currentStop = 1;
+    let stopNumber = 1;
 
-    headers.forEach((header) => {
-      // Dentro de cada header, buscar todas las filas con data-assignment-id
-      const groupRows = header.querySelectorAll("tr[data-assignment-id]");
-
-      groupRows.forEach((row) => {
-        const assignmentId = row.dataset.assignmentId;
-        stopOrders[assignmentId] = currentStop;
+    this.listTarget.querySelectorAll(".stop-group").forEach((group) => {
+      group.querySelectorAll("[data-assignment-id]").forEach((item) => {
+        stopOrders[item.dataset.assignmentId] = stopNumber;
       });
-
-      currentStop++;
+      stopNumber++;
     });
 
-    console.log("stopOrders a enviar:", stopOrders);
-    this.sendUpdateToServer(stopOrders);
+    // Actualizar badges visualmente sin reload
+    this.listTarget.querySelectorAll(".stop-group").forEach((group, idx) => {
+      const badge = group.querySelector(".stop-number");
+      if (badge) badge.textContent = idx + 1;
+
+      const title = group.querySelector(".fw-semibold.text-dark.small");
+      if (title && title.textContent.startsWith("Parada")) {
+        title.textContent = `Parada ${idx + 1}`;
+      }
+    });
+
+    this.sendUpdate(stopOrders);
   }
 
-  sendUpdateToServer(stopOrders) {
-    const csrfToken = document.querySelector("[name='csrf-token']").content;
+  sendUpdate(stopOrders) {
+    const csrf = document.querySelector("[name='csrf-token']").content;
 
     fetch(this.urlValue, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        "X-CSRF-Token": csrfToken,
+        "X-CSRF-Token": csrf,
         Accept: "application/json",
       },
       body: JSON.stringify({ stop_orders: stopOrders }),
-    })
-      .then((response) => {
-        if (response.ok) {
-          window.location.reload();
-        } else {
-          console.error("Error al actualizar el orden");
-          alert("Error al actualizar el orden de las paradas");
-        }
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        alert("Error de conexión al actualizar el orden");
-      });
+    }).catch(() => this.showError());
+  }
+
+  showError() {
+    const toast = document.createElement("div");
+    toast.className =
+      "alert alert-danger position-fixed bottom-0 end-0 m-3 shadow";
+    toast.style.zIndex = 9999;
+    toast.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i>Error al guardar el orden`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
   }
 }

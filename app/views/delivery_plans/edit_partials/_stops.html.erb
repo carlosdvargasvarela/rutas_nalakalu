@@ -1,213 +1,236 @@
-<!-- app/views/delivery_plans/edit_partials/_stops.html.erb -->
-<div class="card shadow-sm mb-4">
-  <div class="card-header bg-light fw-bold d-flex justify-content-between">
-    <span><i class="bi bi-list-ol me-1"></i> Orden de paradas</span>
-    <small class="text-muted"><i class="bi bi-arrows-move me-1"></i> Arrastra para reordenar grupos</small>
+<%# Wrapper principal %>
+<div class="stops-panel">
+  <div class="stops-panel-header d-flex justify-content-between align-items-center mb-3">
+    <span class="fw-bold text-dark">
+      <i class="bi bi-list-ol me-2 text-primary"></i>Orden de paradas
+    </span>
+    <small class="text-muted">
+      <i class="bi bi-arrows-move me-1"></i>Arrastra para reordenar
+    </small>
   </div>
-  <div class="table-responsive">
-    <table class="table table-sm align-middle mb-0">
-      <thead class="table-light">
-        <tr>
-          <th style="width:40px;"></th>
-          <th style="width:60px;">#</th>
-          <th style="width:200px;">Cliente</th>
-          <th>Dirección</th>
-          <th style="width:100px;">Hora pref.</th>
-          <th style="width:220px;">Productos</th>
-          <th style="width:280px;">Notas</th>
-          <th style="width:70px;">Acción</th>
-        </tr>
-      </thead>
-      <tbody data-controller="sortable"
-             data-sortable-target="list"
-             data-sortable-url-value="<%= update_order_delivery_plan_path(delivery_plan) %>">
-        <% 
-          # Agrupar assignments por stop_order
-          grouped_assignments = assignments.group_by(&:stop_order).sort_by { |stop, _| stop }
-        %>
-        
-        <% grouped_assignments.each do |stop_number, group| %>
-          <!-- Fila contenedora del grupo (arrastrable) -->
-          <tr class="stop-group-header" 
-              data-stop-number="<%= stop_number %>"
-              data-group-size="<%= group.size %>">
-            <td colspan="8" class="p-0">
-              <!-- Tabla interna para mantener alineación -->
-              <table class="table mb-0">
-                <colgroup>
-                  <col style="width:40px;">
-                  <col style="width:60px;">
-                  <col style="width:200px;">
-                  <col>
-                  <col style="width:100px;">
-                  <col style="width:220px;">
-                  <col style="width:280px;">
-                  <col style="width:70px;">
-                </colgroup>
-                <tbody>
-                  <% group.each_with_index do |assignment, idx| %>
-                    <% d = assignment.delivery %>
-                    <tr data-assignment-id="<%= assignment.id %>"
-                        data-stop-number="<%= stop_number %>"
-                        class="stop-item <%= 'table-active' if idx > 0 %>"
-                        style="<%= 'border-left: 4px solid #0d6efd;' if idx == 0 %>">
-                      
-                      <!-- Columna de arrastre -->
-                      <td class="text-center">
-                        <% if idx == 0 %>
-                          <i class="bi bi-grip-vertical drag-handle text-primary" 
-                             style="cursor: grab; font-size: 1.2rem;"></i>
-                        <% else %>
-                          <i class="bi bi-arrow-return-right text-muted"></i>
-                        <% end %>
-                      </td>
-                      
-                      <!-- Número de parada -->
-                      <td class="text-center">
-                        <% if idx == 0 %>
-                          <span class="badge bg-primary stop-number"><%= stop_number %></span>
-                          <% if group.size > 1 %>
-                            <small class="text-muted d-block">(+<%= group.size - 1 %>)</small>
-                          <% end %>
-                        <% else %>
-                          <span class="badge bg-secondary">↳</span>
-                        <% end %>
-                      </td>
-                      
-                      <!-- Cliente -->
-                      <td><%= d.order.client.name %></td>
-                      
-                      <!-- Dirección -->
-                      <td>
-                        <%= [d.delivery_address.address, d.delivery_address.description].compact.join(" - ") %>
-                        <% if idx > 0 %>
-                          <small class="text-success d-block">
-                            <i class="bi bi-geo-alt-fill"></i> Misma ubicación que parada <%= stop_number %>
-                          </small>
-                        <% end %>
-                      </td>
-                      
-                      <!-- Hora preferencia -->
-                      <td><%= d.delivery_time_preference.presence || "--" %></td>
-
-                      <!-- Productos -->
-                      <td>
-                        <a data-bs-toggle="collapse" 
-                           href="#products_<%= assignment.id %>"
-                           role="button" 
-                           aria-expanded="false"
-                           aria-controls="products_<%= assignment.id %>">
-                          <i class="bi bi-caret-down"></i> Ver productos
-                        </a>
-                        <div class="collapse mt-2" id="products_<%= assignment.id %>">
-                          <ul class="list-unstyled small mb-0">
-                            <% d.delivery_items.includes(:order_item).each do |di| %>
-                              <li class="mb-2">
-                                • <strong><%= di.order_item.product %></strong>
-                                <span class="badge bg-info"><%= di.quantity_delivered %> unidades</span>
-                                <% if di.service_case %>
-                                  <span class="badge bg-warning text-dark">Caso de servicio</span>
-                                <% end %>
-                              </li>
-                            <% end %>
-                          </ul>
-                        </div>
-                      </td>
-
-                      <!-- Notas -->
-                      <td>
-                        <%# Nota de la entrega %>
-                        <% if d.respond_to?(:delivery_notes) && d.delivery_notes.present? %>
-                          <div class="mb-2 p-2" style="background:#fff4e5; border-left:4px solid #fd7e14; border-radius:6px;">
-                            <span class="fw-bold text-dark">
-                              <i class="bi bi-sticky me-1 text-warning"></i> Nota de la entrega:
-                            </span>
-                            <div class="mt-1 text-dark"><em><%= d.delivery_notes %></em></div>
-                          </div>
-                        <% end %>
-
-                        <%# Notas de DeliveryItem %>
-                        <% d.delivery_items.each do |di| %>
-                          <% if di.notes.present? %>
-                            <div class="mb-2 p-2" style="background:#fff4e5; border-left:4px solid #fd7e14; border-radius:6px;">
-                              <span class="fw-bold text-dark">
-                                <i class="bi bi-pin-angle-fill me-1 text-warning"></i> Nota de entrega:
-                              </span>
-                              <div class="mt-1 text-dark"><em><%= di.notes %></em></div>
-                              <div class="small text-muted mt-1">
-                                <i class="bi bi-box-seam me-1"></i><%= di.order_item.product %>
-                              </div>
-                            </div>
-                          <% end %>
-                        <% end %>
-
-                        <%# Notas de OrderItem %>
-                        <% d.delivery_items.includes(:order_item).each do |di| %>
-                          <% if di.order_item.notes.present? %>
-                            <div class="mb-2 p-2" style="background:#eef6ff; border-left:4px solid #0d6efd; border-radius:6px;">
-                              <span class="fw-bold text-primary">
-                                <i class="bi bi-info-circle me-1"></i> Nota del producto:
-                              </span>
-                              <div class="mt-1 text-dark"><%= di.order_item.notes %></div>
-                              <div class="small text-muted mt-1">
-                                <i class="bi bi-box-seam me-1"></i><%= di.order_item.product %>
-                              </div>
-                            </div>
-                          <% end %>
-                        <% end %>
-                      </td>
-
-                      <!-- Acción -->
-                      <td>
-                        <%= button_to delivery_plan_delivery_plan_assignment_path(delivery_plan, assignment),
-                          method: :delete,
-                          class: "btn btn-sm btn-outline-danger",
-                          form: { data: { turbo_confirm: "¿Eliminar esta parada del grupo?" },
-                                  class: "d-inline" } do %>
-                          <i class="bi bi-trash"></i>
-                        <% end %>
-                      </td>
-                    </tr>
+  <% if assignments.empty? %>
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-inbox fs-1 d-block mb-3 opacity-25"></i>
+      <p class="mb-0">No hay paradas en este plan.</p>
+    </div>
+  <% else %>
+    <div class="stop-groups-list"
+         data-controller="sortable"
+         data-sortable-target="list"
+         data-sortable-url-value="<%= update_order_delivery_plan_path(delivery_plan) %>">
+      <% grouped_assignments = assignments.group_by(&:stop_order).sort_by { |stop, _| stop } %>
+      <% grouped_assignments.each do |stop_number, group| %>
+        <%# ── CARD DE GRUPO (draggable) ── %>
+        <div class="stop-group mb-3"
+             data-stop-number="<%= stop_number %>"
+          data-group-size="<%= group.size %>">
+          <%# Header de la card %>
+          <div class="stop-group-header d-flex align-items-center justify-content-between px-3 py-2">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-grip-vertical drag-handle fs-5 text-primary" style="cursor:grab;"></i>
+              <span class="badge bg-primary rounded-pill stop-number" style="min-width:28px;">
+                <%= stop_number %>
+              </span>
+              <span class="fw-semibold text-dark small">Parada <%= stop_number %></span>
+              <% if group.size > 1 %>
+                <span class="badge bg-light text-secondary border" style="font-size:0.7rem;">
+                  <i class="bi bi-layers me-1"></i><%= group.size %> entregas
+                </span>
+              <% end %>
+            </div>
+            <%# Badges de alerta rápida %>
+            <div class="d-flex gap-1">
+              <% if group.any? { |a| a.delivery.delivery_type == "sala_pickup" } %>
+                <span class="badge bg-info text-dark">
+                  <i class="bi bi-shop me-1"></i>Sala Pickup
+                </span>
+              <% end %>
+              <% if group.any? { |a| a.delivery.delivery_items.any?(&:service_case?) } %>
+                <span class="badge bg-warning text-dark">
+                  <i class="bi bi-tools me-1"></i>Caso Servicio
+                </span>
+              <% end %>
+            </div>
+          </div>
+          <%# Filas de assignments dentro del grupo %>
+          <div class="stop-group-body">
+            <% group.each_with_index do |assignment, idx| %>
+              <% d = assignment.delivery %>
+              <div class="stop-item d-flex align-items-start gap-3 px-3 py-2 <%= idx > 0 ? 'stop-item-secondary' : '' %>"
+                   data-assignment-id="<%= assignment.id %>"
+                  data-stop-number="<%= stop_number %>">
+                <%# Indicador de sub-entrega %>
+                <div class="stop-item-indicator flex-shrink-0 text-center" style="width:20px; padding-top:2px;">
+                  <% if idx == 0 %>
+                    <i class="bi bi-circle-fill text-primary" style="font-size:0.5rem;"></i>
+                  <% else %>
+                    <i class="bi bi-arrow-return-right text-muted small"></i>
                   <% end %>
-                </tbody>
-              </table>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
+                </div>
+                <%# Cliente + Orden %>
+                <div class="flex-shrink-0" style="width:180px;">
+                  <div class="fw-semibold text-dark small"><%= d.order.client.name %></div>
+                  <div class="text-muted" style="font-size:0.7rem;">#<%= d.order.number %></div>
+                  <% if idx > 0 %>
+                    <small class="text-success" style="font-size:0.65rem;">
+                      <i class="bi bi-geo-alt-fill"></i> Misma ubicación
+                    </small>
+                  <% end %>
+                </div>
+                <%# Dirección %>
+                <div class="flex-grow-1">
+                  <div class="small text-dark">
+                    <%= [d.delivery_address.address, d.delivery_address.description].compact.join(" · ") %>
+                  </div>
+                  <%# Hora preferencia %>
+                  <% if d.delivery_time_preference.present? %>
+                    <span class="badge bg-light text-dark border mt-1" style="font-size:0.65rem;">
+                      <i class="bi bi-clock me-1 text-primary"></i><%= d.delivery_time_preference %>
+                    </span>
+                  <% end %>
+                </div>
+                <%# Productos (collapsible) %>
+                <div class="flex-shrink-0" style="width:200px;">
+                  <a class="small text-decoration-none text-primary"
+                     data-bs-toggle="collapse"
+                     href="#products_<%= assignment.id %>"
+                     role="button">
+                    <i class="bi bi-box-seam me-1"></i>
+                    <%= d.delivery_items.size %> producto<%= d.delivery_items.size == 1 ? '' : 's' %>
+                    <i class="bi bi-chevron-down" style="font-size:0.6rem;"></i>
+                  </a>
+                  <div class="collapse mt-1" id="products_<%= assignment.id %>">
+                    <% d.delivery_items.includes(:order_item).each do |di| %>
+                      <div class="d-flex align-items-center gap-1 mb-1">
+                        <span class="badge bg-secondary" style="font-size:0.65rem;">x<%= di.quantity_delivered %></span>
+                        <span class="small text-dark"><%= di.order_item.product %></span>
+                        <% if di.service_case? %>
+                          <span class="badge bg-warning text-dark" style="font-size:0.6rem;">
+                            <i class="bi bi-tools"></i>
+                          </span>
+                        <% end %>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+                <%# Notas %>
+                <div class="flex-shrink-0" style="width:240px;">
+                  <% if d.delivery_notes.present? %>
+                    <div class="note-block note-orange mb-1">
+                      <i class="bi bi-sticky-fill me-1"></i>
+                      <span class="small"><%= d.delivery_notes %></span>
+                    </div>
+                  <% end %>
+                  <% d.delivery_items.each do |di| %>
+                    <% if di.notes.present? %>
+                      <div class="note-block note-blue mb-1">
+                        <i class="bi bi-pin-angle-fill me-1"></i>
+                        <span class="small"><em><%= di.notes %></em></span>
+                        <div class="text-muted" style="font-size:0.6rem;"><%= di.order_item.product %></div>
+                      </div>
+                    <% end %>
+                    <% if di.order_item.notes.present? %>
+                      <div class="note-block note-gray mb-1">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <span class="small"><%= di.order_item.notes %></span>
+                        <div class="text-muted" style="font-size:0.6rem;"><%= di.order_item.product %></div>
+                      </div>
+                    <% end %>
+                  <% end %>
+                </div>
+                <%# Acción %>
+                <div class="flex-shrink-0">
+                  <%= button_to delivery_plan_delivery_plan_assignment_path(delivery_plan, assignment),
+                        method: :delete,
+                        class: "btn btn-sm btn-outline-danger",
+                        form: {
+                          data: { turbo_confirm: "¿Eliminar esta parada del grupo?" },
+                          class: "d-inline"
+                        } do %>
+                    <i class="bi bi-trash"></i>
+                  <% end %>
+                </div>
+              </div>
+              <%# /stop-item %>
+            <% end %><%# /group.each %>
+          </div>
+          <%# /stop-group-body %>
+        </div>
+        <%# /stop-group %>
+      <% end %><%# /grouped_assignments.each %>
+    </div>
+    <%# /stop-groups-list %>
+  <% end %>
 </div>
-
+<%# /stops-panel %>
 <style>
+  /* ── Panel ── */
+  .stops-panel {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e9ecef;
+    padding: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+
+  /* ── Card de grupo ── */
+  .stop-group {
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+    background: #fff;
+  }
+  .stop-group:hover {
+    box-shadow: 0 4px 16px rgba(13,110,253,.12);
+  }
+
+  /* ── Header de grupo ── */
   .stop-group-header {
-    transition: all 0.2s ease;
+    background: linear-gradient(135deg, #f8f9ff 0%, #eef2ff 100%);
+    border-bottom: 1px solid #e2e8ff;
+    min-height: 44px;
   }
 
-  .stop-group-header:hover {
-    background-color: #f8f9fa;
+  /* ── Items dentro del grupo ── */
+  .stop-item {
+    border-bottom: 1px solid #f1f3f5;
+    transition: background 0.15s ease;
+  }
+  .stop-item:last-child { border-bottom: none; }
+  .stop-item:hover { background: #f8f9ff; }
+
+  .stop-item-secondary {
+    background: #fafbff;
+    border-left: 3px solid #dee2e6;
+  }
+  .stop-item:not(.stop-item-secondary) {
+    border-left: 3px solid #0d6efd;
   }
 
-  .dragging-group {
-    opacity: 0.5;
-    background-color: #e3f2fd !important;
-  }
+  /* ── Drag & Drop ── */
+  .drag-handle:hover { color: #0056b3 !important; }
+  .drag-handle:active { cursor: grabbing !important; }
 
   .sortable-ghost {
-    opacity: 0.4;
-    background-color: #bbdefb;
+    opacity: 0.35;
+    background: #e8f0fe !important;
+    border: 2px dashed #0d6efd !important;
+    border-radius: 12px;
   }
-
   .sortable-chosen {
-    background-color: #e3f2fd;
+    box-shadow: 0 8px 24px rgba(13,110,253,.2) !important;
+    transform: scale(1.01);
   }
 
-  .drag-handle:hover {
-    color: #0056b3 !important;
-    cursor: grab;
+  /* ── Notas ── */
+  .note-block {
+    border-radius: 6px;
+    padding: 3px 7px;
+    border-left: 3px solid;
+    line-height: 1.3;
   }
-
-  .drag-handle:active {
-    cursor: grabbing;
-  }
+  .note-orange { background: #fff8f0; border-color: #fd7e14; color: #7c3a00; }
+  .note-blue   { background: #f0f7ff; border-color: #0d6efd; color: #003580; }
+  .note-gray   { background: #f8f9fa; border-color: #adb5bd; color: #495057; }
 </style>
