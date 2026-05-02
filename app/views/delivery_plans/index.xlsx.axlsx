@@ -65,6 +65,7 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
     "Camión",
     "Estado Plan",
     "Estado Entrega",
+    "Cargado en el Camión?",
     "Hora",
     "Contacto",
     "Notas"
@@ -111,6 +112,7 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
           delivery_plan.truck || "Sin asignar",
           delivery_plan.display_status || "Sin estado",
           delivery.display_status || "Sin estado",
+          "",
           delivery.delivery_time_preference.presence || "Sin preferencia",
           "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
           notes_text
@@ -139,6 +141,7 @@ wb.add_worksheet(name: "Todos los Planes de Entrega") do |sheet|
             delivery_plan.truck || "Sin asignar",
             delivery_plan.display_status || "Sin estado",
             delivery.display_status || "Sin estado",
+            "",
             delivery.delivery_time_preference.presence || "Sin preferencia",
             "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
             notes_text
