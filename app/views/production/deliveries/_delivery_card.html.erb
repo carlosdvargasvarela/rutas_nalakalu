@@ -1,55 +1,93 @@
 <%# app/views/production/deliveries/_delivery_card.html.erb %>
-<div id="delivery_<%= delivery.id %>" class="mb-3">
-  <div class="card shadow-sm border-0">
-    <div class="card-header bg-light d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 py-2">
-      <div class="flex-grow-1">
-        <h6 class="mb-1">
-          <i class="bi bi-geo-alt text-primary me-1"></i>
-          Parada #<%= assignment&.stop_order || "N/A" %> - Entrega #<%= delivery.id %>
-        </h6>
-        <div class="small text-muted">
-          <strong><%= delivery.client&.name %></strong><br>
-          <%= delivery.delivery_address&.address&.truncate(50) %><br>
-          Pedido: <strong><%= delivery.order&.number %></strong>
+<%
+  load_color = case delivery.load_status
+    when "all_loaded"   then "success"
+    when "partial"      then "warning"
+    when "some_missing" then "danger"
+    else "secondary"
+  end
+%>
+<div id="delivery_<%= delivery.id %>"
+     class="card border-0 shadow-sm mb-3"
+     style="border-left: 4px solid var(--bs-<%= load_color %>) !important;"
+     data-client-name="<%= delivery.client&.name&.downcase %>"
+  data-order-number="<%= delivery.order&.number&.downcase %>"
+    data-loading-target="deliveryCard">
+  <%# ── Card Header ── %>
+  <div class="card-header bg-white border-bottom py-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+      <%# Info de la parada %>
+      <div class="d-flex align-items-start gap-3">
+        <%# Número de parada %>
+        <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
+             style="width:36px; height:36px; background: var(--bs-<%= load_color %>); font-size:0.85rem;">
+          <%= assignment&.stop_order || "?" %>
         </div>
-      </div>
-      <div class="d-flex flex-wrap gap-2 align-items-center">
-        <%= load_status_badge(delivery.load_status) %>
-        <div class="progress" style="height: 20px; min-width: 100px;">
-          <div class="progress-bar bg-success" 
-               role="progressbar" 
-               style="width: <%= delivery.load_percentage %>%" 
-               aria-valuenow="<%= delivery.load_percentage %>" 
-               aria-valuemin="0" 
-               aria-valuemax="100">
-            <%= delivery.load_percentage %>%
+        <div>
+          <div class="fw-semibold lh-1">
+            <%= delivery.client&.name %>
+          </div>
+          <div class="small text-muted mt-1">
+            <i class="bi bi-geo-alt me-1"></i><%= delivery.delivery_address&.address&.truncate(55) %>
+          </div>
+          <div class="small text-muted">
+            <i class="bi bi-receipt me-1"></i>Pedido <strong><%= delivery.order&.number %></strong>
+            &nbsp;·&nbsp;
+            <i class="bi bi-box-seam me-1"></i><%= delivery.delivery_items.count %> producto(s)
           </div>
         </div>
+      </div>
+      <%# Acciones + progreso %>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <%# Badge + % %>
+        <%= load_status_badge(delivery.load_status) %>
+        <span class="fw-bold text-<%= load_color %> small"><%= delivery.load_percentage %>%</span>
+        <%# Barra de progreso compacta %>
+        <div class="progress rounded-pill" style="height:8px; width:80px;">
+          <div class="progress-bar bg-<%= load_color %>"
+               role="progressbar"
+               style="width: <%= delivery.load_percentage %>%">
+          </div>
+        </div>
+        <%# Botones de acción %>
         <div class="btn-group btn-group-sm" role="group">
           <% if policy(delivery).mark_all_loaded? %>
-            <%= button_to mark_all_loaded_production_delivery_path(delivery), 
-                method: :post, 
-                class: "btn btn-outline-success", 
+            <%= button_to mark_all_loaded_production_delivery_path(delivery),
+                method: :post,
+                class: "btn btn-outline-success",
                 title: "Marcar todo cargado",
                 data: { turbo_confirm: "¿Marcar todos los productos de esta entrega como cargados?" } do %>
               <i class="bi bi-check-all"></i>
             <% end %>
           <% end %>
           <% if policy(delivery).reset_load_status? %>
-            <%= button_to reset_load_status_production_delivery_path(delivery), 
-                method: :post, 
-                class: "btn btn-outline-warning", 
+            <%= button_to reset_load_status_production_delivery_path(delivery),
+                method: :post,
+                class: "btn btn-outline-warning",
                 title: "Resetear carga",
-                data: { turbo_confirm: "¿Resetear estado de carga de esta entrega?" } do %>
+                data: { turbo_confirm: "¿Resetear el estado de carga de esta entrega?" } do %>
               <i class="bi bi-arrow-counterclockwise"></i>
             <% end %>
           <% end %>
         </div>
+        <%# Toggle colapsar/expandir items %>
+        <button class="btn btn-outline-secondary btn-sm"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#delivery_items_<%= delivery.id %>"
+                aria-expanded="true"
+                title="Ver/ocultar productos">
+          <i class="bi bi-chevron-down"></i>
+        </button>
       </div>
     </div>
+  </div>
+  <%# ── Items colapsables ── %>
+  <div id="delivery_items_<%= delivery.id %>" class="collapse show">
     <ul class="list-group list-group-flush">
       <% delivery.delivery_items.each do |item| %>
-        <li id="delivery_item_<%= item.id %>" class="list-group-item">
+        <li id="delivery_item_<%= item.id %>"
+            class="list-group-item px-3 py-3 <%= item.load_status == "missing" ? "bg-danger bg-opacity-5" : "" %>">
           <%= render "production/delivery_items/delivery_item_row", item: item %>
         </li>
       <% end %>

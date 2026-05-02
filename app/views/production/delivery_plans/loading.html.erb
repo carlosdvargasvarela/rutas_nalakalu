@@ -1,67 +1,75 @@
 <%# app/views/production/delivery_plans/loading.html.erb %>
-<div class="container-fluid mt-3 px-2 px-md-4" data-controller="loading">
-  <%# Header %>
-  <div id="plan_header">
+<div class="container-fluid mt-3 px-2 px-md-4"
+     data-controller="loading"
+     data-loading-plan-id-value="<%= @delivery_plan.id %>">
+  <%# Header sticky %>
+  <div id="plan_header" class="sticky-top" style="top: 56px; z-index: 100;">
     <%= render "plan_header", delivery_plan: @delivery_plan, load_stats: @load_stats %>
   </div>
-  <%# Resumen de Carga %>
-  <div id="load_summary" class="mb-3">
+  <%# Resumen de carga %>
+  <div id="load_summary">
     <%= render "load_summary", delivery_plan: @delivery_plan, load_stats: @load_stats %>
   </div>
-  <%# Modal de Filtros %>
-  <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="filterModalLabel">Filtrar Bitácora</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <%# ── Filtros inline (chips + búsqueda) ── %>
+  <div class="card border-0 shadow-sm mb-3"
+       data-controller="loading-filters"
+       data-loading-filters-plan-id-value="<%= @delivery_plan.id %>">
+    <div class="card-body py-3">
+      <div class="d-flex flex-column flex-md-row gap-3 align-items-start align-items-md-center">
+        <%# Buscador en tiempo real %>
+        <div class="flex-grow-1">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white border-end-0">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text"
+                   class="form-control border-start-0 ps-0"
+                   placeholder="Buscar cliente, pedido..."
+                   data-action="input->loading#filterDeliveries"
+            data-loading-target="searchInput"
+            value="<%= @filter_search %>">
+          </div>
         </div>
-        <%= form_with url: loading_production_delivery_plan_path(@delivery_plan), method: :get do %>
-          <div class="modal-body">
-            <div class="mb-3">
-              <%= label_tag :load_status, "Estado de Carga", class: "form-label" %>
-              <%= select_tag :load_status, 
-                  options_for_select([
-                    ["Todos", ""], 
-                    ["Sin cargar", "empty"], 
-                    ["Parcialmente cargado", "partial"], 
-                    ["Completamente cargado", "all_loaded"], 
-                    ["Con faltantes", "some_missing"]
-                  ], @filter_load_status), 
-                  class: "form-select" %>
-            </div>
-            <div class="mb-3">
-              <%= label_tag :search, "Buscar por Cliente o Pedido", class: "form-label" %>
-              <%= text_field_tag :search, @filter_search, class: "form-control", placeholder: "Ej: Cliente A, P-1234" %>
-            </div>
-            <div class="mb-3">
-              <%= label_tag :view_mode, "Modo de Vista", class: "form-label" %>
-              <%= select_tag :view_mode, 
-                  options_for_select([
-                    ["Por Entrega", "by_delivery"], 
-                    ["Por Producto", "by_product"]
-                  ], @view_mode), 
-                  class: "form-select" %>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-            <%= submit_tag "Aplicar Filtros", class: "btn btn-primary" %>
-          </div>
-        <% end %>
+        <%# Chips de filtro por estado %>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          <small class="text-muted fw-semibold me-1">Estado:</small>
+          <%
+            chip_filters = [
+              { value: "",             label: "Todos",       icon: "bi-list-ul",                  color: "secondary" },
+              { value: "empty",        label: "Sin cargar",  icon: "bi-circle",                   color: "secondary" },
+              { value: "partial",      label: "Parcial",     icon: "bi-hourglass-split",           color: "warning"   },
+              { value: "all_loaded",   label: "Cargado",     icon: "bi-check-circle-fill",         color: "success"   },
+              { value: "some_missing", label: "Faltantes",   icon: "bi-exclamation-triangle-fill", color: "danger"    },
+            ]
+          %>
+          <% chip_filters.each do |chip| %>
+            <% active = @filter_load_status.to_s == chip[:value] %>
+            <%= link_to loading_production_delivery_plan_path(@delivery_plan, load_status: chip[:value], search: @filter_search),
+                class: "btn btn-sm #{active ? "btn-#{chip[:color]}" : "btn-outline-#{chip[:color]}"} rounded-pill",
+                data: { turbo_action: "replace" } do %>
+              <i class="bi <%= chip[:icon] %> me-1"></i><%= chip[:label] %>
+            <% end %>
+          <% end %>
+        </div>
       </div>
     </div>
   </div>
-  <%# Lista de Entregas %>
-  <% if @view_mode == "by_delivery" %>
-    <% @assignments.each do |assignment| %>
-      <% delivery = assignment.delivery %>
-      <%= render "production/deliveries/delivery_card", delivery: delivery, assignment: assignment %>
+  <%# ── Lista de entregas ── %>
+  <div id="delivery_cards_list" data-loading-target="deliveryList">
+    <% if @assignments.empty? %>
+      <div class="text-center py-5">
+        <i class="bi bi-inbox" style="font-size: 3rem; color: #cbd5e1;"></i>
+        <p class="text-muted mt-3 mb-0">No hay entregas que coincidan con los filtros.</p>
+        <%= link_to "Ver todas", loading_production_delivery_plan_path(@delivery_plan),
+            class: "btn btn-outline-secondary btn-sm mt-2" %>
+      </div>
+    <% else %>
+      <% @assignments.each_with_index do |assignment, index| %>
+        <% delivery = assignment.delivery %>
+        <%= render "production/deliveries/delivery_card",
+            delivery: delivery,
+            assignment: assignment %>
+      <% end %>
     <% end %>
-  <% else %>
-    <div class="alert alert-info text-center" role="alert">
-      <i class="bi bi-info-circle me-2"></i>
-      La vista por producto está en desarrollo. Por favor, use la vista "Por Entrega".
-    </div>
-  <% end %>
+  </div>
 </div>
