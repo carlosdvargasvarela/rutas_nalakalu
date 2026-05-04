@@ -9,15 +9,15 @@ class SalesOrderImportWorker < QBWC::Worker
     }
   end
 
-  def handle_response(response, session, job, request, data)
-    orders = Array.wrap(response["sales_order_ret"])
-    Rails.logger.info "=== QB: #{orders.count} Sales Orders recibidos ==="
+  # 👇 IMPORTANTE: evitar que qbxml intente parsear automáticamente
+  def should_parse_response?
+    false
+  end
 
-    orders.each do |so|
-      Rails.logger.info "Pedido: #{so["ref_number"]} | " \
-                        "Cliente: #{so.dig("customer_ref", "full_name")} | " \
-                        "Entrega: #{so["due_date"]} | " \
-                        "Líneas: #{Array.wrap(so["sales_order_line_ret"]).count}"
-    end
+  def handle_response(response, session, job, request, data)
+    Rails.logger.info "RAW XML RESPONSE:"
+    Rails.logger.info response
+
+    # luego lo parseamos nosotros manualmente
   end
 end
