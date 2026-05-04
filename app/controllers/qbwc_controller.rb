@@ -1,31 +1,40 @@
 class QbwcController < ActionController::Base
   include QBWC::Controller
 
-  def authenticate(username, password)
+  def authenticate
     user = ENV["QB_USER"].to_s.strip
     pass = ENV["QB_PASS"].to_s.strip
 
-    if username.to_s.strip == user && password.to_s.strip == pass
-      [SecureRandom.uuid, nil]
+    if params[:strUserName].to_s.strip == user && params[:strPassword].to_s.strip == pass
+      ticket = SecureRandom.uuid
+      render soap: {authRet: [ticket, nil]}
     else
-      Rails.logger.error "QB Auth Falló -> #{username}"
-      ["", "nvu"]
+      Rails.logger.error "QB Auth Falló -> #{params[:strUserName]}"
+      render soap: {authRet: ["", "nvu"]}
     end
   end
 
-  def server_version(_version)
-    ""
+  def server_version
+    render soap: {serverVersionRet: ""}
   end
 
-  def client_version(_version)
-    ""
+  def client_version
+    render soap: {clientVersionRet: ""}
   end
 
-  def connection_error(ticket, hresult, message)
-    "done"
+  def send_request_xml
+    render soap: {sendRequestXMLRet: ""}
   end
 
-  def close_connection(ticket)
-    "OK"
+  def receive_response_xml
+    render soap: {receiveResponseXMLRet: 100}
+  end
+
+  def connection_error
+    render soap: {connectionErrorRet: "done"}
+  end
+
+  def close_connection
+    render soap: {closeConnectionRet: "OK"}
   end
 end
