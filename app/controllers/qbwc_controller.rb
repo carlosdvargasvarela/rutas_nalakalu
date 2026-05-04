@@ -9,9 +9,8 @@ class QbwcController < ActionController::Base
 
     if params[:strUserName].to_s.strip == user && params[:strPassword].to_s.strip == pass
       ticket = SecureRandom.uuid
-      render soap: {authRet: [ticket, nil]}
+      render soap: {authRet: [ticket, ""]}   # <-- "" en vez de nil
     else
-      Rails.logger.error "QB Auth Falló -> #{params[:strUserName]}"
       render soap: {authRet: ["", "nvu"]}
     end
   end
