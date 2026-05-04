@@ -55,6 +55,9 @@ gem "geocoder"
 gem "bootstrap"
 gem "jquery-rails"
 
+# Quickbooks integration
+gem "wash_out"
+
 # Other frontemd gems
 
 # Use sassc-rails for CSS preprocessing
