@@ -2,8 +2,10 @@ class QbwcController < ActionController::Base
   include QBWC::Controller
 
   def authenticate
-    user = ENV["QB_USER"] || "admin".strip
-    pass = ENV["QB_PASS"] || "123456".strip
+    Rails.logger.info "QBWC PARAMS: #{params.to_unsafe_h.inspect}"
+
+    user = ENV["QB_USER"] || "admin"
+    pass = ENV["QB_PASS"] || "123456"
 
     if params[:strUserName].to_s.strip == user && params[:strPassword].to_s.strip == pass
       ticket = SecureRandom.uuid
