@@ -1,41 +1,17 @@
 class QbwcController < ActionController::Base
   include QBWC::Controller
 
-  def authenticate
-    Rails.logger.info "QBWC PARAMS: #{params.to_unsafe_h.inspect}"
+  protected
 
-    user = ENV["QB_USER"] || "admin"
-    pass = ENV["QB_PASS"] || "123456"
-
-    if params[:strUserName].to_s.strip == user && params[:strPassword].to_s.strip == pass
-      ticket = SecureRandom.uuid
-      render soap: {authRet: [ticket, ""]}   # <-- "" en vez de nil
-    else
-      render soap: {authRet: ["", "nvu"]}
-    end
+  def server_version_response
+    ""
   end
 
-  def server_version
-    render soap: {serverVersionRet: ""}
+  def check_client_version
+    ""
   end
 
-  def client_version
-    render soap: {clientVersionRet: ""}
-  end
-
-  def send_request_xml
-    render soap: {sendRequestXMLRet: ""}
-  end
-
-  def receive_response_xml
-    render soap: {receiveResponseXMLRet: 100}
-  end
-
-  def connection_error
-    render soap: {connectionErrorRet: "done"}
-  end
-
-  def close_connection
-    render soap: {closeConnectionRet: "OK"}
+  def app_name
+    "Rutas Nalakalu"
   end
 end
