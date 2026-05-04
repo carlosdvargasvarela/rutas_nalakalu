@@ -1,27 +1,29 @@
 # config/initializers/qbxml_bigdecimal_fix.rb
 # Fix para qbxml-1.0.0: QuickBooks Costa Rica envía decimales con coma (ej: "0,5")
-# BigDecimal() de Ruby moderno lanza excepción con ese formato.
+# Usamos prepend sobre Qbxml::Hash para interceptar el typecast ANTES del BigDecimal.
 
-Rails.application.config.after_initialize do
-  if defined?(Qbxml::Types::TYPES)
-    decimal_fix = ->(v) {
-      begin
-        BigDecimal(v.to_s.tr(",", "."))
-      rescue
-        BigDecimal(0)
-      end
-    }
+module QbxmlBigDecimalPatch
+  private
 
-    Qbxml::Types::TYPES.merge!(
-      "AMTTYPE" => decimal_fix,
-      "PRICETYPE" => decimal_fix,
-      "QUANTYPE" => decimal_fix,
-      "PERCENTTYPE" => decimal_fix,
-      "FLOATTYPE" => decimal_fix
-    )
+  def typecast(value, type)
+    # Normalizamos coma decimal -> punto para todos los tipos numéricos
+    if %w[AMTTYPE PRICETYPE QUANTYPE PERCENTTYPE FLOATTYPE].include?(type)
+      value = value.to_s.tr(",", ".")
+    end
+    super
+  rescue ArgumentError => e
+    # Fallback: si aún falla, retornamos 0 en lugar de explotar
+    Rails.logger.warn "QbxmlBigDecimalPatch: typecast falló para value=#{value.inspect} type=#{type}: #{e.message}"
+    0
+  end
+end
 
-    Rails.logger.info "qbxml_bigdecimal_fix: patch aplicado correctamente."
+# Esperamos a que la gema esté cargada antes de parchear
+Rails.application.config.to_prepare do
+  if defined?(Qbxml::Hash)
+    Qbxml::Hash.prepend(QbxmlBigDecimalPatch)
+    Rails.logger.info "QbxmlBigDecimalPatch: prepend aplicado sobre Qbxml::Hash."
   else
-    Rails.logger.warn "qbxml_bigdecimal_fix: Qbxml::Types::TYPES no encontrado, patch NO aplicado."
+    Rails.logger.warn "QbxmlBigDecimalPatch: Qbxml::Hash no encontrado, patch NO aplicado."
   end
 end
