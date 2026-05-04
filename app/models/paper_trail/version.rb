@@ -13,6 +13,7 @@ module PaperTrail
         event
         whodunnit
         object
+        object_changes
         created_at
       ]
     end
