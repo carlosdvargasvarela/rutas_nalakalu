@@ -41,6 +41,9 @@ Rails.application.routes.draw do
   # =============================================================================
   wash_out :qbwc
 
+  # Cuando QBWC hace GET a /qbwc/action, lo mandamos al WSDL
+  get "/qbwc/action", to: redirect("/qbwc/wsdl")
+
   # =============================================================================
   # RUTA PRINCIPAL
   # =============================================================================
