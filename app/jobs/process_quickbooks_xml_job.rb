@@ -18,7 +18,8 @@ class ProcessQuickbooksXmlJob
 
   def process_sales_order(so)
     qb_txn_id = so["txn_id"]
-    order_number = "PED-#{so["ref_number"]}"
+    ref_number = so["ref_number"].to_s.strip
+    order_number = ref_number.start_with?("PED-") ? ref_number : "PED-#{ref_number}"
     existing = Order.find_by(number: order_number)
 
     # Órdenes pre-integración (existen en Rails pero sin qb_txn_id):

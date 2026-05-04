@@ -3,9 +3,7 @@ class SalesOrderImportWorker < QBWC::Worker
   def requests(job, session, data)
     return nil if data && data["done"]
 
-    # Hora de Costa Rica para coincidir con la PC donde está QuickBooks
-    costa_rica_now = Time.find_zone("Central America").now
-    default_from = costa_rica_now.beginning_of_day.strftime("%Y-%m-%dT%H:%M:%S")
+    default_from = Time.now.utc.beginning_of_day.strftime("%Y-%m-%dT%H:%M:%S")
     from_date = ENV.fetch("QBWC_SYNC_FROM_DATE", default_from)
 
     <<~XML
