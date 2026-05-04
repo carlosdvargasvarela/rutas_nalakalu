@@ -284,6 +284,15 @@ GEM
       nio4r (~> 2.0)
     pundit (2.5.0)
       activesupport (>= 3.0.0)
+    qbwc (2.0.0)
+      actionpack (>= 7.1)
+      qbxml (>= 0.3.0)
+      wash_out (>= 0.12.0)
+    qbxml (1.0.0)
+      activesupport (>= 7.1.0)
+      bigdecimal
+      builder (~> 3.0)
+      nokogiri (~> 1.5)
     raabro (1.4.0)
     racc (1.8.1)
     rack (3.1.16)
@@ -511,6 +520,7 @@ DEPENDENCIES
   prawn-table
   puma (>= 5.0)
   pundit (~> 2.5)
+  qbwc
   rails (~> 7.2.2, >= 7.2.2.1)
   ransack
   redis
@@ -528,7 +538,6 @@ DEPENDENCIES
   tom-select-rails
   turbo-rails
   tzinfo-data
-  wash_out
   web-console
 
 BUNDLED WITH

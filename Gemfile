@@ -56,7 +56,7 @@ gem "bootstrap"
 gem "jquery-rails"
 
 # Quickbooks integration
-gem "wash_out"
+gem "qbwc"
 
 # Other frontemd gems
 

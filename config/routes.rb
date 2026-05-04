@@ -1,6 +1,8 @@
 require "sidekiq/web"
 
 Rails.application.routes.draw do
+  mount QBWC::Engine => "/qbwc"
+
   # =============================================================================
   # SIDEKIQ WEB PANEL - Monitoreo de jobs en background
   # =============================================================================
@@ -39,10 +41,6 @@ Rails.application.routes.draw do
   # =============================================================================
   # RUTAS RELACIONADAS A QUICKBOOKS
   # =============================================================================
-  wash_out :qbwc
-
-  # Cuando QBWC hace GET a /qbwc/action, lo mandamos al WSDL
-  get "/qbwc/action", to: redirect("/qbwc/wsdl")
 
   # =============================================================================
   # RUTA PRINCIPAL

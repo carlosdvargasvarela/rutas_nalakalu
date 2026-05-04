@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_04_30_220131) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_04_041123) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -271,6 +271,34 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_30_220131) do
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_orders_on_client_id"
     t.index ["seller_id"], name: "index_orders_on_seller_id"
+  end
+
+  create_table "qbwc_jobs", force: :cascade do |t|
+    t.string "name"
+    t.string "company", limit: 1000
+    t.string "worker_class", limit: 100
+    t.boolean "enabled", default: false, null: false
+    t.text "request_index"
+    t.text "requests"
+    t.boolean "requests_provided_when_job_added", default: false, null: false
+    t.text "data"
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
+    t.index ["company"], name: "index_qbwc_jobs_on_company"
+    t.index ["name"], name: "index_qbwc_jobs_on_name", unique: true
+  end
+
+  create_table "qbwc_sessions", force: :cascade do |t|
+    t.string "ticket"
+    t.string "user"
+    t.string "company", limit: 1000
+    t.integer "progress", default: 0, null: false
+    t.string "current_job"
+    t.string "iterator_id"
+    t.string "error", limit: 1000
+    t.text "pending_jobs", limit: 1000, null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
   end
 
   create_table "sellers", force: :cascade do |t|
