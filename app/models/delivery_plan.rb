@@ -290,6 +290,14 @@ class DeliveryPlan < ApplicationRecord
     ((completed.to_f / total) * 100).round
   end
 
+  def service_cases_count
+    deliveries.joins(:delivery_items)
+      .where(delivery_items: {service_case: true})
+      .unscope(:order)
+      .distinct
+      .count
+  end
+
   private
 
   def notify_driver_assignment

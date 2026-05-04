@@ -48,7 +48,7 @@
         <%= delivery_plan.delivery_plan_assignments.size %>
         <small class="text-muted fw-normal">paradas</small>
       </dd>
-      <% service_cases = delivery_plan.deliveries.joins(:delivery_items).where(delivery_items: { service_case: true }).distinct.count %>
+      <% service_cases = delivery_plan.service_cases_count %>
       <% if service_cases > 0 %>
         <dt class="col-5 text-muted fw-normal small">
           <i class="bi bi-exclamation-triangle me-1 text-warning"></i>Casos servicio
