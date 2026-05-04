@@ -1,15 +1,22 @@
 class SalesOrderImportWorker < QBWC::Worker
   def requests(job, session, data)
-    # Si ya procesamos, no enviamos más requests
     return nil if data && data[:done]
 
-    {
-      sales_order_query_rq: {
-        xml_attributes: {"requestID" => "1"},
-        max_returned: 50,
-        include_line_items: true
-      }
-    }
+    # XML crudo — evitamos que la gema intente parsear/construir QBXML
+    <<~XML
+      <?xml version="1.0" encoding="utf-8"?>
+      <?qbxml version="13.0"?>
+      <QBXML>
+        <QBXMLMsgsRq onError="stopOnError">
+          <SalesOrderQueryRq requestID="1">
+            <MaxReturned>100</MaxReturned>
+            <IncludeLineItems>true</IncludeLineItems>
+            <IncludeLinkedTxns>false</IncludeLinkedTxns>
+            <OwnerID>0</OwnerID>
+          </SalesOrderQueryRq>
+        </QBXMLMsgsRq>
+      </QBXML>
+    XML
   end
 
   def handle_response(response, session, job, request, data)
@@ -26,7 +33,6 @@ class SalesOrderImportWorker < QBWC::Worker
       ProcessQuickbooksXmlJob.perform_async(raw_xml)
     end
 
-    # 👇 CLAVE: marcar como done para que requests() retorne nil
     {done: true}
   end
 end
