@@ -1,0 +1,164 @@
+<%# app/views/delivery_plans/index_partials/_table.html.erb %>
+<div class="card border-0 shadow-sm mb-4" style="border-radius:14px; overflow:hidden;">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0 delivery-plans-table">
+      <thead>
+        <tr>
+          <th>Semana</th>
+          <th>Fechas de Entrega</th>
+          <th>Estado</th>
+          <th>Conductor</th>
+          <th>Camión</th>
+          <th class="text-center">Entregas</th>
+          <th style="min-width:160px;">Progreso</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if delivery_plans.empty? %>
+          <tr>
+            <td colspan="8">
+              <%= render "delivery_plans/index_partials/empty_state" %>
+            </td>
+          </tr>
+        <% else %>
+          <% delivery_plans.each do |plan| %>
+            <% meta = delivery_plan_meta(plan) %>
+            <tr class="delivery-plan-row"
+                data-href="<%= delivery_plan_path(plan) %>"
+              data-controller="row-link">
+              <%# Semana %>
+              <td>
+                <% if plan.year.present? && plan.week.present? %>
+                  <div class="week-badge">
+                    <span class="week-badge__number">S<%= plan.week %></span>
+                    <span class="week-badge__year"><%= plan.year %></span>
+                  </div>
+                <% else %>
+                  <span class="badge bg-light text-muted border">Sin definir</span>
+                <% end %>
+              </td>
+              <%# Fechas de entrega %>
+              <td>
+                <% if meta[:first_date].present? %>
+                  <div class="d-flex flex-column">
+                    <span class="fw-semibold small text-dark">
+                      <i class="bi bi-calendar-check text-primary me-1"></i>
+                      <%= l meta[:first_date].to_date, format: :short %>
+                    </span>
+                    <% if meta[:last_date] && meta[:last_date] != meta[:first_date] %>
+                      <small class="text-muted">
+                        hasta <%= l meta[:last_date].to_date, format: :short %>
+                      </small>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <span class="text-muted fst-italic small">Sin entregas</span>
+                <% end %>
+              </td>
+              <%# Estado %>
+              <td>
+                <span class="status-badge status-badge--<%= plan.status %>">
+                  <i class="<%= delivery_plan_status_icon(plan.status) %>"></i>
+                  <%= plan.display_status %>
+                </span>
+              </td>
+              <%# Conductor %>
+              <td>
+                <% if plan.driver.present? %>
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="avatar-xs bg-primary bg-opacity-10 text-primary">
+                      <%= plan.driver.name.first.upcase %>
+                    </div>
+                    <span class="small fw-semibold"><%= plan.driver.name %></span>
+                  </div>
+                <% else %>
+                  <span class="text-muted small fst-italic">
+                    <i class="bi bi-person-dash me-1"></i>Sin asignar
+                  </span>
+                <% end %>
+              </td>
+              <%# Camión %>
+              <td>
+                <% if plan.truck.present? %>
+                  <span class="badge bg-dark d-flex align-items-center gap-1" style="width:fit-content;">
+                    <i class="bi bi-truck-front"></i>
+                    <%= plan.truck %>
+                  </span>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              <%# Entregas %>
+              <td class="text-center">
+                <span class="fw-bold text-dark"><%= meta[:total_count] %></span>
+                <small class="text-muted d-block" style="font-size:0.65rem;">entregas</small>
+              </td>
+              <%# Progreso %>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress flex-grow-1" style="height:6px; border-radius:99px;">
+                    <div class="progress-bar <%= meta[:progress_percentage] == 100 ? 'bg-success' : 'bg-primary' %>"
+                         style="width:<%= meta[:progress_percentage] %>%"></div>
+                  </div>
+                  <small class="text-muted fw-semibold" style="min-width:40px; font-size:0.75rem;">
+                    <%= meta[:delivered_count] %>/<%= meta[:total_count] %>
+                  </small>
+                </div>
+                <% if meta[:progress_percentage] == 100 %>
+                  <small class="text-success" style="font-size:0.65rem;">
+                    <i class="bi bi-check-circle-fill me-1"></i>Completado
+                  </small>
+                <% end %>
+              </td>
+              <%# Acciones %>
+              <td class="text-center" data-action="click->row-link#stopPropagation">
+                <div class="btn-group btn-group-sm" role="group">
+                  <%= link_to delivery_plan_path(plan),
+                        class: "btn btn-outline-primary",
+                        title: "Ver detalles",
+                        data: { bs_toggle: "tooltip" } do %>
+                    <i class="bi bi-eye"></i>
+                  <% end %>
+                  <%= link_to edit_delivery_plan_path(plan),
+                        class: "btn btn-outline-secondary",
+                        title: "Editar",
+                        data: { bs_toggle: "tooltip" } do %>
+                    <i class="bi bi-pencil"></i>
+                  <% end %>
+                  <button class="btn btn-outline-dark dropdown-toggle dropdown-toggle-split"
+                          data-bs-toggle="dropdown">
+                    <span class="visually-hidden">Más</span>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius:10px;">
+                    <li>
+                      <%= link_to delivery_plan_path(plan, format: :pdf),
+                            class: "dropdown-item rounded-2", target: "_blank" do %>
+                        <i class="bi bi-file-earmark-pdf me-2 text-danger"></i>Descargar PDF
+                      <% end %>
+                    </li>
+                    <li>
+                      <%= link_to delivery_plan_path(plan, format: :xlsx),
+                            class: "dropdown-item rounded-2" do %>
+                        <i class="bi bi-file-earmark-spreadsheet me-2 text-success"></i>Exportar Excel
+                      <% end %>
+                    </li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li>
+                      <%= link_to plan,
+                            method: :delete,
+                            class: "dropdown-item rounded-2 text-danger",
+                            data: { confirm: "¿Eliminar este plan?", turbo_method: :delete } do %>
+                        <i class="bi bi-trash me-2"></i>Eliminar
+                      <% end %>
+                    </li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,296 @@
+.ring-highlight {
+  outline: 3px solid #0d6efd;
+  transition: outline 1.5s ease;
+}
+
+// ── Stat Cards ──────────────────────────────────────────────
+.stat-card {
+  border-radius: 14px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+
+  &__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+  }
+
+  &__value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    line-height: 1.1;
+  }
+
+  &__icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  // Gradientes
+  &--purple {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  &--pink {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  }
+  &--blue {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  }
+  &--green {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  }
+  &--teal {
+    background: linear-gradient(135deg, #0acffe 0%, #495aff 100%);
+  }
+  &--orange {
+    background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+  }
+
+  // Card de "Por Estado" — fondo neutro, label oscuro
+  &--neutral {
+    background: #fff;
+
+    .stat-card__label {
+      color: #6c757d;
+    }
+  }
+}
+
+// ── Status Badges ────────────────────────────────────────────
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  // Estados de DeliveryPlan
+  &--draft {
+    background: #f1f3f5;
+    color: #495057;
+    border: 1px solid #dee2e6;
+  }
+  &--sent_to_logistics {
+    background: #e7f5ff;
+    color: #1971c2;
+  }
+  &--routes_created {
+    background: #e8f4fd;
+    color: #0c63a4;
+    border: 1px solid #b6d4fe;
+  }
+  &--in_progress {
+    background: #cff4fc;
+    color: #055160;
+  }
+  &--completed {
+    background: #d1e7dd;
+    color: #0a3622;
+  }
+  &--aborted {
+    background: #f8d7da;
+    color: #842029;
+  }
+
+  // Aliases genéricos (por si se reutiliza en otros modelos)
+  &--pending {
+    background: #fff3cd;
+    color: #856404;
+  }
+  &--cancelled {
+    background: #f8d7da;
+    color: #842029;
+  }
+  &--active {
+    background: #d1e7dd;
+    color: #0a3622;
+  }
+}
+
+// ── Week Badge ───────────────────────────────────────────────
+.week-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  &__number {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #0d6efd;
+    line-height: 1;
+  }
+
+  &__year {
+    font-size: 0.65rem;
+    color: #6c757d;
+  }
+}
+
+// ── Avatar XS ────────────────────────────────────────────────
+.avatar-xs {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+// ── Tabla de planes ──────────────────────────────────────────
+.delivery-plans-table {
+  thead tr {
+    background: #f8f9fa;
+
+    th {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: #6c757d;
+      font-weight: 600;
+      border-bottom: 2px solid #e9ecef;
+      padding: 0.85rem 1rem;
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #f1f3f5;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: #f8f9ff;
+    }
+    &:last-child {
+      border-bottom: none;
+    }
+
+    td {
+      padding: 0.85rem 1rem;
+    }
+  }
+}
+
+// ── Delivery Plan Card (móvil) ───────────────────────────────
+.delivery-plan-card {
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+
+  &:hover {
+    box-shadow: 0 6px 20px rgba(13, 110, 253, 0.12) !important;
+    transform: translateY(-1px);
+  }
+}
+
+// Barra de acento superior por estado
+.plan-card-accent {
+  height: 4px;
+
+  &--draft {
+    background: #adb5bd;
+  }
+  &--sent_to_logistics {
+    background: #74c0fc;
+  }
+  &--routes_created {
+    background: #4dabf7;
+  }
+  &--in_progress {
+    background: #0dcaf0;
+  }
+  &--completed {
+    background: #198754;
+  }
+  &--aborted {
+    background: #dc3545;
+  }
+  &--pending {
+    background: #ffc107;
+  }
+  &--cancelled {
+    background: #dc3545;
+  }
+}
+
+// ── Info Chip ────────────────────────────────────────────────
+.info-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+
+  i {
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  &__label {
+    display: block;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    color: #6c757d;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  &__value {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #212529;
+    line-height: 1.2;
+  }
+}
+
+// ── Active Filter Chip ───────────────────────────────────────
+.active-filter-chip {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 99px;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba(13, 110, 253, 0.15) !important;
+  }
+}
+
+// ── Filtros ──────────────────────────────────────────────────
+.filters-collapsed {
+  display: none;
+}
+
+.transition-icon {
+  transition: transform 0.25s ease;
+}
+
+// ── Empty State ──────────────────────────────────────────────
+.empty-state-icon {
+  width: 80px;
+  height: 80px;
+  background: #f8f9fa;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

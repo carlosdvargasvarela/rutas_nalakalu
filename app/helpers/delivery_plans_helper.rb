@@ -98,4 +98,30 @@ module DeliveryPlansHelper
       "bi-circle"
     end
   end
+
+  def delivery_plan_meta(plan)
+    start_date = end_date = nil
+    if plan.year.present? && plan.week.present?
+      begin
+        start_date = Date.commercial(plan.year.to_i, plan.week.to_i, 1)
+        end_date = Date.commercial(plan.year.to_i, plan.week.to_i, 5)
+      rescue ArgumentError
+        # noop
+      end
+    end
+
+    total_count = plan.deliveries_count.to_i
+    delivered_count = plan.delivered_count.to_i
+    progress = (total_count > 0) ? (delivered_count.to_f / total_count * 100).round : 0
+
+    {
+      start_date: start_date,
+      end_date: end_date,
+      first_date: plan.respond_to?(:first_delivery_date) ? plan.first_delivery_date : nil,
+      last_date: plan.respond_to?(:last_delivery_date) ? plan.last_delivery_date : nil,
+      total_count: total_count,
+      delivered_count: delivered_count,
+      progress_percentage: progress
+    }
+  end
 end

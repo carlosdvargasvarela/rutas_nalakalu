@@ -1,0 +1,144 @@
+<%# app/views/delivery_plans/index_partials/_filters.html.erb %>
+<div class="card border-0 shadow-sm mb-3" style="border-radius:14px;"
+     data-controller="delivery-plan-filters">
+  <%# ── Header colapsable ── %>
+  <div class="card-header bg-white border-0 py-3 px-4"
+       style="border-radius:14px; cursor:pointer;"
+       data-action="click->delivery-plan-filters#toggleFilters">
+    <div class="d-flex justify-content-between align-items-center">
+      <span class="fw-bold text-dark">
+        <i class="bi bi-funnel me-2 text-primary"></i>Filtros
+        <% active_count = [
+             params.dig(:q, :first_delivery_date_gteq),
+             params.dig(:q, :first_delivery_date_lteq),
+             params.dig(:q, :status_eq),
+             params.dig(:q, :truck_eq),
+             params.dig(:q, :driver_name_cont),
+             params.dig(:q, :deliveries_order_client_name_cont),
+             params.dig(:q, :deliveries_order_number_cont)
+           ].count(&:present?) %>
+        <% if active_count > 0 %>
+          <span class="badge bg-primary rounded-pill ms-1"><%= active_count %></span>
+        <% end %>
+      </span>
+      <div class="d-flex align-items-center gap-3">
+        <% if params[:q].present? && params[:q].values.any?(&:present?) %>
+          <%= link_to delivery_plans_path,
+                class: "btn btn-sm btn-outline-secondary",
+                data: { action: "click->delivery-plan-filters#stopPropagation" } do %>
+            <i class="bi bi-x-circle me-1"></i>Limpiar todo
+          <% end %>
+        <% end %>
+        <i class="bi bi-chevron-down text-muted transition-icon"
+           data-delivery-plan-filters-target="chevron"></i>
+      </div>
+    </div>
+  </div>
+  <%# ── Quick filters ── %>
+  <div class="px-4 pb-2 pt-2 border-bottom"
+       data-delivery-plan-filters-target="quickFilters">
+    <div class="d-flex gap-2 flex-wrap">
+      <span class="text-muted small me-1 align-self-center">Acceso rápido:</span>
+      <% current_week = Date.today.cweek; current_year = Date.today.year %>
+      <% week_start = Date.commercial(current_year, current_week, 1).to_s %>
+      <% week_end   = Date.commercial(current_year, current_week, 5).to_s %>
+      <%= link_to delivery_plans_path(q: { first_delivery_date_gteq: week_start, first_delivery_date_lteq: week_end }),
+            class: "btn btn-sm #{params.dig(:q, :first_delivery_date_gteq) == week_start ? 'btn-primary' : 'btn-outline-primary'}" do %>
+        <i class="bi bi-calendar-check me-1"></i>Esta semana
+      <% end %>
+      <%= link_to delivery_plans_path(q: { status_eq: "in_progress" }),
+            class: "btn btn-sm #{params.dig(:q, :status_eq) == 'in_progress' ? 'btn-info text-white' : 'btn-outline-info'}" do %>
+        <i class="bi bi-truck me-1"></i>En curso
+      <% end %>
+      <%= link_to delivery_plans_path(q: { status_eq: "pending" }),
+            class: "btn btn-sm #{params.dig(:q, :status_eq) == 'pending' ? 'btn-warning text-dark' : 'btn-outline-warning'}" do %>
+        <i class="bi bi-hourglass me-1"></i>Pendientes
+      <% end %>
+      <%= link_to delivery_plans_path(q: { status_eq: "completed" }),
+            class: "btn btn-sm #{params.dig(:q, :status_eq) == 'completed' ? 'btn-success' : 'btn-outline-success'}" do %>
+        <i class="bi bi-check-circle me-1"></i>Completados
+      <% end %>
+    </div>
+  </div>
+  <%# ── Formulario de filtros avanzados ── %>
+  <div data-delivery-plan-filters-target="advancedFilters"
+       class="<%= params[:q].present? && params[:q].values.any?(&:present?) ? '' : 'filters-collapsed' %>">
+    <div class="card-body px-4 py-3">
+      <%= search_form_for @q, url: delivery_plans_path, method: :get,
+            html: { class: "row g-3 align-items-end", id: "delivery-plans-filter-form" } do |f| %>
+        <%# Desde %>
+        <div class="col-12 col-sm-6 col-md-2">
+          <%= f.label :first_delivery_date_gteq, class: "form-label fw-semibold small text-muted mb-1" do %>
+            <i class="bi bi-calendar-event me-1"></i>Desde
+          <% end %>
+          <%= f.date_field :first_delivery_date_gteq, class: "form-control form-control-sm" %>
+        </div>
+        <%# Hasta %>
+        <div class="col-12 col-sm-6 col-md-2">
+          <%= f.label :first_delivery_date_lteq, class: "form-label fw-semibold small text-muted mb-1" do %>
+            <i class="bi bi-calendar-event me-1"></i>Hasta
+          <% end %>
+          <%= f.date_field :first_delivery_date_lteq, class: "form-control form-control-sm" %>
+        </div>
+        <%# Estado %>
+        <div class="col-12 col-sm-6 col-md-2">
+          <%= f.label :status_eq, class: "form-label fw-semibold small text-muted mb-1" do %>
+            <i class="bi bi-flag me-1"></i>Estado
+          <% end %>
+          <%= f.select :status_eq,
+                options_for_select(
+                  DeliveryPlan.statuses.keys.map { |s| [delivery_plan_status_label(s), s] },
+                  params.dig(:q, :status_eq)
+                ),
+                { include_blank: "Todos" },
+                { class: "form-select form-select-sm" } %>
+        </div>
+        <%# Camión %>
+        <div class="col-12 col-sm-6 col-md-1">
+          <%= f.label :truck_eq, class: "form-label fw-semibold small text-muted mb-1" do %>
+            <i class="bi bi-truck me-1"></i>Camión
+          <% end %>
+          <%= f.select :truck_eq,
+                options_for_select(@available_trucks.map { |t| [t, t] }, params.dig(:q, :truck_eq)),
+                { include_blank: "Todos" },
+                { class: "form-select form-select-sm" } %>
+        </div>
+        <%# Conductor %>
+        <div class="col-12 col-sm-6 col-md-1">
+          <%= f.label :driver_name_cont, class: "form-label fw-semibold small text-muted mb-1" do %>
+            <i class="bi bi-person me-1"></i>Conductor
+          <% end %>
+          <%= f.text_field :driver_name_cont,
+                class: "form-control form-control-sm",
+                placeholder: "Nombre..." %>
+        </div>
+        <%# Cliente (nuevo) %>
+        <div class="col-12 col-sm-6 col-md-2">
+          <%= f.label :deliveries_order_client_name_cont,
+                class: "form-label fw-semibold small text-muted mb-1" do %>
+            <i class="bi bi-person-lines-fill me-1"></i>Cliente
+          <% end %>
+          <%= f.text_field :deliveries_order_client_name_cont,
+                class: "form-control form-control-sm",
+                placeholder: "Nombre del cliente...",
+                value: params.dig(:q, :deliveries_order_client_name_cont) %>
+        </div>
+        <%# Número de orden (nuevo) %>
+        <div class="col-12 col-sm-6 col-md-1">
+          <%= f.label :deliveries_order_number_cont,
+                class: "form-label fw-semibold small text-muted mb-1" do %>
+            <i class="bi bi-hash me-1"></i>N° Orden
+          <% end %>
+          <%= f.text_field :deliveries_order_number_cont,
+                class: "form-control form-control-sm",
+                placeholder: "Ej: 1234...",
+                value: params.dig(:q, :deliveries_order_number_cont) %>
+        </div>
+        <%# Buscar %>
+        <div class="col-12 col-sm-6 col-md-1 d-flex gap-2">
+          <%= f.submit "Buscar", class: "btn btn-primary btn-sm flex-fill" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

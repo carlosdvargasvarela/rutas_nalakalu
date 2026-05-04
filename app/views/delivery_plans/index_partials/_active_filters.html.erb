@@ -1,0 +1,57 @@
+<%# app/views/delivery_plans/index_partials/_active_filters.html.erb %>
+<% q_params = params[:q]&.to_unsafe_h || {} %>
+<% active_filters = [] %>
+<% if q_params["first_delivery_date_gteq"].present? %>
+  <% active_filters << {
+       label: "Desde: #{l(q_params["first_delivery_date_gteq"].to_date, format: :short) rescue q_params["first_delivery_date_gteq"]}",
+       remove_params: q_params.except("first_delivery_date_gteq")
+     } %>
+<% end %>
+<% if q_params["first_delivery_date_lteq"].present? %>
+  <% active_filters << {
+       label: "Hasta: #{l(q_params["first_delivery_date_lteq"].to_date, format: :short) rescue q_params["first_delivery_date_lteq"]}",
+       remove_params: q_params.except("first_delivery_date_lteq")
+     } %>
+<% end %>
+<% if q_params["status_eq"].present? %>
+  <% active_filters << {
+       label: "Estado: #{delivery_plan_status_label(q_params["status_eq"])}",
+       remove_params: q_params.except("status_eq")
+     } %>
+<% end %>
+<% if q_params["truck_eq"].present? %>
+  <% active_filters << {
+       label: "Camión: #{q_params["truck_eq"]}",
+       remove_params: q_params.except("truck_eq")
+     } %>
+<% end %>
+<% if q_params["driver_name_cont"].present? %>
+  <% active_filters << {
+       label: "Conductor: #{q_params["driver_name_cont"]}",
+       remove_params: q_params.except("driver_name_cont")
+     } %>
+<% end %>
+<% if q_params["deliveries_order_client_name_cont"].present? %>
+  <% active_filters << {
+       label: "Cliente: #{q_params["deliveries_order_client_name_cont"]}",
+       remove_params: q_params.except("deliveries_order_client_name_cont")
+     } %>
+<% end %>
+<% if q_params["deliveries_order_number_cont"].present? %>
+  <% active_filters << {
+       label: "Orden: #{q_params["deliveries_order_number_cont"]}",
+       remove_params: q_params.except("deliveries_order_number_cont")
+     } %>
+<% end %>
+<% if active_filters.any? %>
+  <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
+    <span class="text-muted small">Filtros activos:</span>
+    <% active_filters.each do |filter| %>
+      <%= link_to delivery_plans_path(q: filter[:remove_params]),
+            class: "badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 text-decoration-none d-flex align-items-center gap-1 active-filter-chip" do %>
+        <%= filter[:label] %>
+        <i class="bi bi-x-circle-fill ms-1" style="font-size:0.7rem;"></i>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

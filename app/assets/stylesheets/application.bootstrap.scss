@@ -1,16 +1,17 @@
 // app/assets/stylesheets/application.bootstrap.scss
-@import 'bootstrap/scss/bootstrap';
-@import 'bootstrap-icons/font/bootstrap-icons';
+@import "bootstrap/scss/bootstrap";
+@import "bootstrap-icons/font/bootstrap-icons";
 @import "navbar";
 @import "notifications";
 @import "dashboard";
 @import "devise_sessions";
-
+@import "application"; 
+@import "delivery_plans";
 // Estilos globales para consistencia
 body {
-  background-color: #FFF7EE !important; // nalakalu-cream
-  
+  background-color: #fff7ee !important; // nalakalu-cream
+
   &.bg-light {
-    background-color: #FFF7EE !important; // Sobreescribir bg-light de Bootstrap
+    background-color: #fff7ee !important; // Sobreescribir bg-light de Bootstrap
   }
 }

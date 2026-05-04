@@ -3,12 +3,15 @@ class DeliveryPlansController < ApplicationController
   def index
     authorize DeliveryPlan
 
-    # 1) Tomamos los filtros de fecha (porque el listado usa GROUP + MIN)
     date_gteq = params.dig(:q, :first_delivery_date_gteq).presence
     date_lteq = params.dig(:q, :first_delivery_date_lteq).presence
 
-    # 2) Le quitamos esos 2 params a Ransack para evitar conflictos con GROUP BY
-    q_params = (params[:q] || {}).except(:first_delivery_date_gteq, :first_delivery_date_lteq)
+    # Extraer filtros que manejamos manualmente (fuera de Ransack)
+    q_params = (params[:q]&.to_unsafe_h || {})
+      .except("first_delivery_date_gteq", "first_delivery_date_lteq")
+
+    client_name = q_params.delete("deliveries_order_client_name_cont").presence
+    order_number = q_params.delete("deliveries_order_number_cont").presence
 
     @q = DeliveryPlan.ransack(q_params)
     @q.sorts = ["first_delivery_date desc"] if @q.sorts.empty?
@@ -26,12 +29,41 @@ class DeliveryPlansController < ApplicationController
       )
       .group("delivery_plans.id")
       .order(
-        Arel.sql("MIN(deliveries.delivery_date) DESC, delivery_plans.year DESC, delivery_plans.week DESC")
+        Arel.sql(<<~SQL)
+          (SELECT MIN(d.delivery_date)
+                 FROM deliveries d
+                 INNER JOIN delivery_plan_assignments dpa ON dpa.delivery_id = d.id
+                 WHERE dpa.delivery_plan_id = delivery_plans.id) DESC,
+          MIN(deliveries.delivery_date) DESC,
+          delivery_plans.year DESC,
+          delivery_plans.week DESC
+        SQL
       )
 
-    # 3) Aplicar filtros por MIN(delivery_date) con HAVING (correcto con GROUP BY)
+    # Filtros por HAVING (fecha mínima de entrega)
     base_result = base_result.having("MIN(deliveries.delivery_date) >= ?", date_gteq) if date_gteq.present?
     base_result = base_result.having("MIN(deliveries.delivery_date) <= ?", date_lteq) if date_lteq.present?
+
+    # Filtros por cliente y número de orden (subquery para no romper GROUP BY)
+    if client_name.present?
+      base_result = base_result.where(
+        "delivery_plans.id IN (?)",
+        DeliveryPlan
+          .joins(deliveries: {order: :client})
+          .where("clients.name LIKE ?", "%#{client_name}%")
+          .select("delivery_plans.id")
+      )
+    end
+
+    if order_number.present?
+      base_result = base_result.where(
+        "delivery_plans.id IN (?)",
+        DeliveryPlan
+          .joins(deliveries: :order)
+          .where("orders.number LIKE ?", "%#{order_number}%")
+          .select("delivery_plans.id")
+      )
+    end
 
     respond_to do |format|
       format.html do
