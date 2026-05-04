@@ -28,6 +28,4 @@ QBWC.configure do |c|
   c.on_error = :stop
 
   c.logger = Rails.logger
-
-  c.parser = :rexml
 end
