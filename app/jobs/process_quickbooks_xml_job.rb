@@ -35,11 +35,16 @@ class ProcessQuickbooksXmlJob
       raw_item = line.dig("item_ref", "full_name").to_s
       product_name = clean_product_name(raw_item)
 
+      # Si clean_product_name no pudo extraer el nombre (quedó solo código),
+      # usamos el campo Desc de la línea como respaldo
+      line_description = line["desc"].to_s.strip
+      final_base_name = line_description.present? ? line_description : product_name
+
       # Características (DataExt a nivel Línea)
       line_ext = Array.wrap(line["data_ext_ret"])
       chars = (2..6).map { |i| find_ext(line_ext, "Caracteristica#{i}") }.select(&:present?)
 
-      full_product = [product_name, chars.join("    ")].select(&:present?).join("    ")
+      full_product = [final_base_name, chars.join("    ")].select(&:present?).join("    ")
 
       row_data = {
         delivery_date: due_date,
@@ -59,7 +64,7 @@ class ProcessQuickbooksXmlJob
       # service = RouteExcelImportService.new(nil)
       # service.send(:process_row, row_data, index)
 
-      Rails.logger.info "ProcessQuickbooksXmlJob: Importado #{order_number} - #{product_name}- Cantidad: #{line["quantity"]} - Cliente: #{client_name} - Vendedor: #{seller_code} - Contacto: #{full_contact} - Dirección: #{address}"
+      Rails.logger.info "ProcessQuickbooksXmlJob: Importado #{order_number} - #{full_product} - Cantidad: #{line["quantity"]} - Cliente: #{client_name} - Vendedor: #{seller_code} - Contacto: #{full_contact} - Dirección: #{address}"
     end
   end
 
@@ -68,7 +73,17 @@ class ProcessQuickbooksXmlJob
   end
 
   def clean_product_name(name)
-    cleaned = name.gsub(/^\d+\s*\(/, "").gsub(/\)$/, "").strip
-    cleaned.presence || name.strip
+    # Caso 1: "008000100 (Espejo de cuerpo entero)" → "Espejo de cuerpo entero"
+    if name =~ /\((.+)\)/
+      return $1.strip
+    end
+
+    # Caso 2: "008000100 Espejo de cuerpo entero" → "Espejo de cuerpo entero"
+    parts = name.split(/\s+/, 2)
+    if parts.first =~ /^\d+$/ && parts.size == 2
+      return parts.last.strip
+    end
+
+    name.strip
   end
 end
