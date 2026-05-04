@@ -61,8 +61,8 @@ class ProcessQuickbooksXmlJob
       }
 
       # IMPORTANTE: Llamada al servicio original de rutas
-      # service = RouteExcelImportService.new(nil)
-      # service.send(:process_row, row_data, index)
+      service = RouteExcelImportService.new(nil)
+      service.send(:process_row, row_data, index)
 
       Rails.logger.info "ProcessQuickbooksXmlJob: Importado #{order_number} - #{full_product} - Cantidad: #{line["quantity"]} - Cliente: #{client_name} - Vendedor: #{seller_code} - Contacto: #{full_contact} - Dirección: #{address}"
     end
