@@ -1,28 +1,31 @@
-# app/workers/sales_order_import_worker.rb
 class SalesOrderImportWorker < QBWC::Worker
+  # 1. Definimos la petición a QuickBooks
   def requests(job, session, data)
     {
       sales_order_query_rq: {
         xml_attributes: {"requestID" => "1"},
-        max_returned: 20,
+        max_returned: 100, # Ajusta según necesites
         include_line_items: true
       }
     }
   end
 
+  # 2. Recibimos la respuesta CRUDA (sin parsear para evitar el error 0,5)
   def handle_response(response, session, job, request, data)
-    orders = Array.wrap(response["sales_order_ret"])
+    # response aquí es un String XML porque pusimos should_parse_response: false en el job
 
-    Rails.logger.info "=== QB: #{orders.count} Sales Orders recibidos ==="
+    if response.present?
+      Rails.logger.info "SalesOrderImportWorker: XML recibido, enviando a Sidekiq..."
 
-    orders.each do |so|
-      Rails.logger.info(
-        "Pedido: #{so["ref_number"]} | " \
-        "Cliente: #{so.dig("customer_ref", "full_name")} | " \
-        "Entrega: #{so["due_date"]}"
-      )
+      # Enviamos el XML a un Job de Sidekiq para procesarlo fuera del ciclo de QBWC
+      ProcessQuickbooksXmlJob.perform_async(response)
+    else
+      Rails.logger.warn "SalesOrderImportWorker: Se recibió una respuesta vacía."
     end
+  end
 
-    QBWC.delete_job(job)
+  # Configuración para que no intente parsear y no falle con BigDecimal
+  def should_parse_response
+    false
   end
 end
