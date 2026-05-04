@@ -1,7 +1,9 @@
 require "sidekiq/web"
 
 Rails.application.routes.draw do
-  mount QBWC::Engine => "/qbwc"
+  get "qbwc/action" => "qbwc#_generate_wsdl"
+  get "qbwc/qwc" => "qbwc#qwc"
+  wash_out :qbwc
 
   # =============================================================================
   # SIDEKIQ WEB PANEL - Monitoreo de jobs en background
