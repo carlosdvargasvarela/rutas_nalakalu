@@ -51,7 +51,7 @@ class ProcessQuickbooksXmlJob
 
       # Características (DataExt a nivel línea) — fundamentales para el full_product
       line_ext = Array.wrap(line["data_ext_ret"])
-      chars = (2..6).map { |i| find_ext(line_ext, "Caracteristica#{i}") }.select(&:present?)
+      chars = (1..6).map { |i| find_ext(line_ext, "Caracteristica#{i}") }.select(&:present?)
 
       full_product = [final_base_name, chars.join("    ")].select(&:present?).join("    ")
 
