@@ -1,7 +1,7 @@
 QBWC.configure do |c|
   # Credenciales que pondrás en el archivo .qwc y en el Web Connector
-  c.username = ENV.fetch("QBWC_USER", "admin")
-  c.password = ENV.fetch("QBWC_PASS", "password123")
+  c.username = ENV.fetch("QB_USER")
+  c.password = ENV.fetch("QB_PASS")
 
   # Dejar vacío para usar el archivo que esté abierto en QuickBooks
   c.company_file_path = ""
