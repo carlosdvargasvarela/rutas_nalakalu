@@ -1,18 +1,16 @@
-# Parche para qbxml 1.0.0: QuickBooks Desktop (Costa Rica) puede devolver
-# decimales con coma ("0,5") que BigDecimal() no acepta en Ruby 3.x.
-# Este patch normaliza la coma a punto antes del casteo.
-
+# config/initializers/qbxml_bigdecimal_patch.rb
 require "bigdecimal"
 
-module Qbxml
-  module Types
-    BIGDECIMAL_CAST = proc do |d|
-      if d
-        normalized = d.to_s.tr(",", ".")
-        BigDecimal(normalized)
-      else
-        BigDecimal(0)
-      end
+Rails.application.config.after_initialize do
+  Qbxml::Types.send(:remove_const, :BIGDECIMAL_CAST)
+  Qbxml::Types.const_set(:BIGDECIMAL_CAST, proc do |d|
+    if d
+      BigDecimal(d.to_s.tr(",", "."))
+    else
+      BigDecimal(0)
     end
-  end
+  end)
+
+  # Actualizar el TYPE_MAP para que use el nuevo BIGDECIMAL_CAST
+  Qbxml::Types::TYPE_MAP["QUANTYPE"] = Qbxml::Types::BIGDECIMAL_CAST
 end
