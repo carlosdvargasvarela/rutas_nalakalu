@@ -19,6 +19,21 @@ class ProcessQuickbooksXmlJob
   def process_sales_order(so)
     qb_txn_id = so["txn_id"]
     order_number = "PED-#{so["ref_number"]}"
+    existing = Order.find_by(number: order_number)
+
+    # Órdenes pre-integración (existen en Rails pero sin qb_txn_id):
+    # Solo vinculamos el ID de QB y salimos — no tocamos sus items
+    if existing.present? && existing.qb_txn_id.blank?
+      if qb_txn_id.present?
+        existing.update_columns(qb_txn_id: qb_txn_id, qb_updated_at: Time.current)
+        Rails.logger.info "🔗 Vinculado #{order_number} con qb_txn_id: #{qb_txn_id} (orden pre-integración, sin modificar items)"
+      else
+        Rails.logger.info "⏭️ Saltando #{order_number}: orden pre-integración sin qb_txn_id disponible"
+      end
+      return
+    end
+
+    # A partir de aquí: orden nueva (no existe en Rails) → procesamiento completo
     due_date = so["due_date"]
     client_name = so.dig("customer_ref", "full_name")
     address = so.dig("ship_address", "addr1")
@@ -30,21 +45,11 @@ class ProcessQuickbooksXmlJob
     contact_phone = find_ext(order_ext, "CelularEntrega")
     full_contact = [contact_name, contact_phone].select(&:present?).join(" / ")
 
-    # Vincular qb_txn_id si la orden ya existe pero no tiene el ID de QB
-    if qb_txn_id.present?
-      existing = Order.find_by(number: order_number)
-      if existing && existing.qb_txn_id.blank?
-        existing.update_columns(qb_txn_id: qb_txn_id, qb_updated_at: Time.current)
-      end
-    end
-
     lines = Array.wrap(so["sales_order_line_ret"])
 
     lines.each_with_index do |line, index|
       line_id = line["txn_line_id"]
       raw_item = line.dig("item_ref", "full_name").to_s
-
-      # Nombre base: extraído del item o fallback al campo Desc de la línea
       product_name = clean_product_name(raw_item)
       line_description = line["desc"].to_s.strip
       final_base_name = line_description.present? ? line_description : product_name
@@ -71,7 +76,7 @@ class ProcessQuickbooksXmlJob
 
       RouteExcelImportService.new(nil).send(:process_row, row_data)
 
-      # Vincular qb_line_id al OrderItem recién creado/encontrado
+      # Vincular qb_line_id al OrderItem recién creado
       if line_id.present?
         order = Order.find_by(number: order_number)
         item = order&.order_items&.find_by(product: full_product)
