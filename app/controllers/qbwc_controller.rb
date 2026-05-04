@@ -1,12 +1,12 @@
 # app/controllers/qbwc_controller.rb
 class QbwcController < ApplicationController
+  skip_before_action :verify_authenticity_token
   # Esto le dice a Pundit que no verifique autorización en este controlador
   skip_after_action :verify_authorized
 
   # Si usas Devise o similar para autenticar usuarios, también sáltatelo:
   skip_before_action :authenticate_user!, raise: false
 
-  soap_service namespace: "urn:qbwc"
   # Le dice a Rails que este es un servicio SOAP
   soap_service namespace: "urn:qbwc"
 
