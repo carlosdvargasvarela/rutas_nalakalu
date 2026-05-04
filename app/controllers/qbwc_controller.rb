@@ -13,7 +13,7 @@ class QbwcController < ApplicationController
   # 1. El método que ya teníamos
   def authenticate(username, password)
     user = ENV.fetch("QB_USER", "admin").strip
-    pass = ENV.fetch("QB_PASS", "123456").strip
+    pass = ENV.fetch("QB_PASS", "Acesa2023").strip
 
     if username.to_s.strip == user && password.to_s.strip == pass
       # Retornamos un Ticket único y nil para indicar "Sin errores"
