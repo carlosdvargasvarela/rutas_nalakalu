@@ -24,7 +24,7 @@ class ProcessQuickbooksXmlJob
     address = so.dig("ship_address", "addr1")
     seller_code = so.dig("sales_rep_ref", "full_name")
 
-    # Contacto a nivel de orden
+    # Contacto a nivel de orden (DataExt)
     order_ext = Array.wrap(so["data_ext_ret"])
     contact_name = find_ext(order_ext, "ContactoEntrega")
     contact_phone = find_ext(order_ext, "CelularEntrega")
@@ -40,16 +40,16 @@ class ProcessQuickbooksXmlJob
 
     lines = Array.wrap(so["sales_order_line_ret"])
 
-    lines.each do |line|
+    lines.each_with_index do |line, index|
       line_id = line["txn_line_id"]
       raw_item = line.dig("item_ref", "full_name").to_s
-      product_name = clean_product_name(raw_item)
 
-      # Fallback a descripción de línea si el nombre del item está vacío
+      # Nombre base: extraído del item o fallback al campo Desc de la línea
+      product_name = clean_product_name(raw_item)
       line_description = line["desc"].to_s.strip
       final_base_name = line_description.present? ? line_description : product_name
 
-      # Características (Caracteristica2 a Caracteristica6)
+      # Características (DataExt a nivel línea) — fundamentales para el full_product
       line_ext = Array.wrap(line["data_ext_ret"])
       chars = (2..6).map { |i| find_ext(line_ext, "Caracteristica#{i}") }.select(&:present?)
 
@@ -78,7 +78,7 @@ class ProcessQuickbooksXmlJob
         item&.update_columns(qb_line_id: line_id) if item && item.qb_line_id.blank?
       end
 
-      Rails.logger.info "✅ Importado #{order_number} - #{full_product} - Cantidad: #{line["quantity"]}"
+      Rails.logger.info "ProcessQuickbooksXmlJob: Importado #{order_number} - #{full_product} - Cantidad: #{line["quantity"]} - Cliente: #{client_name} - Vendedor: #{seller_code} - Contacto: #{full_contact} - Dirección: #{address}"
     end
   end
 
@@ -87,6 +87,13 @@ class ProcessQuickbooksXmlJob
   end
 
   def clean_product_name(name)
-    name.sub(/^\d+\s*/, "").sub(/^\((.+)\)$/, '\1').strip
+    # Caso 1: "008000100 (Espejo de cuerpo entero)" → "Espejo de cuerpo entero"
+    return $1.strip if name =~ /\((.+)\)/
+
+    # Caso 2: "008000100 Espejo de cuerpo entero" → "Espejo de cuerpo entero"
+    parts = name.split(/\s+/, 2)
+    return parts.last.strip if parts.first =~ /^\d+$/ && parts.size == 2
+
+    name.strip
   end
 end
