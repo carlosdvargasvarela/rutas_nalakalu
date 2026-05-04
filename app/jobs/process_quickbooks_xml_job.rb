@@ -1,3 +1,4 @@
+# app/jobs/process_quickbooks_xml_job.rb
 class ProcessQuickbooksXmlJob
   include Sidekiq::Job
 
@@ -9,37 +10,46 @@ class ProcessQuickbooksXmlJob
     orders.each do |so|
       process_sales_order(so)
     rescue => e
-      Rails.logger.error "ProcessQuickbooksXmlJob: Error procesando SO #{so["ref_number"]}: #{e.message}"
+      Rails.logger.error "ProcessQuickbooksXmlJob: Error procesando SO #{so["ref_number"]}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
     end
   end
 
   private
 
   def process_sales_order(so)
+    qb_txn_id = so["txn_id"]
     order_number = "PED-#{so["ref_number"]}"
     due_date = so["due_date"]
     client_name = so.dig("customer_ref", "full_name")
     address = so.dig("ship_address", "addr1")
     seller_code = so.dig("sales_rep_ref", "full_name")
 
-    # Contacto
+    # Contacto a nivel de orden
     order_ext = Array.wrap(so["data_ext_ret"])
     contact_name = find_ext(order_ext, "ContactoEntrega")
     contact_phone = find_ext(order_ext, "CelularEntrega")
     full_contact = [contact_name, contact_phone].select(&:present?).join(" / ")
 
-    # Líneas
+    # Vincular qb_txn_id si la orden ya existe pero no tiene el ID de QB
+    if qb_txn_id.present?
+      existing = Order.find_by(number: order_number)
+      if existing && existing.qb_txn_id.blank?
+        existing.update_columns(qb_txn_id: qb_txn_id, qb_updated_at: Time.current)
+      end
+    end
+
     lines = Array.wrap(so["sales_order_line_ret"])
 
     lines.each do |line|
+      line_id = line["txn_line_id"]
       raw_item = line.dig("item_ref", "full_name").to_s
       product_name = clean_product_name(raw_item)
 
-      # fallback a descripción
+      # Fallback a descripción de línea si el nombre del item está vacío
       line_description = line["desc"].to_s.strip
       final_base_name = line_description.present? ? line_description : product_name
 
-      # Características
+      # Características (Caracteristica2 a Caracteristica6)
       line_ext = Array.wrap(line["data_ext_ret"])
       chars = (2..6).map { |i| find_ext(line_ext, "Caracteristica#{i}") }.select(&:present?)
 
@@ -59,9 +69,14 @@ class ProcessQuickbooksXmlJob
         time_preference: nil
       }
 
-      # ✅ FIX AQUÍ
-      service = RouteExcelImportService.new(nil)
-      service.send(:process_row, row_data)
+      RouteExcelImportService.new(nil).send(:process_row, row_data)
+
+      # Vincular qb_line_id al OrderItem recién creado/encontrado
+      if line_id.present?
+        order = Order.find_by(number: order_number)
+        item = order&.order_items&.find_by(product: full_product)
+        item&.update_columns(qb_line_id: line_id) if item && item.qb_line_id.blank?
+      end
 
       Rails.logger.info "✅ Importado #{order_number} - #{full_product} - Cantidad: #{line["quantity"]}"
     end
@@ -72,17 +87,6 @@ class ProcessQuickbooksXmlJob
   end
 
   def clean_product_name(name)
-    # Caso 1: "008000100 (Espejo de cuerpo entero)"
-    if name =~ /\((.+)\)/
-      return $1.strip
-    end
-
-    # Caso 2: "008000100 Espejo..."
-    parts = name.split(/\s+/, 2)
-    if parts.first =~ /^\d+$/ && parts.size == 2
-      return parts.last.strip
-    end
-
-    name.strip
+    name.sub(/^\d+\s*/, "").sub(/^\((.+)\)$/, '\1').strip
   end
 end

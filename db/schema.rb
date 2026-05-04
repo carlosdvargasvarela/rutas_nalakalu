@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_04_041123) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_04_162920) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -258,8 +258,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_04_041123) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "confirmed"
+    t.string "qb_line_id"
     t.index ["order_id", "product"], name: "index_order_items_on_order_and_product_unique", unique: true
     t.index ["order_id"], name: "index_order_items_on_order_id"
+    t.index ["qb_line_id"], name: "index_order_items_on_qb_line_id", unique: true
   end
 
   create_table "orders", force: :cascade do |t|
@@ -269,7 +271,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_04_041123) do
     t.integer "status"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "qb_txn_id"
+    t.datetime "qb_updated_at"
     t.index ["client_id"], name: "index_orders_on_client_id"
+    t.index ["qb_txn_id"], name: "index_orders_on_qb_txn_id", unique: true
     t.index ["seller_id"], name: "index_orders_on_seller_id"
   end
 
