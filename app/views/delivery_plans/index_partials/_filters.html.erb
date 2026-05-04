@@ -41,7 +41,7 @@
       <span class="text-muted small me-1 align-self-center">Acceso rápido:</span>
       <% current_week = Date.today.cweek; current_year = Date.today.year %>
       <% week_start = Date.commercial(current_year, current_week, 1).to_s %>
-      <% week_end   = Date.commercial(current_year, current_week, 5).to_s %>
+      <% week_end   = Date.commercial(current_year, current_week, 7).to_s %>
       <%= link_to delivery_plans_path(q: { first_delivery_date_gteq: week_start, first_delivery_date_lteq: week_end }),
             class: "btn btn-sm #{params.dig(:q, :first_delivery_date_gteq) == week_start ? 'btn-primary' : 'btn-outline-primary'}" do %>
         <i class="bi bi-calendar-check me-1"></i>Esta semana

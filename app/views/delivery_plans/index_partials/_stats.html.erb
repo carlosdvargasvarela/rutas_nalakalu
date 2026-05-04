@@ -44,26 +44,25 @@
         </div>
       </div>
     </div>
-    <%# Card: Por estado %>
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <p class="stat-card__label mb-2">
-            <i class="bi bi-pie-chart me-1"></i>Por Estado
-          </p>
-          <div class="d-flex flex-wrap gap-1">
-            <% stats[:by_status]
+    <%# Card: Por Estado — fondo blanco, label visible %>
+    <div class="card border-0 shadow-sm h-100 stat-card stat-card--neutral">
+      <div class="card-body">
+        <p class="stat-card__label mb-2" style="color:#6c757d;">
+          <i class="bi bi-pie-chart me-1"></i>Por Estado
+        </p>
+        <div class="d-flex flex-wrap gap-1">
+          <% stats[:by_status]
                  .sort_by { |s, _| DeliveryPlan.statuses[s.to_s] || 999 }
                  .each do |status, count| %>
-              <span class="badge bg-<%= delivery_plan_status_color(status) %> d-flex align-items-center gap-1 px-2 py-1">
-                <i class="<%= delivery_plan_status_icon(status) %>"></i>
-                <%= delivery_plan_status_label(status) %>
-                <span class="badge bg-white text-dark ms-1 rounded-pill"><%= count %></span>
-              </span>
-            <% end %>
-          </div>
+            <span class="badge bg-<%= delivery_plan_status_color(status) %> d-flex align-items-center gap-1 px-2 py-1">
+              <i class="<%= delivery_plan_status_icon(status) %>"></i>
+              <%= delivery_plan_status_label(status) %>
+              <span class="badge bg-white text-dark ms-1 rounded-pill"><%= count %></span>
+            </span>
+          <% end %>
         </div>
       </div>
     </div>
   </div>
+</div>
 <% end %>
