@@ -25,14 +25,10 @@ module DeliveryDuplicateAudit
   )
 
   class << self
-    def run!(scope: Delivery.all, min_score: 0.72, verbose: true)
-      candidate_ids = scope
-        .joins(:delivery_items)
-        .group("deliveries.id")
-        .having("COUNT(delivery_items.id) > 0 AND MOD(COUNT(delivery_items.id), 2) = 0")
-        .pluck(:id)
+    def run!(scope: Delivery.where("deliveries.id >= 5000"), min_score: 0.72, verbose: true)
+      candidate_ids = scope.pluck(:id)
 
-      puts "Deliveries candidatos (cantidad par de items): #{candidate_ids.size}" if verbose
+      puts "Deliveries candidatos (id >= 5000): #{candidate_ids.size}" if verbose
 
       results = []
 
@@ -169,5 +165,5 @@ module DeliveryDuplicateAudit
   end
 end
 
-scope = Delivery.all
-DeliveryDuplicateAudit.run!(scope: scope, min_score: 0.85)
+scope = Delivery.where("deliveries.id >= 5000")
+DeliveryDuplicateAudit.run!(scope: scope, min_score: 0.72)
