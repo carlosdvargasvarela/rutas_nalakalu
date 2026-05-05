@@ -1,8 +1,4 @@
 module DeliveryDuplicateAudit
-  STOPWORDS = %w[
-    de del la el los las y e con para por un una uno unas unos
-  ].freeze
-
   Result = Struct.new(
     :delivery_id,
     :order_number,
@@ -16,19 +12,15 @@ module DeliveryDuplicateAudit
   Pair = Struct.new(
     :delivery_item_a_id,
     :delivery_item_b_id,
-    :order_item_id_a,
-    :order_item_id_b,
-    :order_item_id_diff,
+    :order_item_a_id,
+    :order_item_b_id,
     :product_a,
     :product_b,
-    :score,
-    :tokens_a,
-    :tokens_b,
     keyword_init: true
   )
 
   class << self
-    def run!(scope: Delivery.where("deliveries.id >= 5000"), min_score: 0.72, verbose: true)
+    def run!(scope: Delivery.where("deliveries.id >= 5000"), verbose: true)
       candidate_ids = scope.pluck(:id)
 
       puts "Deliveries candidatos (id >= 5000): #{candidate_ids.size}" if verbose
@@ -39,10 +31,11 @@ module DeliveryDuplicateAudit
         .where(id: candidate_ids)
         .includes(order: :client, delivery_items: :order_item)
         .find_each do |delivery|
+
         items = delivery.delivery_items.to_a
         next if items.size < 2
 
-        pairs = suspicious_pairs(items, min_score: min_score)
+        pairs = suspicious_pairs(items)
         next if pairs.empty?
 
         results << Result.new(
@@ -65,95 +58,37 @@ module DeliveryDuplicateAudit
 
     private
 
-    def suspicious_pairs(items, min_score:)
+    def suspicious_pairs(items)
       pairs = []
 
       items.combination(2).each do |a, b|
-        product_a = a.order_item&.product.to_s.strip
-        product_b = b.order_item&.product.to_s.strip
+        oi_a = a.order_item_id
+        oi_b = b.order_item_id
 
-        next if product_a.blank? || product_b.blank?
+        next if oi_a.nil? || oi_b.nil?
 
-        tokens_a = normalize_tokens(product_a)
-        tokens_b = normalize_tokens(product_b)
-        next if tokens_a.empty? || tokens_b.empty?
+        # REGLA PRINCIPAL: diferencia de order_item_id >= 100
+        next unless (oi_a - oi_b).abs >= 100
 
-        score = similarity(tokens_a, tokens_b)
-        id_diff = (a.order_item_id.to_i - b.order_item_id.to_i).abs
-
-        next unless likely_duplicate?(tokens_a, tokens_b, score, min_score, a.order_item_id, b.order_item_id)
+        # REGLAS DE SIMILITUD (comentadas por ahora)
+        # product_a = a.order_item&.product.to_s.strip
+        # product_b = b.order_item&.product.to_s.strip
+        # tokens_a = normalize_tokens(product_a)
+        # tokens_b = normalize_tokens(product_b)
+        # score = similarity(tokens_a, tokens_b)
+        # next unless likely_duplicate?(tokens_a, tokens_b, score, 0.72)
 
         pairs << Pair.new(
           delivery_item_a_id: a.id,
           delivery_item_b_id: b.id,
-          order_item_id_a: a.order_item_id,
-          order_item_id_b: b.order_item_id,
-          order_item_id_diff: id_diff,
-          product_a: product_a,
-          product_b: product_b,
-          score: score.round(3),
-          tokens_a: tokens_a,
-          tokens_b: tokens_b
+          order_item_a_id: oi_a,
+          order_item_b_id: oi_b,
+          product_a: a.order_item&.product.to_s.strip,
+          product_b: b.order_item&.product.to_s.strip
         )
       end
 
-      pairs.sort_by { |p| -p.order_item_id_diff }
-    end
-
-    def normalize_tokens(text)
-      normalized = I18n.transliterate(text.to_s.downcase)
-      normalized = normalized.gsub(/\A\d+\s+/, " ")
-      normalized = normalized.gsub(/[^a-z0-9\s]/, " ")
-      normalized = normalized.gsub(/\s+/, " ").strip
-
-      tokens = normalized.split(" ")
-
-      tokens.reject do |token|
-        token.blank? || STOPWORDS.include?(token) || token.match?(/\A\d+\z/)
-      end
-    end
-
-    def similarity(tokens_a, tokens_b)
-      set_a = tokens_a.uniq
-      set_b = tokens_b.uniq
-
-      intersection = (set_a & set_b).size.to_f
-      union = (set_a | set_b).size.to_f
-      return 0.0 if union.zero?
-
-      jaccard = intersection / union
-
-      prefix_bonus =
-        if set_a.first(2) == set_b.first(2) && set_a.first(2).present?
-          0.15
-        elsif set_a.first == set_b.first && set_a.first.present?
-          0.08
-        else
-          0.0
-        end
-
-      [jaccard + prefix_bonus, 1.0].min
-    end
-
-    def likely_duplicate?(tokens_a, tokens_b, score, min_score, order_item_id_a, order_item_id_b)
-      return false if order_item_id_a.nil? || order_item_id_b.nil?
-
-      id_diff = (order_item_id_a - order_item_id_b).abs
-
-      # Con diff grande, basta parecido moderado
-      return true if id_diff > 100 && score >= min_score
-      return true if id_diff > 100 && tokens_a == tokens_b
-      return true if id_diff > 100 && (tokens_a & tokens_b).size >= 3
-
-      # Sin diff grande, exigimos más
-      return true if tokens_a == tokens_b
-
-      shared = tokens_a & tokens_b
-      min_size = [tokens_a.size, tokens_b.size].min
-      return true if shared.size >= 3 && shared.size >= (min_size - 1)
-      return true if score >= min_score
-
-      false
+      pairs
     end
 
     def print_report(results)
@@ -168,9 +103,10 @@ module DeliveryDuplicateAudit
         puts "Delivery ##{result.delivery_id} | Pedido: #{result.order_number} | Fecha: #{result.delivery_date} | Cliente: #{result.client_name} | Items: #{result.items_count}"
 
         result.pairs.each do |pair|
-          puts "  - score=#{pair.score} | order_item_id diff=#{pair.order_item_id_diff}"
-          puts "    A(delivery_item=#{pair.delivery_item_a_id}, order_item=#{pair.order_item_id_a}): #{pair.product_a}"
-          puts "    B(delivery_item=#{pair.delivery_item_b_id}, order_item=#{pair.order_item_id_b}): #{pair.product_b}"
+          puts "  Par sospechoso:"
+          puts "    A -> delivery_item=#{pair.delivery_item_a_id} | order_item=#{pair.order_item_a_id} | #{pair.product_a}"
+          puts "    B -> delivery_item=#{pair.delivery_item_b_id} | order_item=#{pair.order_item_b_id} | #{pair.product_b}"
+          puts "    Diferencia order_item_id: #{(pair.order_item_a_id - pair.order_item_b_id).abs}"
         end
 
         puts
@@ -180,4 +116,4 @@ module DeliveryDuplicateAudit
 end
 
 scope = Delivery.where("deliveries.id >= 5000")
-DeliveryDuplicateAudit.run!(scope: scope, min_score: 0.72)
+DeliveryDuplicateAudit.run!(scope: scope)
