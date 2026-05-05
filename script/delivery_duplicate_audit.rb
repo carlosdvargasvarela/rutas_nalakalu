@@ -170,4 +170,4 @@ module DeliveryDuplicateAudit
 end
 
 scope = Delivery.all
-DeliveryDuplicateAudit.run!(scope: scope, min_score: 0.72)
+DeliveryDuplicateAudit.run!(scope: scope, min_score: 0.85)
