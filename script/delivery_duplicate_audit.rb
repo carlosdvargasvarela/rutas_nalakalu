@@ -16,6 +16,7 @@ module DeliveryDuplicateAudit
     :order_item_b_id,
     :product_a,
     :product_b,
+    :id_diff,
     keyword_init: true
   )
 
@@ -32,7 +33,9 @@ module DeliveryDuplicateAudit
         .includes(order: :client, delivery_items: :order_item)
         .find_each do |delivery|
 
-        items = delivery.delivery_items.to_a
+        items = delivery.delivery_items
+          .select { |di| di.order_item.present? && di.order_item.created_at >= Time.zone.parse("2026-05-04 00:00:00") }
+
         next if items.size < 2
 
         pairs = suspicious_pairs(items)
@@ -43,7 +46,7 @@ module DeliveryDuplicateAudit
           order_number: delivery.order.number,
           delivery_date: delivery.delivery_date,
           client_name: delivery.order.client.name,
-          items_count: items.size,
+          items_count: delivery.delivery_items.size,
           pairs: pairs
         )
       end
@@ -62,33 +65,32 @@ module DeliveryDuplicateAudit
       pairs = []
 
       items.combination(2).each do |a, b|
-        oi_a = a.order_item_id
-        oi_b = b.order_item_id
+        oi_a = a.order_item
+        oi_b = b.order_item
 
-        next if oi_a.nil? || oi_b.nil?
+        next unless oi_a.present? && oi_b.present?
 
-        # REGLA PRINCIPAL: diferencia de order_item_id >= 200
-        next unless (oi_a - oi_b).abs >= 200
+        id_diff = (oi_a.id - oi_b.id).abs
+        next unless id_diff > 100
 
-        # REGLAS DE SIMILITUD (comentadas por ahora)
-        # product_a = a.order_item&.product.to_s.strip
-        # product_b = b.order_item&.product.to_s.strip
-        # tokens_a = normalize_tokens(product_a)
-        # tokens_b = normalize_tokens(product_b)
+        # --- similitud de texto comentada por ahora ---
+        # tokens_a = normalize_tokens(oi_a.product)
+        # tokens_b = normalize_tokens(oi_b.product)
         # score = similarity(tokens_a, tokens_b)
-        # next unless likely_duplicate?(tokens_a, tokens_b, score, 0.72)
+        # next unless score >= 0.72
 
         pairs << Pair.new(
           delivery_item_a_id: a.id,
           delivery_item_b_id: b.id,
-          order_item_a_id: oi_a,
-          order_item_b_id: oi_b,
-          product_a: a.order_item&.product.to_s.strip,
-          product_b: b.order_item&.product.to_s.strip
+          order_item_a_id: oi_a.id,
+          order_item_b_id: oi_b.id,
+          product_a: oi_a.product.to_s,
+          product_b: oi_b.product.to_s,
+          id_diff: id_diff
         )
       end
 
-      pairs
+      pairs.sort_by { |p| -p.id_diff }
     end
 
     def print_report(results)
@@ -100,13 +102,12 @@ module DeliveryDuplicateAudit
       puts
 
       results.each do |result|
-        puts "Delivery ##{result.delivery_id} | Pedido: #{result.order_number} | Fecha: #{result.delivery_date} | Cliente: #{result.client_name} | Items: #{result.items_count}"
+        puts "Delivery ##{result.delivery_id} | Pedido: #{result.order_number} | Fecha: #{result.delivery_date} | Cliente: #{result.client_name} | Items totales: #{result.items_count}"
 
         result.pairs.each do |pair|
-          puts "  Par sospechoso:"
-          puts "    A -> delivery_item=#{pair.delivery_item_a_id} | order_item=#{pair.order_item_a_id} | #{pair.product_a}"
-          puts "    B -> delivery_item=#{pair.delivery_item_b_id} | order_item=#{pair.order_item_b_id} | #{pair.product_b}"
-          puts "    Diferencia order_item_id: #{(pair.order_item_a_id - pair.order_item_b_id).abs}"
+          puts "  - order_item diff=#{pair.id_diff}"
+          puts "    A (order_item ##{pair.order_item_a_id}, delivery_item ##{pair.delivery_item_a_id}): #{pair.product_a}"
+          puts "    B (order_item ##{pair.order_item_b_id}, delivery_item ##{pair.delivery_item_b_id}): #{pair.product_b}"
         end
 
         puts
