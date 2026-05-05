@@ -18,7 +18,7 @@ module DeliveryDuplicateAudit
     :delivery_item_b_id,
     :order_item_id_a,
     :order_item_id_b,
-    :id_gap,
+    :order_item_id_diff,
     :product_a,
     :product_b,
     :score,
@@ -79,16 +79,16 @@ module DeliveryDuplicateAudit
         next if tokens_a.empty? || tokens_b.empty?
 
         score = similarity(tokens_a, tokens_b)
-        id_gap = (a.order_item_id - b.order_item_id).abs
+        id_diff = (a.order_item_id.to_i - b.order_item_id.to_i).abs
 
-        next unless likely_duplicate?(tokens_a, tokens_b, score, min_score, id_gap)
+        next unless likely_duplicate?(tokens_a, tokens_b, score, min_score, a.order_item_id, b.order_item_id)
 
         pairs << Pair.new(
           delivery_item_a_id: a.id,
           delivery_item_b_id: b.id,
           order_item_id_a: a.order_item_id,
           order_item_id_b: b.order_item_id,
-          id_gap: id_gap,
+          order_item_id_diff: id_diff,
           product_a: product_a,
           product_b: product_b,
           score: score.round(3),
@@ -97,7 +97,7 @@ module DeliveryDuplicateAudit
         )
       end
 
-      pairs.sort_by { |p| -p.score }
+      pairs.sort_by { |p| -p.order_item_id_diff }
     end
 
     def normalize_tokens(text)
@@ -135,19 +135,22 @@ module DeliveryDuplicateAudit
       [jaccard + prefix_bonus, 1.0].min
     end
 
-    def likely_duplicate?(tokens_a, tokens_b, score, min_score, id_gap)
-      # Regla principal: gap grande + similitud mínima = casi seguro duplicado de QB
-      return true if id_gap > 100 && score >= 0.50
+    def likely_duplicate?(tokens_a, tokens_b, score, min_score, order_item_id_a, order_item_id_b)
+      return false if order_item_id_a.nil? || order_item_id_b.nil?
 
-      # Tokens idénticos
+      id_diff = (order_item_id_a - order_item_id_b).abs
+
+      # Con diff grande, basta parecido moderado
+      return true if id_diff > 100 && score >= min_score
+      return true if id_diff > 100 && tokens_a == tokens_b
+      return true if id_diff > 100 && (tokens_a & tokens_b).size >= 3
+
+      # Sin diff grande, exigimos más
       return true if tokens_a == tokens_b
 
-      # Muchos tokens compartidos
       shared = tokens_a & tokens_b
       min_size = [tokens_a.size, tokens_b.size].min
       return true if shared.size >= 3 && shared.size >= (min_size - 1)
-
-      # Score alto
       return true if score >= min_score
 
       false
@@ -165,9 +168,9 @@ module DeliveryDuplicateAudit
         puts "Delivery ##{result.delivery_id} | Pedido: #{result.order_number} | Fecha: #{result.delivery_date} | Cliente: #{result.client_name} | Items: #{result.items_count}"
 
         result.pairs.each do |pair|
-          puts "  - score=#{pair.score} | id_gap=#{pair.id_gap}"
-          puts "    A(di:#{pair.delivery_item_a_id} oi:#{pair.order_item_id_a}): #{pair.product_a}"
-          puts "    B(di:#{pair.delivery_item_b_id} oi:#{pair.order_item_id_b}): #{pair.product_b}"
+          puts "  - score=#{pair.score} | order_item_id diff=#{pair.order_item_id_diff}"
+          puts "    A(delivery_item=#{pair.delivery_item_a_id}, order_item=#{pair.order_item_id_a}): #{pair.product_a}"
+          puts "    B(delivery_item=#{pair.delivery_item_b_id}, order_item=#{pair.order_item_id_b}): #{pair.product_b}"
         end
 
         puts
