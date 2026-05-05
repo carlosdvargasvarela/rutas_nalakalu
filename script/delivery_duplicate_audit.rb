@@ -16,6 +16,9 @@ module DeliveryDuplicateAudit
   Pair = Struct.new(
     :delivery_item_a_id,
     :delivery_item_b_id,
+    :order_item_id_a,
+    :order_item_id_b,
+    :id_gap,
     :product_a,
     :product_b,
     :score,
@@ -76,12 +79,16 @@ module DeliveryDuplicateAudit
         next if tokens_a.empty? || tokens_b.empty?
 
         score = similarity(tokens_a, tokens_b)
+        id_gap = (a.order_item_id - b.order_item_id).abs
 
-        next unless likely_duplicate?(tokens_a, tokens_b, score, min_score)
+        next unless likely_duplicate?(tokens_a, tokens_b, score, min_score, id_gap)
 
         pairs << Pair.new(
           delivery_item_a_id: a.id,
           delivery_item_b_id: b.id,
+          order_item_id_a: a.order_item_id,
+          order_item_id_b: b.order_item_id,
+          id_gap: id_gap,
           product_a: product_a,
           product_b: product_b,
           score: score.round(3),
@@ -128,13 +135,19 @@ module DeliveryDuplicateAudit
       [jaccard + prefix_bonus, 1.0].min
     end
 
-    def likely_duplicate?(tokens_a, tokens_b, score, min_score)
+    def likely_duplicate?(tokens_a, tokens_b, score, min_score, id_gap)
+      # Regla principal: gap grande + similitud mínima = casi seguro duplicado de QB
+      return true if id_gap > 100 && score >= 0.50
+
+      # Tokens idénticos
       return true if tokens_a == tokens_b
 
+      # Muchos tokens compartidos
       shared = tokens_a & tokens_b
       min_size = [tokens_a.size, tokens_b.size].min
-
       return true if shared.size >= 3 && shared.size >= (min_size - 1)
+
+      # Score alto
       return true if score >= min_score
 
       false
@@ -152,11 +165,9 @@ module DeliveryDuplicateAudit
         puts "Delivery ##{result.delivery_id} | Pedido: #{result.order_number} | Fecha: #{result.delivery_date} | Cliente: #{result.client_name} | Items: #{result.items_count}"
 
         result.pairs.each do |pair|
-          puts "  - score=#{pair.score}"
-          puts "    A(#{pair.delivery_item_a_id}): #{pair.product_a}"
-          puts "    B(#{pair.delivery_item_b_id}): #{pair.product_b}"
-          puts "    tokens A: #{pair.tokens_a.join(", ")}"
-          puts "    tokens B: #{pair.tokens_b.join(", ")}"
+          puts "  - score=#{pair.score} | id_gap=#{pair.id_gap}"
+          puts "    A(di:#{pair.delivery_item_a_id} oi:#{pair.order_item_id_a}): #{pair.product_a}"
+          puts "    B(di:#{pair.delivery_item_b_id} oi:#{pair.order_item_id_b}): #{pair.product_b}"
         end
 
         puts
