@@ -1,4 +1,3 @@
-# app/services/route_excel_import_service.rb
 require "roo"
 
 class RouteExcelImportService
@@ -6,7 +5,6 @@ class RouteExcelImportService
     @spreadsheet = Roo::Spreadsheet.open(file_path) if file_path
   end
 
-  # Importa todas las filas del archivo (para uso en consola o importación masiva)
   def import_routes
     raise "No se proporcionó archivo para importación masiva" unless @spreadsheet
 
@@ -26,7 +24,6 @@ class RouteExcelImportService
     results
   end
 
-  # Valida una fila (hash de datos), retorna array de errores
   def validate_row(data)
     errors = []
     errors << "La fecha de entrega es obligatoria" if data[:delivery_date].blank?
@@ -39,9 +36,7 @@ class RouteExcelImportService
     errors
   end
 
-  # Procesa una fila (hash de datos), creando o actualizando registros según sea necesario
   def process_row(data)
-    # Normaliza strings para evitar nil.strip en cualquier parte del flujo
     order_number = safe_str(data[:order_number])
     client_name = safe_str(data[:client_name])
     product_name = safe_str(data[:product])
@@ -50,28 +45,19 @@ class RouteExcelImportService
     contact_text = safe_str(data[:contact])
     notes_text = safe_str(data[:notes])
     time_pref_text = safe_str(data[:time_preference])
+    qb_line_id = data[:qb_line_id].presence  # opcional, viene del job de QB
 
     quantity = data[:quantity].to_i
     raise "Cantidad inválida" if quantity <= 0
 
-    # Entidades base
     client = Client.find_or_create_by!(name: client_name)
-
-    # Dirección: find_or_create_by para no duplicar; el geocoding enriquecido se dispara en el modelo al cambiar address
     address = client.delivery_addresses.find_or_create_by!(address: place_text)
 
-    # Mejora de geocoding: si la dirección es nueva o no tiene coords, pasamos description con referencias
     if address.saved_change_to_id? || address.latitude.blank? || address.longitude.blank?
-      refs = [contact_text, time_pref_text, notes_text].map { |v| v.presence }.compact.join(", ").presence
+      refs = [contact_text, time_pref_text, notes_text].map(&:presence).compact.join(", ").presence
       if refs.present?
-        # Solo actualizar description si aporta algo y no dispara geocoding de nuevo innecesariamente
         address.update(description: refs)
-        # Nota: según tu modelo, la geocodificación solo corre si cambia address (before_validation). Esto NO fuerza re-geocodificar,
-        # pero dejará guardadas referencias para una eventual edición o para el picker.
-        # Si quisieras reintentar geocoding cuando no hay coords, puedes forzar un save si no hay lat/lng:
-        if address.latitude.blank? || address.longitude.blank?
-          address.save(validate: false)
-        end
+        address.save(validate: false) if address.latitude.blank? || address.longitude.blank?
       end
     end
 
@@ -85,8 +71,10 @@ class RouteExcelImportService
     end
     order.update!(seller: seller) if order.seller_id != seller.id
 
-    # OrderItem
-    order_item = order.order_items.find_or_initialize_by(product: product_name)
+    # ── OrderItem: buscar primero por qb_line_id, luego por producto ──
+    order_item = nil
+    order_item = order.order_items.find_by(qb_line_id: qb_line_id) if qb_line_id.present?
+    order_item ||= order.order_items.find_or_initialize_by(product: product_name)
 
     combined_notes =
       if order_item.persisted? && notes_text.present? && notes_text != safe_str(order_item.notes)
@@ -96,18 +84,21 @@ class RouteExcelImportService
       end
 
     order_item.assign_attributes(
-      quantity: quantity,         # Ya viene sumada desde el PrepareJob
+      product: product_name,
+      quantity: quantity,
       notes: combined_notes,
       status: :in_production
     )
+    order_item.qb_line_id ||= qb_line_id if qb_line_id.present?
     order_item.save!
 
-    # Delivery
-    delivery = order.deliveries.where(delivery_date: data[:delivery_date], delivery_address_id: address.id).first_or_initialize
+    # ── Delivery ──
+    delivery = order.deliveries
+      .where(delivery_date: data[:delivery_date], delivery_address_id: address.id)
+      .first_or_initialize
 
     if delivery.new_record?
       contact_name, contact_phone = parse_contact(contact_text)
-
       delivery.assign_attributes(
         delivery_address: address,
         contact_name: contact_name,
@@ -118,20 +109,19 @@ class RouteExcelImportService
       delivery.save!
     end
 
-    # DeliveryItem
-    # Detectar "caso de servicio" por contenido de team
-    service_case = safe_str(data[:team]).downcase.include?("c.s") || safe_str(data[:team]).downcase.include?("cs")
+    # ── DeliveryItem ──
+    service_case = safe_str(data[:team]).downcase.include?("c.s") ||
+      safe_str(data[:team]).downcase.include?("cs")
 
     delivery_item = delivery.delivery_items.find_or_initialize_by(order_item: order_item)
     delivery_item.assign_attributes(
-      quantity_delivered: quantity, # Ya viene sumada
+      quantity_delivered: quantity,
       status: :pending,
       service_case: service_case
     )
     delivery_item.save!
   end
 
-  # Extrae los datos de una fila del Excel (para importación masiva)
   def extract_row_data(row)
     {
       delivery_date: @spreadsheet.cell(row, "A"),
@@ -148,7 +138,6 @@ class RouteExcelImportService
     }
   end
 
-  # Utilidad para parsear el campo de contacto "Nombre / Tel" o "Nombre - Tel"
   def parse_contact(contact_str)
     s = safe_str(contact_str)
     if s.include?("/")
@@ -164,12 +153,6 @@ class RouteExcelImportService
 
   private
 
-  # Convierte a string, recorta espacios y puede devolver nil si queda vacío
-  def norm_str(v)
-    v.to_s.strip.presence
-  end
-
-  # Convierte a string y recorta; nunca devuelve nil (si queda vacío, retorna "")
   def safe_str(v)
     v.to_s.strip
   end
