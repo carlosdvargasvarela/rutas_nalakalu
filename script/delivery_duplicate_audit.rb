@@ -67,8 +67,8 @@ module DeliveryDuplicateAudit
 
         next if oi_a.nil? || oi_b.nil?
 
-        # REGLA PRINCIPAL: diferencia de order_item_id >= 100
-        next unless (oi_a - oi_b).abs >= 100
+        # REGLA PRINCIPAL: diferencia de order_item_id >= 200
+        next unless (oi_a - oi_b).abs >= 200
 
         # REGLAS DE SIMILITUD (comentadas por ahora)
         # product_a = a.order_item&.product.to_s.strip
