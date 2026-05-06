@@ -20,27 +20,28 @@ class ProcessQuickbooksXmlJob
     qb_txn_id = so["txn_id"]
     ref_number = so["ref_number"].to_s.strip
     order_number = ref_number.start_with?("PED-") ? ref_number : "PED-#{ref_number}"
+    qb_modified_at = parse_qb_time(so["time_modified"])
 
     Rails.logger.info "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    Rails.logger.info "📦 ORDEN: #{order_number} | TxnID: #{qb_txn_id}"
-    Rails.logger.info "📋 SO completo: #{so.inspect}"
-    Rails.logger.info "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    Rails.logger.info "📦 ORDEN: #{order_number} | TxnID: #{qb_txn_id} | QB modified: #{qb_modified_at}"
 
     existing = Order.find_by(number: order_number)
 
-    if existing.present? && existing.qb_txn_id.blank?
-      if qb_txn_id.present?
-        existing.update_columns(qb_txn_id: qb_txn_id, qb_updated_at: Time.current)
-        Rails.logger.info "🔗 Vinculado #{order_number} con qb_txn_id: #{qb_txn_id} (pre-integración)"
-      else
-        Rails.logger.info "⏭️ Saltando #{order_number}: pre-integración sin qb_txn_id"
+    if existing.present?
+      if existing.qb_txn_id.blank?
+        # Orden pre-integración: vincular y procesar
+        existing.update_columns(qb_txn_id: qb_txn_id, qb_updated_at: qb_modified_at || Time.current)
+        Rails.logger.info "🔗 Vinculado #{order_number} con qb_txn_id (pre-integración)"
+        return
       end
-      return
-    end
 
-    if existing.present? && existing.qb_txn_id.present?
-      Rails.logger.info "⏭️ Saltando #{order_number}: ya fue importada desde QuickBooks (qb_txn_id: #{existing.qb_txn_id})"
-      return
+      # Orden ya importada: solo re-procesar si QB tiene cambios más nuevos
+      if existing.qb_updated_at.present? && qb_modified_at.present? && existing.qb_updated_at >= qb_modified_at
+        Rails.logger.info "⏭️ Saltando #{order_number}: sin cambios nuevos (local: #{existing.qb_updated_at}, QB: #{qb_modified_at})"
+        return
+      end
+
+      Rails.logger.info "🔄 Re-procesando #{order_number}: cambios detectados en QB (#{qb_modified_at} > #{existing.qb_updated_at})"
     end
 
     due_date = so["due_date"]&.strip
@@ -53,7 +54,6 @@ class ProcessQuickbooksXmlJob
     Rails.logger.info "📍 address: #{address.inspect}"
     Rails.logger.info "🧑‍💼 seller_code: #{seller_code.inspect}"
 
-    # Contacto: primero data_ext_ret de la orden (más confiable), luego ship_address como fallback
     contact_name = find_ext(so["data_ext_ret"], "Contacto de Entrega").to_s.strip
     contact_phone = find_ext(so["data_ext_ret"], "Celular de Contacto Entrega").to_s.strip
 
@@ -73,7 +73,6 @@ class ProcessQuickbooksXmlJob
 
     lines.each_with_index do |line, idx|
       Rails.logger.info "  --- LÍNEA #{idx + 1} ---"
-      Rails.logger.info "  🔍 line completa: #{line.inspect}"
 
       line_id = line["txn_line_id"]
       raw_item = line.dig("item_ref", "full_name").to_s
@@ -82,7 +81,6 @@ class ProcessQuickbooksXmlJob
 
       Rails.logger.info "  🪑 raw_item: #{raw_item.inspect} → product_name: #{product_name.inspect}"
       Rails.logger.info "  🔢 quantity: #{quantity.inspect}"
-      Rails.logger.info "  📎 data_ext_ret (LÍNEA): #{line["data_ext_ret"].inspect}"
 
       chars = (1..6).map do |i|
         val = find_ext(line["data_ext_ret"], "Caracteristica#{i}")
@@ -97,6 +95,7 @@ class ProcessQuickbooksXmlJob
       else
         line["desc"].to_s.strip.presence || product_name
       end
+
       Rails.logger.info "  🏷️ full_product: #{full_product.inspect}"
 
       row_data = {
@@ -122,7 +121,9 @@ class ProcessQuickbooksXmlJob
     end
 
     order = Order.find_by(number: order_number)
-    order&.update_columns(qb_txn_id: qb_txn_id, qb_updated_at: Time.current) if qb_txn_id.present?
+    if order && qb_txn_id.present?
+      order.update_columns(qb_txn_id: qb_txn_id, qb_updated_at: qb_modified_at || Time.current)
+    end
 
     order&.deliveries&.each do |delivery|
       DeliveryEvent.record(
@@ -144,7 +145,6 @@ class ProcessQuickbooksXmlJob
     when Hash then [data_ext_ret]
     else []
     end
-
     entry = entries.find { |item| item["data_ext_name"] == target_name }
     entry&.dig("data_ext_value")&.strip
   end
@@ -152,5 +152,12 @@ class ProcessQuickbooksXmlJob
   def clean_product_name(name)
     cleaned = name.gsub(/^\d+\s*\(/, "").gsub(/\)$/, "").strip
     cleaned.presence || name.strip
+  end
+
+  def parse_qb_time(value)
+    return nil if value.blank?
+    Time.zone.parse(value)
+  rescue ArgumentError, TypeError
+    nil
   end
 end
