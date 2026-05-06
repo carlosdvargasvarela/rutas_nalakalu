@@ -5,7 +5,6 @@ class ProcessQuickbooksXmlJob
 
   def perform(orders)
     orders = Array.wrap(orders)
-
     Rails.logger.info "=== ProcessQuickbooksXmlJob: #{orders.size} órdenes recibidas ==="
 
     orders.each do |so|
@@ -54,11 +53,15 @@ class ProcessQuickbooksXmlJob
     Rails.logger.info "📍 address: #{address.inspect}"
     Rails.logger.info "🧑‍💼 seller_code: #{seller_code.inspect}"
 
-    Rails.logger.info "--- data_ext_ret (ORDEN): #{so["data_ext_ret"].inspect}"
-    contact_name = find_ext(so["data_ext_ret"], "ContactoEntrega")
-    contact_phone = find_ext(so["data_ext_ret"], "CelularEntrega")
+    # Contacto: primero intentamos ship_address addr2/city, luego data_ext_ret como fallback
+    contact_name = so.dig("ship_address", "addr2").to_s.gsub(/^Contacto:\s*/i, "").strip
+    contact_phone = so.dig("ship_address", "city").to_s.gsub(/^Telefono:\+?/i, "").strip
+    if contact_name.blank? && contact_phone.blank?
+      contact_name = find_ext(so["data_ext_ret"], "ContactoEntrega").to_s
+      contact_phone = find_ext(so["data_ext_ret"], "CelularEntrega").to_s
+    end
     full_contact = [contact_name, contact_phone].select(&:present?).join(" / ")
-    Rails.logger.info "📞 contact_name: #{contact_name.inspect} | contact_phone: #{contact_phone.inspect}"
+    Rails.logger.info "📞 contact: #{full_contact.inspect}"
 
     lines = so["sales_order_line_ret"]
     lines = [lines] if lines.is_a?(Hash)
@@ -73,9 +76,7 @@ class ProcessQuickbooksXmlJob
       line_id = line["txn_line_id"]
       raw_item = line.dig("item_ref", "full_name").to_s
       product_name = clean_product_name(raw_item)
-
-      raw_qty = line["quantity"].to_s.tr(",", ".")
-      quantity = raw_qty.to_f
+      quantity = line["quantity"].to_s.tr(",", ".").to_f
 
       Rails.logger.info "  🪑 raw_item: #{raw_item.inspect} → product_name: #{product_name.inspect}"
       Rails.logger.info "  🔢 quantity: #{quantity.inspect}"
@@ -89,7 +90,13 @@ class ProcessQuickbooksXmlJob
 
       Rails.logger.info "  ✅ chars finales: #{chars.inspect}"
 
-      full_product = [product_name, chars.join("\t")].select(&:present?).join("\t")
+      # Si llegaron características custom (con OwnerID 0), las usamos.
+      # Si no, usamos el desc como fallback (QB ya lo trae con nombre completo).
+      full_product = if chars.any?
+        [product_name, chars.join("    ")].join("    ")
+      else
+        line["desc"].to_s.strip.presence || product_name
+      end
       Rails.logger.info "  🏷️ full_product: #{full_product.inspect}"
 
       row_data = {
@@ -121,9 +128,7 @@ class ProcessQuickbooksXmlJob
     end
 
     order = Order.find_by(number: order_number)
-    if order && qb_txn_id.present?
-      order.update_columns(qb_txn_id: qb_txn_id, qb_updated_at: Time.current)
-    end
+    order&.update_columns(qb_txn_id: qb_txn_id, qb_updated_at: Time.current) if qb_txn_id.present?
 
     order&.deliveries&.each do |delivery|
       DeliveryEvent.record(
@@ -140,12 +145,11 @@ class ProcessQuickbooksXmlJob
   end
 
   def find_ext(data_ext_ret, target_name)
-    entries =
-      case data_ext_ret
-      when Array then data_ext_ret
-      when Hash then [data_ext_ret]
-      else []
-      end
+    entries = case data_ext_ret
+    when Array then data_ext_ret
+    when Hash then [data_ext_ret]
+    else []
+    end
 
     entry = entries.find { |item| item["data_ext_name"] == target_name }
     entry&.dig("data_ext_value")&.strip

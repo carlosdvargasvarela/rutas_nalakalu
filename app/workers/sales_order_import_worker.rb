@@ -13,12 +13,13 @@ class SalesOrderImportWorker < QBWC::Worker
       <QBXML>
         <QBXMLMsgsRq onError="stopOnError">
           <SalesOrderQueryRq requestID="1">
-            <MaxReturned>100</MaxReturned>
+            <MaxReturned>50</MaxReturned>
             <ModifiedDateRangeFilter>
               <FromModifiedDate>#{from_date}</FromModifiedDate>
             </ModifiedDateRangeFilter>
             <IncludeLineItems>true</IncludeLineItems>
             <IncludeLinkedTxns>false</IncludeLinkedTxns>
+            <OwnerID>0</OwnerID>
           </SalesOrderQueryRq>
         </QBXMLMsgsRq>
       </QBXML>
