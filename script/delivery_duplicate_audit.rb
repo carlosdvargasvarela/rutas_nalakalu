@@ -32,7 +32,6 @@ module DeliveryDuplicateAudit
         .where(id: candidate_ids)
         .includes(order: :client, delivery_items: :order_item)
         .find_each do |delivery|
-
         items = delivery.delivery_items
           .select { |di| di.order_item.present? && di.order_item.created_at >= Time.zone.parse("2026-05-04 00:00:00") }
 
