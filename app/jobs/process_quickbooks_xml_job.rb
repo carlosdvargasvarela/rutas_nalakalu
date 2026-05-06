@@ -40,38 +40,37 @@ class ProcessQuickbooksXmlJob
     end
 
     # ── Orden nueva: procesamiento completo ──
-    due_date = so["due_date"]
-    client_name = so.dig("customer_ref", "full_name")
-    address = so.dig("ship_address", "addr1").presence || "No especificada en QB"
-    seller_code = so.dig("sales_rep_ref", "full_name")
+    due_date = so["due_date"]&.strip
+    client_name = so.dig("customer_ref", "full_name")&.strip
+    address = so.dig("ship_address", "addr1")&.strip.presence || "No especificada en QB"
+    seller_code = so.dig("sales_rep_ref", "full_name")&.strip
 
-    order_ext = Array.wrap(so["data_ext_ret"])
-    contact_name = find_ext(order_ext, "ContactoEntrega")
-    contact_phone = find_ext(order_ext, "CelularEntrega")
+    contact_name = find_ext(so["data_ext_ret"], "ContactoEntrega")
+    contact_phone = find_ext(so["data_ext_ret"], "CelularEntrega")
     full_contact = [contact_name, contact_phone].select(&:present?).join(" / ")
 
-    lines = Array.wrap(so["sales_order_line_ret"])
+    lines = so["sales_order_line_ret"]
+    lines = [lines] if lines.is_a?(Hash)
+    lines = [] if lines.blank?
 
     lines.each do |line|
       line_id = line["txn_line_id"]
       raw_item = line.dig("item_ref", "full_name").to_s
       product_name = clean_product_name(raw_item)
 
-      line_description = line["desc"].to_s.strip
-      final_base_name = line_description.present? ? line_description : product_name
+      raw_qty = line["quantity"].to_s.tr(",", ".")
+      quantity = raw_qty.to_f
 
-      # Características 2 a 6 (la 1 se omite según requerimiento)
-      line_ext = Array.wrap(line["data_ext_ret"])
-      chars = (1..6).map { |i| find_ext(line_ext, "Caracteristica#{i}") }.select(&:present?)
+      chars = (1..6).map { |i| find_ext(line["data_ext_ret"], "Caracteristica#{i}") }.select(&:present?)
 
-      full_product = [final_base_name, chars.join("    ")].select(&:present?).join("    ")
+      full_product = [product_name, chars.join("    ")].select(&:present?).join("    ")
 
       row_data = {
         delivery_date: due_date,
         order_number: order_number,
         client_name: client_name,
         product: full_product,
-        quantity: line["quantity"].to_f,
+        quantity: quantity,
         place: address,
         contact: full_contact,
         seller_code: seller_code,
@@ -80,22 +79,19 @@ class ProcessQuickbooksXmlJob
         time_preference: nil
       }
 
+      Rails.logger.info "ProcessQuickbooksXmlJob: Procesando #{order_number} | #{full_product} | Cant: #{quantity} | Cliente: #{client_name} | Vendedor: #{seller_code}"
+
       RouteExcelImportService.new(nil).send(:process_row, row_data)
 
       # ── Vincular qb_line_id usando el ID de QB como fuente de verdad ──
       if line_id.present?
         order = Order.find_by(number: order_number)
-
-        # Primero buscar por qb_line_id (ya vinculado antes)
         item = order&.order_items&.find_by(qb_line_id: line_id)
-
-        # Si no, buscar por producto sin qb_line_id asignado aún
         item ||= order&.order_items&.find_by(product: full_product, qb_line_id: nil)
-
         item&.update_columns(qb_line_id: line_id) if item&.qb_line_id.blank?
       end
-
-      Rails.logger.info "✅ ProcessQuickbooksXmlJob: #{order_number} | #{full_product} | Cant: #{line["quantity"]} | Cliente: #{client_name} | Vendedor: #{seller_code}"
+    rescue => e
+      Rails.logger.error "ProcessQuickbooksXmlJob: Error en línea #{order_number} / #{product_name}: #{e.message}"
     end
 
     # ── Registrar qb_txn_id en la orden una vez procesada ──
@@ -119,18 +115,20 @@ class ProcessQuickbooksXmlJob
     end
   end
 
-  def find_ext(ext_array, name)
-    ext_array.find { |e| e["data_ext_name"] == name }&.dig("data_ext_value")&.strip
+  def find_ext(data_ext_ret, target_name)
+    entries =
+      case data_ext_ret
+      when Array then data_ext_ret
+      when Hash then [data_ext_ret]
+      else []
+      end
+
+    entry = entries.find { |item| item["data_ext_name"] == target_name }
+    entry&.dig("data_ext_value")&.strip
   end
 
   def clean_product_name(name)
-    # "008000100 (Espejo de cuerpo entero)" → "Espejo de cuerpo entero"
-    return $1.strip if name =~ /\((.+)\)/
-
-    # "008000100 Espejo de cuerpo entero" → "Espejo de cuerpo entero"
-    parts = name.split(/\s+/, 2)
-    return parts.last.strip if parts.first =~ /^\d+$/ && parts.size == 2
-
-    name.strip
+    cleaned = name.gsub(/^\d+\s*\(/, "").gsub(/\)$/, "").strip
+    cleaned.presence || name.strip
   end
 end
