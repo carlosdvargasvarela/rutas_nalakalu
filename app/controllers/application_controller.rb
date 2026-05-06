@@ -7,6 +7,7 @@ class ApplicationController < ActionController::Base
 
   before_action :set_paper_trail_whodunnit
   before_action :authenticate_user!
+  before_action :check_maintenance_mode
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :check_password_change
 
@@ -68,5 +69,18 @@ class ApplicationController < ActionController::Base
       controller_path.start_with?("public_") ||
       controller_name == "rails/health" ||
       controller_name == "pwa"
+  end
+
+  def check_maintenance_mode
+    return unless MaintenanceWindow.active?
+    return if devise_controller?
+
+    window = MaintenanceWindow.current_window
+    return unless window
+
+    return if window.allows_user?(current_user)
+
+    sign_out current_user if current_user.present?
+    redirect_to new_user_session_path, alert: window.message
   end
 end

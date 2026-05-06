@@ -1,0 +1,92 @@
+<div class="container mt-4" style="max-width: 760px;">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to "Dashboard", root_path %></li>
+      <li class="breadcrumb-item"><%= link_to "Admin", admin_users_path %></li>
+      <li class="breadcrumb-item active">Mantenimiento</li>
+    </ol>
+  </nav>
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+      <h5 class="mb-0 fw-semibold">
+        <i class="bi bi-tools me-2 text-primary"></i>Control de Acceso al Sistema
+      </h5>
+      <% if MaintenanceWindow.active? %>
+        <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3">
+          <i class="bi bi-lock-fill me-1"></i>Bloqueado
+        </span>
+      <% else %>
+        <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3">
+          <i class="bi bi-unlock-fill me-1"></i>Operativo
+        </span>
+      <% end %>
+    </div>
+    <div class="card-body p-4">
+      <% if MaintenanceWindow.active? %>
+        <% window = MaintenanceWindow.current_window %>
+        <div class="alert border-0 shadow-sm mb-4" style="background-color: #fffbeb; border-left: 4px solid #f59e0b !important;">
+          <div class="d-flex align-items-start gap-3">
+            <i class="bi bi-shield-exclamation fs-4 text-warning mt-1"></i>
+            <div class="flex-grow-1">
+              <p class="mb-2 fw-semibold"><%= window.message %></p>
+              <div class="row g-2 text-muted small">
+                <div class="col-sm-6">
+                  <i class="bi bi-person-fill me-1"></i>
+                  Activado por: <strong><%= window.activated_by.name %></strong>
+                </div>
+                <div class="col-sm-6">
+                  <i class="bi bi-calendar-event me-1"></i>
+                  Inicio: <strong><%= l(window.created_at, format: :short) %></strong>
+                </div>
+                <div class="col-sm-6">
+                  <i class="bi bi-hourglass-split me-1"></i>
+                  Finaliza:
+                  <strong>
+                    <% if window.ends_at %>
+                      <%= l(window.ends_at, format: :short) %>
+                      (<%= window.time_remaining %> min)
+                    <% else %>
+                      Indefinido
+                    <% end %>
+                  </strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mb-4">
+          <p class="text-muted small fw-semibold mb-2">
+            <i class="bi bi-people-fill me-1"></i>Usuarios con acceso durante el mantenimiento:
+          </p>
+          <div class="d-flex flex-wrap gap-2">
+            <% User.where(id: window.allowed_user_ids).order(:name).each do |user| %>
+              <span class="badge bg-light text-dark border fw-normal px-3 py-2">
+                <i class="bi bi-person-check me-1 text-success"></i><%= user.name %>
+                <span class="text-muted ms-1">(<%= user.display_role %>)</span>
+              </span>
+            <% end %>
+          </div>
+        </div>
+        <hr class="my-4">
+        <%= button_to deactivate_admin_maintenance_window_path,
+              method: :patch,
+              class: "btn btn-success px-4",
+              form: { data: { turbo_confirm: "¿Confirmas que deseas rehabilitar el acceso para todos los usuarios?" } } do %>
+          <i class="bi bi-unlock-fill me-2"></i>Finalizar mantenimiento y abrir sistema
+        <% end %>
+      <% else %>
+        <div class="text-center py-5">
+          <i class="bi bi-shield-check display-1 text-success opacity-50"></i>
+          <h5 class="mt-3 fw-semibold">Sistema operando con normalidad</h5>
+          <p class="text-muted mx-auto mt-2" style="max-width: 420px;">
+            Podés bloquear temporalmente el acceso para realizar actualizaciones,
+            ajustes de rutas o mantenimiento de base de datos.
+          </p>
+          <%= link_to new_admin_maintenance_window_path, class: "btn btn-primary px-4 mt-2" do %>
+            <i class="bi bi-lock-fill me-2"></i>Configurar ventana de mantenimiento
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -17,6 +17,29 @@
     <div id="navbar-container" data-turbo-permanent>
       <%= render "layouts/navbar" %>
     </div>
+    <%# Banner de mantenimiento — solo visible para usuarios con acceso permitido %>
+    <% if MaintenanceWindow.active? %>
+      <% mw = MaintenanceWindow.current_window %>
+      <div class="alert alert-warning rounded-0 border-0 border-bottom border-warning mb-0 py-2 shadow-sm" role="alert">
+        <div class="container-fluid d-flex align-items-center justify-content-center gap-3 flex-wrap">
+          <span>
+            <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>
+            <strong>Modo mantenimiento activo</strong>
+            <% if mw&.ends_at %>
+              &mdash;
+              <span class="badge bg-warning text-dark">
+                <i class="bi bi-clock-history me-1"></i><%= mw.time_remaining %> min restantes
+              </span>
+            <% end %>
+          </span>
+          <% if current_user&.admin? %>
+            <%= link_to admin_maintenance_window_path, class: "btn btn-sm btn-outline-dark py-0 px-2" do %>
+              <i class="bi bi-gear-fill me-1"></i>Gestionar
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
     <main class="container-fluid mt-4">
       <%= render "layouts/flashes" %>
       <%= yield %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_04_162920) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_06_182153) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -223,6 +223,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_04_162920) do
     t.index ["load_status"], name: "index_delivery_plans_on_load_status"
   end
 
+  create_table "maintenance_windows", force: :cascade do |t|
+    t.boolean "active", default: false, null: false
+    t.datetime "ends_at"
+    t.integer "activated_by_id", null: false
+    t.text "allowed_user_ids", default: "[]"
+    t.string "message", default: "El sistema está en mantenimiento. Volvemos pronto."
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_maintenance_windows_on_active"
+  end
+
   create_table "notifications", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "notifiable_type", null: false
@@ -370,6 +381,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_04_162920) do
   add_foreign_key "delivery_plan_assignments", "delivery_plans", on_delete: :cascade
   add_foreign_key "delivery_plan_locations", "delivery_plans"
   add_foreign_key "delivery_plans", "users", column: "driver_id"
+  add_foreign_key "maintenance_windows", "users", column: "activated_by_id"
   add_foreign_key "notifications", "users"
   add_foreign_key "order_item_notes", "order_items"
   add_foreign_key "order_item_notes", "users"

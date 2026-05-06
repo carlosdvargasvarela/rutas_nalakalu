@@ -222,6 +222,10 @@ Rails.application.routes.draw do
         patch :toggle_notifications
       end
     end
+
+    resource :maintenance_window, only: [:show, :new, :create] do
+      patch :deactivate
+    end
   end
 
   # =============================================================================

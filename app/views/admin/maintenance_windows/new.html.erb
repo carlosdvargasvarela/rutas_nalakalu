@@ -1,0 +1,93 @@
+<div class="container mt-4" style="max-width: 760px;">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to "Dashboard", root_path %></li>
+      <li class="breadcrumb-item"><%= link_to "Admin", admin_users_path %></li>
+      <li class="breadcrumb-item"><%= link_to "Mantenimiento", admin_maintenance_window_path %></li>
+      <li class="breadcrumb-item active">Activar</li>
+    </ol>
+  </nav>
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+      <h5 class="mb-0 fw-semibold text-danger">
+        <i class="bi bi-shield-lock-fill me-2"></i>Activar Ventana de Mantenimiento
+      </h5>
+    </div>
+    <div class="card-body p-4">
+      <div class="alert alert-secondary border-0 small mb-4">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        Al activar este modo, los usuarios <strong>no incluidos en la lista</strong> serán
+        cerrados de sesión automáticamente y no podrán ingresar hasta que finalice el mantenimiento.
+      </div>
+      <%= form_with url: admin_maintenance_window_path, method: :post do |f| %>
+        <%# Mensaje %>
+        <div class="mb-4">
+          <label class="form-label fw-semibold small">
+            <i class="bi bi-chat-left-text me-1"></i>Mensaje para usuarios bloqueados
+          </label>
+          <%= f.text_area :message,
+                name: "maintenance_window[message]",
+                rows: 2,
+                class: "form-control",
+                placeholder: "Ej. Estamos realizando una actualización del sistema. Volvemos en breve." %>
+        </div>
+        <%# Duración %>
+        <div class="mb-4">
+          <label class="form-label fw-semibold small">
+            <i class="bi bi-hourglass-split me-1"></i>Duración estimada
+          </label>
+          <div class="row g-2 align-items-center">
+            <div class="col-auto">
+              <%= f.number_field :duration_minutes,
+                    name: "maintenance_window[duration_minutes]",
+                    class: "form-control",
+                    value: 60, min: 0, style: "width: 120px;" %>
+            </div>
+            <div class="col-auto text-muted small">minutos &mdash; usa <strong>0</strong> para tiempo indefinido</div>
+          </div>
+        </div>
+        <%# Usuarios permitidos %>
+        <div class="mb-4">
+          <label class="form-label fw-semibold small">
+            <i class="bi bi-people-fill me-1"></i>Usuarios con acceso permitido durante el mantenimiento
+          </label>
+          <div class="card border rounded" style="max-height: 280px; overflow-y: auto;">
+            <div class="list-group list-group-flush">
+              <% User.order(:name).each do |user| %>
+                <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-2 px-3
+                              <%= user == current_user ? 'bg-light' : '' %>">
+                  <%= check_box_tag "maintenance_window[allowed_user_ids][]",
+                        user.id,
+                        user == current_user,
+                        class: "form-check-input mt-0 flex-shrink-0",
+                        id: "user_#{user.id}",
+                        disabled: (user == current_user) %>
+                  <div class="d-flex align-items-center justify-content-between w-100">
+                    <span class="<%= user == current_user ? 'fw-semibold' : '' %>">
+                      <%= user.name %>
+                      <% if user == current_user %>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1 fw-normal small">Tú</span>
+                      <% end %>
+                    </span>
+                    <span class="badge bg-light text-dark border fw-normal small"><%= user.display_role %></span>
+                  </div>
+                </label>
+              <% end %>
+            </div>
+          </div>
+          <div class="form-text mt-1">
+            <i class="bi bi-lock-fill me-1 text-primary"></i>
+            Vos siempre tenés acceso como activador del mantenimiento.
+          </div>
+        </div>
+        <hr class="my-4">
+        <div class="d-flex align-items-center gap-3">
+          <%= f.submit "Iniciar bloqueo del sistema",
+                class: "btn btn-danger px-4",
+                data: { turbo_confirm: "¿Confirmás que querés bloquear el acceso al sistema?" } %>
+          <%= link_to "Cancelar", admin_maintenance_window_path, class: "btn btn-link link-secondary text-decoration-none" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
