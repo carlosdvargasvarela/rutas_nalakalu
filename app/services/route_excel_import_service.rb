@@ -45,7 +45,7 @@ class RouteExcelImportService
     contact_text = safe_str(data[:contact])
     notes_text = safe_str(data[:notes])
     time_pref_text = safe_str(data[:time_preference])
-    qb_line_id = data[:qb_line_id].presence  # opcional, viene del job de QB
+    qb_line_id = data[:qb_line_id].presence
 
     quantity = data[:quantity].to_i
     raise "Cantidad inválida" if quantity <= 0
@@ -55,10 +55,8 @@ class RouteExcelImportService
 
     if address.saved_change_to_id? || address.latitude.blank? || address.longitude.blank?
       refs = [contact_text, time_pref_text, notes_text].map(&:presence).compact.join(", ").presence
-      if refs.present?
-        address.update(description: refs)
-        address.save(validate: false) if address.latitude.blank? || address.longitude.blank?
-      end
+      address.update(description: refs) if refs.present?
+      address.save(validate: false) if address.latitude.blank? || address.longitude.blank?
     end
 
     seller = Seller.find_by(seller_code: seller_code)
@@ -76,12 +74,11 @@ class RouteExcelImportService
     order_item = order.order_items.find_by(qb_line_id: qb_line_id) if qb_line_id.present?
     order_item ||= order.order_items.find_or_initialize_by(product: product_name)
 
-    combined_notes =
-      if order_item.persisted? && notes_text.present? && notes_text != safe_str(order_item.notes)
-        [safe_str(order_item.notes), notes_text].reject(&:blank?).uniq.join("; ")
-      else
-        notes_text.presence || order_item.notes
-      end
+    combined_notes = if order_item.persisted? && notes_text.present? && notes_text != safe_str(order_item.notes)
+      [safe_str(order_item.notes), notes_text].reject(&:blank?).uniq.join("; ")
+    else
+      notes_text.presence || order_item.notes
+    end
 
     order_item.assign_attributes(
       product: product_name,

@@ -53,13 +53,15 @@ class ProcessQuickbooksXmlJob
     Rails.logger.info "📍 address: #{address.inspect}"
     Rails.logger.info "🧑‍💼 seller_code: #{seller_code.inspect}"
 
-    # Contacto: primero intentamos ship_address addr2/city, luego data_ext_ret como fallback
-    contact_name = so.dig("ship_address", "addr2").to_s.gsub(/^Contacto:\s*/i, "").strip
-    contact_phone = so.dig("ship_address", "city").to_s.gsub(/^Telefono:\+?/i, "").strip
+    # Contacto: primero data_ext_ret de la orden (más confiable), luego ship_address como fallback
+    contact_name = find_ext(so["data_ext_ret"], "Contacto de Entrega").to_s.strip
+    contact_phone = find_ext(so["data_ext_ret"], "Celular de Contacto Entrega").to_s.strip
+
     if contact_name.blank? && contact_phone.blank?
-      contact_name = find_ext(so["data_ext_ret"], "ContactoEntrega").to_s
-      contact_phone = find_ext(so["data_ext_ret"], "CelularEntrega").to_s
+      contact_name = so.dig("ship_address", "addr2").to_s.gsub(/^Contacto:\s*/i, "").strip
+      contact_phone = so.dig("ship_address", "city").to_s.gsub(/^Telefono:\+?506\s*/i, "").strip
     end
+
     full_contact = [contact_name, contact_phone].select(&:present?).join(" / ")
     Rails.logger.info "📞 contact: #{full_contact.inspect}"
 
@@ -90,8 +92,6 @@ class ProcessQuickbooksXmlJob
 
       Rails.logger.info "  ✅ chars finales: #{chars.inspect}"
 
-      # Si llegaron características custom (con OwnerID 0), las usamos.
-      # Si no, usamos el desc como fallback (QB ya lo trae con nombre completo).
       full_product = if chars.any?
         [product_name, chars.join("    ")].join("    ")
       else
@@ -110,19 +110,13 @@ class ProcessQuickbooksXmlJob
         seller_code: seller_code,
         team: nil,
         notes: so["memo"],
-        time_preference: nil
+        time_preference: nil,
+        qb_line_id: line_id
       }
 
       Rails.logger.info "  📤 row_data: #{row_data.inspect}"
 
       RouteExcelImportService.new(nil).send(:process_row, row_data)
-
-      if line_id.present?
-        order = Order.find_by(number: order_number)
-        item = order&.order_items&.find_by(qb_line_id: line_id)
-        item ||= order&.order_items&.find_by(product: full_product, qb_line_id: nil)
-        item&.update_columns(qb_line_id: line_id) if item&.qb_line_id.blank?
-      end
     rescue => e
       Rails.logger.error "ProcessQuickbooksXmlJob: Error en línea #{order_number} / #{raw_item}: #{e.message}\n#{e.backtrace&.first(3)&.join("\n")}"
     end
