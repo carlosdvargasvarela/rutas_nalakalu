@@ -8,6 +8,10 @@ class MaintenanceWindow < ApplicationRecord
 
   validates :message, presence: true
 
+  after_initialize do
+    self.message ||= "El sistema está temporalmente en mantenimiento. Volvemos en breve."
+  end
+
   scope :active_windows, -> { where(active: true).order(created_at: :desc) }
 
   def self.active?

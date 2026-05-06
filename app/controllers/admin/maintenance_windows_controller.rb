@@ -26,12 +26,13 @@ class Admin::MaintenanceWindowsController < ApplicationController
     allowed_ids << current_user.id
     allowed_ids.uniq!
 
-    @window = MaintenanceWindow.new(
+    @window.assign_attributes(
       active: true,
       activated_by: current_user,
       ends_at: ends_at,
       allowed_user_ids: allowed_ids,
-      message: params[:maintenance_window][:message]
+      message: params[:maintenance_window][:message].presence ||
+               "El sistema está temporalmente en mantenimiento. Volvemos en breve."
     )
 
     if @window.save
