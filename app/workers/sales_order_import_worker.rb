@@ -2,9 +2,10 @@ class SalesOrderImportWorker < QBWC::Worker
   def requests(job, session, data)
     return nil if data && data["done"]
 
+    # Buscamos modificaciones de la última semana para asegurar captura de registros
     from_date = ENV.fetch(
       "QBWC_SYNC_FROM_DATE",
-      2.days.ago.strftime("%Y-%m-%dT00:00:00")
+      1.days.ago.strftime("%Y-%m-%dT00:00:00")
     )
 
     <<~XML
@@ -13,7 +14,7 @@ class SalesOrderImportWorker < QBWC::Worker
       <QBXML>
         <QBXMLMsgsRq onError="stopOnError">
           <SalesOrderQueryRq requestID="1">
-            <MaxReturned>50</MaxReturned>
+            <MaxReturned>100</MaxReturned>
             <ModifiedDateRangeFilter>
               <FromModifiedDate>#{from_date}</FromModifiedDate>
             </ModifiedDateRangeFilter>
@@ -32,10 +33,8 @@ class SalesOrderImportWorker < QBWC::Worker
     if orders.present?
       orders = Array.wrap(orders)
       plain_payload = deep_to_h(orders)
-      Rails.logger.info "SalesOrderImportWorker: Encolando #{plain_payload.size} órdenes para procesamiento."
+      Rails.logger.info "SalesOrderImportWorker: Recibidas #{plain_payload.size} órdenes de QB."
       ProcessQuickbooksXmlJob.perform_async(plain_payload)
-    else
-      Rails.logger.info "SalesOrderImportWorker: No se encontraron órdenes modificadas desde #{2.days.ago.strftime("%Y-%m-%dT00:00:00")}"
     end
 
     {"done" => true}

@@ -28,16 +28,21 @@ class ProcessQuickbooksXmlJob
     existing = Order.find_by(number: order_number)
 
     if existing.present?
+      # 🚫 REGLA DE ORO: Pre-integración = intocable
       if existing.qb_txn_id.blank?
-        # Orden pre-integración: vinculamos y permitimos que procese para actualizar datos
-        existing.update_columns(qb_txn_id: qb_txn_id, qb_updated_at: qb_modified_at || Time.current)
-        Rails.logger.info "🔗 Vinculado #{order_number} con qb_txn_id (pre-integración)"
-      elsif existing.qb_updated_at.present? && qb_modified_at.present? && existing.qb_updated_at >= qb_modified_at
-        # Si ya la tenemos actualizada a esta fecha o más nueva, saltamos
+        Rails.logger.info "🚫 Ignorando #{order_number}: pedido pre-integración (qb_txn_id es null)"
+        return
+      end
+
+      # ⏭️ Ya sincronizado y sin cambios nuevos
+      if existing.qb_updated_at.present? && qb_modified_at.present? && existing.qb_updated_at >= qb_modified_at
         Rails.logger.info "⏭️ Saltando #{order_number}: sin cambios nuevos (local: #{existing.qb_updated_at}, QB: #{qb_modified_at})"
         return
       end
-      Rails.logger.info "🔄 Procesando #{order_number}: cambios detectados o nueva vinculación"
+
+      Rails.logger.info "🔄 Actualizando #{order_number}: cambios detectados en QB"
+    else
+      Rails.logger.info "🆕 Nuevo pedido: #{order_number}"
     end
 
     due_date = so["due_date"]&.strip
@@ -45,11 +50,9 @@ class ProcessQuickbooksXmlJob
     address = so.dig("ship_address", "addr1")&.strip.presence || "No especificada en QB"
     seller_code = so.dig("sales_rep_ref", "full_name")&.strip
 
-    # Contacto de la orden (DataExt)
     contact_name = find_ext(so["data_ext_ret"], "Contacto de Entrega").to_s.strip
     contact_phone = find_ext(so["data_ext_ret"], "Celular de Contacto Entrega").to_s.strip
 
-    # Fallback a ship_address si los DataExt están vacíos
     if contact_name.blank? && contact_phone.blank?
       contact_name = so.dig("ship_address", "addr2").to_s.gsub(/^Contacto:\s*/i, "").strip
       contact_phone = so.dig("ship_address", "city").to_s.gsub(/^Telefono:\+?506\s*/i, "").strip
@@ -64,21 +67,16 @@ class ProcessQuickbooksXmlJob
     lines.each_with_index do |line, idx|
       line_id = line["txn_line_id"]
 
-      # SEGÚN TU ESTRUCTURA: 'desc' es el nombre del producto, 'item_ref > full_name' es el código
       product_base_name = line["desc"].to_s.strip
       product_code = line.dig("item_ref", "full_name").to_s.strip
-
-      # Si por alguna razón desc está vacío, usamos el código limpio
       product_base_name = clean_product_name(product_code) if product_base_name.blank?
 
       quantity = line["quantity"].to_s.tr(",", ".").to_f
 
-      # Características de la línea
       chars = (1..6).map do |i|
         find_ext(line["data_ext_ret"], "Caracteristica#{i}")
       end.select(&:present?)
 
-      # Concatenamos nombre base + características con los 4 espacios
       full_product = if chars.any?
         [product_base_name, chars.join("    ")].join("    ")
       else
@@ -106,13 +104,11 @@ class ProcessQuickbooksXmlJob
       Rails.logger.error "Error en línea #{idx} de SO #{order_number}: #{e.message}"
     end
 
-    # Actualizar marca de tiempo al finalizar para evitar re-procesar lo mismo
     order = Order.find_by(number: order_number)
     if order && qb_txn_id.present?
       order.update_columns(qb_txn_id: qb_txn_id, qb_updated_at: qb_modified_at || Time.current)
     end
 
-    # Registrar evento de creación/actualización
     order&.deliveries&.each do |delivery|
       DeliveryEvent.record(
         delivery: delivery,
@@ -134,7 +130,6 @@ class ProcessQuickbooksXmlJob
   end
 
   def clean_product_name(name)
-    # Limpia códigos tipo "001000(Mesa)" si hiciera falta
     name.gsub(/^\d+\s*\(/, "").gsub(/\)$/, "").strip
   end
 
