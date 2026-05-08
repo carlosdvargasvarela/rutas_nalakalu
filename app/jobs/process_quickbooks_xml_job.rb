@@ -40,20 +40,17 @@ class ProcessQuickbooksXmlJob
     client_name = so.dig("customer_ref", "full_name")&.strip
     seller_code = so.dig("sales_rep_ref", "full_name")&.strip
 
-    # Solo extraemos dirección y contacto si la orden es NUEVA
-    address = nil
-    full_contact = nil
-    if existing.blank?
-      address = so.dig("ship_address", "addr1")&.strip.presence || "No especificada en QB"
+    # Dirección y contacto: siempre se calculan, pero solo se envían al Service si la orden es NUEVA.
+    # Nunca se sobreescriben en órdenes existentes.
+    address = so.dig("ship_address", "addr1")&.strip.presence || "Vendedor no agregó dirección"
 
-      c_name = find_ext(so["data_ext_ret"], "Contacto de Entrega").to_s.strip
-      c_phone = find_ext(so["data_ext_ret"], "Celular de Contacto Entrega").to_s.strip
-      if c_name.blank? && c_phone.blank?
-        c_name = so.dig("ship_address", "addr2").to_s.gsub(/^Contacto:\s*/i, "").strip
-        c_phone = so.dig("ship_address", "city").to_s.gsub(/^Telefono:\+?506\s*/i, "").strip
-      end
-      full_contact = [c_name, c_phone].select(&:present?).join(" / ")
+    c_name = find_ext(so["data_ext_ret"], "Contacto de Entrega").to_s.strip
+    c_phone = find_ext(so["data_ext_ret"], "Celular de Contacto Entrega").to_s.strip
+    if c_name.blank? && c_phone.blank?
+      c_name = so.dig("ship_address", "addr2").to_s.gsub(/^Contacto:\s*/i, "").strip
+      c_phone = so.dig("ship_address", "city").to_s.gsub(/^Telefono:\+?506\s*/i, "").strip
     end
+    full_contact = [c_name, c_phone].select(&:present?).join(" / ")
 
     lines = Array.wrap(so["sales_order_line_ret"]).compact
 
@@ -62,29 +59,27 @@ class ProcessQuickbooksXmlJob
       chars = (1..6).map { |i| find_ext(line["data_ext_ret"], "Caracteristica#{i}") }.select(&:present?)
       full_product = chars.any? ? [product_base, chars.join("    ")].join("    ") : product_base
 
-      # CONSTRUCCIÓN DEL ROW_DATA CONDICIONAL
       row_data = {
         order_number: order_number,
         product: full_product,
         quantity: line["quantity"].to_s.tr(",", ".").to_f,
         qb_line_id: line["txn_line_id"],
-        delivery_date: due_date, # Siempre enviamos fecha por si cambia el DueDate
+        delivery_date: due_date,
         client_name: client_name,
         seller_code: seller_code
       }
 
-      # SOLO agregamos estos campos si la orden NO existe (es nueva)
+      # SOLO agregamos dirección/contacto/notas si la orden es NUEVA — nunca se sobreescriben
       if existing.blank?
         row_data[:place] = address
         row_data[:contact] = full_contact
         row_data[:notes] = so["memo"]
       end
 
-      # El Service se encarga de buscar la entrega y añadir el ítem
       RouteExcelImportService.new(nil).send(:process_row, row_data)
     end
 
-    # Finalización y registro de eventos
+    # Actualizar metadata de QB
     order = Order.find_by(number: order_number)
     if order && qb_txn_id.present?
       order.update_columns(qb_txn_id: qb_txn_id, qb_updated_at: qb_modified_at || Time.current)
