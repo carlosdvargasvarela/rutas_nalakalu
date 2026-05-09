@@ -20,6 +20,14 @@
       <i class="bi bi-calendar-check me-1"></i> Planes de Entrega
     <% end %>
   </li>
+  <li class="nav-item">
+    <%= link_to "https://na-lakalalu.gitbook.io/na-lakalalu-docs",
+                class: "nav-link",
+                target: "_blank",
+                rel: "noopener" do %>
+      <i class="bi bi-book me-1"></i> Documentación
+    <% end %>
+  </li>
   <% if current_user.admin? || current_user.production_manager? %>
     <li class="nav-item">
       <%= link_to production_delivery_plans_path, class: "nav-link" do %>
@@ -52,7 +60,7 @@
           <% end %>
         </li>
         <% if current_user.admin? || current_user.production_manager? %>
-          <li >
+          <li>
             <%= link_to orders_path, class: "dropdown-item" do %>
               <i class="bi bi-box-seam me-1"></i> Pedidos
             <% end %>
