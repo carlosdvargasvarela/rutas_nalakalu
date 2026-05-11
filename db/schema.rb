@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_06_182153) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_11_082402) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -163,6 +163,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_06_182153) do
     t.text "notes"
     t.integer "load_status", default: 0, null: false
     t.integer "loaded_quantity"
+    t.boolean "sala_pickup_requested", default: false, null: false
     t.index ["delivery_id", "order_item_id"], name: "index_delivery_items_on_delivery_and_order_item_unique", unique: true
     t.index ["delivery_id"], name: "index_delivery_items_on_delivery_id"
     t.index ["load_status"], name: "index_delivery_items_on_load_status"

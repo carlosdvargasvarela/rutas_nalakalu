@@ -534,7 +534,7 @@ class DeliveriesController < ApplicationController
         load_delivery_for_panel
         set_delivery_panel_data
 
-        flash.now[:notice] = "Orden de recogida ##{@pickup_delivery.id} creada correctamente."
+        flash.now[:notice] = "Orden de recogida para pedido ##{@pickup_delivery.order_number} creada correctamente."
 
         render turbo_stream: [
           turbo_stream.replace("flash_messages", partial: "layouts/flashes"),

@@ -35,7 +35,8 @@ module Deliveries
       return [] if @delivery.status.in?(%w[delivered rescheduled cancelled archived])
 
       @delivery.delivery_items.reject { |item|
-        item.status.in?(%w[delivered rescheduled cancelled archived])
+        item.status.in?(%w[delivered rescheduled cancelled archived]) ||
+        item.sala_pickup_requested?
       }.select { |item|
         name = normalize(item.product.to_s)
         contains_keyword?(name) && !contains_exclusion?(name)

@@ -117,6 +117,9 @@ module Deliveries
           notes: "Recogida en sala para entrega programada el #{original_delivery.delivery_date.strftime("%d/%m/%Y")}."
         )
       end
+
+      # Marcar los items originales como ya procesados para sala pickup
+      items_to_copy.update_all(sala_pickup_requested: true)
     end
 
     def update_original_delivery_notes!
@@ -132,7 +135,7 @@ module Deliveries
     end
 
     def build_pickup_notes
-      base = "Recogida de sala generada desde Entrega ##{original_delivery.id} (#{original_delivery.delivery_date.strftime("%d/%m/%Y")})."
+      base = "Recogida de sala generada desde Pedido ##{original_delivery.order_number} (#{original_delivery.delivery_date.strftime("%d/%m/%Y")})."
       extra = params[:delivery_notes].presence
       extra ? "#{base} #{extra}" : base
     end
