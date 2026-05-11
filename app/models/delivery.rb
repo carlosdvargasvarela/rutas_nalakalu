@@ -310,7 +310,11 @@ class Delivery < ApplicationRecord
     new_status = calculate_delivery_status(item_statuses)
     return if new_status.blank? || new_status.to_s == status.to_s
 
-    update!(status: new_status)
+    if new_status == :ready_to_deliver && !confirmed_by_vendor?
+      update!(status: new_status, confirmed_by_vendor: true, confirmed_by_vendor_at: Time.current)
+    else
+      update!(status: new_status)
+    end
   end
 
   def active_items_for_plan
@@ -473,12 +477,7 @@ class Delivery < ApplicationRecord
 
     # todos los activos están confirmados o en plan
     if active.all? { |s| %w[confirmed in_plan].include?(s) }
-      if delivery_plan.present?
-        return :in_plan
-      else
-        mark_as_confirmed_by_vendor! unless ready_to_deliver?
-        return :ready_to_deliver
-      end
+      return delivery_plan.present? ? :in_plan : :ready_to_deliver
     end
 
     # mezcla pending + confirmed → volver a scheduled (hay items sin confirmar)

@@ -42,3 +42,9 @@
 !/app/assets/builds/.keep
 
 /node_modules
+
+# Claude / AI tooling
+/.claude/
+/.claude-flow/
+/.swarm/
+/ruvector.db

@@ -50,6 +50,12 @@
             <%= delivery.delivery_address&.address&.truncate(35) || "Sin dirección" %>
           </span>
         </div>
+        <% if delivery.contact_name.present? %>
+          <div class="small text-secondary d-flex align-items-center gap-1">
+            <i class="bi bi-person-lines-fill text-secondary" style="font-size: 0.75rem;"></i>
+            <span class="text-truncate" style="max-width: 200px;"><%= delivery.contact_name.truncate(35) %></span>
+          </div>
+        <% end %>
         <%# Fecha de fin de bodegaje %>
         <% if delivery.warehousing? && delivery.warehousing_until.present? %>
           <div class="small d-flex align-items-center gap-1" style="color:#6f42c1;">

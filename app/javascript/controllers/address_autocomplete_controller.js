@@ -36,10 +36,27 @@ export default class extends Controller {
       });
     }
 
+    // Cuando el modal Bootstrap termina de abrirse, el mapa necesita redimensionarse
+    // y el pac-container reposicionarse (getBoundingClientRect devuelve 0 si estaba oculto)
+    this._onModalShown = () => {
+      if (this._initialized) {
+        this.resizeMap();
+        this._repositionPac?.();
+      } else {
+        this.tryInitializeAutocomplete();
+      }
+    };
+    const modal = this.element.closest(".modal");
+    if (modal) modal.addEventListener("shown.bs.modal", this._onModalShown);
+
     this.loadGoogleMapsAPI().then(() => this.tryInitializeAutocomplete());
   }
 
   disconnect() {
+    const modal = this.element.closest(".modal");
+    if (modal && this._onModalShown) {
+      modal.removeEventListener("shown.bs.modal", this._onModalShown);
+    }
     if (this._pacObserver) {
       this._pacObserver.disconnect();
       this._pacObserver = null;
@@ -696,6 +713,8 @@ export default class extends Controller {
   updateFromCoords(lat, lng) {
     const pos = { lat, lng };
     if (this.map) {
+      // resize fuerza recarga de tiles cuando el mapa fue inicializado en un contenedor oculto
+      google.maps.event.trigger(this.map, "resize");
       this.map.setCenter(pos);
       this.map.setZoom(17);
     }

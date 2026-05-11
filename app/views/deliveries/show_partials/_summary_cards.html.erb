@@ -12,6 +12,13 @@
       </div>
       <div class="p-3">
         <p class="fw-bold fs-6 mb-0"><%= delivery.client_name %></p>
+        <% if delivery.contact_name.present? %>
+          <p class="text-muted small mb-1">
+            <i class="bi bi-person-lines-fill me-1"></i><%= delivery.contact_name %>
+          </p>
+        <% else %>
+          <p class="text-muted small mb-1 fst-italic">Sin nombre de contacto</p>
+        <% end %>
         <% if delivery.contact_phone.present? %>
           <a href="tel:<%= delivery.contact_phone %>"
              class="text-muted small text-decoration-none d-block mb-3">
@@ -93,7 +100,8 @@
         <div class="mt-auto">
           <%= link_to order_path(delivery.order),
                 class: "btn btn-sm btn-outline-secondary w-100",
-                data: { turbo_frame: "_top" } do %>
+                target: "_blank",
+                rel: "noopener noreferrer" do %>
             <i class="bi bi-box-arrow-up-right me-1"></i>Ver Pedido Original
           <% end %>
         </div>
@@ -149,7 +157,10 @@
           <div class="row g-2 text-center">
             <div class="col-4 border-end">
               <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase;">Plan</div>
-              <%= link_to plan.full_name, delivery_plan_path(plan), class: "fw-bold small d-block text-truncate" %>
+              <%= link_to plan.full_name, delivery_plan_path(plan),
+                    class: "fw-bold small d-block text-truncate",
+                    target: "_blank",
+                    rel: "noopener noreferrer" %>
             </div>
             <div class="col-4 border-end">
               <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase;">Conductor</div>
