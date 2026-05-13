@@ -4,7 +4,7 @@
   class="<%= 'item-with-notes' if item.notes.present? %>">
   <%# Checkbox %>
   <td class="text-center align-top pt-3">
-    <% if can_confirm && item.bulk_reschedulable? %>
+    <% if can_confirm && item.bulk_actionable? %>
       <input type="checkbox"
              value="<%= item.id %>"
         class="form-check-input item-checkbox"

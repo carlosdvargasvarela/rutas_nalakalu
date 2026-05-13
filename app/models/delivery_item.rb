@@ -130,6 +130,10 @@ class DeliveryItem < ApplicationRecord
     status.in?(%w[pending confirmed in_plan])
   end
 
+  def bulk_actionable?
+    !status.in?(%w[delivered rescheduled cancelled failed])
+  end
+
   def logistics_info
     {
       product: order_item.product,

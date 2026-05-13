@@ -48,3 +48,6 @@
 /.claude-flow/
 /.swarm/
 /ruvector.db
+
+# Knowledge graph generado por graphify
+graphify-out/

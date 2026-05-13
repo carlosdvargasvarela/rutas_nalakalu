@@ -433,6 +433,17 @@ class Delivery < ApplicationRecord
     Rails.logger.info "[Delivery##{id}] Confirmación de vendedor removida"
   end
 
+  def unconfirm!
+    return if bulk_locked?
+
+    transaction do
+      delivery_items.confirmed.find_each { |item| item.update!(status: :pending) }
+      update!(confirmed_by_vendor: false, confirmed_by_vendor_at: nil)
+      reload
+      update_status_based_on_items
+    end
+  end
+
   def self.unconfirmed_by_vendor
     where(confirmed_by_vendor: false)
   end

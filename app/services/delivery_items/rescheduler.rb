@@ -32,6 +32,8 @@ module DeliveryItems
         end
       end
 
+      notify_after_reschedule
+
       delivery_item
     rescue => e
       Rails.logger.error("❌ Error en DeliveryItems::Rescheduler: #{e.message}")
@@ -174,6 +176,29 @@ module DeliveryItems
       if all_terminal
         original_delivery.update_column(:status, Delivery.statuses[:rescheduled])
       end
+    end
+
+    def notify_after_reschedule
+      NotificationService.notify_delivery_rescheduled(
+        target_delivery,
+        old_date: original_delivery.delivery_date,
+        rescheduled_by: current_user&.name,
+        reason: params[:reason].presence
+      )
+
+      old_in_current = IsoWeekHelper.in_current_iso_week?(original_delivery.delivery_date)
+      new_in_current = IsoWeekHelper.in_current_iso_week?(target_delivery.delivery_date)
+
+      if old_in_current || new_in_current
+        NotificationService.notify_current_week_delivery_rescheduled(
+          target_delivery,
+          old_date: original_delivery.delivery_date,
+          rescheduled_by: current_user&.name,
+          reason: params[:reason].presence
+        )
+      end
+    rescue => e
+      Rails.logger.error("⚠️ Notificación de reagendamiento de ítem fallida: #{e.message}")
     end
 
     def record_event

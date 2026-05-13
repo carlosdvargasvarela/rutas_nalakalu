@@ -7,7 +7,7 @@ class NotificationService
   def self.create_for_users(users, notifiable, message, type: "generic", send_email: true)
     users = Array(users)
     admin_users = User.where(role: :admin)
-    all_users = (users + admin_users).uniq
+    all_users = (users + admin_users).compact.uniq
 
     # Inserta notificaciones en la BD
     notifications = all_users.map do |user|
@@ -46,16 +46,18 @@ class NotificationService
 
   # ✅ MÉTODO MEJORADO PARA REAGENDAMIENTOS
   def self.notify_delivery_rescheduled(delivery, old_date:, rescheduled_by: nil, reason: nil)
-    seller = delivery.order.seller.user
+    seller_user = delivery.order.seller&.user
 
     formatted_old = I18n.l old_date, format: :long
     formatted_new = I18n.l delivery.delivery_date, format: :long
 
-    # 👉 Mensaje claro
     simple_message = "La entrega del pedido #{delivery.order.number} fue reagendada del #{formatted_old} al #{formatted_new}."
+    simple_message += " Por: #{rescheduled_by}." if rescheduled_by.present?
 
-    # Notificación interna (solo una vez!)
-    create_for_users([seller], delivery, simple_message, type: "reschedule_delivery", send_email: false)
+    # Notificación interna: logística + admin + seller
+    users = User.where(role: [:logistics, :admin]).to_a
+    users << seller_user
+    create_for_users(users.compact.uniq, delivery, simple_message, type: "reschedule_delivery", send_email: false)
 
     # Mensaje detallado para correos externos
     detailed_message = <<~MSG.strip
@@ -115,9 +117,8 @@ class NotificationService
     end
   end
 
-  # ✅ NUEVO: Entrega reagendada a semana ISO actual
+  # ✅ NUEVO: Entrega reagendada — fecha original O nueva en semana ISO actual
   def self.notify_current_week_delivery_rescheduled(delivery, old_date:, rescheduled_by: nil, reason: nil)
-    return unless delivery_in_current_iso_week?(delivery)
     # No correo para mandados internos
     send_email_to_plan = !delivery.internal_delivery?
 
@@ -139,6 +140,35 @@ class NotificationService
         notifiable_type: "Delivery"
       )
     end
+  end
+
+  # ✅ Notificación cuando se cancela un producto de una entrega
+  def self.notify_item_cancelled(delivery_item, cancelled_by: nil)
+    delivery = delivery_item.delivery
+    seller_user = delivery.order.seller&.user
+    product = delivery_item.order_item&.product || "-"
+    qty = delivery_item.quantity_delivered || 1
+    order_number = delivery.order.number
+
+    message = "El producto '#{product}' (x#{qty}) del pedido #{order_number} fue cancelado."
+    message += " Por: #{cancelled_by}." if cancelled_by.present?
+
+    # Notificación interna: logística + admin + seller
+    users = User.where(role: [:logistics, :admin]).to_a
+    users << seller_user
+    create_for_users(users.compact.uniq, delivery, message, type: "item_cancelled", send_email: false)
+
+    # Correo externo a plan@ si la entrega es de la semana actual y no es mandado interno
+    return if delivery.internal_delivery?
+    return unless IsoWeekHelper.in_current_iso_week?(delivery.delivery_date)
+
+    NotificationMailer.safe_notify_external(
+      email: PLAN_EMAIL,
+      message: build_item_cancelled_message(delivery_item, cancelled_by: cancelled_by),
+      type: "item_cancelled",
+      notifiable_id: delivery.id,
+      notifiable_type: "Delivery"
+    )
   end
 
   # ✅ NUEVO: Alerta diaria de entregas pendientes de confirmar para la próxima semana
@@ -284,6 +314,24 @@ class NotificationService
     message
   end
   private_class_method :build_next_week_pending_message_for_seller
+
+  def self.build_item_cancelled_message(delivery_item, cancelled_by: nil)
+    delivery = delivery_item.delivery
+    product = delivery_item.order_item&.product || "-"
+    qty = delivery_item.quantity_delivered || 1
+    fecha = I18n.l(delivery.delivery_date, format: :long)
+
+    [
+      "Producto cancelado en entrega de semana actual:",
+      "Pedido: #{delivery.order.number}",
+      "Cliente: #{delivery.order.client.name}",
+      "Producto: #{product} x #{qty}",
+      "Fecha de entrega: #{fecha}",
+      "Vendedor: #{delivery.order.seller.name} (#{delivery.order.seller.seller_code})",
+      ("Cancelado por: #{cancelled_by}" if cancelled_by.present?)
+    ].compact.join("\n")
+  end
+  private_class_method :build_item_cancelled_message
 
   def self.build_next_week_pending_message_for_admins(deliveries, start_date, end_date)
     formatted_range = "#{I18n.l(start_date, format: :short)} - #{I18n.l(end_date, format: :short)}"

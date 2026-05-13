@@ -20,6 +20,28 @@
       </label>
     </div>
     <div class="d-flex gap-2 flex-wrap align-items-center">
+      <%# Confirmar bulk %>
+      <% if can_confirm %>
+        <button class="btn btn-sm btn-primary shadow-sm border-0 px-3"
+                data-delivery-items-selection-target="bulkButton"
+                data-action="click->delivery-items-selection#bulkConfirm"
+                data-url="<%= bulk_confirm_delivery_items_path %>"
+                data-delivery-id="<%= delivery.id %>"
+                disabled>
+          <i class="bi bi-check2-all me-1"></i>
+          Confirmar
+        </button>
+        <%# Entregar bulk %>
+        <button class="btn btn-sm btn-success shadow-sm border-0 px-3"
+                data-delivery-items-selection-target="bulkButton"
+                data-action="click->delivery-items-selection#bulkDeliver"
+                data-url="<%= bulk_deliver_delivery_items_path %>"
+                data-delivery-id="<%= delivery.id %>"
+                disabled>
+          <i class="bi bi-truck me-1"></i>
+          Entregar
+        </button>
+      <% end %>
       <%# Reagendar bulk %>
       <button class="btn btn-sm btn-warning shadow-sm border-0 px-3"
               data-delivery-items-selection-target="bulkButton"
@@ -31,6 +53,18 @@
         <span class="badge bg-white text-dark ms-1"
               data-delivery-items-selection-target="count">0</span>
       </button>
+      <%# Cancelar bulk %>
+      <% if can_confirm %>
+        <button class="btn btn-sm btn-outline-danger shadow-sm px-3"
+                data-delivery-items-selection-target="bulkButton"
+                data-action="click->delivery-items-selection#bulkCancel"
+                data-url="<%= bulk_cancel_delivery_items_path %>"
+                data-delivery-id="<%= delivery.id %>"
+                disabled>
+          <i class="bi bi-x-circle me-1"></i>
+          Cancelar
+        </button>
+      <% end %>
       <% if can_confirm %>
         <%# Sala Pickup bulk %>
         <% if delivery.requires_sala_pickup? %>

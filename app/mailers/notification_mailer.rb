@@ -74,6 +74,12 @@ class NotificationMailer < ApplicationMailer
     when "daily_reminder" then "🔔 Recordatorio Diario de Entregas"
     when "urgent_alert" then "🚨 Alerta Urgente de Producción"
     when "next_week_pending_confirmation" then "🔔 Entregas pendientes de confirmar para la próxima semana"
+    when "item_cancelled"
+      if notifiable.is_a?(Delivery) && notifiable.order.present?
+        "❌ Producto cancelado – Pedido ##{notifiable.order.number}"
+      else
+        "❌ Producto cancelado en entrega"
+      end
     when "reschedule_delivery"
       if notifiable.is_a?(Delivery) && notifiable.order.present?
         "🔄 Pedido ##{notifiable.order.number} reagendado"

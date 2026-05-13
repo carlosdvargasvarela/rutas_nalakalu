@@ -169,14 +169,16 @@ module Deliveries
     end
 
     def notify_current_week_if_needed(old_date)
-      if new_date.cweek == Date.current.cweek && new_date.cwyear == Date.current.cwyear
-        NotificationService.notify_current_week_delivery_rescheduled(
-          target_delivery,
-          old_date: old_date,
-          rescheduled_by: current_user.name,
-          reason: reason
-        )
-      end
+      old_in_current = old_date.cweek == Date.current.cweek && old_date.cwyear == Date.current.cwyear
+      new_in_current = new_date.cweek == Date.current.cweek && new_date.cwyear == Date.current.cwyear
+      return unless old_in_current || new_in_current
+
+      NotificationService.notify_current_week_delivery_rescheduled(
+        target_delivery,
+        old_date: old_date,
+        rescheduled_by: current_user.name,
+        reason: reason
+      )
     rescue => e
       Rails.logger.error("⚠️ Notificación semana actual fallida: #{e.message}")
     end

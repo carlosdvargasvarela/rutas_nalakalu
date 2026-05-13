@@ -7,7 +7,7 @@ class DeliveriesController < ApplicationController
     :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing,
     :update_status, :reassign_seller, :take_order, :sala_pickup_form,
     :create_sala_pickup, :service_case_form, :create_service_case_from_workspace,
-    :warehousing_form, :start_warehousing, :end_warehousing
+    :warehousing_form, :start_warehousing, :end_warehousing, :unconfirm
   ]
   before_action :set_addresses, only: [:new, :edit, :create, :update]
 
@@ -745,6 +745,68 @@ class DeliveriesController < ApplicationController
 
   def note
     render partial: "delivery_items/form_note", locals: {delivery: @delivery}
+  end
+
+  def unconfirm
+    authorize @delivery, :edit?
+
+    if @delivery.bulk_locked?
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:alert] = "No se puede desconfirmar una entrega en estado #{@delivery.display_status}."
+          render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+            status: :unprocessable_entity
+        end
+        format.html { redirect_to @delivery, alert: "No se puede desconfirmar esta entrega." }
+      end
+      return
+    end
+
+    @delivery.unconfirm!
+    @delivery.reload
+
+    DeliveryEvent.record(
+      delivery: @delivery,
+      action: "unconfirmed",
+      actor: current_user,
+      payload: {unconfirmed_at: Time.current.to_s}
+    )
+
+    respond_to do |format|
+      format.turbo_stream do
+        load_delivery_for_panel
+        set_delivery_panel_data
+        flash.now[:notice] = "Entrega desconfirmada. Los productos volvieron a estado pendiente."
+        render turbo_stream: [
+          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          turbo_stream.replace(
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {delivery: @delivery, future_deliveries: @future_deliveries, delivery_history: @delivery_history}
+          ),
+          turbo_stream.replace(
+            "delivery_items_list",
+            partial: "deliveries/show_partials/product_table",
+            locals: {delivery: @delivery}
+          ),
+          turbo_stream.replace(
+            dom_id(@delivery, :card),
+            partial: "deliveries/index_partials/delivery_card",
+            locals: {delivery: @delivery}
+          )
+        ]
+      end
+      format.html { redirect_to @delivery, notice: "Entrega desconfirmada correctamente." }
+    end
+  rescue => e
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:alert] = "Error al desconfirmar: #{e.message}"
+        render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          status: :unprocessable_entity
+      end
+      format.html { redirect_to @delivery, alert: "Error al desconfirmar: #{e.message}" }
+    end
   end
 
   def update_status

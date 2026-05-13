@@ -110,6 +110,7 @@ class DeliveryItemsController < ApplicationController
     return render_bulk_locked(delivery) if delivery.bulk_locked?
 
     items = delivery.delivery_items.bulk_confirmable
+    items = items.where(id: params[:item_ids].to_s.split(",").map(&:strip)) if params[:item_ids].present?
     items.each do |item|
       DeliveryItems::StatusUpdater.new(
         delivery_item: item,
@@ -128,6 +129,7 @@ class DeliveryItemsController < ApplicationController
     return render_bulk_locked(delivery) if delivery.bulk_locked?
 
     items = delivery.delivery_items.bulk_deliverable
+    items = items.where(id: params[:item_ids].to_s.split(",").map(&:strip)) if params[:item_ids].present?
     items.each do |item|
       DeliveryItems::StatusUpdater.new(
         delivery_item: item,
@@ -171,6 +173,7 @@ class DeliveryItemsController < ApplicationController
     return render_bulk_locked(delivery) if delivery.bulk_locked?
 
     items = delivery.delivery_items.bulk_cancellable
+    items = items.where(id: params[:item_ids].to_s.split(",").map(&:strip)) if params[:item_ids].present?
     items.each do |item|
       DeliveryItems::StatusUpdater.new(
         delivery_item: item,

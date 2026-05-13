@@ -18,16 +18,16 @@ export default class extends Controller {
   updateUI() {
     const selectedCount = this.checkboxTargets.filter((c) => c.checked).length;
 
-    if (this.hasBulkButtonTarget) {
-      this.bulkButtonTarget.disabled = selectedCount === 0;
-    }
+    this.bulkButtonTargets.forEach((btn) => {
+      btn.disabled = selectedCount === 0;
+    });
 
     if (this.hasCountTarget) {
       this.countTarget.textContent = selectedCount;
     }
   }
 
-  // ─── Acciones bulk ───────────────────────────────────────────────────────────
+  // ─── Acciones bulk con modal ──────────────────────────────────────────────────
 
   prepareReschedule(event) {
     const selectedIds = this._selectedIds();
@@ -51,6 +51,32 @@ export default class extends Controller {
     const ids = preselected.length > 0 ? preselected : this._selectedIds();
     if (ids.length === 0) return;
     this._openModal(btn.dataset.url, ids);
+  }
+
+  // ─── Acciones bulk directas ───────────────────────────────────────────────────
+
+  bulkConfirm(event) {
+    const ids = this._selectedIds();
+    if (ids.length === 0) return;
+    if (!confirm(`¿Confirmar ${ids.length} producto(s) seleccionado(s)?`)) return;
+    const btn = event.currentTarget;
+    this._submitBulkAction(btn.dataset.url, btn.dataset.deliveryId, ids);
+  }
+
+  bulkDeliver(event) {
+    const ids = this._selectedIds();
+    if (ids.length === 0) return;
+    if (!confirm(`¿Marcar ${ids.length} producto(s) como entregado(s)?`)) return;
+    const btn = event.currentTarget;
+    this._submitBulkAction(btn.dataset.url, btn.dataset.deliveryId, ids);
+  }
+
+  bulkCancel(event) {
+    const ids = this._selectedIds();
+    if (ids.length === 0) return;
+    if (!confirm(`¿Cancelar ${ids.length} producto(s) seleccionado(s)?`)) return;
+    const btn = event.currentTarget;
+    this._submitBulkAction(btn.dataset.url, btn.dataset.deliveryId, ids);
   }
 
   // ─── Privados ────────────────────────────────────────────────────────────────
@@ -87,5 +113,30 @@ export default class extends Controller {
     if (modalFrame) {
       modalFrame.src = url.toString();
     }
+  }
+
+  // Envía PATCH con delivery_id e item_ids directamente (sin modal)
+  _submitBulkAction(url, deliveryId, ids) {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = url;
+
+    const appendHidden = (name, value) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    };
+
+    const csrf = document.querySelector('meta[name="csrf-token"]');
+    if (csrf) appendHidden("authenticity_token", csrf.content);
+    appendHidden("_method", "patch");
+    appendHidden("delivery_id", deliveryId);
+    appendHidden("item_ids", ids.join(","));
+
+    document.body.appendChild(form);
+    form.requestSubmit();
+    form.remove();
   }
 }

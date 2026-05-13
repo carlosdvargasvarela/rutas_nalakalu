@@ -79,6 +79,7 @@ Rails.application.routes.draw do
     member do
       patch :mark_as_delivered
       patch :confirm_all_items
+      patch :unconfirm
       patch :reschedule_all
       patch :update_status
 

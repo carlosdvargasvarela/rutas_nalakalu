@@ -75,6 +75,17 @@
                 <i class="bi bi-pencil text-muted"></i> Editar Datos
               <% end %>
             </li>
+            <% if delivery.confirmed_by_vendor? && !delivery.bulk_locked? %>
+              <li>
+                <%= button_to unconfirm_delivery_path(delivery),
+                      method: :patch,
+                      form: { data: { turbo_stream: true } },
+                      class: "dropdown-item d-flex align-items-center gap-2 py-2 border-0 bg-transparent text-start text-warning",
+                      data: { turbo_confirm: "¿Desconfirmar la entrega? Los productos volverán a estado pendiente." } do %>
+                  <i class="bi bi-arrow-counterclockwise"></i> Desconfirmar
+                <% end %>
+              </li>
+            <% end %>
             <li>
               <%= button_to warehousing_form_delivery_path(delivery),
                     method: :get,

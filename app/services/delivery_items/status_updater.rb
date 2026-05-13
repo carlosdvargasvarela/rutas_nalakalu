@@ -19,6 +19,7 @@ module DeliveryItems
       when :cancelled
         delivery_item.update!(status: :cancelled)
         record_event("item_cancelled")
+        notify_cancellation
       else
         raise ArgumentError, "Estado no válido: #{new_status}"
       end
@@ -54,6 +55,15 @@ module DeliveryItems
           previous_status: delivery_item.status_before_last_save || delivery_item.status
         }
       )
+    end
+
+    def notify_cancellation
+      NotificationService.notify_item_cancelled(
+        delivery_item,
+        cancelled_by: current_user&.name
+      )
+    rescue => e
+      Rails.logger.error("⚠️ Notificación de cancelación fallida: #{e.message}")
     end
   end
 end
