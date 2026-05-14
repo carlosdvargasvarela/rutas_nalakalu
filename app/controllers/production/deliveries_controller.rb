@@ -12,14 +12,11 @@ class Production::DeliveriesController < ApplicationController
 
   def management
     authorize Delivery, :management?
-    @filter = params[:filter] || "this_week"
-    @deliveries = filtered_deliveries.page(params[:page]).per(20)
-    @stats = {
-      pending_approval: pending_approval_count,
-      this_week: this_week_count,
-      with_errors: deliveries_with_errors_count,
-      ready_to_deliver: ready_to_deliver_count
-    }
+    @date_from = params[:date_from].presence
+    @date_to   = params[:date_to].presence
+    @order_number = params[:order_number].presence
+    @seller_query = params[:seller].presence
+    @deliveries = filtered_deliveries.page(params[:page]).per(30)
   end
 
   def show
@@ -297,40 +294,23 @@ class Production::DeliveriesController < ApplicationController
   end
 
   def filtered_deliveries
-    base = Delivery.includes(order: [:client, :seller], delivery_address: :client)
-    case @filter
-    when "pending_approval" then base.where(approved: false, delivery_date: current_week_range)
-    when "this_week" then base.where(delivery_date: current_week_range)
-    when "errors" then detect_deliveries_with_errors
-    when "ready" then base.where(status: :ready_to_deliver)
-    else base.where(delivery_date: current_week_range)
-    end.order(:delivery_date, :id)
+    base = Delivery.includes(order: [:client, :seller], delivery_address: :client, delivery_items: :order_item)
+
+    if @date_from || @date_to
+      base = base.where("deliveries.delivery_date >= ?", @date_from) if @date_from
+      base = base.where("deliveries.delivery_date <= ?", @date_to) if @date_to
+    else
+      base = base.where(delivery_date: Date.current.beginning_of_week..Date.current.end_of_week)
+    end
+
+    if @order_number.present? || @seller_query.present?
+      base = base.joins(order: :seller)
+      base = base.where("LOWER(orders.number) LIKE ?", "%#{@order_number.downcase}%") if @order_number
+      base = base.where("LOWER(sellers.name) LIKE :q OR LOWER(sellers.seller_code) LIKE :q", q: "%#{@seller_query.downcase}%") if @seller_query
+    end
+
+    base.order("deliveries.delivery_date ASC, deliveries.id ASC")
   end
-
-  def detect_deliveries_with_errors
-    date_range = Date.current..Date.current.next_week.end_of_week
-    candidates = Delivery.where(delivery_date: date_range)
-      .where(status: [:scheduled, :ready_to_deliver])
-      .includes(order: [:client, :seller, :order_items], delivery_address: :client, delivery_items: :order_item)
-      .limit(100)
-    ids = candidates.select { |d| Deliveries::ErrorDetector.new(d).has_errors? }.map(&:id)
-    Delivery.where(id: ids).includes(order: [:client, :seller], delivery_address: :client)
-  end
-
-  def pending_approval_count = Delivery.where(approved: false, delivery_date: current_week_range).count
-  def this_week_count = Delivery.where(delivery_date: current_week_range).count
-  def ready_to_deliver_count = Delivery.where(status: :ready_to_deliver).count
-
-  def deliveries_with_errors_count
-    date_range = Date.current..Date.current.next_week.end_of_week
-    Delivery.where(delivery_date: date_range)
-      .where(status: [:scheduled, :ready_to_deliver])
-      .includes(order: :order_items, delivery_items: :order_item)
-      .limit(100)
-      .count { |d| Deliveries::ErrorDetector.new(d).has_errors? }
-  end
-
-  def current_week_range = Date.current.beginning_of_week..Date.current.end_of_week
 
   def quick_update_params
     params.require(:delivery).permit(:delivery_date, :contact_name, :contact_phone, :delivery_notes, :delivery_time_preference)

@@ -1,74 +1,67 @@
 <%# app/views/production/deliveries/_management_card.html.erb %>
-<div class="list-group-item p-3 hover-bg-light border-start border-4 <%= delivery.approved? ? 'border-success' : 'border-warning' %>"
-     id="delivery_card_<%= delivery.id %>">
-  <div class="row align-items-center g-2">
-    <div class="col-md-3">
-      <div class="d-flex align-items-center">
-        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3 flex-shrink-0"
-             style="width:42px;height:42px;">
-          <i class="bi bi-truck text-primary fs-5"></i>
+<tr id="delivery_card_<%= delivery.id %>">
+  <td>
+    <span class="fw-bold d-block"><%= l(delivery.delivery_date, format: :short) %></span>
+    <small class="text-muted"><%= delivery.delivery_time_preference.presence || "Sin horario" %></small>
+  </td>
+  <td>
+    <span class="fw-bold"><%= delivery.order.number %></span>
+  </td>
+  <td>
+    <span><%= delivery.order.client.name %></span>
+  </td>
+  <td>
+    <span class="d-block"><%= delivery.order.seller.name %></span>
+    <small class="text-muted"><%= delivery.order.seller.seller_code %></small>
+  </td>
+  <td>
+    <% if delivery.delivery_items.any? %>
+      <% delivery.delivery_items.each do |item| %>
+        <div class="d-flex align-items-center mb-1">
+          <span class="badge bg-secondary me-2 flex-shrink-0"><%= item.quantity_delivered %></span>
+          <span class="small"><%= item.order_item.product %></span>
         </div>
-        <div class="overflow-hidden">
-          <h6 class="mb-0 fw-bold text-truncate"><%= delivery.order.number %> - <%= delivery.order.client.name %></h6>
-          <small class="text-muted">
-            <i class="bi bi-person-badge me-1"></i><%= delivery.order.seller.name %>
-          </small>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-2">
-      <span class="fw-bold d-block">
-        <i class="bi bi-calendar-event me-1 text-primary"></i>
-        <%= l(delivery.delivery_date, format: :short) %>
-      </span>
-      <small class="text-muted">
-        <%= delivery.delivery_time_preference.presence || "Sin horario" %>
-      </small>
-    </div>
-    <div class="col-md-3">
-      <div class="small text-truncate" title="<%= delivery.delivery_address.address %>">
-        <i class="bi bi-geo-alt text-danger me-1"></i><%= delivery.delivery_address.address %>
-      </div>
-      <div class="small text-muted">
-        <i class="bi bi-telephone me-1"></i><%= delivery.contact_phone %>
-      </div>
-    </div>
-    <div class="col-md-2">
-      <% error_detector = Deliveries::ErrorDetector.new(delivery) %>
-      <% if error_detector.has_errors? %>
-        <span class="badge bg-danger bg-opacity-10 text-danger w-100 mb-1">
-          <i class="bi bi-exclamation-octagon me-1"></i>
-          <%= pluralize(error_detector.errors.count, "error", "errores") %>
-        </span>
       <% end %>
-      <span class="badge bg-light text-dark border w-100">
-        <i class="bi bi-box-seam me-1"></i> <%= delivery.delivery_items.count %> productos
+    <% else %>
+      <span class="text-muted small">Sin productos</span>
+    <% end %>
+  </td>
+  <td>
+    <% if delivery.approved? %>
+      <span class="badge bg-success mb-1 d-block">
+        <i class="bi bi-shield-check me-1"></i>Aprobada
       </span>
-    </div>
-    <div class="col-md-2 text-end">
-      <div class="btn-group shadow-sm">
-        <% unless delivery.approved? %>
-          <%= button_to approve_production_delivery_path(delivery),
-              method: :patch,
-              class: "btn btn-sm btn-success",
-              title: "Aprobar para Ruta",
-              data: { turbo_confirm: "¿Confirmar que esta entrega está lista para planificación?" } do %>
-            <i class="bi bi-check-lg"></i>
-          <% end %>
+    <% else %>
+      <span class="badge bg-warning text-dark mb-1 d-block">
+        <i class="bi bi-clock me-1"></i>Pendiente aprobación
+      </span>
+    <% end %>
+    <span class="badge bg-<%= delivery_status_color(delivery.status) %> d-block">
+      <%= delivery.display_status %>
+    </span>
+    <% error_detector = Deliveries::ErrorDetector.new(delivery) %>
+    <% if error_detector.has_errors? %>
+      <span class="badge bg-danger mt-1 d-block">
+        <i class="bi bi-exclamation-octagon me-1"></i><%= pluralize(error_detector.errors.count, "error", "errores") %>
+      </span>
+    <% end %>
+  </td>
+  <td class="text-center">
+    <div class="d-flex gap-1 justify-content-center flex-wrap">
+      <% unless delivery.approved? %>
+        <%= button_to approve_production_delivery_path(delivery),
+            method: :patch,
+            class: "btn btn-sm btn-success",
+            title: "Aprobar para ruta",
+            data: { turbo_confirm: "¿Confirmar que esta entrega está lista para planificación?" } do %>
+          <i class="bi bi-check-lg"></i>
         <% end %>
-        <button class="btn btn-sm btn-white border"
-                data-bs-toggle="modal"
-                data-bs-target="#editModal<%= delivery.id %>"
-                title="Editar entrega">
-          <i class="bi bi-pencil-square"></i>
-        </button>
-        <%= link_to production_delivery_path(delivery),
-            class: "btn btn-sm btn-white border",
-            title: "Ver detalle completo" do %>
-          <i class="bi bi-eye"></i>
-        <% end %>
-      </div>
+      <% end %>
+      <%= link_to production_delivery_path(delivery),
+          class: "btn btn-sm btn-outline-primary",
+          title: "Ver detalle" do %>
+        <i class="bi bi-eye"></i>
+      <% end %>
     </div>
-  </div>
-</div>
-<%= render "production/deliveries/edit_modal", delivery: delivery %>
+  </td>
+</tr>
