@@ -83,6 +83,22 @@
                 class: "form-control",
                 placeholder: "Ej: 8888-8888" %>
         </div>
+        <div class="col-md-6">
+          <%= f.label :condominio_number, class: "form-label fw-semibold" do %>
+            <i class="bi bi-buildings me-1 text-success"></i> N° de Condominio
+          <% end %>
+          <%= f.text_field :condominio_number,
+                class: "form-control",
+                placeholder: "Ej: Residencial Los Pinos" %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :casa_number, class: "form-label fw-semibold" do %>
+            <i class="bi bi-house-door me-1 text-success"></i> N° de Casa
+          <% end %>
+          <%= f.text_field :casa_number,
+                class: "form-control",
+                placeholder: "Ej: 15-B" %>
+        </div>
         <div class="col-12">
           <%= f.label :delivery_notes, class: "form-label fw-semibold" do %>
             <i class="bi bi-sticky me-1 text-success"></i> Notas de Entrega

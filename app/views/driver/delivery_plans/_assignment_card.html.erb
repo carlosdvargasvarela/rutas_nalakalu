@@ -47,6 +47,17 @@
         <% end %>
       </div>
     <% end %>
+    <!-- Condominio / Casa -->
+    <% if delivery.condominio_number.present? || delivery.casa_number.present? %>
+      <div class="mb-2 small">
+        <% if delivery.condominio_number.present? %>
+          <i class="bi bi-buildings me-1"></i><strong><%= delivery.condominio_number %></strong>
+        <% end %>
+        <% if delivery.casa_number.present? %>
+          <span class="ms-2"><i class="bi bi-house-door me-1"></i>Casa <strong><%= delivery.casa_number %></strong></span>
+        <% end %>
+      </div>
+    <% end %>
     <!-- Fecha y hora preferida -->
     <% if delivery.delivery_date.present? || delivery.delivery_time_preference.present? %>
       <div class="mb-2 small text-muted">

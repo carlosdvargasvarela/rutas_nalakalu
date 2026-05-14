@@ -928,6 +928,7 @@ class DeliveriesController < ApplicationController
       permitted = params.require(:delivery).permit(
         :delivery_date, :delivery_address_id, :order_id,
         :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
+        :condominio_number, :casa_number, :_return_to_panel,
         delivery_items_attributes: [
           :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
           {order_item_attributes: [:id, :product, :quantity, :notes]}
@@ -953,6 +954,7 @@ class DeliveriesController < ApplicationController
       permitted = params.require(:delivery).permit(
         :delivery_date, :delivery_address_id, :order_id,
         :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
+        :condominio_number, :casa_number, :_return_to_panel,
         delivery_items_attributes: [
           :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
           {order_item_attributes: [:id, :product, :quantity, :notes]}

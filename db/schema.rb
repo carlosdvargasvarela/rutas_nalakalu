@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_11_082402) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_13_120000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -92,6 +92,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_11_082402) do
     t.integer "load_status", default: 0, null: false
     t.string "tracking_token"
     t.date "warehousing_until"
+    t.string "condominio_number"
+    t.string "casa_number"
     t.index ["approved"], name: "index_deliveries_on_approved"
     t.index ["archived"], name: "index_deliveries_on_archived"
     t.index ["confirmed_by_vendor"], name: "index_deliveries_on_confirmed_by_vendor"

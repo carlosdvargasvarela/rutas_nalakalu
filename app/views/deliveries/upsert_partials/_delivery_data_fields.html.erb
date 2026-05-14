@@ -22,6 +22,18 @@
           placeholder: "8888-8888",
           data: { action: "input->delivery-form#validateDeliveryData" } %>
   </div>
+  <div class="col-md-4">
+    <%= f.label :condominio_number, "N° de Condominio", class: "form-label small fw-semibold" %>
+    <%= f.text_field :condominio_number,
+          class: "form-control",
+          placeholder: "Ej: Residencial Los Pinos" %>
+  </div>
+  <div class="col-md-4">
+    <%= f.label :casa_number, "N° de Casa", class: "form-label small fw-semibold" %>
+    <%= f.text_field :casa_number,
+          class: "form-control",
+          placeholder: "Ej: 15-B" %>
+  </div>
   <div data-controller="searchable-select"
      data-searchable-select-placeholder-value="Seleccione..."
      data-searchable-select-search-placeholder-value="Buscar...">

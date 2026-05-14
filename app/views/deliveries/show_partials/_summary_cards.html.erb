@@ -27,6 +27,20 @@
         <% else %>
           <p class="text-muted small mb-3 fst-italic">Sin teléfono</p>
         <% end %>
+        <% if delivery.condominio_number.present? || delivery.casa_number.present? %>
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <% if delivery.condominio_number.present? %>
+              <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill" style="font-size:0.75rem;">
+                <i class="bi bi-buildings me-1"></i><%= delivery.condominio_number %>
+              </span>
+            <% end %>
+            <% if delivery.casa_number.present? %>
+              <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill" style="font-size:0.75rem;">
+                <i class="bi bi-house-door me-1"></i>Casa <%= delivery.casa_number %>
+              </span>
+            <% end %>
+          </div>
+        <% end %>
         <div class="d-flex align-items-center gap-2 mb-2">
           <span class="bg-primary-subtle text-primary rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
                 style="width:32px; height:32px;">

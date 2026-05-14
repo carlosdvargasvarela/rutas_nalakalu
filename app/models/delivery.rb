@@ -136,7 +136,7 @@ class Delivery < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[delivery_date status delivery_type contact_name contact_phone delivery_notes delivery_time_preference reschedule_reason]
+    %w[delivery_date status delivery_type contact_name contact_phone delivery_notes delivery_time_preference reschedule_reason condominio_number casa_number]
   end
 
   def self.ransackable_associations(_auth_object = nil)
@@ -367,7 +367,9 @@ class Delivery < ApplicationRecord
       address: delivery_address.address,
       contact: contact_name,
       phone: contact_phone,
-      seller: order.seller.name
+      seller: order.seller.name,
+      condominio_number: condominio_number,
+      casa_number: casa_number
     }
   end
 
