@@ -294,12 +294,14 @@ class Production::DeliveriesController < ApplicationController
   end
 
   def filtered_deliveries
-    base = Delivery.includes(order: [:client, :seller], delivery_address: :client, delivery_items: :order_item)
+    base = Delivery
+      .includes(order: [:client, :seller], delivery_address: :client)
+      .preload(delivery_items: :order_item)
 
     if @date_from || @date_to
       base = base.where("deliveries.delivery_date >= ?", @date_from) if @date_from
       base = base.where("deliveries.delivery_date <= ?", @date_to) if @date_to
-    else
+    elsif @order_number.blank? && @seller_query.blank?
       base = base.where(delivery_date: Date.current.beginning_of_week..Date.current.end_of_week)
     end
 
