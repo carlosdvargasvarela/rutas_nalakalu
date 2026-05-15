@@ -283,36 +283,65 @@ class DeliveryPlansController < ApplicationController
         rows = @assignments.flat_map do |assignment|
           delivery = assignment.delivery
           address = delivery.delivery_address
-          delivery.active_items_for_plan_for(current_user).map do |item|
-            address_text = [address.address, address.description].compact.join(" - ")
-            map_link =
-              if address.latitude.present? && address.longitude.present?
-                " (Waze: https://waze.com/ul?ll=#{address.latitude},#{address.longitude}&navigate=yes)"
-              elsif address.address.present?
-                " (Waze: https://waze.com/ul?q=#{ERB::Util.url_encode(address.address)}&navigate=yes)"
-              else
-                ""
-              end
-            full_address = "#{address_text}#{map_link}"
+          active_items = delivery.active_items_for_plan_for(current_user)
+
+          if active_items.empty?
+            next_del = delivery.next_rescheduled_delivery
+            rescheduled_text = if next_del
+              "⚠ REAGENDADO → #{I18n.l(next_del.delivery_date, format: :long)}"
+            else
+              "⚠ REAGENDADO"
+            end
             notes = []
-            notes << "PRODUCCIÓN: #{item.order_item.notes}" if item.order_item.notes.present?
-            notes << "LOGÍSTICA: #{item.notes}" if item.notes.present?
             notes << "VENDEDOR: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
-            [
+            notes << "Nueva entrega ID: #{next_del.id}" if next_del
+            [[
               assignment.stop_order,
               delivery.order.number,
-              item.order_item.product,
-              item.quantity_delivered,
+              rescheduled_text,
+              "-",
               delivery.order.client.name,
               delivery.order.seller.seller_code,
-              full_address,
+              [address.address, address.description].compact.join(" - "),
               delivery.delivery_time_preference.presence || "Sin preferencia",
               I18n.l(delivery.delivery_date, format: :long),
               delivery.contact_name,
               delivery.contact_phone.presence || "-",
               notes.join("\n"),
-              item.display_status
-            ]
+              delivery.display_status
+            ]]
+          else
+            active_items.map do |item|
+              address_text = [address.address, address.description].compact.join(" - ")
+              map_link =
+                if address.latitude.present? && address.longitude.present?
+                  " (Waze: https://waze.com/ul?ll=#{address.latitude},#{address.longitude}&navigate=yes)"
+                elsif address.address.present?
+                  " (Waze: https://waze.com/ul?q=#{ERB::Util.url_encode(address.address)}&navigate=yes)"
+                else
+                  ""
+                end
+              full_address = "#{address_text}#{map_link}"
+              notes = []
+              notes << "PRODUCCIÓN: #{item.order_item.notes}" if item.order_item.notes.present?
+              notes << "LOGÍSTICA: #{item.notes}" if item.notes.present?
+              notes << "VENDEDOR: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
+              [
+                assignment.stop_order,
+                delivery.order.number,
+                item.order_item.product,
+                item.quantity_delivered,
+                delivery.order.client.name,
+                delivery.order.seller.seller_code,
+                full_address,
+                delivery.delivery_time_preference.presence || "Sin preferencia",
+                I18n.l(delivery.delivery_date, format: :long),
+                delivery.contact_name,
+                delivery.contact_phone.presence || "-",
+                notes.join("\n"),
+                item.display_status
+              ]
+            end
           end
         end
         pdf.table([headers] + rows, header: true,

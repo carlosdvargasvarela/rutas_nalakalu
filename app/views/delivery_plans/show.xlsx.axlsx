@@ -40,6 +40,15 @@ cancelled_style = wb.styles.add_style(
   alignment: { wrap_text: true, vertical: :top }
 )
 
+rescheduled_style = wb.styles.add_style(
+  bg_color: "F4B942",
+  fg_color: "000000",
+  b: true,
+  sz: 12,
+  border: { style: :medium, color: "C07A00" },
+  alignment: { wrap_text: true, vertical: :center, horizontal: :center }
+)
+
 default_style = wb.styles.add_style(
   border: { style: :thin, color: "CCCCCC" },
   alignment: { wrap_text: true, vertical: :top }
@@ -86,16 +95,30 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
                 else default_style
                 end
 
-    if delivery.active_items_for_plan_for(current_user).empty?
-      # Combinar notas para fila sin productos
+    active_items = delivery.active_items_for_plan_for(current_user)
+
+    if active_items.empty?
+      is_rescheduled = delivery.rescheduled? || delivery.delivery_items.any?
+      next_del = delivery.next_rescheduled_delivery if is_rescheduled
+
+      product_text = if is_rescheduled
+        if next_del
+          "⚠ REAGENDADO → #{next_del.delivery_date.strftime("%d/%m/%Y")}"
+        else
+          "⚠ REAGENDADO"
+        end
+      else
+        "Sin productos"
+      end
+
       all_notes = []
       all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
-      notes_text = all_notes.join("\n")
+      all_notes << "Nueva entrega ID: #{next_del.id}" if next_del
 
       sheet.add_row [
         delivery.delivery_date.strftime("%d/%m/%Y"),
         delivery.order.number,
-        "Sin productos",
+        product_text,
         "",
         delivery.order.seller.seller_code,
         delivery.order.client.name,
@@ -107,11 +130,11 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
         "",
         delivery.delivery_time_preference.presence || "Sin preferencia",
         "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
-        notes_text
-      ], style: row_style
+        all_notes.join("\n")
+      ], style: is_rescheduled ? rescheduled_style : row_style
 
     else
-      delivery.active_items_for_plan_for(current_user).each do |delivery_item|
+      active_items.each do |delivery_item|
         # Combinar notas con saltos de línea
         all_notes = []
         all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?

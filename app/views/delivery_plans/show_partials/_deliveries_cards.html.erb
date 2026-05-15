@@ -7,6 +7,7 @@
       <div class="row g-2">
         <% delivery_plan.delivery_plan_assignments.order(:stop_order).each do |assignment| %>
           <% delivery = assignment.delivery %>
+          <% active_items = delivery.active_items_for_plan_for(current_user) %>
           <div class="col-12">
             <div class="card shadow-sm">
               <div class="card-body p-3">
@@ -44,7 +45,7 @@
                     <span class="text-muted small"><%= delivery.delivery_notes %></span>
                   <% end %>
                 </p>
-                <% if delivery.delivery_items.any? %>
+                <% if active_items.any? %>
                   <div class="mt-2 d-flex gap-1">
                     <button class="btn btn-sm btn-outline-info flex-fill"
                         data-bs-toggle="collapse"
@@ -59,7 +60,7 @@
                   </div>
                   <div class="collapse mt-2" id="productosMovil<%= delivery.id %>">
                     <ul class="small ps-3 mb-0">
-                      <% delivery.active_items_for_plan_for(current_user).each do |item| %>
+                      <% active_items.each do |item| %>
                         <li>
                           <strong><%= item.order_item.product %></strong>
                           <span class="badge bg-secondary ms-1"><%= item.quantity %></span>
@@ -74,6 +75,26 @@
                         </li>
                       <% end %>
                     </ul>
+                  </div>
+                <% elsif delivery.rescheduled? || delivery.delivery_items.any? %>
+                  <% next_del = delivery.next_rescheduled_delivery %>
+                  <div class="mt-2 rounded p-3 border border-warning border-2 text-center" style="background:#fff3cd">
+                    <div class="fw-bold text-warning-emphasis fs-5">
+                      <i class="bi bi-calendar-x-fill me-1"></i>REAGENDADO
+                    </div>
+                    <% if next_del %>
+                      <p class="mb-1 mt-1 small">
+                        Nueva fecha: <strong><%= l(next_del.delivery_date, format: :long) %></strong>
+                      </p>
+                      <%= link_to "Ver nueva entrega →",
+                            production_delivery_path(next_del),
+                            class: "btn btn-warning btn-sm w-100",
+                            target: "_blank" %>
+                    <% else %>
+                      <p class="mb-0 mt-1 small">
+                        <strong><%= l(delivery.delivery_date, format: :long) %></strong>
+                      </p>
+                    <% end %>
                   </div>
                 <% end %>
               </div>

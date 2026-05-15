@@ -23,6 +23,7 @@
           <tbody>
             <% delivery_plan.delivery_plan_assignments.order(:stop_order).each do |assignment| %>
               <% delivery = assignment.delivery %>
+              <% active_items = delivery.active_items_for_plan_for(current_user) %>
               <tr>
                 <td>
                   <span class="badge bg-primary"><%= assignment.stop_order %></span>
@@ -93,7 +94,7 @@
                 </td>
 
                 <td>
-                  <% if delivery.delivery_items.any? %>
+                  <% if active_items.any? %>
                     <div class="d-flex flex-column gap-1">
                       <button class="btn btn-sm btn-outline-info"
                               data-bs-toggle="collapse"
@@ -106,13 +107,34 @@
                         <i class="bi bi-sticky"></i> Agregar nota
                       </button>
                     </div>
+                  <% elsif delivery.rescheduled? || delivery.delivery_items.any? %>
+                    <% next_del = delivery.next_rescheduled_delivery %>
+                    <div class="rounded p-2 text-center border border-warning border-2" style="background:#fff3cd;min-width:165px">
+                      <div class="fw-bold text-warning-emphasis" style="font-size:1.05rem">
+                        <i class="bi bi-calendar-x-fill me-1"></i>REAGENDADO
+                      </div>
+                      <% if next_del %>
+                        <small class="d-block mt-1 lh-sm">
+                          Nueva fecha:<br>
+                          <strong><%= l(next_del.delivery_date, format: :long) %></strong>
+                        </small>
+                        <%= link_to "Ver nueva entrega →",
+                              production_delivery_path(next_del),
+                              class: "btn btn-warning btn-sm mt-2 w-100",
+                              target: "_blank" %>
+                      <% else %>
+                        <small class="d-block mt-1">
+                          <strong><%= l(delivery.delivery_date, format: :long) %></strong>
+                        </small>
+                      <% end %>
+                    </div>
                   <% else %>
                     <span class="text-muted">Sin productos</span>
                   <% end %>
                 </td>
               </tr>
 
-              <% if delivery.delivery_items.any? %>
+              <% if active_items.any? %>
                 <tr class="collapse" id="productosEntrega<%= delivery.id %>">
                   <td colspan="10" class="bg-light">
                     <div class="p-2">
@@ -121,7 +143,7 @@
                       </strong>
 
                       <ul class="mb-0 ps-3">
-                        <% delivery.active_items_for_plan_for(current_user).each do |item| %>
+                        <% active_items.each do |item| %>
                           <li class="mb-3">
                             <div class="d-flex align-items-start justify-content-between">
                               <div>

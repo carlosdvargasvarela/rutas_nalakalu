@@ -354,6 +354,14 @@ class Delivery < ApplicationRecord
     order_items.all? { |oi| oi.status == "ready" }
   end
 
+  def next_rescheduled_delivery
+    order.deliveries
+      .where("id > ?", id)
+      .where.not(status: [:cancelled, :archived])
+      .order(:id)
+      .first
+  end
+
   def delivery_history
     order.deliveries
       .where(delivery_address_id: delivery_address_id)
