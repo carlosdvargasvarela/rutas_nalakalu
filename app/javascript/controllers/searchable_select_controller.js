@@ -6,6 +6,7 @@ export default class extends Controller {
     placeholder: { type: String, default: "Seleccionar..." },
     searchPlaceholder: { type: String, default: "Buscar..." },
     noResults: { type: String, default: "Sin resultados" },
+    multiple: { type: Boolean, default: false },
   };
 
   connect() {
@@ -229,11 +230,22 @@ export default class extends Controller {
       if (!option.value && option.text.trim() === "") return;
 
       const item = document.createElement("li");
-      item.className = "ss-option px-3 py-2 small";
+      item.className = "ss-option px-3 py-2 small d-flex align-items-center gap-2";
       item.dataset.value = option.value;
       item.dataset.label = option.text;
       item.setAttribute("role", "option");
-      item.textContent = option.text;
+
+      if (this.multipleValue) {
+        const check = document.createElement("span");
+        check.className = "ss-check flex-shrink-0";
+        check.style.cssText = "width:14px;text-align:center;color:#3b5bdb;font-size:0.8rem;";
+        check.textContent = option.selected ? "✓" : "";
+        item.appendChild(check);
+      }
+
+      const label = document.createElement("span");
+      label.textContent = option.text;
+      item.appendChild(label);
 
       if (!option.value) {
         item.classList.add("text-muted", "fst-italic");
@@ -251,28 +263,66 @@ export default class extends Controller {
   }
 
   syncFromSelect() {
-    const selectedOption =
-      this.selectElement.options[this.selectElement.selectedIndex];
-
-    if (selectedOption && selectedOption.value) {
-      this.triggerText.textContent = selectedOption.text;
-      this.triggerText.classList.remove("text-muted");
-      this.clearBtn.style.display = "";
+    if (this.multipleValue) {
+      const selected = Array.from(this.selectElement.options).filter(
+        (o) => o.selected && o.value,
+      );
+      if (selected.length === 0) {
+        this.triggerText.textContent = this.placeholderValue;
+        this.triggerText.classList.add("text-muted");
+        this.clearBtn.style.display = "none";
+      } else if (selected.length === 1) {
+        this.triggerText.textContent = selected[0].text;
+        this.triggerText.classList.remove("text-muted");
+        this.clearBtn.style.display = "";
+      } else {
+        this.triggerText.textContent = `${selected.length} seleccionados`;
+        this.triggerText.classList.remove("text-muted");
+        this.clearBtn.style.display = "";
+      }
     } else {
-      this.triggerText.textContent = this.placeholderValue;
-      this.triggerText.classList.add("text-muted");
-      this.clearBtn.style.display = "none";
+      const selectedOption =
+        this.selectElement.options[this.selectElement.selectedIndex];
+
+      if (selectedOption && selectedOption.value) {
+        this.triggerText.textContent = selectedOption.text;
+        this.triggerText.classList.remove("text-muted");
+        this.clearBtn.style.display = "";
+      } else {
+        this.triggerText.textContent = this.placeholderValue;
+        this.triggerText.classList.add("text-muted");
+        this.clearBtn.style.display = "none";
+      }
     }
   }
 
   select(value) {
-    this.selectElement.value = value;
-    this.selectElement.dispatchEvent(new Event("change", { bubbles: true }));
-    this.close();
+    if (this.multipleValue) {
+      const option = Array.from(this.selectElement.options).find(
+        (o) => o.value === value,
+      );
+      if (option) option.selected = !option.selected;
+      this.selectElement.dispatchEvent(new Event("change", { bubbles: true }));
+      this.renderOptions();
+      this.syncFromSelect();
+    } else {
+      this.selectElement.value = value;
+      this.selectElement.dispatchEvent(new Event("change", { bubbles: true }));
+      this.close();
+    }
   }
 
   clearSelection() {
-    this.select("");
+    if (this.multipleValue) {
+      Array.from(this.selectElement.options).forEach(
+        (o) => (o.selected = false),
+      );
+      this.selectElement.dispatchEvent(new Event("change", { bubbles: true }));
+      this.renderOptions();
+      this.syncFromSelect();
+    } else {
+      this.select("");
+    }
   }
 
   filter() {

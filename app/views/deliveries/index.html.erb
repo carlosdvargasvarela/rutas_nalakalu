@@ -44,17 +44,36 @@
                 <span class="input-group-text bg-light border-start-0 border-end-0 text-muted"><i class="bi bi-hash"></i></span>
                 <%= f.search_field :order_number_cont, class: "form-control bg-light border-start-0", placeholder: "N°..." %>
               </div>
-              <div class="input-group input-group-sm">
-                <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person-badge"></i></span>
-                <%= f.select :order_seller_id_eq,
-                    options_from_collection_for_select(@sellers, :id, ->(s) { "#{s.name} · #{s.seller_code}" }, params.dig(:q, :order_seller_id_eq)),
-                    { include_blank: "Todos los vendedores" },
-                    { class: "form-select form-select-sm bg-light border-start-0" } %>
+              <div data-controller="searchable-select"
+                   data-searchable-select-placeholder-value="Todos los vendedores"
+                   data-searchable-select-search-placeholder-value="Buscar vendedor..."
+                   data-searchable-select-multiple-value="true">
+                <%= f.select :order_seller_id_in,
+                    options_from_collection_for_select(@sellers, :id, ->(s) { "#{s.name} · #{s.seller_code}" }, Array(params.dig(:q, :order_seller_id_in))),
+                    {},
+                    { class: "form-select form-select-sm bg-light", multiple: true } %>
               </div>
-              <%= f.select :status_eq,
-                  Delivery.statuses.map { |k, _v| [t("activerecord.attributes.delivery.statuses.#{k}"), k] },
-                  { include_blank: "Todos los estados" },
-                  { class: "form-select form-select-sm bg-light" } %>
+              <div data-controller="searchable-select"
+                   data-searchable-select-placeholder-value="Todos los estados"
+                   data-searchable-select-search-placeholder-value="Buscar estado..."
+                   data-searchable-select-multiple-value="true">
+                <%= f.select :status_in,
+                    [
+                      ["Pendiente de confirmar", "scheduled"],
+                      ["Confirmada para entregar", "ready_to_deliver"],
+                      ["En plan", "in_plan"],
+                      ["En ruta", "in_route"],
+                      ["Entregada", "delivered"],
+                      ["Reprogramada", "rescheduled"],
+                      ["Cancelada", "cancelled"],
+                      ["Archivada", "archived"],
+                      ["Entrega fracasada", "failed"],
+                      ["Cargada en camión", "loaded_on_truck"],
+                      ["En bodegaje", "warehousing"]
+                    ],
+                    { selected: Array(params.dig(:q, :status_in)) },
+                    { class: "form-select form-select-sm bg-light", multiple: true } %>
+              </div>
               <div class="d-flex gap-2 align-items-center">
                 <div class="input-group input-group-sm flex-grow-1">
                   <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-calendar-range"></i></span>
