@@ -1,8 +1,9 @@
 <%# app/views/deliveries/show_partials/_delivery_timeline.html.erb %>
 <%# Locals: delivery (Delivery), limit: (Integer, default 20), show_header: (Boolean, default true) %>
-<% limit        ||= 20 %>
-<% show_header  ||= true %>
-<% events = delivery.delivery_events.recent.limit(limit) %>
+<% limit           ||= 20 %>
+<% show_header     ||= true %>
+<% events          = delivery.related_events(limit: limit) %>
+<% total_count     = delivery.related_events_count %>
 <% if show_header %>
   <div class="d-flex align-items-center justify-content-between mb-3">
     <div class="d-flex align-items-center gap-2">
@@ -10,7 +11,7 @@
       <span class="fw-semibold">Seguimiento de entrega</span>
     </div>
     <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1">
-      <%= delivery.delivery_events.count %> evento<%= delivery.delivery_events.count == 1 ? "" : "s" %>
+      <%= total_count %> evento<%= total_count == 1 ? "" : "s" %>
     </span>
   </div>
 <% end %>
@@ -25,7 +26,7 @@
         <%# Contenido %>
         <div class="dt-body">
           <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-            <div>
+            <div class="d-flex align-items-center gap-1 flex-wrap">
               <span class="badge"
                     style="font-size:0.7rem;
                     background-color: var(--bs-<%= event.color %>-bg-subtle, rgba(0,0,0,0.06));
@@ -33,6 +34,12 @@
                     border: 1px solid var(--bs-<%= event.color %>-border-subtle, #ccc);">
                 <%= event.label %>
               </span>
+              <% if event.delivery_id != delivery.id %>
+                <span class="badge rounded-pill text-secondary border"
+                      style="font-size:0.62rem; background-color:#f1f3f5; border-color:#dee2e6 !important;">
+                  <i class="bi bi-calendar3 me-1"></i><%= l(event.delivery.delivery_date, format: :short) %>
+                </span>
+              <% end %>
             </div>
             <div class="text-end flex-shrink-0">
               <div class="small text-muted" style="font-size:0.72rem;">
@@ -83,14 +90,14 @@
       </div>
     <% end %>
   </div>
-  <% if delivery.delivery_events.count > limit %>
+  <% if total_count > limit %>
     <div class="text-center mt-3">
       <%= link_to resource_history_audit_logs_path(item_type: "Delivery", item_id: delivery.id),
           class: "btn btn-sm btn-outline-secondary",
           target: "_blank",
           rel: "noopener noreferrer" do %>
         <i class="bi bi-clock-history me-1"></i>
-        Ver historial completo (<%= delivery.delivery_events.count %> eventos)
+        Ver historial completo (<%= total_count %> eventos)
       <% end %>
     </div>
   <% end %>

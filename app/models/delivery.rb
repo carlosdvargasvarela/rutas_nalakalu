@@ -369,6 +369,22 @@ class Delivery < ApplicationRecord
       .order(:delivery_date)
   end
 
+  # Eventos de esta entrega + todas las entregas hermanas que comparten
+  # al menos un order_item_id (misma dirección, mismo pedido).
+  # Esto permite ver el ciclo completo de un ítem aunque haya cruzado
+  # varias entregas (A→B→A de vuelta).
+  def related_events(limit: 50)
+    DeliveryEvent
+      .where(delivery_id: sibling_delivery_ids)
+      .includes(:actor, :delivery)
+      .order(created_at: :desc)
+      .limit(limit)
+  end
+
+  def related_events_count
+    DeliveryEvent.where(delivery_id: sibling_delivery_ids).count
+  end
+
   def client_info
     {
       name: order.client.name,
@@ -459,6 +475,21 @@ class Delivery < ApplicationRecord
   end
 
   private
+
+  # IDs de todas las entregas (misma orden + dirección) que comparten al menos
+  # un order_item con esta entrega. Incluye la entrega actual.
+  # Siempre retorna al menos [id] para que la consulta funcione aunque no haya ítems.
+  def sibling_delivery_ids
+    oi_ids = delivery_items.pluck(:order_item_id).uniq
+    return [id] if oi_ids.empty?
+
+    DeliveryItem
+      .joins(:delivery)
+      .where(order_item_id: oi_ids,
+             deliveries: { order_id: order_id, delivery_address_id: delivery_address_id })
+      .distinct
+      .pluck(:delivery_id)
+  end
 
   # ============================================================================
   # CÁLCULO DE ESTADO — lógica centralizada
