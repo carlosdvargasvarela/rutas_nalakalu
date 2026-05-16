@@ -20,6 +20,7 @@ class DeliveryEvent < ApplicationRecord
   ACTIONS = %w[
     rescheduled
     item_rescheduled
+    items_bulk_confirmed
     sala_pickup_created
     service_case_created
     approved
@@ -84,6 +85,7 @@ class DeliveryEvent < ApplicationRecord
   ACTION_LABELS = {
     "rescheduled" => "Reagendada",
     "item_rescheduled" => "Ítem reagendado",
+    "items_bulk_confirmed" => "Ítems confirmados",
     "sala_pickup_created" => "Recogida en Sala creada",
     "service_case_created" => "Caso de servicio creado",
     "approved" => "Aprobada",
@@ -100,6 +102,7 @@ class DeliveryEvent < ApplicationRecord
   ACTION_COLORS = {
     "rescheduled" => "warning",
     "item_rescheduled" => "warning",
+    "items_bulk_confirmed" => "success",
     "sala_pickup_created" => "info",
     "service_case_created" => "info",
     "approved" => "success",
@@ -116,6 +119,7 @@ class DeliveryEvent < ApplicationRecord
   ACTION_ICONS = {
     "rescheduled" => "bi-calendar-x",
     "item_rescheduled" => "bi-box-arrow-right",
+    "items_bulk_confirmed" => "bi-check2-all",
     "sala_pickup_created" => "bi-shop",
     "service_case_created" => "bi-tools",
     "approved" => "bi-check-circle",

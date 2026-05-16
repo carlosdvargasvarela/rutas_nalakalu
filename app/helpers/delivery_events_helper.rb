@@ -5,7 +5,7 @@ module DeliveryEventsHelper
 
     case event.action
     when "rescheduled"
-      from = format_date_safe(data["from_date"])
+      from = format_date_safe(data["from_date"] || data["old_date"])
       to = format_date_safe(data["new_date"] || data["to_date"])
       reason = data["reason"].presence
       parts = ["Reagendada"]
@@ -16,8 +16,19 @@ module DeliveryEventsHelper
 
     when "item_rescheduled"
       product = data["product"].presence || "producto"
+      from = format_date_safe(data["from_date"])
       to = format_date_safe(data["new_date"])
-      "Ítem «#{product}» movido#{" al #{to}" if to}"
+      qty = data["quantity_rescheduled"]
+      partial = data["partial"]
+      parts = ["Ítem «#{product}» movido"]
+      parts << "del #{from}" if from
+      parts << "al #{to}" if to
+      parts << "— #{qty} unid. (parcial)" if partial && qty
+      parts.join(" ")
+
+    when "items_bulk_confirmed"
+      count = data["items_count"] || data["item_ids"]&.size || "varios"
+      "#{count} producto(s) confirmado(s) para entrega"
 
     when "sala_pickup_created"
       count = data["items_count"] || data["item_ids"]&.size || "?"

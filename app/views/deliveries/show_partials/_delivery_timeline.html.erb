@@ -54,9 +54,10 @@
           </div>
           <%# Payload extra — colapsable si hay datos adicionales %>
           <% data = event.payload_data.except("reason", "from_date", "new_date", "to_date",
-                                               "product", "sala", "items_count", "item_ids",
+                                               "product", "products", "sala", "items_count", "item_ids",
                                                "new_delivery_id", "delivery_type", "delivery_date",
-                                               "changed_fields", "from_seller", "to_seller", "until_date") %>
+                                               "changed_fields", "from_seller", "to_seller", "until_date",
+                                               "old_date") %>
           <% if data.any? %>
             <div class="mt-2">
               <button class="btn btn-link btn-sm p-0 text-muted"
