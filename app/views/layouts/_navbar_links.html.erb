@@ -1,4 +1,3 @@
-<!-- Navbar links partial -->
 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
   <li class="nav-item">
     <%= link_to root_path, class: "nav-link" do %>
@@ -28,24 +27,26 @@
       <i class="bi bi-book me-1"></i> Documentación
     <% end %>
   </li>
+
   <% if current_user.admin? || current_user.production_manager? %>
     <li class="nav-item">
       <%= link_to production_delivery_plans_path, class: "nav-link" do %>
         <i class="bi bi-truck-front me-1"></i> Carga a camiones
       <% end %>
     </li>
-  <% end %>
-  <% if current_user.admin? || current_user.production_manager? %>
     <li class="nav-item">
       <%= link_to new_delivery_import_path, class: "nav-link" do %>
         <i class="bi bi-file-earmark-arrow-up me-1"></i> Importar Excel
       <% end %>
     </li>
   <% end %>
+
   <% if current_user.admin? %>
     <li><span class="nav-link disabled px-2">|</span></li>
+
     <li class="nav-item dropdown">
-      <a class="nav-link dropdown-toggle" href="#" id="catalogosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+      <a class="nav-link dropdown-toggle" href="#" id="catalogosDropdown" role="button"
+         data-bs-toggle="dropdown" aria-expanded="false">
         <i class="bi bi-collection me-1"></i> Catálogos
       </a>
       <ul class="dropdown-menu" aria-labelledby="catalogosDropdown">
@@ -59,31 +60,44 @@
             <i class="bi bi-person-badge me-1"></i> Vendedores
           <% end %>
         </li>
-        <% if current_user.admin? || current_user.production_manager? %>
+        <li>
+          <%= link_to orders_path, class: "dropdown-item" do %>
+            <i class="bi bi-box-seam me-1"></i> Pedidos
+          <% end %>
+        </li>
+      </ul>
+    </li>
+
+    <li class="nav-item dropdown">
+      <a class="nav-link dropdown-toggle" href="#" id="configuracionDropdown" role="button"
+         data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-gear me-1"></i> Configuración
+      </a>
+      <ul class="dropdown-menu" aria-labelledby="configuracionDropdown">
+        <li>
+          <%= link_to admin_quickbooks_path, class: "dropdown-item" do %>
+            <i class="bi bi-arrow-repeat me-2"></i> QuickBooks
+          <% end %>
+        </li>
+        <% if policy(:audit_log).index? %>
           <li>
-            <%= link_to orders_path, class: "dropdown-item" do %>
-              <i class="bi bi-box-seam me-1"></i> Pedidos
+            <%= link_to audit_logs_path, class: "dropdown-item" do %>
+              <i class="bi bi-clock-history me-2"></i> Log de cambios
             <% end %>
           </li>
         <% end %>
+        <li>
+          <%= link_to admin_maintenance_window_path,
+                      class: "dropdown-item #{'text-danger fw-semibold' if MaintenanceWindow.active?}" do %>
+            <% if MaintenanceWindow.active? %>
+              <i class="bi bi-shield-lock-fill me-2 text-danger"></i> Mantenimiento
+              <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">ON</span>
+            <% else %>
+              <i class="bi bi-tools me-2"></i> Mantenimiento
+            <% end %>
+          <% end %>
+        </li>
       </ul>
-    </li>
-    <% if policy(:audit_log).index? %>
-      <li class="nav-item">
-        <%= link_to audit_logs_path, class: 'nav-link' do %>
-          <i class="bi bi-clock-history me-1"></i> Log de cambios
-        <% end %>
-      </li>
-    <% end %>
-    <li class="nav-item">
-      <%= link_to admin_maintenance_window_path, class: "nav-link #{'text-danger fw-semibold' if MaintenanceWindow.active?}" do %>
-        <% if MaintenanceWindow.active? %>
-          <i class="bi bi-shield-lock-fill me-1 text-danger"></i> Mantenimiento
-          <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">ON</span>
-        <% else %>
-          <i class="bi bi-tools me-1"></i> Mantenimiento
-        <% end %>
-      <% end %>
     </li>
   <% end %>
 </ul>

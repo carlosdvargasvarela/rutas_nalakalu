@@ -1,0 +1,64 @@
+<div class="container mt-4" style="max-width: 760px;">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to "Dashboard", root_path %></li>
+      <li class="breadcrumb-item"><%= link_to "Admin", admin_users_path %></li>
+      <li class="breadcrumb-item active">QuickBooks</li>
+    </ol>
+  </nav>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+      <h5 class="mb-0 fw-semibold">
+        <i class="bi bi-arrow-repeat me-2 text-primary"></i>Sincronización QuickBooks
+      </h5>
+    </div>
+    <div class="card-body p-4">
+
+      <% if notice.present? %>
+        <div class="alert alert-success border-0 shadow-sm mb-4">
+          <i class="bi bi-check-circle-fill me-2"></i><%= notice %>
+        </div>
+      <% end %>
+      <% if alert.present? %>
+        <div class="alert alert-danger border-0 shadow-sm mb-4">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i><%= alert %>
+        </div>
+      <% end %>
+
+      <p class="text-muted mb-4">
+        Configura desde qué fecha QuickBooks buscará órdenes de venta modificadas en la próxima sincronización.
+      </p>
+
+      <% current_value = AppSetting.get("qb_sync_from_date") %>
+      <% display_date = current_value.present? ? current_value.split("T").first : nil %>
+
+      <div class="mb-4 p-3 rounded" style="background-color: #f8f9fa;">
+        <p class="mb-1 small text-muted fw-semibold">Fecha activa actualmente:</p>
+        <% if display_date.present? %>
+          <span class="fw-semibold"><i class="bi bi-calendar-check me-1 text-success"></i><%= display_date %></span>
+        <% else %>
+          <span class="text-muted fst-italic">No configurada — usa el día de ayer por defecto</span>
+        <% end %>
+      </div>
+
+      <%= form_with url: admin_quickbooks_path, method: :patch, local: true do |f| %>
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="from_date">Nueva fecha de inicio</label>
+          <input type="date"
+                 id="from_date"
+                 name="from_date"
+                 class="form-control"
+                 style="max-width: 220px;"
+                 value="<%= display_date %>"
+                 max="<%= Date.today.strftime('%Y-%m-%d') %>">
+          <div class="form-text">QB buscará órdenes modificadas a partir de esta fecha.</div>
+        </div>
+        <button type="submit" class="btn btn-primary px-4">
+          <i class="bi bi-save me-2"></i>Guardar fecha
+        </button>
+      <% end %>
+
+    </div>
+  </div>
+</div>

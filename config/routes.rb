@@ -227,6 +227,8 @@ Rails.application.routes.draw do
     resource :maintenance_window, only: [:show, :new, :create] do
       patch :deactivate
     end
+
+    resource :quickbooks, only: [:show, :update]
   end
 
   # =============================================================================

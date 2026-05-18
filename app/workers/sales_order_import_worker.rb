@@ -2,10 +2,9 @@ class SalesOrderImportWorker < QBWC::Worker
   def requests(job, session, data)
     return nil if data && data["done"]
 
-    # Buscamos modificaciones de la última semana para asegurar captura de registros
-    from_date = ENV.fetch(
-      "QBWC_SYNC_FROM_DATE",
-      1.days.ago.strftime("%Y-%m-%dT00:00:00")
+    from_date = AppSetting.get(
+      "qb_sync_from_date",
+      default: 1.days.ago.strftime("%Y-%m-%dT00:00:00")
     )
 
     <<~XML
