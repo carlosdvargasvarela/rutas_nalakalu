@@ -193,16 +193,33 @@ class DeliveryItemsController < ApplicationController
 
     item_ids = params[:item_ids].to_s.split(",").map(&:strip)
 
+    # Materializar antes del loop: después del reagendamiento su status cambia a :rescheduled
+    # y el scope bulk_reschedulable ya no los devolvería
     items = delivery.delivery_items
       .bulk_reschedulable
       .where(id: item_ids)
+      .includes(order_item: :order)
+      .to_a
 
+    last_rescheduler = nil
     items.each do |item|
-      DeliveryItems::Rescheduler.new(
+      last_rescheduler = DeliveryItems::Rescheduler.new(
         delivery_item: item,
         params: params,
-        current_user: current_user
-      ).call
+        current_user: current_user,
+        notify: false
+      )
+      last_rescheduler.call
+    end
+
+    if last_rescheduler
+      NotificationService.notify_bulk_items_rescheduled(
+        original_delivery: delivery,
+        items: items,
+        target_delivery: last_rescheduler.target_delivery,
+        rescheduled_by: current_user.name,
+        reason: params[:reason].presence
+      )
     end
 
     respond_with_delivery_update(delivery.reload, notice: "#{items.count} producto(s) reagendado(s).")

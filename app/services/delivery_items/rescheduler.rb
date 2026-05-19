@@ -1,9 +1,10 @@
 module DeliveryItems
   class Rescheduler
-    def initialize(delivery_item:, params:, current_user:)
+    def initialize(delivery_item:, params:, current_user:, notify: true)
       @delivery_item = delivery_item
       @params = params
       @current_user = current_user
+      @notify = notify
     end
 
     def call
@@ -32,7 +33,7 @@ module DeliveryItems
         end
       end
 
-      notify_after_reschedule
+      notify_after_reschedule if @notify
 
       delivery_item
     rescue => e
@@ -40,10 +41,12 @@ module DeliveryItems
       raise
     end
 
+    attr_reader :target_delivery
+
     private
 
     attr_reader :delivery_item, :params, :current_user,
-      :original_delivery, :target_delivery, :quantity_to_reschedule
+      :original_delivery, :quantity_to_reschedule
 
     def resolve_quantity
       qty = params[:quantity_to_reschedule].to_i

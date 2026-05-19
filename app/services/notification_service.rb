@@ -142,6 +142,49 @@ class NotificationService
     end
   end
 
+  # ✅ Reagendamiento masivo de ítems: un solo correo con todos los productos
+  def self.notify_bulk_items_rescheduled(original_delivery:, items:, target_delivery:, rescheduled_by: nil, reason: nil)
+    return if items.empty?
+
+    message = build_bulk_reschedule_message(
+      original_delivery, items, target_delivery,
+      rescheduled_by: rescheduled_by, reason: reason
+    )
+
+    # Notificación interna sin correo
+    users = User.where(role: %i[admin logistics]).to_a
+    users << original_delivery.order.seller&.user
+    create_for_users(users.compact.uniq, target_delivery, message, type: "reschedule_delivery", send_email: false)
+
+    return if original_delivery.internal_delivery?
+
+    # Un solo correo a RESCHEDULE_NOTIFICATION_EMAILS
+    RESCHEDULE_NOTIFICATION_EMAILS.each do |email|
+      NotificationMailer.safe_notify_external(
+        email: email,
+        message: message,
+        type: "reschedule_delivery",
+        notifiable_id: target_delivery.id,
+        notifiable_type: "Delivery"
+      )
+    end
+
+    # Correo a plan@ solo si alguna de las fechas cae en la semana ISO actual
+    old_in_current = IsoWeekHelper.in_current_iso_week?(original_delivery.delivery_date)
+    new_in_current = IsoWeekHelper.in_current_iso_week?(target_delivery.delivery_date)
+    return unless old_in_current || new_in_current
+
+    NotificationMailer.safe_notify_external(
+      email: PLAN_EMAIL,
+      message: message,
+      type: "current_week_reschedule",
+      notifiable_id: target_delivery.id,
+      notifiable_type: "Delivery"
+    )
+  rescue => e
+    Rails.logger.error("⚠️ notify_bulk_items_rescheduled falló: #{e.message}")
+  end
+
   # ✅ Notificación cuando se cancela un producto de una entrega
   def self.notify_item_cancelled(delivery_item, cancelled_by: nil)
     delivery = delivery_item.delivery
@@ -226,6 +269,37 @@ class NotificationService
   # -----------------------
   # Helpers privados
   # -----------------------
+
+  def self.build_bulk_reschedule_message(original_delivery, items, target_delivery, rescheduled_by: nil, reason: nil)
+    old_f = I18n.l(original_delivery.delivery_date, format: :long)
+    new_f = I18n.l(target_delivery.delivery_date, format: :long)
+    motivo  = reason.present?        ? reason        : "El usuario no agregó motivos"
+    usuario = rescheduled_by.present? ? rescheduled_by : "No especificado"
+
+    productos = items.map do |di|
+      prod = di.order_item&.product || "-"
+      qty  = di.quantity_delivered || 1
+      "- #{prod} x #{qty}"
+    end.join("\n")
+
+    [
+      "Productos reagendados (reagendamiento masivo):",
+      "Pedido: #{original_delivery.order.number}",
+      "Del: #{old_f}",
+      "Al:  #{new_f}",
+      "Cliente: #{original_delivery.order.client.name}",
+      "Direccion: #{original_delivery.delivery_address.address}#{" (#{original_delivery.delivery_address.description})" if original_delivery.delivery_address.description.present?}",
+      "Tipo: #{original_delivery.display_type}",
+      "Vendedor: #{original_delivery.order.seller.name} (#{original_delivery.order.seller.seller_code})",
+      "Motivo: #{motivo}",
+      "Reagendado por: #{usuario}",
+      "",
+      "Productos:",
+      productos
+    ].join("\n")
+  end
+  private_class_method :build_bulk_reschedule_message
+
   def self.delivery_in_current_iso_week?(delivery)
     IsoWeekHelper.in_current_iso_week?(delivery.delivery_date)
   end
