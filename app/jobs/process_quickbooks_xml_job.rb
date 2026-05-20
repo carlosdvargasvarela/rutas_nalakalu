@@ -37,8 +37,8 @@ class ProcessQuickbooksXmlJob
     lines = Array.wrap(so["sales_order_line_ret"]).compact
 
     if existing.present?
-      update_order_lines(existing, lines, due_date)
-      event_action = "updated"
+      lines_changed = update_order_lines(existing, lines, due_date)
+      event_action = lines_changed ? "updated" : nil
     else
       create_order_from_so(so, order_number, due_date, lines)
       event_action = "created"
@@ -47,8 +47,10 @@ class ProcessQuickbooksXmlJob
     order = Order.find_by(number: order_number)
     if order && qb_txn_id.present?
       order.update_columns(qb_txn_id: qb_txn_id, qb_updated_at: qb_modified_at || Time.current)
-      order.deliveries.each do |delivery|
-        DeliveryEvent.record(delivery: delivery, action: event_action, payload: {source: "quickbooks"})
+      if event_action.present?
+        order.deliveries.each do |delivery|
+          DeliveryEvent.record(delivery: delivery, action: event_action, payload: {source: "quickbooks"})
+        end
       end
     end
   end
@@ -85,6 +87,8 @@ class ProcessQuickbooksXmlJob
   end
 
   def update_order_lines(order, lines, due_date)
+    changed = false
+
     lines.each do |line|
       qb_line_id = line["txn_line_id"]
       new_qty = line["quantity"].to_s.tr(",", ".").to_f.to_i
@@ -92,12 +96,16 @@ class ProcessQuickbooksXmlJob
       order_item = order.order_items.find_by(qb_line_id: qb_line_id)
 
       if order_item
-        order_item.update!(quantity: new_qty) if order_item.quantity != new_qty
+        if order_item.quantity != new_qty
+          order_item.update!(quantity: new_qty)
+          changed = true
+        end
       else
         full_product = build_product_name(line)
         order_item = order.order_items.find_or_initialize_by(product: full_product)
         order_item.assign_attributes(quantity: new_qty, qb_line_id: qb_line_id, status: :in_production)
         order_item.save!
+        changed = true
 
         delivery = order.deliveries.find_by(delivery_date: due_date)
         if delivery
@@ -107,6 +115,8 @@ class ProcessQuickbooksXmlJob
         end
       end
     end
+
+    changed
   end
 
   def build_product_name(line)

@@ -1,4 +1,8 @@
 <%# app/views/deliveries/index.html.erb %>
+<% content_for :head do %>
+  <meta name="turbo-refresh-method" content="morph">
+  <meta name="turbo-refresh-scroll" content="preserve">
+<% end %>
 <%= turbo_stream_from "deliveries" %>
 <div class="workspace-container container-fluid py-3"
      data-controller="workspace"
@@ -126,7 +130,7 @@
     <%# ── COLUMNA DERECHA: Panel de detalle ── %>
     <div class="col-lg-7 col-xl-8 workspace-col d-none d-lg-flex flex-column">
       <div class="card shadow-sm border-0 h-100 overflow-hidden">
-        <%= turbo_frame_tag "delivery_detail", class: "h-100 d-block" do %>
+        <%= turbo_frame_tag "delivery_detail", class: "h-100 d-block", data: { turbo_permanent: true } do %>
           <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted p-5 bg-white">
             <div class="text-center">
               <i class="bi bi-layout-sidebar-reverse text-light-emphasis" style="font-size: 4rem;"></i>

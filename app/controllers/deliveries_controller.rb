@@ -144,7 +144,7 @@ class DeliveriesController < ApplicationController
       end
       format.html do
         redirect_to(
-          session.delete(:deliveries_return_to) || deliveries_path,
+          session[:deliveries_return_to] || deliveries_path,
           notice: "Entrega actualizada correctamente."
         )
       end
@@ -165,7 +165,7 @@ class DeliveriesController < ApplicationController
     ).call
 
     redirect_to(
-      session.delete(:deliveries_return_to) || delivery_path(target_delivery),
+      session[:deliveries_return_to] || delivery_path(target_delivery),
       notice: "Entrega reagendada para el #{target_delivery.delivery_date.strftime("%d/%m/%Y")}."
     )
   rescue => e

@@ -13,6 +13,7 @@ class Delivery < ApplicationRecord
   accepts_nested_attributes_for :delivery_items, allow_destroy: true
 
   before_validation :generate_tracking_token, on: :create
+  after_create_commit -> { broadcast_refresh_to("deliveries") }
   after_update_commit :broadcast_delivery_updates
 
   delegate :latitude, :longitude, :address, :plus_code, to: :delivery_address, allow_nil: true
@@ -548,12 +549,7 @@ class Delivery < ApplicationRecord
   # ============================================================================
 
   def broadcast_delivery_updates
-    broadcast_replace_to(
-      "deliveries",
-      target: dom_id(self, :card),
-      partial: "deliveries/index_partials/delivery_card",
-      locals: {delivery: self}
-    )
+    broadcast_refresh_to("deliveries")
 
     broadcast_replace_to(
       "delivery_#{id}_detail",
