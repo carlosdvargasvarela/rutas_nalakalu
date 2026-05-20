@@ -1,23 +1,37 @@
-<div class="card shadow-sm mb-3">
-  <div class="card-header bg-light d-flex align-items-center">
-    <i class="bi bi-map me-2"></i>
-    <strong>Mapa de Ruta</strong>
-  </div>
-  <div class="card-body p-0">
+<%# app/views/driver/delivery_plans/_map.html.erb %>
+<% return if assignments.empty? || ENV['GOOGLE_MAPS_API_KEY'].blank? %>
+
+<div class="dk-card" style="margin-bottom:14px;">
+  <button type="button"
+          class="dk-card-body"
+          style="width:100%;background:none;border:none;cursor:pointer;
+                 display:flex;justify-content:space-between;align-items:center;
+                 text-align:left;"
+          data-bs-toggle="collapse"
+          data-bs-target="#dk-map-collapse">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <i class="bi bi-map" style="color:var(--dk-primary);font-size:1.1rem;"></i>
+      <span style="font-weight:700;font-size:.95rem;">Mapa de la ruta</span>
+    </div>
+    <i class="bi bi-chevron-down" style="color:var(--dk-muted);"></i>
+  </button>
+  <div class="collapse" id="dk-map-collapse">
     <div data-controller="delivery-plan-map"
          data-delivery-plan-map-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
          data-delivery-plan-map-optimize-value="false"
-         data-delivery-plan-map-points-value="<%= assignments.map { |a| {
-           id: a.id, 
-           stop_order: a.stop_order,
-           address: a.delivery.delivery_address.address,
-           lat: a.delivery.delivery_address.latitude,
-           lng: a.delivery.delivery_address.longitude,
-           order_number: a.delivery.order.number,
-           client: a.delivery.order.client.name,
-           date: l(a.delivery.delivery_date, format: :short)
-         } }.to_json %>">
-      <div style="height:400px" class="border-0" data-delivery-plan-map-target="map"></div>
+         data-delivery-plan-map-points-value="<%= assignments.map { |a|
+           {
+             id: a.id,
+             stop_order: a.stop_order,
+             address: a.delivery.delivery_address.address,
+             lat: a.delivery.delivery_address.latitude,
+             lng: a.delivery.delivery_address.longitude,
+             order_number: a.delivery.order.number,
+             client: a.delivery.order.client.name,
+             date: l(a.delivery.delivery_date, format: :short)
+           }
+         }.to_json %>">
+      <div style="height:360px;" data-delivery-plan-map-target="map"></div>
     </div>
   </div>
 </div>

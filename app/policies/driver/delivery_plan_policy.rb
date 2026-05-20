@@ -3,11 +3,7 @@ module Driver
   class DeliveryPlanPolicy < ApplicationPolicy
     class Scope < Scope
       def resolve
-        if user.driver?
-          scope.where(driver_id: user.id)
-        else
-          scope.none
-        end
+        user.driver? ? scope.all : scope.none
       end
     end
 

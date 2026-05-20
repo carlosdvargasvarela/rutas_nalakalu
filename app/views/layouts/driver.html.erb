@@ -1,183 +1,420 @@
 <!DOCTYPE html>
 <html lang="es">
   <head>
-    <title>NaLakalu - Conductor</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>NaLakalu · Conductor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#1565C0">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
     <link rel="manifest" href="<%= pwa_manifest_path %>">
     <style>
+      :root {
+        --dk-primary:       #1565C0;
+        --dk-primary-lt:    #E3F2FD;
+        --dk-success:       #2E7D32;
+        --dk-success-lt:    #E8F5E9;
+        --dk-warning:       #E65100;
+        --dk-warning-lt:    #FFF3E0;
+        --dk-danger:        #C62828;
+        --dk-danger-lt:     #FFEBEE;
+        --dk-purple:        #6A1B9A;
+        --dk-purple-lt:     #F3E5F5;
+        --dk-bg:            #F0F2F5;
+        --dk-card:          #FFFFFF;
+        --dk-text:          #111827;
+        --dk-muted:         #6B7280;
+        --dk-border:        #E5E7EB;
+        --dk-nav-h:         56px;
+      }
+
+      *, *::before, *::after { box-sizing: border-box; }
+
       body {
-        padding-bottom: 80px;
-        background-color: #f8f9fa;
+        background: var(--dk-bg);
+        color: var(--dk-text);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        padding-top: var(--dk-nav-h);
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+        min-height: 100dvh;
+        margin: 0;
       }
-      .navbar-driver {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        box-shadow: 0 2px 4px rgba(0,0,0,.1);
+
+      /* ── NAVBAR ─────────────────────────────────────────── */
+      .dk-nav {
+        position: fixed; top: 0; left: 0; right: 0;
+        height: var(--dk-nav-h);
+        background: var(--dk-primary);
+        display: flex; align-items: center; padding: 0 16px;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0,0,0,.25);
       }
-      .card {
-        border: 0;
-        border-radius: 0.75rem;
-        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
-        margin-bottom: 1rem;
+      .dk-nav-brand {
+        color: #fff; font-size: 1.05rem; font-weight: 800;
+        text-decoration: none; display: flex; align-items: center; gap: 8px; flex: 1;
+        letter-spacing: -.01em;
       }
-      .offline-banner {
-        position: fixed;
-        top: 56px;
-        left: 0;
-        right: 0;
-        z-index: 1040;
-        animation: slideDown 0.3s ease;
+      .dk-nav-brand:hover { color: #fff; }
+      .dk-nav-avatar {
+        width: 34px; height: 34px; border-radius: 50%;
+        background: rgba(255,255,255,.2);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; border: none;
+        color: #fff; font-size: 1rem;
       }
-      @keyframes slideDown {
-        from { transform: translateY(-100%); }
-        to { transform: translateY(0); }
+
+      /* ── OFFLINE BANNER ─────────────────────────────────── */
+      .dk-offline {
+        position: fixed; top: var(--dk-nav-h); left: 0; right: 0;
+        background: #F59E0B; color: #fff;
+        text-align: center; padding: 7px 16px;
+        font-size: .8rem; font-weight: 700;
+        z-index: 999; display: none;
       }
+      .dk-offline.on { display: block; }
+
+      /* ── PAGE WRAPPER ───────────────────────────────────── */
+      .dk-page {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 14px 14px 24px;
+      }
+
+      /* ── CARDS ──────────────────────────────────────────── */
+      .dk-card {
+        background: var(--dk-card);
+        border-radius: 14px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.07);
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+      .dk-card-body { padding: 16px; }
+
+      /* Plan card with status stripe */
+      .dk-plan-card {
+        border-left: 5px solid var(--dk-border);
+      }
+      .dk-plan-card[data-status="in_progress"]    { border-left-color: var(--dk-primary); }
+      .dk-plan-card[data-status="routes_created"] { border-left-color: var(--dk-purple); }
+      .dk-plan-card[data-status="completed"]      { border-left-color: var(--dk-success); }
+      .dk-plan-card[data-status="aborted"]        { border-left-color: var(--dk-danger); }
+      .dk-plan-card[data-status="draft"]          { border-left-color: #9CA3AF; }
+
+      /* Assignment card with status stripe */
+      .dk-stop-card { border-left: 5px solid var(--dk-border); }
+      .dk-stop-card[data-status="pending"]   { border-left-color: #9CA3AF; }
+      .dk-stop-card[data-status="in_route"]  { border-left-color: var(--dk-primary); }
+      .dk-stop-card[data-status="completed"] { border-left-color: var(--dk-success); }
+      .dk-stop-card[data-status="cancelled"] { border-left-color: var(--dk-danger); }
+
+      /* ── STOP NUMBER CIRCLE ─────────────────────────────── */
+      .dk-stop-num {
+        width: 48px; height: 48px; border-radius: 50%;
+        background: #9CA3AF; color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem; font-weight: 800;
+        flex-shrink: 0;
+      }
+      .dk-stop-num[data-status="in_route"]  { background: var(--dk-primary); }
+      .dk-stop-num[data-status="completed"] { background: var(--dk-success); }
+      .dk-stop-num[data-status="cancelled"] { background: var(--dk-danger); }
+
+      /* ── STATUS PILLS ───────────────────────────────────── */
+      .dk-pill {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 4px 10px; border-radius: 20px;
+        font-size: .72rem; font-weight: 700; white-space: nowrap;
+      }
+      .dk-pill-primary { background: var(--dk-primary-lt); color: var(--dk-primary); }
+      .dk-pill-success { background: var(--dk-success-lt); color: var(--dk-success); }
+      .dk-pill-danger  { background: var(--dk-danger-lt);  color: var(--dk-danger);  }
+      .dk-pill-warning { background: var(--dk-warning-lt); color: var(--dk-warning); }
+      .dk-pill-purple  { background: var(--dk-purple-lt);  color: var(--dk-purple);  }
+      .dk-pill-muted   { background: #F3F4F6; color: var(--dk-muted); }
+
+      /* ── PROGRESS ───────────────────────────────────────── */
+      .dk-progress { height: 8px; background: #E5E7EB; border-radius: 8px; overflow: hidden; }
+      .dk-progress-fill { height: 100%; background: var(--dk-success); border-radius: 8px; transition: width .4s ease; }
+
+      /* ── BUTTONS (touch-friendly) ───────────────────────── */
+      .dk-btn {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        min-height: 52px; border-radius: 12px;
+        font-size: .95rem; font-weight: 700;
+        border: none; cursor: pointer; width: 100%;
+        text-decoration: none; transition: opacity .12s, transform .1s;
+        -webkit-tap-highlight-color: transparent;
+        padding: 0 16px;
+      }
+      .dk-btn:active { opacity: .82; transform: scale(.97); }
+
+      .dk-btn-green         { background: var(--dk-success);   color: #fff; }
+      .dk-btn-blue          { background: var(--dk-primary);   color: #fff; }
+      .dk-btn-blue-outline  { background: transparent; color: var(--dk-primary);
+                               border: 2px solid var(--dk-primary); }
+      .dk-btn-red-outline   { background: transparent; color: var(--dk-danger);
+                               border: 2px solid var(--dk-danger); }
+      .dk-btn-ghost         { background: #F3F4F6; color: var(--dk-text);
+                               border: 1px solid var(--dk-border); }
+      .dk-btn-sm            { min-height: 40px; font-size: .82rem; border-radius: 8px; }
+
+      /* ── PLAN ACTION ────────────────────────────────────── */
+      .dk-plan-action {
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        width: 100%; border: none; cursor: pointer;
+        border-radius: 16px; padding: 22px 16px;
+        font-size: 1.15rem; font-weight: 800; letter-spacing: .01em;
+        transition: opacity .12s, transform .1s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .dk-plan-action:active { opacity: .85; transform: scale(.97); }
+      .dk-plan-action.start  { background: var(--dk-success); color: #fff; }
+      .dk-plan-action.finish { background: var(--dk-primary); color: #fff; }
+      .dk-plan-action.abort  {
+        background: transparent; color: var(--dk-danger);
+        border: 2px solid var(--dk-danger);
+        border-radius: 10px; padding: 14px; margin-top: 8px;
+        font-size: .875rem; font-weight: 700;
+      }
+
+      /* ── ACTION LINKS (Waze / Phone) ────────────────────── */
+      .dk-link-btn {
+        display: flex; align-items: center; gap: 12px;
+        padding: 14px 14px; border-radius: 12px;
+        text-decoration: none; font-weight: 700; font-size: .9rem;
+        width: 100%; margin-bottom: 8px;
+        transition: opacity .12s; -webkit-tap-highlight-color: transparent;
+      }
+      .dk-link-btn:active { opacity: .8; }
+      .dk-link-btn .dk-link-icon {
+        width: 40px; height: 40px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem; flex-shrink: 0;
+      }
+      .dk-link-waze  { background: #EEF2FF; color: #3730A3; border: 1.5px solid #C7D2FE; }
+      .dk-link-waze .dk-link-icon  { background: #4F46E5; color: #fff; }
+      .dk-link-phone { background: var(--dk-success-lt); color: var(--dk-success);
+                        border: 1.5px solid #A7D7A9; }
+      .dk-link-phone .dk-link-icon { background: var(--dk-success); color: #fff; }
+
+      /* ── PRODUCT LIST ───────────────────────────────────── */
+      .dk-product {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 0; border-bottom: 1px solid var(--dk-border);
+        font-size: .875rem;
+      }
+      .dk-product:last-child { border-bottom: none; }
+      .dk-product-qty {
+        background: var(--dk-primary); color: #fff;
+        border-radius: 6px; padding: 2px 8px;
+        font-size: .75rem; font-weight: 700; flex-shrink: 0;
+      }
+
+      /* ── COMPLETED / FAILED STATES ──────────────────────── */
+      .dk-delivered-state {
+        background: var(--dk-success-lt); border-radius: 12px;
+        padding: 18px; display: flex; align-items: center; gap: 12px;
+        color: var(--dk-success); font-weight: 700; font-size: 1rem;
+      }
+      .dk-failed-state {
+        background: var(--dk-danger-lt); border-radius: 12px;
+        padding: 18px; display: flex; align-items: center; gap: 12px;
+        color: var(--dk-danger); font-weight: 700; font-size: 1rem;
+      }
+
+      /* ── GPS BAR ────────────────────────────────────────── */
+      .dk-gps-bar {
+        background: var(--dk-success-lt); border-radius: 10px;
+        padding: 10px 14px; display: flex; align-items: center;
+        justify-content: space-between; margin-bottom: 12px;
+        border: 1px solid #A7D7A9;
+      }
+
+      /* ── FAIL REASON BUTTON ─────────────────────────────── */
+      .dk-reason-btn {
+        display: block; width: 100%; text-align: left;
+        padding: 14px 16px; background: #F9FAFB;
+        border: 1.5px solid var(--dk-border); border-radius: 10px;
+        font-size: .9rem; color: var(--dk-text);
+        cursor: pointer; margin-bottom: 8px;
+        transition: all .15s; -webkit-tap-highlight-color: transparent;
+      }
+      .dk-reason-btn.selected {
+        background: var(--dk-danger-lt); border-color: var(--dk-danger);
+        color: var(--dk-danger); font-weight: 700;
+      }
+
+      /* ── STAT MINI ──────────────────────────────────────── */
+      .dk-mini-stat {
+        text-align: center; padding: 10px 6px;
+      }
+      .dk-mini-stat-val { font-size: 1.6rem; font-weight: 800; line-height: 1; }
+      .dk-mini-stat-lbl { font-size: .65rem; font-weight: 700; text-transform: uppercase;
+                           letter-spacing: .06em; color: var(--dk-muted); margin-top: 3px; }
+
+      /* ── SECTION LABEL ──────────────────────────────────── */
+      .dk-label {
+        font-size: .68rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .08em; color: var(--dk-muted); margin-bottom: 6px;
+      }
+
+      /* ── DIVIDER ────────────────────────────────────────── */
+      .dk-divider { height: 1px; background: var(--dk-border); margin: 12px 0; }
+
+      /* ── EMPTY STATE ────────────────────────────────────── */
+      .dk-empty { text-align: center; padding: 56px 24px; }
+      .dk-empty-icon { font-size: 3.5rem; color: #D1D5DB; margin-bottom: 16px; }
+
+      /* ── TOAST ──────────────────────────────────────────── */
+      .dk-toast-wrap {
+        position: fixed; bottom: 20px; left: 12px; right: 12px;
+        z-index: 9999; pointer-events: none;
+        display: flex; flex-direction: column; gap: 8px;
+        max-width: 600px; margin: 0 auto;
+      }
+      .dk-toast {
+        background: #1F2937; color: #fff;
+        border-radius: 14px; padding: 14px 16px;
+        display: flex; align-items: center; gap: 12px;
+        font-size: .9rem; font-weight: 600;
+        box-shadow: 0 6px 24px rgba(0,0,0,.25);
+        pointer-events: auto;
+        animation: dktin .22s ease;
+      }
+      @keyframes dktin {
+        from { transform: translateY(16px); opacity: 0; }
+        to   { transform: translateY(0);    opacity: 1; }
+      }
+      .dk-toast-ico {
+        width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center; font-size: 1rem;
+      }
+      .dk-toast.success .dk-toast-ico { background: var(--dk-success); }
+      .dk-toast.error   .dk-toast-ico { background: var(--dk-danger);  }
+      .dk-toast.warning .dk-toast-ico { background: var(--dk-warning); }
+      .dk-toast.info    .dk-toast-ico { background: var(--dk-primary); }
+
+      /* ── FILTER ─────────────────────────────────────────── */
+      .dk-filter { background: var(--dk-card); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+
+      /* ── INFO ROWS ──────────────────────────────────────── */
+      .dk-info-row {
+        display: flex; align-items: center; gap: 10px;
+        padding: 9px 0; border-bottom: 1px solid var(--dk-border); font-size: .88rem;
+      }
+      .dk-info-row:last-child { border-bottom: none; }
+      .dk-info-row i { width: 20px; color: var(--dk-muted); flex-shrink: 0; }
+
+      /* ── ALERT BANNER ───────────────────────────────────── */
+      .dk-alert {
+        border-radius: 12px; padding: 14px 16px;
+        display: flex; align-items: center; gap: 12px;
+        margin-bottom: 12px; font-size: .88rem; font-weight: 600;
+      }
+      .dk-alert i { font-size: 1.3rem; flex-shrink: 0; }
+      .dk-alert-info    { background: var(--dk-primary-lt); color: var(--dk-primary); }
+      .dk-alert-success { background: var(--dk-success-lt); color: var(--dk-success); }
+      .dk-alert-warning { background: var(--dk-warning-lt); color: var(--dk-warning); }
     </style>
   </head>
   <body>
+
     <!-- Navbar -->
-    <nav class="navbar navbar-dark navbar-driver fixed-top">
-      <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="<%= driver_delivery_plans_path %>">
-          <i class="bi bi-truck me-2"></i>NaLakalu
-        </a>
-        <div class="d-flex align-items-center gap-2">
-          <span class="badge bg-light text-dark" id="connection-badge">
-            <i class="bi bi-wifi"></i>
-          </span>
-          <div class="dropdown">
-            <button class="btn btn-link text-white p-0" type="button" data-bs-toggle="dropdown">
-              <i class="bi bi-person-circle fs-4"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li><span class="dropdown-item-text small"><%= current_user.name %></span></li>
-              <li><hr class="dropdown-divider"></li>
-              <li>
-                <%= link_to destroy_user_session_path, data: { turbo_method: :delete }, class: "dropdown-item" do %>
-                  <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
-                <% end %>
-              </li>
-            </ul>
-          </div>
+    <nav class="dk-nav">
+      <a href="<%= driver_delivery_plans_path %>" class="dk-nav-brand">
+        <i class="bi bi-truck-front-fill" style="font-size:1.25rem;"></i>
+        NaLakalu
+      </a>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <span id="dk-conn">
+          <i class="bi bi-wifi" style="color:rgba(255,255,255,.75);font-size:1.1rem;"></i>
+        </span>
+        <div class="dropdown">
+          <button class="dk-nav-avatar" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-person-fill"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+            <li>
+              <span class="dropdown-item-text small fw-bold text-muted">
+                <%= current_user.name %>
+              </span>
+            </li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li>
+              <%= link_to destroy_user_session_path, data: { turbo_method: :delete }, class: "dropdown-item" do %>
+                <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+              <% end %>
+            </li>
+          </ul>
         </div>
       </div>
     </nav>
-    <!-- Banner offline -->
-    <div id="offline-banner" class="offline-banner alert alert-warning mb-0 rounded-0 text-center d-none" role="alert">
-      <i class="bi bi-wifi-off me-2"></i>
-      <strong>Sin conexión.</strong> Tus acciones se sincronizarán automáticamente.
-    </div>
-    <!-- Contenido principal -->
-    <div class="container-fluid mt-5 pt-3">
-      <%= yield %>
-    </div>
-    <!-- Toast container -->
-    <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 1080;">
-      <div id="toasts-container"></div>
-    </div>
-    <script>
-      // Registrar Service Worker
-      if ('serviceWorker' in navigator && window.location.pathname.startsWith('/driver')) {
-        window.addEventListener('load', async () => {
-          try {
-            const reg = await navigator.serviceWorker.register('<%= pwa_service_worker_path %>', {
-              scope: '/driver/',
-              updateViaCache: 'none'
-            });
-            console.log('[App] Service Worker registered:', reg.scope);
 
-            // Auto-actualizar
+    <!-- Offline banner -->
+    <div id="dk-offline" class="dk-offline">
+      <i class="bi bi-wifi-off me-2"></i>Sin conexión · Las acciones se guardan y sincronizan al volver
+    </div>
+
+    <!-- Content -->
+    <%= yield %>
+
+    <!-- Toast container -->
+    <div id="dk-toasts" class="dk-toast-wrap"></div>
+
+    <script>
+      // ── Service Worker ──────────────────────────────────
+      if ('serviceWorker' in navigator && location.pathname.startsWith('/driver')) {
+        addEventListener('load', async () => {
+          try {
+            const reg = await navigator.serviceWorker.register('<%= pwa_service_worker_path %>',
+              { scope: '/driver/', updateViaCache: 'none' });
             reg.addEventListener('updatefound', () => {
-              const newWorker = reg.installing;
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('[App] New version available, reloading...');
-                  window.location.reload();
-                }
+              const w = reg.installing;
+              w.addEventListener('statechange', () => {
+                if (w.state === 'installed' && navigator.serviceWorker.controller) location.reload();
               });
             });
-          } catch (e) {
-            console.warn('[App] SW registration failed:', e);
-          }
+          } catch(e) {}
         });
       }
 
-      // Banner offline
-      function updateOfflineBanner() {
-        const banner = document.getElementById('offline-banner');
-        const badge = document.getElementById('connection-badge');
-
-        if (navigator.onLine) {
-          banner?.classList.add('d-none');
-          if (badge) {
-            badge.innerHTML = '<i class="bi bi-wifi"></i>';
-            badge.classList.remove('bg-danger');
-            badge.classList.add('bg-light', 'text-dark');
-          }
-        } else {
-          banner?.classList.remove('d-none');
-          if (badge) {
-            badge.innerHTML = '<i class="bi bi-wifi-off"></i>';
-            badge.classList.remove('bg-light', 'text-dark');
-            badge.classList.add('bg-danger');
-          }
-        }
+      // ── Connection ──────────────────────────────────────
+      const offEl  = document.getElementById('dk-offline');
+      const connEl = document.getElementById('dk-conn');
+      function syncConn() {
+        const on = navigator.onLine;
+        offEl?.classList.toggle('on', !on);
+        if (connEl) connEl.innerHTML = on
+          ? '<i class="bi bi-wifi"     style="color:rgba(255,255,255,.75);font-size:1.1rem;"></i>'
+          : '<i class="bi bi-wifi-off" style="color:#FCD34D;font-size:1.1rem;"></i>';
       }
+      addEventListener('online', syncConn);
+      addEventListener('offline', syncConn);
+      syncConn();
 
-      window.addEventListener('online', updateOfflineBanner);
-      window.addEventListener('offline', updateOfflineBanner);
-      updateOfflineBanner();
-
-      // Sistema de toasts
-      function showToast(message, type = 'info') {
-        const container = document.getElementById('toasts-container');
-        if (!container) return;
-
-        const bgClass = {
-          success: 'bg-success',
-          error: 'bg-danger',
-          warning: 'bg-warning',
-          info: 'bg-primary'
-        }[type] || 'bg-primary';
-
-        const icon = {
-          success: 'check-circle-fill',
-          error: 'exclamation-octagon-fill',
-          warning: 'exclamation-triangle-fill',
-          info: 'info-circle-fill'
-        }[type] || 'info-circle-fill';
-
-        const toastId = `toast-${Date.now()}`;
-        const toastHTML = `
-          <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert">
-            <div class="d-flex">
-              <div class="toast-body">
-                <i class="bi bi-${icon} me-2"></i>${message}
-              </div>
-              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-          </div>
-        `;
-        container.insertAdjacentHTML('beforeend', toastHTML);
-
-        const toastEl = document.getElementById(toastId);
-        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-        toast.show();
-
-        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+      // ── Toast ───────────────────────────────────────────
+      function showDkToast(msg, type = 'info') {
+        const wrap = document.getElementById('dk-toasts');
+        if (!wrap) return;
+        const icons = { success:'check-lg', error:'x-lg', warning:'exclamation-lg', info:'info-lg' };
+        const el = document.createElement('div');
+        el.className = `dk-toast ${type}`;
+        el.innerHTML = `<div class="dk-toast-ico"><i class="bi bi-${icons[type]||'info-lg'}" style="color:#fff;"></i></div>
+                        <span style="flex:1;">${msg}</span>`;
+        wrap.appendChild(el);
+        setTimeout(() => {
+          el.style.transition = 'opacity .3s';
+          el.style.opacity = '0';
+          setTimeout(() => el.remove(), 320);
+        }, 3600);
       }
-
-      document.addEventListener("toast:show", (e) => {
-        const { message, type } = e.detail || {};
-        showToast(message, type);
-      });
+      document.addEventListener('toast:show', e => showDkToast(e.detail.message, e.detail.type));
+      function showToast(m, t) { showDkToast(m, t); }
     </script>
   </body>
 </html>

@@ -1,127 +1,200 @@
-<!-- app/views/driver/delivery_plans/show.html.erb -->
-<div class="container-fluid py-3"
-     data-controller="driver-tracker driver-plan"
+<%# app/views/driver/delivery_plans/show.html.erb %>
+<%
+  completed_count = @assignments.count(&:completed?)
+  failed_count    = @assignments.count(&:cancelled?)
+  pending_count   = @assignments.count { |a| a.pending? || a.in_route? }
+  total_count     = @assignments.size
+  pct = total_count > 0 ? (completed_count.to_f / total_count * 100).round : 0
+  next_assignment = @assignments.find { |a| a.pending? || a.in_route? }
+%>
+
+<div class="dk-page"
+     data-controller="driver-tracker driver-plan driver-route"
      data-driver-tracker-plan-id-value="<%= @delivery_plan.id %>"
+     data-driver-tracker-plan-status-value="<%= @delivery_plan.status %>"
      data-driver-tracker-url-value="<%= update_position_batch_driver_delivery_plans_path %>"
      data-driver-tracker-interval-value="15000"
      data-driver-plan-id-value="<%= @delivery_plan.id %>"
      data-driver-plan-status-value="<%= @delivery_plan.status %>"
-     data-driver-plan-start-url-value="<%= start_driver_delivery_plan_path(@delivery_plan) %>"
-     data-driver-plan-finish-url-value="<%= finish_driver_delivery_plan_path(@delivery_plan) %>"
-     data-driver-plan-abort-url-value="<%= abort_driver_delivery_plan_path(@delivery_plan) %>">
+     data-driver-route-next-assignment-id-value="<%= next_assignment&.id %>">
 
-  <!-- Alertas del sistema -->
-  <%= render "driver/delivery_plans/alerts", delivery_plan: @delivery_plan %>
-  
-  <!-- Encabezado con info del plan -->
-  <%= render "driver/delivery_plans/header", delivery_plan: @delivery_plan %>
+  <%# ── Plan header ─────────────────────────────────────── %>
+  <div class="dk-card" style="margin-bottom:12px;">
+    <div class="dk-card-body">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <div>
+          <div class="dk-label">Plan de entrega</div>
+          <div style="font-size:1.15rem;font-weight:800;color:var(--dk-text);">
+            Semana <%= @delivery_plan.week %> – <%= @delivery_plan.year %>
+          </div>
+          <div style="font-size:.8rem;color:var(--dk-muted);margin-top:3px;display:flex;align-items:center;gap:10px;">
+            <% if @delivery_plan.truck.present? %>
+              <span><i class="bi bi-truck-front me-1"></i><%= @delivery_plan.truck.tr("_"," ") %></span>
+            <% end %>
+            <% if @delivery_plan.driver.present? %>
+              <span><i class="bi bi-person-circle me-1"></i><%= @delivery_plan.driver.name %></span>
+            <% end %>
+          </div>
+        </div>
+        <% pill = case @delivery_plan.status
+                  when "in_progress"    then "dk-pill-primary"
+                  when "routes_created" then "dk-pill-purple"
+                  when "completed"      then "dk-pill-success"
+                  when "aborted"        then "dk-pill-danger"
+                  else "dk-pill-muted"
+                  end %>
+        <span class="dk-pill <%= pill %>">
+          <% if @delivery_plan.status_in_progress? %>
+            <span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;"></span>
+          <% end %>
+          <%= @delivery_plan.display_status %>
+        </span>
+      </div>
 
-  <!-- Estado del Tracking GPS (Integrado con el nuevo controlador) -->
-  <div class="card mb-3 shadow-sm border-0">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-      <h6 class="mb-0 fw-bold">
-        <i class="bi bi-broadcast text-primary me-2"></i>Estado del Tracking
-      </h6>
-      <span data-driver-tracker-target="status" class="badge bg-secondary">
-        Iniciando GPS...
-      </span>
-    </div>
-    <div class="card-body">
-      <div class="row text-center">
-        <div class="col-6 border-end">
-          <small class="text-muted d-block">Última actualización</small>
-          <span data-driver-tracker-target="lastUpdate" class="fw-bold">--:--:--</span>
+      <%# Progress bar with counters %>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);text-align:center;margin-bottom:12px;">
+        <div>
+          <div style="font-size:1.4rem;font-weight:800;color:var(--dk-success);" data-driver-plan-target="completedCount">
+            <%= completed_count %>
+          </div>
+          <div class="dk-label">Entregados</div>
         </div>
-        <div class="col-6">
-          <small class="text-muted d-block">Sincronización</small>
-          <button type="button" 
-                  class="btn btn-link btn-sm p-0 text-decoration-none" 
-                  data-action="click->driver-tracker#forceSync">
-            <i class="bi bi-arrow-repeat me-1"></i>Sincronizar ya
-          </button>
+        <div style="border-left:1px solid var(--dk-border);border-right:1px solid var(--dk-border);">
+          <div style="font-size:1.4rem;font-weight:800;color:var(--dk-muted);" data-driver-plan-target="pendingCount">
+            <%= pending_count %>
+          </div>
+          <div class="dk-label">Pendientes</div>
         </div>
+        <div>
+          <div style="font-size:1.4rem;font-weight:800;color:var(--dk-danger);">
+            <%= failed_count %>
+          </div>
+          <div class="dk-label">Fallidos</div>
+        </div>
+      </div>
+
+      <div class="dk-progress" style="height:10px;">
+        <div class="dk-progress-fill"
+             data-driver-plan-target="progressBar"
+             style="width:<%= pct %>%;"></div>
+      </div>
+      <div style="text-align:right;font-size:.75rem;color:var(--dk-muted);margin-top:4px;">
+        <%= pct %>% completado
       </div>
     </div>
   </div>
 
-  <!-- Información General y Tripulación -->
-  <div class="row g-3 mb-3">
-    <div class="col-12">
-      <%= render "driver/delivery_plans/general_info", delivery_plan: @delivery_plan %>
-    </div>
-    <div class="col-12">
-      <%= render "driver/delivery_plans/crew", delivery_plan: @delivery_plan %>
-    </div>
-  </div>
-
-  <!-- Controles Principales de la Ruta -->
-  <div class="card shadow-sm mb-3 border-0">
-    <div class="card-body">
-      <div class="d-grid gap-2">
-        <% if @delivery_plan.status_routes_created? %>
-          <button type="button"
-                  class="btn btn-success btn-lg py-3 fw-bold"
-                  data-action="click->driver-plan#startPlan">
-            <i class="bi bi-play-circle-fill me-2"></i>INICIAR RUTA
-          </button>
-        <% elsif @delivery_plan.status_in_progress? %>
-          <button type="button"
-                  class="btn btn-primary btn-lg py-3 fw-bold"
-                  data-action="click->driver-plan#finishPlan">
-            <i class="bi bi-check-circle-fill me-2"></i>FINALIZAR RUTA
-          </button>
-          <button type="button"
-                  class="btn btn-outline-danger btn-sm mt-2"
-                  data-action="click->driver-plan#abortPlan">
-            <i class="bi bi-x-circle me-2"></i>Abortar ruta
-          </button>
-        <% elsif @delivery_plan.status_completed? %>
-          <div class="alert alert-success mb-0 text-center fw-bold">
-            <i class="bi bi-check-circle-fill me-2"></i>RUTA COMPLETADA
+  <%# ── GPS status bar (solo cuando en progreso) ────────── %>
+  <% if @delivery_plan.status_in_progress? %>
+    <div class="dk-gps-bar">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <i class="bi bi-broadcast" style="color:var(--dk-success);font-size:1.1rem;"></i>
+        <div>
+          <div style="font-size:.8rem;font-weight:700;color:var(--dk-success);">GPS activo</div>
+          <div style="font-size:.72rem;color:var(--dk-muted);">
+            Última posición: <span data-driver-tracker-target="lastUpdate">--:--:--</span>
           </div>
-        <% elsif @delivery_plan.status_aborted? %>
-          <div class="alert alert-danger mb-0 text-center fw-bold">
-            <i class="bi bi-x-circle-fill me-2"></i>RUTA ABORTADA
-          </div>
-        <% end %>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span data-driver-tracker-target="status"
+              class="dk-pill dk-pill-success"
+              style="font-size:.68rem;">Iniciando...</span>
+        <button type="button"
+                class="dk-btn dk-btn-ghost dk-btn-sm"
+                style="width:auto;min-height:34px;padding:0 10px;"
+                data-action="click->driver-tracker#forceSync"
+                title="Sincronizar ahora">
+          <i class="bi bi-arrow-repeat"></i>
+        </button>
       </div>
     </div>
+  <% end %>
+
+  <%# ── Plan action button ──────────────────────────────── %>
+  <div class="dk-card" style="margin-bottom:14px;">
+    <div class="dk-card-body">
+      <% if @delivery_plan.status_routes_created? %>
+        <div class="dk-alert dk-alert-info" style="margin-bottom:12px;">
+          <i class="bi bi-info-circle-fill"></i>
+          <span>Presiona el botón para salir a entregar. El GPS se activará automáticamente.</span>
+        </div>
+        <button type="button"
+                class="dk-plan-action start"
+                data-action="click->driver-plan#startPlan">
+          <i class="bi bi-play-circle-fill" style="font-size:1.4rem;"></i>
+          INICIAR RUTA
+        </button>
+
+      <% elsif @delivery_plan.status_in_progress? %>
+        <button type="button"
+                class="dk-plan-action finish"
+                data-action="click->driver-plan#finishPlan">
+          <i class="bi bi-check-circle-fill" style="font-size:1.4rem;"></i>
+          FINALIZAR RUTA
+        </button>
+        <button type="button"
+                class="dk-plan-action abort"
+                data-action="click->driver-plan#abortPlan">
+          <i class="bi bi-x-circle me-1"></i> Abortar ruta
+        </button>
+
+      <% elsif @delivery_plan.status_completed? %>
+        <div class="dk-delivered-state">
+          <i class="bi bi-check-circle-fill" style="font-size:2rem;"></i>
+          <div>
+            <div style="font-size:1rem;">Ruta completada</div>
+            <div style="font-size:.8rem;font-weight:400;opacity:.8;">Todas las paradas han sido procesadas.</div>
+          </div>
+        </div>
+
+      <% elsif @delivery_plan.status_aborted? %>
+        <div class="dk-failed-state">
+          <i class="bi bi-x-circle-fill" style="font-size:2rem;"></i>
+          <div>
+            <div style="font-size:1rem;">Ruta abortada</div>
+          </div>
+        </div>
+      <% end %>
+    </div>
   </div>
 
-  <!-- Progreso de Entregas -->
-  <%= render "driver/delivery_plans/progress", delivery_plan: @delivery_plan, assignments: @assignments %>
+  <%# ── Paradas ─────────────────────────────────────────── %>
+  <div style="margin-bottom:4px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h2 style="font-size:1rem;font-weight:800;margin:0;color:var(--dk-text);">
+        <i class="bi bi-list-ol me-2" style="color:var(--dk-primary);"></i>Paradas
+      </h2>
+      <span class="dk-pill dk-pill-muted"><%= total_count %> en total</span>
+    </div>
 
-  <!-- Listado de Entregas (Paradas) -->
-  <div class="mb-3">
-    <h5 class="mb-3 fw-bold">
-      <i class="bi bi-truck-flatbed me-2 text-primary"></i>
-      Paradas de hoy
-    </h5>
     <% if @assignments.any? %>
-      <div class="row g-3">
-        <% @assignments.each do |assignment| %>
-          <div class="col-12">
-            <%= render "driver/delivery_plans/assignment_card",
-                       assignment: assignment,
-                       delivery_plan: @delivery_plan %>
-          </div>
-        <% end %>
-      </div>
+      <% @assignments.each do |assignment| %>
+        <%= render "driver/delivery_plans/assignment_card",
+                   assignment: assignment,
+                   delivery_plan: @delivery_plan %>
+      <% end %>
     <% else %>
-      <div class="alert alert-info border-0 shadow-sm">
-        <i class="bi bi-info-circle me-2"></i>
-        No hay entregas asignadas para este plan.
+      <div class="dk-empty" style="padding:32px 16px;">
+        <div class="dk-empty-icon" style="font-size:2.5rem;">
+          <i class="bi bi-inbox"></i>
+        </div>
+        <div style="font-size:.9rem;color:var(--dk-muted);">No hay entregas asignadas a este plan.</div>
       </div>
     <% end %>
   </div>
 
-  <!-- Mapa de la Ruta -->
+  <%# ── Crew ───────────────────────────────────────────── %>
+  <%= render "driver/delivery_plans/crew", delivery_plan: @delivery_plan %>
+
+  <%# ── Mapa ───────────────────────────────────────────── %>
   <%= render "driver/delivery_plans/map", delivery_plan: @delivery_plan, assignments: @assignments %>
 
-  <!-- Botón de Retorno -->
-  <div class="d-grid gap-2 mt-4">
-    <%= link_to driver_delivery_plans_path, class: "btn btn-light border" do %>
-      <i class="bi bi-arrow-left me-2"></i>Volver a mis rutas
+  <%# ── Volver ──────────────────────────────────────────── %>
+  <div style="margin-top:8px;">
+    <%= link_to driver_delivery_plans_path, class: "dk-btn dk-btn-ghost" do %>
+      <i class="bi bi-arrow-left"></i> Volver a mis rutas
     <% end %>
   </div>
+
 </div>

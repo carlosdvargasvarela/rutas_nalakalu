@@ -4,29 +4,45 @@ import { Controller } from "@hotwired/stimulus";
 export default class extends Controller {
   static values = {
     planId: Number,
-    interval: { type: Number, default: 15000 }, // 15 segundos por defecto
+    planStatus: String,
+    interval: { type: Number, default: 15000 },
     url: String,
   };
 
   static targets = ["status", "lastUpdate"];
 
   connect() {
-    console.log("🚚 Driver Tracker conectado");
     this.positions = [];
     this.watchId = null;
     this.syncTimer = null;
     this.isTracking = false;
 
-    // Cargar posiciones pendientes del localStorage
     this.loadPendingPositions();
 
-    // Iniciar tracking automáticamente
-    this.startTracking();
+    // Solo iniciar el tracking si el plan ya está en progreso
+    if (this.planStatusValue === "in_progress") {
+      this.startTracking();
+    } else {
+      this.updateStatus("GPS inactivo – inicia la ruta para activar", "secondary");
+    }
+
+    // Reaccionar al cambio de estado del plan (botón "INICIAR RUTA")
+    this._onPlanStatusChanged = (e) => {
+      const { status } = e.detail;
+      if (status === "in_progress") {
+        this.startTracking();
+      } else if (status === "completed" || status === "aborted") {
+        this.stopTracking();
+      }
+    };
+    document.addEventListener("driver:plan:status-changed", this._onPlanStatusChanged);
   }
 
   disconnect() {
-    console.log("🚚 Driver Tracker desconectado");
     this.stopTracking();
+    if (this._onPlanStatusChanged) {
+      document.removeEventListener("driver:plan:status-changed", this._onPlanStatusChanged);
+    }
   }
 
   startTracking() {
