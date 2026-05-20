@@ -34,7 +34,7 @@ module DeliveryEventsHelper
       count = data["items_count"] || data["item_ids"]&.size || "?"
       sala = data["sala"].presence
       new_id = data["new_delivery_id"]
-      parts = ["Recogida en Sala creada para #{count} producto(s)"]
+      parts = ["Retiro en Sala programado para #{count} producto(s)"]
       parts << "en #{sala}" if sala
       parts << "(Entrega ##{new_id})" if new_id
       parts.join(" ")
@@ -107,20 +107,20 @@ module DeliveryEventsHelper
 
   def service_case_type_label(type)
     {
-      "pickup_with_return" => "Recogida y devolución",
+      "pickup_with_return" => "Retiro con devolución posterior",
       "return_delivery" => "Devolución",
       "onsite_repair" => "Reparación en sitio",
-      "only_pickup" => "Solo recogida"
+      "only_pickup" => "Solo retiro del producto"
     }[type.to_s] || type.to_s.humanize
   end
 
   def delivery_type_label(type)
     {
       "normal" => "Entrega normal",
-      "pickup_with_return" => "Recogida con devolución",
+      "pickup_with_return" => "Retiro con devolución posterior",
       "return_delivery" => "Devolución",
       "onsite_repair" => "Reparación en sitio",
-      "only_pickup" => "Solo recogida",
+      "only_pickup" => "Solo retiro del producto",
       "internal_delivery" => "Mandado interno"
     }[type.to_s] || type.to_s.humanize
   end

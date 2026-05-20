@@ -85,7 +85,7 @@ module Deliveries
 
     def duplicate_item(item, type)
       prefix = case type
-      when "only_pickup" then "Recogida - "
+      when "only_pickup" then "Retiro - "
       when "return_delivery" then "Devolución - "
       else ""
       end

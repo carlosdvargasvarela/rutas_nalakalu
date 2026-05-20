@@ -197,10 +197,10 @@ class Delivery < ApplicationRecord
   def display_type
     case delivery_type
     when "normal" then "Entrega normal"
-    when "pickup_with_return" then "Recogida de producto y posteriormente entrega al cliente"
+    when "pickup_with_return" then "Retiro del producto en sala y entrega posterior al cliente"
     when "return_delivery" then "Devolución de producto"
     when "onsite_repair" then "Reparación en sitio"
-    when "only_pickup" then "Solo recogida de producto"
+    when "only_pickup" then "Solo retiro del producto (sin entrega posterior)"
     when "internal_delivery" then "Mandado Interno"
     else delivery_type.to_s.humanize
     end

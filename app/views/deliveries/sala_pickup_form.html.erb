@@ -4,7 +4,7 @@
 </style>
 <%= turbo_frame_tag "modal" do %>
   <div class="modal-header bg-danger text-white">
-    <h5 class="modal-title"><i class="bi bi-shop me-2"></i>Nueva Recogida en Sala</h5>
+    <h5 class="modal-title"><i class="bi bi-shop me-2"></i>Nuevo Retiro en Sala</h5>
     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
   </div>
   <%= simple_form_for @pickup_delivery, url: create_sala_pickup_delivery_path(@delivery), method: :post do |f| %>
@@ -35,12 +35,12 @@
           <% end %>
         </div>
       </div>
-      <%# 2. Fecha de recogida %>
+      <%# 2. Fecha de retiro en sala %>
       <div class="mb-4">
         <%= f.input :delivery_date,
               as: :date,
               html5: true,
-              label: "Fecha de recogida",
+              label: "Fecha de retiro en sala",
               hint: "Debe ser anterior al #{@delivery.delivery_date.strftime("%d/%m/%Y")} (fecha de entrega al cliente)",
               input_html: {
                 max: (@delivery.delivery_date - 1.day),
@@ -81,11 +81,11 @@
     <div class="modal-footer bg-light d-flex justify-content-between align-items-center">
       <span class="text-muted small">
         <i class="bi bi-info-circle me-1"></i>
-        Se creará una entrega de tipo <strong>Solo Recogida</strong>
+        Se creará una entrega de tipo <strong>Solo Retiro en Sala</strong>
       </span>
       <div class="d-flex gap-2">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <%= f.submit "Generar Orden de Recogida", class: "btn btn-danger px-4 shadow-sm" %>
+        <%= f.submit "Generar Orden de Retiro en Sala", class: "btn btn-danger px-4 shadow-sm" %>
       </div>
     </div>
   <% end %>

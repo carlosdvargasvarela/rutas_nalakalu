@@ -86,7 +86,7 @@ class DeliveryEvent < ApplicationRecord
     "rescheduled" => "Reagendada",
     "item_rescheduled" => "Ítem reagendado",
     "items_bulk_confirmed" => "Ítems confirmados",
-    "sala_pickup_created" => "Recogida en Sala creada",
+    "sala_pickup_created" => "Retiro en Sala programado",
     "service_case_created" => "Caso de servicio creado",
     "approved" => "Aprobada",
     "delivered" => "Marcada como entregada",

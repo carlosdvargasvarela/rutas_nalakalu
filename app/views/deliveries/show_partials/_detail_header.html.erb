@@ -50,7 +50,7 @@
       <% if delivery.requires_sala_pickup? %>
         <div class="alert alert-danger border-0 shadow-sm d-flex justify-content-between align-items-center mb-2 px-3 py-2">
           <div class="small fw-medium">
-            <i class="bi bi-shop-window me-2"></i>Requiere Recogida en Sala
+            <i class="bi bi-shop-window me-2"></i>Pendiente de retiro en Sala
           </div>
           <% if can_edit %>
             <%= link_to sala_pickup_form_delivery_path(delivery),

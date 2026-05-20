@@ -481,7 +481,7 @@ class DeliveriesController < ApplicationController
       pickup, ret = created
       redirect_to delivery_path(main),
         notice: "Se crearon 2 entregas de caso de servicio: " \
-                "Recogida (#{I18n.l pickup.delivery_date, format: :long}) y " \
+                "Retiro del producto (#{I18n.l pickup.delivery_date, format: :long}) y " \
                 "Devolución (#{I18n.l ret.delivery_date, format: :long})."
     end
   rescue => e
@@ -534,7 +534,7 @@ class DeliveriesController < ApplicationController
         load_delivery_for_panel
         set_delivery_panel_data
 
-        flash.now[:notice] = "Orden de recogida para pedido ##{@pickup_delivery.order_number} creada correctamente."
+        flash.now[:notice] = "Orden de retiro en sala para pedido ##{@pickup_delivery.order_number} registrada correctamente."
 
         render turbo_stream: [
           turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
@@ -551,7 +551,7 @@ class DeliveriesController < ApplicationController
           )
         ]
       end
-      format.html { redirect_to @delivery, notice: "Recogida creada." }
+      format.html { redirect_to @delivery, notice: "Retiro en sala registrado." }
     end
   rescue => e
     handle_sala_pickup_error(e)
@@ -909,14 +909,14 @@ class DeliveriesController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
-        flash.now[:alert] = "Error al crear recogida: #{e.message}"
+        flash.now[:alert] = "Error al registrar retiro en sala: #{e.message}"
         render turbo_stream: turbo_stream.replace(
           "flash_messages",
           partial: "layouts/flashes"
         ), status: :unprocessable_entity
       end
       format.html do
-        redirect_to delivery_path(@delivery), alert: "Error al crear recogida: #{e.message}"
+        redirect_to delivery_path(@delivery), alert: "Error al registrar retiro en sala: #{e.message}"
       end
     end
   end

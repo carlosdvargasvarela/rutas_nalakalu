@@ -3,7 +3,7 @@ module Deliveries
   module ServiceCasePrefix
     def service_case_prefix_for(delivery_type)
       case delivery_type.to_s
-      when "pickup_with_return", "only_pickup" then "Recogida - "
+      when "pickup_with_return", "only_pickup" then "Retiro - "
       when "return_delivery" then "Devolución - "
       when "onsite_repair" then "Reparación - "
       else ""

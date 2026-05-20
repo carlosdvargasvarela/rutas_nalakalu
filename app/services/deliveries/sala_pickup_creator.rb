@@ -29,7 +29,7 @@ module Deliveries
             }
           )
 
-          # 🔹 Registrar evento en la nueva entrega de recogida
+          # 🔹 Registrar evento en la nueva entrega de retiro en sala
           DeliveryEvent.record(
             delivery: @pickup_delivery,
             action: "created",
@@ -56,7 +56,7 @@ module Deliveries
       raise StandardError, "Debe seleccionar al menos un producto." if params[:item_ids].blank?
 
       delivery_date = params.dig(:delivery, :delivery_date)
-      raise StandardError, "Debe seleccionar una fecha de recogida." if delivery_date.blank?
+      raise StandardError, "Debe seleccionar una fecha para el retiro en sala." if delivery_date.blank?
 
       addr = params[:delivery_address]
       if addr.blank? || addr[:latitude].blank? || addr[:longitude].blank?
@@ -64,7 +64,7 @@ module Deliveries
       end
 
       if delivery_date.to_date >= original_delivery.delivery_date
-        raise StandardError, "La fecha de recogida debe ser anterior a la fecha de entrega (#{original_delivery.delivery_date.strftime("%d/%m/%Y")})."
+        raise StandardError, "La fecha del retiro debe ser anterior a la fecha de entrega del pedido (#{original_delivery.delivery_date.strftime("%d/%m/%Y")})."
       end
     end
 
@@ -105,7 +105,7 @@ module Deliveries
     def create_pickup_items!
       items_to_copy = original_delivery.delivery_items.where(id: params[:item_ids])
 
-      raise StandardError, "No se encontraron productos válidos para la recogida." if items_to_copy.empty?
+      raise StandardError, "No se encontraron productos válidos para el retiro en sala." if items_to_copy.empty?
 
       items_to_copy.each do |original_item|
         DeliveryItem.create!(
@@ -114,7 +114,7 @@ module Deliveries
           quantity_delivered: original_item.quantity_delivered,
           status: :pending,
           service_case: original_item.service_case,
-          notes: "Recogida en sala para entrega programada el #{original_delivery.delivery_date.strftime("%d/%m/%Y")}."
+          notes: "Pendiente de retiro en sala antes de la entrega del #{original_delivery.delivery_date.strftime("%d/%m/%Y")}."
         )
       end
 
@@ -126,7 +126,7 @@ module Deliveries
       product_names = @pickup_delivery.delivery_items.map(&:product).join(", ")
       pickup_date = @pickup_delivery.delivery_date.strftime("%d/%m/%Y")
 
-      new_note = "\n[SISTEMA #{Date.current.strftime("%d/%m/%Y")}]: Recogida en sala generada para el #{pickup_date}. Productos: #{product_names}."
+      new_note = "\n[SISTEMA #{Date.current.strftime("%d/%m/%Y")}]: Retiro en sala programado para el #{pickup_date}. Productos a retirar: #{product_names}."
 
       original_delivery.update_column(
         :delivery_notes,
@@ -135,7 +135,7 @@ module Deliveries
     end
 
     def build_pickup_notes
-      base = "Recogida de sala generada desde Pedido ##{original_delivery.order_number} (#{original_delivery.delivery_date.strftime("%d/%m/%Y")})."
+      base = "Retiro en sala — Pedido ##{original_delivery.order_number} (entrega original: #{original_delivery.delivery_date.strftime("%d/%m/%Y")})."
       extra = params[:delivery_notes].presence
       extra ? "#{base} #{extra}" : base
     end
