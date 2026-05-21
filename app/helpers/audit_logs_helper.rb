@@ -4,15 +4,12 @@ module AuditLogsHelper
 
   # ── Cambios ────────────────────────────────────────────────────────────────
 
-  def summarize_changes(version, max_keys: 5)
-    raw = version.object_changes
-    return {} if raw.blank?
-
-    changes = raw.is_a?(String) ? JSON.parse(raw) : raw
-    return {} unless changes.is_a?(Hash)
+  def summarize_changes(version, max_keys: 100)
+    changes = version.changeset
+    return {} if changes.blank?
 
     changes.except(*IGNORED_KEYS).first(max_keys).to_h
-  rescue JSON::ParserError, StandardError
+  rescue StandardError
     {}
   end
 
@@ -23,7 +20,7 @@ module AuditLogsHelper
     return value.strftime("%d/%m/%Y") if value.is_a?(Date)
     return value ? "Sí" : "No" if value.is_a?(TrueClass) || value.is_a?(FalseClass)
 
-    value.to_s.truncate(80)
+    value.to_s.truncate(200)
   end
 
   def change_severity(attr)

@@ -35,6 +35,24 @@
         <p class="tc-desc mb-0">
           <%= timeline_description(primary, users_by_id: users_by_id) %>
         </p>
+        <%# Diffs de campos para actualizaciones PaperTrail %>
+        <% if !primary.delivery_event? && primary.record.event == "update" %>
+          <% all_changes = summarize_changes(primary.record, max_keys: 100) %>
+          <% if all_changes.any? %>
+            <div class="tc-diff mt-2 pt-2 border-top">
+              <% all_changes.each do |attr, (before, after)| %>
+                <div class="tc-diff-row">
+                  <span class="badge bg-<%= change_severity(attr) %>-subtle text-<%= change_severity(attr) %>-emphasis tc-diff-badge">
+                    <%= attr.humanize %>
+                  </span>
+                  <code class="tc-diff-val text-danger"><%= format_value_detailed(before) %></code>
+                  <i class="bi bi-arrow-right mx-1 text-muted" style="font-size:0.62rem;"></i>
+                  <code class="tc-diff-val text-success"><%= format_value_detailed(after) %></code>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        <% end %>
         <%# Payload extra (DeliveryEvent) %>
         <% if primary.delivery_event? %>
           <% extra = primary.record.payload_data.except(
@@ -229,4 +247,27 @@
 
   /* Bloque crítico */
   .timeline-block--critical .timeline-time .time-hour { color: #dc3545; }
+
+  /* Diffs de campos PaperTrail */
+  .tc-diff { }
+  .tc-diff-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 4px;
+    font-size: 0.78rem;
+  }
+  .tc-diff-badge { font-size: 0.62rem !important; }
+  .tc-diff-val {
+    background: #f8f9fa;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.72rem;
+    max-width: 260px;
+    word-break: break-word;
+    white-space: pre-wrap;
+    display: inline-block;
+    vertical-align: top;
+  }
 </style>

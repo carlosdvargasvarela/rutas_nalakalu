@@ -5,7 +5,19 @@
       <%= f.date_field :delivery_date,
             class: "form-control",
             required: true,
-            data: { action: "change->delivery-form#validateDeliveryData" } %>
+            data: {
+              action: "change->delivery-form#validateDeliveryData change->delivery-form#checkDateReschedule",
+              original_date: delivery.new_record? ? nil : delivery.delivery_date&.to_s
+            } %>
+      <% unless delivery.new_record? %>
+        <div class="alert alert-warning d-none mt-2 py-2 px-3"
+             data-delivery-form-target="rescheduleAlert"
+             style="font-size:0.82rem;">
+          <i class="bi bi-calendar-check me-1"></i>
+          <strong>Estás reagendando esta entrega.</strong>
+          No es necesario crear una nueva — solo guardá los cambios.
+        </div>
+      <% end %>
     </div>
   <% end %>
   <div class="col-md-4">

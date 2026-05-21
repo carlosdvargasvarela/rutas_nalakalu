@@ -18,20 +18,23 @@
     <%= user_name_for(version, users_by_id) %>
   </div>
   <% if version.event == 'update' %>
-    <% changes = summarize_changes(version, max_keys: 3) %>
-    <% if changes.any? %>
+    <% all_changes = summarize_changes(version, max_keys: 100) %>
+    <% if all_changes.any? %>
       <div class="p-2 rounded-2 bg-light border-start border-2 border-secondary mb-2">
-        <% changes.each do |attr, (before, after)| %>
+        <% all_changes.each do |attr, (before, after)| %>
           <div class="small mb-1">
-            <span class="badge bg-secondary bg-opacity-10 text-secondary me-1"><%= attr %></span>
-            <code class="text-danger" style="font-size:0.72rem;"><%= truncate(before.to_s, length: 18) %></code>
+            <span class="badge bg-<%= change_severity(attr) %>-subtle text-<%= change_severity(attr) %>-emphasis me-1"
+                  style="font-size:0.65rem;">
+              <%= attr.humanize %>
+            </span>
+            <code class="text-danger" style="font-size:0.72rem; word-break:break-word;">
+              <%= format_value_detailed(before) %>
+            </code>
             <i class="bi bi-arrow-right mx-1 text-muted" style="font-size:0.7rem;"></i>
-            <code class="text-success" style="font-size:0.72rem;"><%= truncate(after.to_s, length: 18) %></code>
+            <code class="text-success" style="font-size:0.72rem; word-break:break-word;">
+              <%= format_value_detailed(after) %>
+            </code>
           </div>
-        <% end %>
-        <% full_changes = summarize_changes(version, max_keys: 100) %>
-        <% if full_changes.size > 3 %>
-          <small class="text-muted fst-italic">+ <%= full_changes.size - 3 %> más</small>
         <% end %>
       </div>
     <% end %>
