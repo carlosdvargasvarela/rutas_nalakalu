@@ -19,6 +19,8 @@
             Agregar usuario
           <% end %>
         </li>
+      <% end %>
+      <% if current_user.admin? || current_user.manager? %>
         <li>
           <%= link_to admin_users_path, class: "dropdown-item" do %>
             <i class="bi bi-people me-2"></i>

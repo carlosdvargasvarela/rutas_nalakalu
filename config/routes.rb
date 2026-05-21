@@ -88,6 +88,7 @@ Rails.application.routes.draw do
       get :note
 
       patch :archive
+      patch :reopen
       get :new_service_case_for_existing
       post :create_service_case_for_existing
 

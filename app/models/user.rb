@@ -5,7 +5,7 @@ class User < ApplicationRecord
   devise :database_authenticatable, :recoverable, :rememberable, :validatable, :trackable, :lockable, :registerable
 
   # Definir los roles como un enum
-  enum role: {admin: 0, production_manager: 1, seller: 2, logistics: 3, driver: 4}
+  enum role: {admin: 0, production_manager: 1, seller: 2, logistics: 3, driver: 4, manager: 5}
 
   attr_accessor :seller_code
 
@@ -41,6 +41,7 @@ class User < ApplicationRecord
   def display_role
     case role
     when "admin" then "Administrador"
+    when "manager" then "Gerente"
     when "production_manager" then "Producción"
     when "seller" then "Vendedor"
     when "logistics" then "Logística"
@@ -77,6 +78,14 @@ class User < ApplicationRecord
 
   def admin?
     role == "admin"
+  end
+
+  def manager?
+    role == "manager"
+  end
+
+  def admin_or_manager?
+    admin? || manager?
   end
 
   accepts_nested_attributes_for :crew_members, allow_destroy: true, reject_if: proc { |attrs|

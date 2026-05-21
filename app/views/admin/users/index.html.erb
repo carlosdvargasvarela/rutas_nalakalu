@@ -13,9 +13,11 @@
       <strong><%= @users.count %></strong>
       <%= pluralize(@users.count, "usuario") %>
     </span>
-    <%= link_to new_admin_user_path, class: "btn btn-primary" do %>
-      <i class="bi bi-person-plus-fill me-1"></i>
-      Nuevo usuario
+    <% if policy(User).create? %>
+      <%= link_to new_admin_user_path, class: "btn btn-primary" do %>
+        <i class="bi bi-person-plus-fill me-1"></i>
+        Nuevo usuario
+      <% end %>
     <% end %>
   </div>
 </div>
@@ -44,6 +46,7 @@
             <td>
               <% role_color = case user.role
                 when "admin" then "danger"
+                when "manager" then "dark"
                 when "production_manager" then "warning"
                 when "seller" then "info"
                 when "logistics" then "primary"

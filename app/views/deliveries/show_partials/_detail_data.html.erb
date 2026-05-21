@@ -8,7 +8,8 @@
         can_approve:          policy(delivery).approve?,
         can_reassign_seller:  policy(delivery).reassign_seller?,
         can_new_service_case: policy(delivery).new_service_case?,
-        is_admin:             current_user&.admin? %>
+        can_reopen:           policy(delivery).reopen?,
+        is_admin:             current_user&.admin_or_manager? %>
   <%# ═══ TABS NAV ═══ %>
   <nav class="bg-light border-bottom sticky-top shadow-sm" style="z-index: 10;">
     <ul class="nav nav-pills nav-fill px-4 py-2" id="deliveryTab" role="tablist" style="max-width: 600px;">

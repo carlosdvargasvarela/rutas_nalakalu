@@ -32,6 +32,7 @@ class DeliveryEvent < ApplicationRecord
     updated
     cancelled
     archived
+    reopened
   ].freeze
 
   # =========================================================================
@@ -96,7 +97,8 @@ class DeliveryEvent < ApplicationRecord
     "created" => "Creada",
     "updated" => "Actualizada",
     "cancelled" => "Cancelada",
-    "archived" => "Archivada"
+    "archived" => "Archivada",
+    "reopened" => "Reabierta"
   }.freeze
 
   ACTION_COLORS = {
@@ -113,7 +115,8 @@ class DeliveryEvent < ApplicationRecord
     "created" => "success",
     "updated" => "primary",
     "cancelled" => "danger",
-    "archived" => "dark"
+    "archived" => "dark",
+    "reopened" => "warning"
   }.freeze
 
   ACTION_ICONS = {
@@ -130,7 +133,8 @@ class DeliveryEvent < ApplicationRecord
     "created" => "bi-plus-circle",
     "updated" => "bi-pencil",
     "cancelled" => "bi-x-circle",
-    "archived" => "bi-archive"
+    "archived" => "bi-archive",
+    "reopened" => "bi-arrow-counterclockwise"
   }.freeze
 
   def label

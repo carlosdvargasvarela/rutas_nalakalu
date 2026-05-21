@@ -33,7 +33,7 @@
               </span>
             <% end %>
           </span>
-          <% if current_user&.admin? %>
+          <% if current_user&.admin? || current_user&.manager? %>
             <%= link_to admin_maintenance_window_path, class: "btn btn-sm btn-outline-dark py-0 px-2" do %>
               <i class="bi bi-gear-fill me-1"></i>Gestionar
             <% end %>

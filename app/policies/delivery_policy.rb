@@ -6,17 +6,17 @@ class DeliveryPolicy < ApplicationPolicy
   # =============================================================================
 
   def index?
-    user.admin? || user.production_manager? || user.logistics? || user.seller? || user.driver?
+    user.admin? || user.manager? || user.production_manager? || user.logistics? || user.seller? || user.driver?
   end
 
   def show?
-    return true if user.admin? || user.production_manager? || user.logistics? || user.seller?
+    return true if user.admin? || user.manager? || user.production_manager? || user.logistics? || user.seller?
     return true if user.driver? && record.delivery_plan&.driver_id == user.id
     false
   end
 
   def edit?
-    user.admin? || user.logistics? || user.production_manager? || user.seller?
+    user.admin? || user.manager? || user.logistics? || user.production_manager? || user.seller?
   end
 
   def update?
@@ -24,7 +24,7 @@ class DeliveryPolicy < ApplicationPolicy
   end
 
   def create?
-    user.admin? || user.logistics? || user.production_manager? || user.seller?
+    user.admin? || user.manager? || user.logistics? || user.production_manager? || user.seller?
   end
 
   def destroy?
@@ -36,19 +36,23 @@ class DeliveryPolicy < ApplicationPolicy
   # =============================================================================
 
   def management?
-    user.admin? || user.production_manager? || user.logistics?
+    user.admin? || user.manager? || user.production_manager? || user.logistics?
   end
 
   def approve?
-    user.admin? || user.logistics? || user.production_manager?
+    user.admin? || user.manager? || user.logistics? || user.production_manager?
   end
 
   def quick_update?
-    user.admin? || user.production_manager? || user.logistics?
+    user.admin? || user.manager? || user.production_manager? || user.logistics?
   end
 
   def add_product?
-    user.admin? || user.production_manager? || user.logistics?
+    user.admin? || user.manager? || user.production_manager? || user.logistics?
+  end
+
+  def reopen?
+    user.admin? || user.manager?
   end
 
   # =============================================================================
@@ -56,11 +60,11 @@ class DeliveryPolicy < ApplicationPolicy
   # =============================================================================
 
   def mark_all_loaded?
-    user.admin? || user.production_manager? || user.logistics?
+    user.admin? || user.manager? || user.production_manager? || user.logistics?
   end
 
   def reset_load_status?
-    user.admin? || user.production_manager? || user.logistics?
+    user.admin? || user.manager? || user.production_manager? || user.logistics?
   end
 
   # =============================================================================
@@ -96,7 +100,7 @@ class DeliveryPolicy < ApplicationPolicy
   # =============================================================================
 
   def reassign_seller?
-    user.admin? || user.logistics? || user.production_manager?
+    user.admin? || user.manager? || user.logistics? || user.production_manager?
   end
 
   def take_order?
@@ -121,7 +125,7 @@ class DeliveryPolicy < ApplicationPolicy
 
   class Scope < Scope
     def resolve
-      if user.admin? || user.production_manager? || user.logistics?
+      if user.admin? || user.manager? || user.production_manager? || user.logistics?
         # Acceso completo a todas las entregas
         scope.all
       elsif user.seller?

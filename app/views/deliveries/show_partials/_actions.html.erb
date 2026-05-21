@@ -1,10 +1,11 @@
 <%# app/views/deliveries/show_partials/_actions.html.erb %>
 <%# Locals esperados (todos opcionales, default false/nil): %>
-<%# can_edit, can_approve, can_reassign_seller, can_new_service_case, is_admin %>
+<%# can_edit, can_approve, can_reassign_seller, can_new_service_case, can_reopen, is_admin %>
 <% can_edit             = local_assigns.fetch(:can_edit, false) %>
 <% can_approve          = local_assigns.fetch(:can_approve, false) %>
 <% can_reassign_seller  = local_assigns.fetch(:can_reassign_seller, false) %>
 <% can_new_service_case = local_assigns.fetch(:can_new_service_case, false) %>
+<% can_reopen           = local_assigns.fetch(:can_reopen, false) %>
 <% is_admin             = local_assigns.fetch(:is_admin, false) %>
 <div class="d-flex align-items-center gap-2 flex-wrap">
   <% if delivery.warehousing? %>
@@ -46,6 +47,17 @@
             data: { turbo_confirm: "¿Marcar esta entrega y todos sus productos como entregados?" } do %>
         <i class="bi bi-check-circle-fill"></i>
         <span>Marcar como Entregada</span>
+      <% end %>
+    <% end %>
+    <%# Reabrir Entrega (solo para admin/gerente cuando está cerrada) %>
+    <% if can_reopen && delivery.reopenable? %>
+      <%= button_to reopen_delivery_path(delivery),
+            method: :patch,
+            form: { data: { turbo_stream: true } },
+            class: "btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-2 px-3",
+            data: { turbo_confirm: "¿Reabrir esta entrega? Volverá a 'Pendiente de confirmar' y todos los productos se resetearán a pendiente." } do %>
+        <i class="bi bi-arrow-counterclockwise"></i>
+        <span>Reabrir Entrega</span>
       <% end %>
     <% end %>
     <%# Aprobar Ruta %>

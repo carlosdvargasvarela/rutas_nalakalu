@@ -1,10 +1,11 @@
 <%# app/views/deliveries/show_partials/_detail_header.html.erb %>
 <%# Locals esperados: delivery, can_edit (bool), can_approve (bool), %>
-<%# can_reassign_seller (bool), can_new_service_case (bool), is_admin (bool) %>
+<%# can_reassign_seller (bool), can_new_service_case (bool), can_reopen (bool), is_admin (bool) %>
 <% can_edit             = local_assigns.fetch(:can_edit, false) %>
 <% can_approve          = local_assigns.fetch(:can_approve, false) %>
 <% can_reassign_seller  = local_assigns.fetch(:can_reassign_seller, false) %>
 <% can_new_service_case = local_assigns.fetch(:can_new_service_case, false) %>
+<% can_reopen           = local_assigns.fetch(:can_reopen, false) %>
 <% is_admin             = local_assigns.fetch(:is_admin, false) %>
 <header id="delivery_detail_header_<%= delivery.id %>" class="bg-white border-bottom p-4">
   <div class="row align-items-center g-3">
@@ -31,7 +32,7 @@
       </div>
     </div>
     <div class="col-md-auto">
-      <% if can_edit || can_approve || can_reassign_seller || can_new_service_case || is_admin %>
+      <% if can_edit || can_approve || can_reassign_seller || can_new_service_case || can_reopen || is_admin %>
         <div id="delivery_actions_container">
           <%= render "deliveries/show_partials/actions",
                 delivery:             delivery,
@@ -39,6 +40,7 @@
                 can_approve:          can_approve,
                 can_reassign_seller:  can_reassign_seller,
                 can_new_service_case: can_new_service_case,
+                can_reopen:           can_reopen,
                 is_admin:             is_admin %>
         </div>
       <% end %>

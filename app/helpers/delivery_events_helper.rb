@@ -91,6 +91,11 @@ module DeliveryEventsHelper
     when "archived"
       "Archivada"
 
+    when "reopened"
+      prev = data["previous_status"].presence
+      prev_label = prev ? Delivery.new(status: prev).display_status : nil
+      prev_label ? "Reabierta (estaba: #{prev_label})" : "Reabierta"
+
     else
       event.label
     end

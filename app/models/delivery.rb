@@ -67,6 +67,7 @@ class Delivery < ApplicationRecord
 
   SERVICE_CASE_TYPES = %w[pickup_with_return return_delivery onsite_repair only_pickup].freeze
   BULK_LOCKED_STATUSES = %w[delivered rescheduled cancelled archived failed warehousing].freeze
+  REOPENABLE_STATUSES = %w[delivered cancelled archived].freeze
 
   # Estados terminales de items — no participan en el flujo activo
   ITEM_TERMINAL_STATUSES = %w[delivered cancelled rescheduled failed].freeze
@@ -126,6 +127,26 @@ class Delivery < ApplicationRecord
 
   def bulk_available?
     !bulk_locked? && delivery_items.bulk_actionable.exists?
+  end
+
+  def reopenable?
+    status.in?(REOPENABLE_STATUSES)
+  end
+
+  def reopen!
+    transaction do
+      delivery_items.update_all(
+        status: DeliveryItem.statuses[:pending],
+        load_status: DeliveryItem.load_statuses[:unloaded],
+        updated_at: Time.current
+      )
+      update!(
+        status: :scheduled,
+        load_status: :empty,
+        confirmed_by_vendor: false,
+        confirmed_by_vendor_at: nil
+      )
+    end
   end
 
   # ============================================================================
@@ -561,6 +582,7 @@ class Delivery < ApplicationRecord
         can_approve: true,
         can_reassign_seller: true,
         can_new_service_case: true,
+        can_reopen: true,
         is_admin: true
       }
     )

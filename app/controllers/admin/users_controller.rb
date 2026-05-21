@@ -92,6 +92,6 @@ class Admin::UsersController < ApplicationController
   end
 
   def require_admin!
-    redirect_to root_path, alert: "No autorizado" unless current_user.admin?
+    redirect_to root_path, alert: "No autorizado" unless current_user.admin? || current_user.manager?
   end
 end
