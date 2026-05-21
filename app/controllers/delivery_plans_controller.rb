@@ -282,8 +282,8 @@ class DeliveryPlansController < ApplicationController
 
         if is_ops_user
           headers = [
-            "Fecha de entrega", "Pedido", "Producto", "Cantidad",
-            "Vendedor", "Cargado en camión", "Cliente", "# Parada", "Camión", "Notas"
+            "Fecha de entrega", "Hora", "Pedido", "Producto", "Cantidad",
+            "Vendedor", "Cargado en camion", "Cliente", "# Parada", "Camion", "Notas"
           ]
           rows = @assignments.flat_map do |assignment|
             delivery = assignment.delivery
@@ -299,6 +299,7 @@ class DeliveryPlansController < ApplicationController
               notes << "Nueva entrega ID: #{next_del.id}" if next_del
               [[
                 I18n.l(delivery.delivery_date, format: :long),
+                delivery.delivery_time_preference.presence || "-",
                 delivery.order.number,
                 rescheduled_text,
                 "-",
@@ -317,6 +318,7 @@ class DeliveryPlansController < ApplicationController
                 notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
                 [
                   I18n.l(delivery.delivery_date, format: :long),
+                  delivery.delivery_time_preference.presence || "-",
                   delivery.order.number,
                   item.order_item.product,
                   item.quantity_delivered,

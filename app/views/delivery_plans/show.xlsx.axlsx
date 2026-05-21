@@ -39,6 +39,7 @@ if is_ops_user
   wb.add_worksheet(name: "Plan de Ruta") do |sheet|
     sheet.add_row [
       "Fecha de entrega",
+      "Hora",
       "Pedido",
       "Producto",
       "Cantidad",
@@ -73,6 +74,7 @@ if is_ops_user
         row_style = is_rescheduled ? rescheduled_style : (row_index.even? ? row_even_style : row_odd_style)
         sheet.add_row [
           delivery.delivery_date.strftime("%d/%m/%Y"),
+          delivery.delivery_time_preference.presence || "",
           delivery.order.number,
           product_text,
           "",
@@ -95,6 +97,7 @@ if is_ops_user
           row_style = row_index.even? ? row_even_style : row_odd_style
           sheet.add_row [
             delivery.delivery_date.strftime("%d/%m/%Y"),
+            delivery.delivery_time_preference.presence || "",
             delivery.order.number,
             delivery_item.order_item.product,
             delivery_item.quantity,
@@ -110,7 +113,7 @@ if is_ops_user
       end
     end
 
-    sheet.column_widths 20, 17, 32, 14, 17, 22, 28, 13, 15, 48
+    sheet.column_widths 20, 14, 17, 32, 14, 17, 22, 28, 13, 15, 48
 
     if @assignments.any?
       first_date = @assignments.first.delivery.delivery_date.strftime("%d/%m/%Y")
@@ -122,7 +125,7 @@ if is_ops_user
 
     if @assignments.any?
       total_rows = 1 + @assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
-      sheet.auto_filter = "A1:J#{total_rows}"
+      sheet.auto_filter = "A1:K#{total_rows}"
     end
 
     sheet.sheet_view.pane do |pane|
