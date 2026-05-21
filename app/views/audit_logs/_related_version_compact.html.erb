@@ -17,6 +17,7 @@
     <i class="bi bi-person me-1"></i>
     <%= user_name_for(version, users_by_id) %>
   </div>
+
   <% if version.event == 'update' %>
     <% all_changes = summarize_changes(version, max_keys: 100) %>
     <% if all_changes.any? %>
@@ -25,28 +26,61 @@
           <div class="small mb-1">
             <span class="badge bg-<%= change_severity(attr) %>-subtle text-<%= change_severity(attr) %>-emphasis me-1"
                   style="font-size:0.65rem;">
-              <%= attr.humanize %>
+              <%= attribute_label(attr, version.item_type) %>
             </span>
             <code class="text-danger" style="font-size:0.72rem; word-break:break-word;">
-              <%= format_value_detailed(before) %>
+              <%= format_change_value(before, attr, version.item_type) %>
             </code>
             <i class="bi bi-arrow-right mx-1 text-muted" style="font-size:0.7rem;"></i>
             <code class="text-success" style="font-size:0.72rem; word-break:break-word;">
-              <%= format_value_detailed(after) %>
+              <%= format_change_value(after, attr, version.item_type) %>
             </code>
           </div>
         <% end %>
       </div>
     <% end %>
   <% elsif version.event == 'create' %>
-    <div class="small text-success mb-2">
-      <i class="bi bi-plus-circle me-1"></i> Registro creado
-    </div>
+    <% fields = create_summary(version) %>
+    <% if fields.any? %>
+      <div class="p-2 rounded-2 bg-success bg-opacity-10 border-start border-2 border-success mb-2">
+        <% fields.each do |attr, value| %>
+          <div class="small mb-1">
+            <span class="badge bg-success-subtle text-success-emphasis me-1" style="font-size:0.65rem;">
+              <%= attribute_label(attr, version.item_type) %>
+            </span>
+            <code class="text-success" style="font-size:0.72rem; word-break:break-word;">
+              <%= format_change_value(value, attr, version.item_type) %>
+            </code>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="small text-success mb-2">
+        <i class="bi bi-plus-circle me-1"></i> Registro creado
+      </div>
+    <% end %>
   <% elsif version.event == 'destroy' %>
-    <div class="small text-danger mb-2">
-      <i class="bi bi-trash me-1"></i> Registro eliminado
-    </div>
+    <% fields = destroy_summary(version) %>
+    <% if fields.any? %>
+      <div class="p-2 rounded-2 bg-danger bg-opacity-10 border-start border-2 border-danger mb-2">
+        <% fields.each do |attr, value| %>
+          <div class="small mb-1">
+            <span class="badge bg-danger-subtle text-danger-emphasis me-1" style="font-size:0.65rem;">
+              <%= attribute_label(attr, version.item_type) %>
+            </span>
+            <code class="text-danger" style="font-size:0.72rem; word-break:break-word;">
+              <%= format_change_value(value, attr, version.item_type) %>
+            </code>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="small text-danger mb-2">
+        <i class="bi bi-trash me-1"></i> Registro eliminado
+      </div>
+    <% end %>
   <% end %>
+
   <%= link_to resource_history_audit_logs_path(item_type: version.item_type, item_id: version.item_id),
       class: 'btn btn-sm btn-outline-secondary' do %>
     <i class="bi bi-clock-history me-1"></i> Ver historial

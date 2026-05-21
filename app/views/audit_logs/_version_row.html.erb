@@ -49,24 +49,62 @@
   </td>
   <%# Cambios %>
   <td class="py-3">
-    <% all_changes = summarize_changes(version, max_keys: 100) %>
-    <% if all_changes.blank? %>
-      <span class="text-muted fst-italic small">Sin cambios detectados</span>
-    <% else %>
-      <div class="changes-summary">
-        <% all_changes.each do |attr, (before, after)| %>
-          <div class="change-item mb-2">
-            <span class="badge bg-<%= change_severity(attr) %> bg-opacity-10 text-<%= change_severity(attr) %> mb-1">
-              <%= attr.humanize %>
-            </span>
-            <div class="d-flex align-items-center gap-2 small flex-wrap">
-              <code class="change-code text-danger"><%= format_value_detailed(before) %></code>
-              <i class="bi bi-arrow-right text-muted"></i>
-              <code class="change-code text-success"><%= format_value_detailed(after) %></code>
+    <% if version.event == 'update' %>
+      <% all_changes = summarize_changes(version, max_keys: 100) %>
+      <% if all_changes.blank? %>
+        <span class="text-muted fst-italic small">Sin cambios detectados</span>
+      <% else %>
+        <div class="changes-summary">
+          <% all_changes.each do |attr, (before, after)| %>
+            <div class="change-item mb-2">
+              <span class="badge bg-<%= change_severity(attr) %> bg-opacity-10 text-<%= change_severity(attr) %> mb-1">
+                <%= attribute_label(attr, version.item_type) %>
+              </span>
+              <div class="d-flex align-items-center gap-2 small flex-wrap">
+                <code class="change-code text-danger"><%= format_change_value(before, attr, version.item_type) %></code>
+                <i class="bi bi-arrow-right text-muted"></i>
+                <code class="change-code text-success"><%= format_change_value(after, attr, version.item_type) %></code>
+              </div>
             </div>
-          </div>
-        <% end %>
-      </div>
+          <% end %>
+        </div>
+      <% end %>
+    <% elsif version.event == 'create' %>
+      <% fields = create_summary(version) %>
+      <% if fields.any? %>
+        <div class="changes-summary">
+          <% fields.each do |attr, value| %>
+            <div class="change-item mb-1">
+              <span class="badge bg-success bg-opacity-10 text-success mb-1" style="font-size:0.65rem;">
+                <%= attribute_label(attr, version.item_type) %>
+              </span>
+              <code class="change-code text-success" style="font-size:0.72rem;">
+                <%= format_change_value(value, attr, version.item_type) %>
+              </code>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <span class="small text-success"><i class="bi bi-plus-circle me-1"></i>Registro creado</span>
+      <% end %>
+    <% elsif version.event == 'destroy' %>
+      <% fields = destroy_summary(version) %>
+      <% if fields.any? %>
+        <div class="changes-summary">
+          <% fields.each do |attr, value| %>
+            <div class="change-item mb-1">
+              <span class="badge bg-danger bg-opacity-10 text-danger mb-1" style="font-size:0.65rem;">
+                <%= attribute_label(attr, version.item_type) %>
+              </span>
+              <code class="change-code text-danger" style="font-size:0.72rem;">
+                <%= format_change_value(value, attr, version.item_type) %>
+              </code>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <span class="small text-danger"><i class="bi bi-trash me-1"></i>Registro eliminado</span>
+      <% end %>
     <% end %>
   </td>
   <%# Acciones %>

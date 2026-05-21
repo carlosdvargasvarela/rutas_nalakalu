@@ -29,5 +29,13 @@ module RutasNalakalu
     # config.eager_load_paths << Rails.root.join("extras")
 
     config.active_job.queue_adapter = :sidekiq
+
+    # Permite deserializar los tipos que PaperTrail guarda en object_changes (YAML safe_load).
+    # Sin esto, campos como delivery_date (Date) o timestamps (TimeWithZone) fallan
+    # silenciosamente y changeset retorna {}, mostrando "Sin cambios detectados".
+    config.active_record.yaml_column_permitted_classes = [
+      Symbol, Date, Time, DateTime, BigDecimal,
+      ActiveSupport::TimeWithZone, ActiveSupport::TimeZone
+    ]
   end
 end

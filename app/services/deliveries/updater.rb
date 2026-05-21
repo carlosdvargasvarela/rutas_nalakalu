@@ -18,6 +18,9 @@ module Deliveries
 
         new_date = delivery_params[:delivery_date].presence || @delivery.delivery_date
 
+        # Asignar todos los atributos en memoria para capturar el set completo de cambios
+        @delivery.assign_attributes(delivery_params.except(:delivery_items_attributes, :delivery_address_id, :order_id, :_return_to_panel))
+
         validate_no_duplicate_products!(
           order: @order,
           address: @address,
@@ -26,10 +29,10 @@ module Deliveries
           excluding_delivery: @delivery
         )
 
-        # Capturar campos cambiados antes de guardar
+        # Capturar campos cambiados (incluye address + todos los params asignados arriba)
         changed_fields = @delivery.changed
 
-        @delivery.update!(delivery_params.except(:delivery_items_attributes, :delivery_address_id, :order_id, :_return_to_panel))
+        @delivery.save!
 
         # 🔹 Registrar evento solo si hubo cambios reales
         if changed_fields.any?
