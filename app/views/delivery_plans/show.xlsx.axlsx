@@ -1,152 +1,244 @@
 wb = xlsx_package.workbook
+is_ops_user = current_user.logistics? || current_user.production_manager?
 
-# =====================
-# Estilos
-# =====================
-header_style = wb.styles.add_style(
-  bg_color: "4472C4",
-  fg_color: "FFFFFF",
-  b: true,
-  alignment: { horizontal: :center, wrap_text: true }
-)
-
-scheduled_style = wb.styles.add_style(
-  bg_color: "FFF2CC",
-  border: { style: :thin, color: "D6B656" },
-  alignment: { wrap_text: true, vertical: :top }
-)
-
-ready_style = wb.styles.add_style(
-  bg_color: "E2EFDA",
-  border: { style: :thin, color: "70AD47" },
-  alignment: { wrap_text: true, vertical: :top }
-)
-
-confirmed_style = wb.styles.add_style(
-  bg_color: "DEEBF7",
-  border: { style: :thin, color: "5B9BD5" },
-  alignment: { wrap_text: true, vertical: :top }
-)
-
-delivered_style = wb.styles.add_style(
-  bg_color: "D5E8D4",
-  border: { style: :thin, color: "82B366" },
-  alignment: { wrap_text: true, vertical: :top }
-)
-
-cancelled_style = wb.styles.add_style(
-  bg_color: "F8CECC",
-  border: { style: :thin, color: "B85450" },
-  alignment: { wrap_text: true, vertical: :top }
-)
-
-rescheduled_style = wb.styles.add_style(
-  bg_color: "F4B942",
-  fg_color: "000000",
-  b: true,
-  sz: 12,
-  border: { style: :medium, color: "C07A00" },
-  alignment: { wrap_text: true, vertical: :center, horizontal: :center }
-)
-
-default_style = wb.styles.add_style(
-  border: { style: :thin, color: "CCCCCC" },
-  alignment: { wrap_text: true, vertical: :top }
-)
-
-# =====================
-# Hoja
-# =====================
-wb.add_worksheet(name: "Plan de Ruta") do |sheet|
+if is_ops_user
   # =====================
-  # Header
+  # Estilos — Glow-up para despacho / producción
   # =====================
-  sheet.add_row [
-    "Fecha de entrega",
-    "Pedido",
-    "Producto",
-    "Cantidad",
-    "Vendedor",
-    "Cliente",
-    "Dirección",
-    "# Parada",
-    "Conductor",
-    "Camión",
-    "Estado",
-    "Cargado en el Camión?",
-    "Hora",
-    "Contacto",
-    "Notas"
-  ], style: header_style
+  header_style = wb.styles.add_style(
+    bg_color: "1B3A6B",
+    fg_color: "FFFFFF",
+    b: true,
+    sz: 16,
+    alignment: { horizontal: :center, wrap_text: true, vertical: :center }
+  )
 
-  # =====================
-  # Filas de datos
-  # =====================
-  @assignments.each do |assignment|
-    delivery = assignment.delivery
+  row_even_style = wb.styles.add_style(
+    bg_color: "EEF4FB",
+    sz: 13,
+    border: { style: :thin, color: "BDD7EE" },
+    alignment: { wrap_text: true, vertical: :center, horizontal: :center }
+  )
 
-    # Determinar estilo según estado de la entrega
-    row_style = case delivery.status&.to_s
-                when "scheduled"        then scheduled_style
-                when "ready_to_deliver" then ready_style
-                when "confirmed"        then confirmed_style
-                when "delivered"        then delivered_style
-                when "cancelled"        then cancelled_style
-                else default_style
-                end
+  row_odd_style = wb.styles.add_style(
+    bg_color: "FFFFFF",
+    sz: 13,
+    border: { style: :thin, color: "BDD7EE" },
+    alignment: { wrap_text: true, vertical: :center, horizontal: :center }
+  )
 
-    active_items = delivery.active_items_for_plan_for(current_user)
+  rescheduled_style = wb.styles.add_style(
+    bg_color: "FFC000",
+    fg_color: "5C2E00",
+    b: true,
+    sz: 16,
+    border: { style: :medium, color: "C07A00" },
+    alignment: { wrap_text: true, vertical: :center, horizontal: :center }
+  )
 
-    if active_items.empty?
-      is_rescheduled = delivery.rescheduled? || delivery.delivery_items.any?
-      next_del = delivery.next_rescheduled_delivery if is_rescheduled
+  wb.add_worksheet(name: "Plan de Ruta") do |sheet|
+    sheet.add_row [
+      "Fecha de entrega",
+      "Pedido",
+      "Producto",
+      "Cantidad",
+      "Vendedor",
+      "Cargado en camión",
+      "Cliente",
+      "# Parada",
+      "Camión",
+      "Notas"
+    ], style: header_style, height: 30
 
-      product_text = if is_rescheduled
-        if next_del
-          "⚠ REAGENDADO → #{next_del.delivery_date.strftime("%d/%m/%Y")}"
+    row_index = 0
+
+    @assignments.each do |assignment|
+      delivery = assignment.delivery
+      active_items = delivery.active_items_for_plan_for(current_user)
+
+      if active_items.empty?
+        is_rescheduled = delivery.rescheduled? || delivery.delivery_items.any?
+        next_del = delivery.next_rescheduled_delivery if is_rescheduled
+
+        product_text = if is_rescheduled
+          next_del ? "⚠ REAGENDADO → #{next_del.delivery_date.strftime("%d/%m/%Y")}" : "⚠ REAGENDADO"
         else
-          "⚠ REAGENDADO"
+          "Sin productos"
         end
-      else
-        "Sin productos"
-      end
 
-      all_notes = []
-      all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
-      all_notes << "Nueva entrega ID: #{next_del.id}" if next_del
-
-      sheet.add_row [
-        delivery.delivery_date.strftime("%d/%m/%Y"),
-        delivery.order.number,
-        product_text,
-        "",
-        delivery.order.seller.seller_code,
-        delivery.order.client.name,
-        [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),
-        assignment.stop_order,
-        @delivery_plan.driver&.name || "Sin asignar",
-        @delivery_plan.truck || "Sin asignar",
-        delivery.display_status,
-        "",
-        delivery.delivery_time_preference.presence || "Sin preferencia",
-        "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
-        all_notes.join("\n")
-      ], style: is_rescheduled ? rescheduled_style : row_style
-
-    else
-      active_items.each do |delivery_item|
-        # Combinar notas con saltos de línea
         all_notes = []
         all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
-        all_notes << "PRODUCCIÓN: #{delivery_item.order_item.notes}" if delivery_item.order_item&.notes.present?
-        all_notes << "LOGÍSTICA: #{delivery_item.notes}" if delivery_item.notes.present?
-        notes_text = all_notes.join("\n")
+        all_notes << "Nueva entrega ID: #{next_del.id}" if next_del
+
+        row_style = is_rescheduled ? rescheduled_style : (row_index.even? ? row_even_style : row_odd_style)
+        sheet.add_row [
+          delivery.delivery_date.strftime("%d/%m/%Y"),
+          delivery.order.number,
+          product_text,
+          "",
+          delivery.order.seller.seller_code,
+          "",
+          delivery.order.client.name,
+          assignment.stop_order,
+          @delivery_plan.truck || "Sin asignar",
+          all_notes.join("\n")
+        ], style: row_style
+        row_index += 1
+
+      else
+        active_items.each do |delivery_item|
+          all_notes = []
+          all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
+          all_notes << "PRODUCCIÓN: #{delivery_item.order_item.notes}" if delivery_item.order_item&.notes.present?
+          all_notes << "LOGÍSTICA: #{delivery_item.notes}" if delivery_item.notes.present?
+
+          row_style = row_index.even? ? row_even_style : row_odd_style
+          sheet.add_row [
+            delivery.delivery_date.strftime("%d/%m/%Y"),
+            delivery.order.number,
+            delivery_item.order_item.product,
+            delivery_item.quantity,
+            delivery.order.seller.seller_code,
+            "",
+            delivery.order.client.name,
+            assignment.stop_order,
+            @delivery_plan.truck || "Sin asignar",
+            all_notes.join("\n")
+          ], style: row_style
+          row_index += 1
+        end
+      end
+    end
+
+    sheet.column_widths 20, 17, 32, 14, 17, 22, 28, 13, 15, 48
+
+    if @assignments.any?
+      first_date = @assignments.first.delivery.delivery_date.strftime("%d/%m/%Y")
+      if @assignments.all? { |a| a.delivery.delivery_date.strftime("%d/%m/%Y") == first_date }
+        total_rows = @assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
+        sheet.merge_cells("A2:A#{total_rows + 1}") if total_rows > 1
+      end
+    end
+
+    if @assignments.any?
+      total_rows = 1 + @assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
+      sheet.auto_filter = "A1:J#{total_rows}"
+    end
+
+    sheet.sheet_view.pane do |pane|
+      pane.y_split = 1
+      pane.state   = :frozen
+      pane.top_left_cell = "A2"
+    end
+  end
+
+else
+  # =====================
+  # Estilos — vista original para otros roles
+  # =====================
+  header_style = wb.styles.add_style(
+    bg_color: "4472C4",
+    fg_color: "FFFFFF",
+    b: true,
+    alignment: { horizontal: :center, wrap_text: true }
+  )
+
+  scheduled_style = wb.styles.add_style(
+    bg_color: "FFF2CC",
+    border: { style: :thin, color: "D6B656" },
+    alignment: { wrap_text: true, vertical: :top }
+  )
+
+  ready_style = wb.styles.add_style(
+    bg_color: "E2EFDA",
+    border: { style: :thin, color: "70AD47" },
+    alignment: { wrap_text: true, vertical: :top }
+  )
+
+  confirmed_style = wb.styles.add_style(
+    bg_color: "DEEBF7",
+    border: { style: :thin, color: "5B9BD5" },
+    alignment: { wrap_text: true, vertical: :top }
+  )
+
+  delivered_style = wb.styles.add_style(
+    bg_color: "D5E8D4",
+    border: { style: :thin, color: "82B366" },
+    alignment: { wrap_text: true, vertical: :top }
+  )
+
+  cancelled_style = wb.styles.add_style(
+    bg_color: "F8CECC",
+    border: { style: :thin, color: "B85450" },
+    alignment: { wrap_text: true, vertical: :top }
+  )
+
+  rescheduled_style = wb.styles.add_style(
+    bg_color: "F4B942",
+    fg_color: "000000",
+    b: true,
+    sz: 12,
+    border: { style: :medium, color: "C07A00" },
+    alignment: { wrap_text: true, vertical: :center, horizontal: :center }
+  )
+
+  default_style = wb.styles.add_style(
+    border: { style: :thin, color: "CCCCCC" },
+    alignment: { wrap_text: true, vertical: :top }
+  )
+
+  wb.add_worksheet(name: "Plan de Ruta") do |sheet|
+    sheet.add_row [
+      "Fecha de entrega",
+      "Pedido",
+      "Producto",
+      "Cantidad",
+      "Vendedor",
+      "Cliente",
+      "Dirección",
+      "# Parada",
+      "Conductor",
+      "Camión",
+      "Estado",
+      "Cargado en el Camión?",
+      "Hora",
+      "Contacto",
+      "Notas"
+    ], style: header_style
+
+    @assignments.each do |assignment|
+      delivery = assignment.delivery
+
+      row_style = case delivery.status&.to_s
+                  when "scheduled"        then scheduled_style
+                  when "ready_to_deliver" then ready_style
+                  when "confirmed"        then confirmed_style
+                  when "delivered"        then delivered_style
+                  when "cancelled"        then cancelled_style
+                  else default_style
+                  end
+
+      active_items = delivery.active_items_for_plan_for(current_user)
+
+      if active_items.empty?
+        is_rescheduled = delivery.rescheduled? || delivery.delivery_items.any?
+        next_del = delivery.next_rescheduled_delivery if is_rescheduled
+
+        product_text = if is_rescheduled
+          next_del ? "⚠ REAGENDADO → #{next_del.delivery_date.strftime("%d/%m/%Y")}" : "⚠ REAGENDADO"
+        else
+          "Sin productos"
+        end
+
+        all_notes = []
+        all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
+        all_notes << "Nueva entrega ID: #{next_del.id}" if next_del
 
         sheet.add_row [
           delivery.delivery_date.strftime("%d/%m/%Y"),
           delivery.order.number,
-          delivery_item.order_item.product,
-          delivery_item.quantity,
+          product_text,
+          "",
           delivery.order.seller.seller_code,
           delivery.order.client.name,
           [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),
@@ -157,39 +249,56 @@ wb.add_worksheet(name: "Plan de Ruta") do |sheet|
           "",
           delivery.delivery_time_preference.presence || "Sin preferencia",
           "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
-          notes_text
-        ], style: row_style
+          all_notes.join("\n")
+        ], style: is_rescheduled ? rescheduled_style : row_style
+
+      else
+        active_items.each do |delivery_item|
+          all_notes = []
+          all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
+          all_notes << "PRODUCCIÓN: #{delivery_item.order_item.notes}" if delivery_item.order_item&.notes.present?
+          all_notes << "LOGÍSTICA: #{delivery_item.notes}" if delivery_item.notes.present?
+
+          sheet.add_row [
+            delivery.delivery_date.strftime("%d/%m/%Y"),
+            delivery.order.number,
+            delivery_item.order_item.product,
+            delivery_item.quantity,
+            delivery.order.seller.seller_code,
+            delivery.order.client.name,
+            [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),
+            assignment.stop_order,
+            @delivery_plan.driver&.name || "Sin asignar",
+            @delivery_plan.truck || "Sin asignar",
+            delivery.display_status,
+            "",
+            delivery.delivery_time_preference.presence || "Sin preferencia",
+            "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
+            all_notes.join("\n")
+          ], style: row_style
+        end
       end
     end
-  end
 
-  # =====================
-  # Ajustes de hoja
-  # =====================
-  sheet.column_widths 12, 15, 25, 10, 12, 20, 30, 8, 15, 10, 15, 15, 25, 50
+    sheet.column_widths 12, 15, 25, 10, 12, 20, 30, 8, 15, 10, 15, 15, 25, 50
 
-  # Combinar celdas de fecha si todas son iguales
-  if @assignments.any?
-    first_date = @assignments.first.delivery.delivery_date.strftime("%d/%m/%Y")
-
-    if @assignments.all? { |a| a.delivery.delivery_date.strftime("%d/%m/%Y") == first_date }
-      total_rows = @assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
-      if total_rows > 1
-        sheet.merge_cells("A2:A#{total_rows + 1}")
+    if @assignments.any?
+      first_date = @assignments.first.delivery.delivery_date.strftime("%d/%m/%Y")
+      if @assignments.all? { |a| a.delivery.delivery_date.strftime("%d/%m/%Y") == first_date }
+        total_rows = @assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
+        sheet.merge_cells("A2:A#{total_rows + 1}") if total_rows > 1
       end
     end
-  end
 
-  # Filtros automáticos
-  if @assignments.any?
-    total_rows = 1 + @assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
-    sheet.auto_filter = "A1:N#{total_rows}"
-  end
+    if @assignments.any?
+      total_rows = 1 + @assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
+      sheet.auto_filter = "A1:N#{total_rows}"
+    end
 
-  # Congelar primera fila
-  sheet.sheet_view.pane do |pane|
-    pane.y_split = 1
-    pane.state   = :frozen
-    pane.top_left_cell = "A2"
+    sheet.sheet_view.pane do |pane|
+      pane.y_split = 1
+      pane.state   = :frozen
+      pane.top_left_cell = "A2"
+    end
   end
 end

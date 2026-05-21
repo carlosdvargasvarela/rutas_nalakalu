@@ -273,81 +273,150 @@ class DeliveryPlansController < ApplicationController
       end
       format.pdf do
         pdf_title = "Hoja_Ruta_#{@from_date&.strftime("%d_%m_%Y")}_#{@delivery_plan.truck.presence || "Sin_Camion"}"
-        pdf = Prawn::Document.new(page_size: "A2", page_layout: :landscape)
-        pdf.text pdf_title, size: 16, style: :bold, align: :center
-        pdf.move_down 20
-        headers = [
-          "# Parada", "Pedido", "Producto", "Cantidad", "Cliente", "Vendedor",
-          "Dirección", "Hora", "Fecha", "Contacto", "Teléfono", "Notas", "Estado"
-        ]
-        rows = @assignments.flat_map do |assignment|
-          delivery = assignment.delivery
-          address = delivery.delivery_address
-          active_items = delivery.active_items_for_plan_for(current_user)
+        is_ops_user = current_user.logistics? || current_user.production_manager?
 
-          if active_items.empty?
-            next_del = delivery.next_rescheduled_delivery
-            rescheduled_text = if next_del
-              "⚠ REAGENDADO → #{I18n.l(next_del.delivery_date, format: :long)}"
-            else
-              "⚠ REAGENDADO"
-            end
-            notes = []
-            notes << "VENDEDOR: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
-            notes << "Nueva entrega ID: #{next_del.id}" if next_del
-            [[
-              assignment.stop_order,
-              delivery.order.number,
-              rescheduled_text,
-              "-",
-              delivery.order.client.name,
-              delivery.order.seller.seller_code,
-              [address.address, address.description].compact.join(" - "),
-              delivery.delivery_time_preference.presence || "Sin preferencia",
-              I18n.l(delivery.delivery_date, format: :long),
-              delivery.contact_name,
-              delivery.contact_phone.presence || "-",
-              notes.join("\n"),
-              delivery.display_status
-            ]]
-          else
-            active_items.map do |item|
-              address_text = [address.address, address.description].compact.join(" - ")
-              map_link =
-                if address.latitude.present? && address.longitude.present?
-                  " (Waze: https://waze.com/ul?ll=#{address.latitude},#{address.longitude}&navigate=yes)"
-                elsif address.address.present?
-                  " (Waze: https://waze.com/ul?q=#{ERB::Util.url_encode(address.address)}&navigate=yes)"
-                else
-                  ""
-                end
-              full_address = "#{address_text}#{map_link}"
+        pdf = Prawn::Document.new(page_size: "A2", page_layout: :landscape)
+        pdf.font_size 12
+        pdf.text pdf_title, size: 18, style: :bold, align: :center
+        pdf.move_down 16
+
+        if is_ops_user
+          headers = [
+            "Fecha de entrega", "Pedido", "Producto", "Cantidad",
+            "Vendedor", "Cargado en camión", "Cliente", "# Parada", "Camión", "Notas"
+          ]
+          rows = @assignments.flat_map do |assignment|
+            delivery = assignment.delivery
+            active_items = delivery.active_items_for_plan_for(current_user)
+
+            if active_items.empty?
+              next_del = delivery.next_rescheduled_delivery
+              rescheduled_text = next_del ?
+                "[!] REAGENDADO -> #{I18n.l(next_del.delivery_date, format: :long)}" :
+                "[!] REAGENDADO"
               notes = []
-              notes << "PRODUCCIÓN: #{item.order_item.notes}" if item.order_item.notes.present?
-              notes << "LOGÍSTICA: #{item.notes}" if item.notes.present?
+              notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
+              notes << "Nueva entrega ID: #{next_del.id}" if next_del
+              [[
+                I18n.l(delivery.delivery_date, format: :long),
+                delivery.order.number,
+                rescheduled_text,
+                "-",
+                delivery.order.seller.seller_code,
+                "",
+                delivery.order.client.name,
+                assignment.stop_order,
+                @delivery_plan.truck || "Sin asignar",
+                notes.join("\n")
+              ]]
+            else
+              active_items.map do |item|
+                notes = []
+                notes << "PRODUCCION: #{item.order_item.notes}" if item.order_item.notes.present?
+                notes << "LOGISTICA: #{item.notes}" if item.notes.present?
+                notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
+                [
+                  I18n.l(delivery.delivery_date, format: :long),
+                  delivery.order.number,
+                  item.order_item.product,
+                  item.quantity_delivered,
+                  delivery.order.seller.seller_code,
+                  "",
+                  delivery.order.client.name,
+                  assignment.stop_order,
+                  @delivery_plan.truck || "Sin asignar",
+                  notes.join("\n")
+                ]
+              end
+            end
+          end
+
+          pdf.table([headers] + rows, header: true, position: :center,
+            cell_style: {size: 13, inline_format: true, padding: [6, 8]}) do
+            row(0).style(
+              background_color: "1B3A6B",
+              text_color: "FFFFFF",
+              font_style: :bold,
+              size: 15
+            )
+            rows(1..-1).each_with_index do |r, i|
+              r.style(background_color: i.even? ? "EEF4FB" : "FFFFFF")
+            end
+          end
+
+        else
+          headers = [
+            "# Parada", "Pedido", "Producto", "Cantidad", "Cliente", "Vendedor",
+            "Dirección", "Hora", "Fecha", "Contacto", "Teléfono", "Notas", "Estado"
+          ]
+          rows = @assignments.flat_map do |assignment|
+            delivery = assignment.delivery
+            address = delivery.delivery_address
+            active_items = delivery.active_items_for_plan_for(current_user)
+
+            if active_items.empty?
+              next_del = delivery.next_rescheduled_delivery
+              rescheduled_text = next_del ?
+                "[!] REAGENDADO -> #{I18n.l(next_del.delivery_date, format: :long)}" :
+                "[!] REAGENDADO"
+              notes = []
               notes << "VENDEDOR: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
-              [
+              notes << "Nueva entrega ID: #{next_del.id}" if next_del
+              [[
                 assignment.stop_order,
                 delivery.order.number,
-                item.order_item.product,
-                item.quantity_delivered,
+                rescheduled_text,
+                "-",
                 delivery.order.client.name,
                 delivery.order.seller.seller_code,
-                full_address,
+                [address.address, address.description].compact.join(" - "),
                 delivery.delivery_time_preference.presence || "Sin preferencia",
                 I18n.l(delivery.delivery_date, format: :long),
                 delivery.contact_name,
                 delivery.contact_phone.presence || "-",
                 notes.join("\n"),
-                item.display_status
-              ]
+                delivery.display_status
+              ]]
+            else
+              active_items.map do |item|
+                address_text = [address.address, address.description].compact.join(" - ")
+                map_link =
+                  if address.latitude.present? && address.longitude.present?
+                    " (Waze: https://waze.com/ul?ll=#{address.latitude},#{address.longitude}&navigate=yes)"
+                  elsif address.address.present?
+                    " (Waze: https://waze.com/ul?q=#{ERB::Util.url_encode(address.address)}&navigate=yes)"
+                  else
+                    ""
+                  end
+                notes = []
+                notes << "PRODUCCIÓN: #{item.order_item.notes}" if item.order_item.notes.present?
+                notes << "LOGÍSTICA: #{item.notes}" if item.notes.present?
+                notes << "VENDEDOR: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
+                [
+                  assignment.stop_order,
+                  delivery.order.number,
+                  item.order_item.product,
+                  item.quantity_delivered,
+                  delivery.order.client.name,
+                  delivery.order.seller.seller_code,
+                  "#{address_text}#{map_link}",
+                  delivery.delivery_time_preference.presence || "Sin preferencia",
+                  I18n.l(delivery.delivery_date, format: :long),
+                  delivery.contact_name,
+                  delivery.contact_phone.presence || "-",
+                  notes.join("\n"),
+                  item.display_status
+                ]
+              end
             end
           end
+
+          pdf.table([headers] + rows, header: true,
+            row_colors: %w[F0F0F0 FFFFFF],
+            position: :center,
+            cell_style: {inline_format: true})
         end
-        pdf.table([headers] + rows, header: true,
-          row_colors: %w[F0F0F0 FFFFFF],
-          position: :center,
-          cell_style: {inline_format: true})
+
         send_data pdf.render,
           filename: "#{pdf_title}.pdf",
           type: "application/pdf",
