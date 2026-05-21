@@ -1,6 +1,7 @@
 # app/controllers/orders_controller.rb
 class OrdersController < ApplicationController
   before_action :set_order, only: [:show, :destroy, :confirm_all_items_ready]
+  before_action :redirect_non_admins
 
   def index
     # Incluir las asociaciones necesarias para el filtro de notas
@@ -43,5 +44,15 @@ class OrdersController < ApplicationController
 
   def set_order
     @order = Order.find(params[:id])
+  end
+
+  def redirect_non_admins
+    return if current_user.admin?
+
+    if current_user.production_manager?
+      redirect_to @order ? management_production_deliveries_path(order_number: @order.number) : management_production_deliveries_path
+    else
+      redirect_to @order ? deliveries_path(q: { order_number_cont: @order.number }) : deliveries_path
+    end
   end
 end
