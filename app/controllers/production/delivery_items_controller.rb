@@ -37,6 +37,23 @@ class Production::DeliveryItemsController < ApplicationController
     end
   end
 
+  def add_note
+    authorize @delivery_item, :add_note?
+    @delivery_item.update!(notes: params[:note].to_s.strip)
+
+    respond_to do |format|
+      format.html { redirect_back fallback_location: root_path }
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          "delivery_item_#{@delivery_item.id}",
+          partial: "production/delivery_items/delivery_item_row",
+          locals: { item: @delivery_item }
+        )
+      end
+      format.json { render json: { success: true, notes: @delivery_item.notes } }
+    end
+  end
+
   private
 
   def set_delivery_item

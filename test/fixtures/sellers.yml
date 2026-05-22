@@ -3,7 +3,9 @@
 one:
   user: one
   name: MyString
+  seller_code: SELLER001
 
 two:
   user: two
   name: MyString
+  seller_code: SELLER002

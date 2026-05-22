@@ -13,6 +13,10 @@ class DeliveryItemPolicy < ApplicationPolicy
     admin_or_manager_or_logistics?
   end
 
+  def add_note?
+    admin_or_manager_or_logistics?
+  end
+
   def show?
     user.admin? || user.production_manager? || user.logistics?
   end
