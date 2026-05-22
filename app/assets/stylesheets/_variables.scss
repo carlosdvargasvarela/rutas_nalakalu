@@ -1,0 +1,34 @@
+// app/assets/stylesheets/_variables.scss
+:root {
+  // ── Brand ─────────────────────────────────────────────
+  --color-brand-primary:    #0d6efd;
+  --color-brand-accent:     #6610f2;
+  --color-brand-bg:         #fff7ee;
+
+  // ── Surface ───────────────────────────────────────────
+  --color-surface:          #ffffff;
+  --color-surface-subtle:   #f8f9fa;
+  --color-border:           #dee2e6;
+
+  // ── Text ──────────────────────────────────────────────
+  --color-text:             #212529;
+  --color-text-muted:       #6c757d;
+
+  // ── Status ────────────────────────────────────────────
+  --color-success:          #198754;
+  --color-success-subtle:   #d1e7dd;
+  --color-danger:           #dc3545;
+  --color-danger-subtle:    #f8d7da;
+  --color-warning:          #856404;
+  --color-warning-subtle:   #fff3cd;
+
+  // ── Production module ─────────────────────────────────
+  --pd-accent:              var(--color-brand-primary);
+  --pd-surface:             var(--color-surface);
+  --pd-surface-subtle:      var(--color-surface-subtle);
+  --pd-border:              var(--color-border);
+  --pd-success-item:        #f0fdf4;
+  --pd-danger-item:         #fff5f5;
+  --pd-warning-item:        #fffbeb;
+  --pd-note-text:           #664d03;
+}
