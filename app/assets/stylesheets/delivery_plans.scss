@@ -9,3 +9,40 @@
 h1.fs-4, h2.fs-4 {
   font-size: 1.25rem;
 }
+
+// ── Sortable / drag-and-drop ──────────────────────────────────
+.dragging-group {
+  opacity: 0.5;
+  background-color: #e3f2fd !important;
+  border-left: 4px solid #2196f3 !important;
+}
+
+.sortable-ghost {
+  opacity: 0.4;
+  background-color: #bbdefb !important;
+}
+
+.sortable-chosen {
+  background-color: #e3f2fd !important;
+  cursor: grabbing !important;
+}
+
+.sortable-drag {
+  opacity: 1 !important;
+  background-color: #fff !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3) !important;
+}
+
+.drag-handle {
+  cursor: grab;
+  transition: color 0.2s;
+}
+.drag-handle:hover  { color: #0d6efd !important; }
+.drag-handle:active { cursor: grabbing; }
+
+.stop-group-header { border-left: 4px solid #0d6efd; }
+
+.stop-item.table-active {
+  background-color: #f8f9fa;
+  border-left: 3px solid #6c757d;
+}
