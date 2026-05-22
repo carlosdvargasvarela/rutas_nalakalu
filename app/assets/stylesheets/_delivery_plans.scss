@@ -79,6 +79,108 @@
   min-width: 45px;
 }
 
+// ── Stops panel (_stops.html.erb) ────────────────────────────
+
+.stops-panel {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e9ecef;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+.stop-group {
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  background: #fff;
+}
+.stop-group:hover {
+  box-shadow: 0 4px 16px rgba(13,110,253,.12);
+}
+
+.stop-group-header {
+  background: linear-gradient(135deg, #f8f9ff 0%, #eef2ff 100%);
+  border-bottom: 1px solid #e2e8ff;
+  min-height: 44px;
+}
+
+.stop-item {
+  border-bottom: 1px solid #f1f3f5;
+  transition: background 0.15s ease;
+}
+.stop-item:last-child { border-bottom: none; }
+.stop-item:hover { background: #f8f9ff; }
+
+.stop-item-secondary {
+  background: #fafbff;
+  border-left: 3px solid #dee2e6;
+}
+.stop-item:not(.stop-item-secondary) {
+  border-left: 3px solid #0d6efd;
+}
+
+.drag-handle:hover  { color: #0056b3 !important; }
+.drag-handle:active { cursor: grabbing !important; }
+
+.sortable-ghost {
+  opacity: 0.35;
+  background: #e8f0fe !important;
+  border: 2px dashed #0d6efd !important;
+  border-radius: 12px;
+}
+.sortable-chosen {
+  box-shadow: 0 8px 24px rgba(13,110,253,.2) !important;
+  transform: scale(1.01);
+}
+
+.note-block {
+  border-radius: 6px;
+  padding: 3px 7px;
+  border-left: 3px solid;
+  line-height: 1.3;
+}
+.note-orange { background: #fff8f0; border-color: #fd7e14; color: #7c3a00; }
+.note-blue   { background: #f0f7ff; border-color: #0d6efd; color: #003580; }
+.note-gray   { background: #f8f9fa; border-color: #adb5bd; color: #495057; }
+
+// Note product label (tiny text under note content)
+.note-product-label { font-size: 0.6rem; }
+
+// Stop-item fixed-width columns
+.stop-col-indicator { width: 20px; padding-top: 2px; }
+.stop-col-client    { width: 180px; }
+.stop-col-products  { width: 200px; }
+.stop-col-notes     { width: 240px; }
+
+// Sub-indicator dot icon
+.stop-dot-icon { font-size: 0.5rem; }
+
+// Order number under client name
+.stop-order-number { font-size: 0.7rem; }
+
+// "Same location" hint for grouped deliveries
+.stop-same-location { font-size: 0.65rem; }
+
+// Time preference badge inside stop row
+.stop-time-badge { font-size: 0.65rem; }
+
+// Chevron icon inside product toggle
+.stop-chevron-icon { font-size: 0.6rem; }
+
+// Quantity badge inside product list
+.stop-qty-badge { font-size: 0.65rem; }
+
+// Service case badge inside product list
+.stop-service-badge { font-size: 0.6rem; }
+
+// Stop number badge minimum width
+.stop-number { min-width: 28px; }
+
+// Multiple-deliveries count badge
+.stop-group-count-badge { font-size: 0.7rem; }
+
 // Reducir altura del mapa en móviles
 @media (max-width: 576px) {
   [data-delivery-plan-map-target="map"] {

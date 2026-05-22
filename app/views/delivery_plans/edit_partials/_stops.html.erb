@@ -27,13 +27,13 @@
           <%# Header de la card %>
           <div class="stop-group-header d-flex align-items-center justify-content-between px-3 py-2">
             <div class="d-flex align-items-center gap-2">
-              <i class="bi bi-grip-vertical drag-handle fs-5 text-primary" style="cursor:grab;"></i>
-              <span class="badge bg-primary rounded-pill stop-number" style="min-width:28px;">
+              <i class="bi bi-grip-vertical drag-handle fs-5 text-primary"></i>
+              <span class="badge bg-primary rounded-pill stop-number">
                 <%= stop_number %>
               </span>
               <span class="fw-semibold text-dark small">Parada <%= stop_number %></span>
               <% if group.size > 1 %>
-                <span class="badge bg-light text-secondary border" style="font-size:0.7rem;">
+                <span class="badge bg-light text-secondary border stop-group-count-badge">
                   <i class="bi bi-layers me-1"></i><%= group.size %> entregas
                 </span>
               <% end %>
@@ -60,19 +60,19 @@
                    data-assignment-id="<%= assignment.id %>"
                   data-stop-number="<%= stop_number %>">
                 <%# Indicador de sub-entrega %>
-                <div class="stop-item-indicator flex-shrink-0 text-center" style="width:20px; padding-top:2px;">
+                <div class="stop-item-indicator flex-shrink-0 text-center stop-col-indicator">
                   <% if idx == 0 %>
-                    <i class="bi bi-circle-fill text-primary" style="font-size:0.5rem;"></i>
+                    <i class="bi bi-circle-fill text-primary stop-dot-icon"></i>
                   <% else %>
                     <i class="bi bi-arrow-return-right text-muted small"></i>
                   <% end %>
                 </div>
                 <%# Cliente + Orden %>
-                <div class="flex-shrink-0" style="width:180px;">
+                <div class="flex-shrink-0 stop-col-client">
                   <div class="fw-semibold text-dark small"><%= d.order.client.name %></div>
-                  <div class="text-muted" style="font-size:0.7rem;">#<%= d.order.number %></div>
+                  <div class="text-muted stop-order-number">#<%= d.order.number %></div>
                   <% if idx > 0 %>
-                    <small class="text-success" style="font-size:0.65rem;">
+                    <small class="text-success stop-same-location">
                       <i class="bi bi-geo-alt-fill"></i> Misma ubicación
                     </small>
                   <% end %>
@@ -84,28 +84,28 @@
                   </div>
                   <%# Hora preferencia %>
                   <% if d.delivery_time_preference.present? %>
-                    <span class="badge bg-light text-dark border mt-1" style="font-size:0.65rem;">
+                    <span class="badge bg-light text-dark border mt-1 stop-time-badge">
                       <i class="bi bi-clock me-1 text-primary"></i><%= d.delivery_time_preference %>
                     </span>
                   <% end %>
                 </div>
                 <%# Productos (collapsible) %>
-                <div class="flex-shrink-0" style="width:200px;">
+                <div class="flex-shrink-0 stop-col-products">
                   <a class="small text-decoration-none text-primary"
                      data-bs-toggle="collapse"
                      href="#products_<%= assignment.id %>"
                      role="button">
                     <i class="bi bi-box-seam me-1"></i>
                     <%= d.delivery_items.size %> producto<%= d.delivery_items.size == 1 ? '' : 's' %>
-                    <i class="bi bi-chevron-down" style="font-size:0.6rem;"></i>
+                    <i class="bi bi-chevron-down stop-chevron-icon"></i>
                   </a>
                   <div class="collapse mt-1" id="products_<%= assignment.id %>">
                     <% d.delivery_items.includes(:order_item).each do |di| %>
                       <div class="d-flex align-items-center gap-1 mb-1">
-                        <span class="badge bg-secondary" style="font-size:0.65rem;">x<%= di.quantity_delivered %></span>
+                        <span class="badge bg-secondary stop-qty-badge">x<%= di.quantity_delivered %></span>
                         <span class="small text-dark"><%= di.order_item.product %></span>
                         <% if di.service_case? %>
-                          <span class="badge bg-warning text-dark" style="font-size:0.6rem;">
+                          <span class="badge bg-warning text-dark stop-service-badge">
                             <i class="bi bi-tools"></i>
                           </span>
                         <% end %>
@@ -114,7 +114,7 @@
                   </div>
                 </div>
                 <%# Notas %>
-                <div class="flex-shrink-0" style="width:240px;">
+                <div class="flex-shrink-0 stop-col-notes">
                   <% if d.delivery_notes.present? %>
                     <div class="note-block note-orange mb-1">
                       <i class="bi bi-sticky-fill me-1"></i>
@@ -126,14 +126,14 @@
                       <div class="note-block note-blue mb-1">
                         <i class="bi bi-pin-angle-fill me-1"></i>
                         <span class="small"><em><%= di.notes %></em></span>
-                        <div class="text-muted" style="font-size:0.6rem;"><%= di.order_item.product %></div>
+                        <div class="text-muted note-product-label"><%= di.order_item.product %></div>
                       </div>
                     <% end %>
                     <% if di.order_item.notes.present? %>
                       <div class="note-block note-gray mb-1">
                         <i class="bi bi-info-circle me-1"></i>
                         <span class="small"><%= di.order_item.notes %></span>
-                        <div class="text-muted" style="font-size:0.6rem;"><%= di.order_item.product %></div>
+                        <div class="text-muted note-product-label"><%= di.order_item.product %></div>
                       </div>
                     <% end %>
                   <% end %>
@@ -163,74 +163,3 @@
   <% end %>
 </div>
 <%# /stops-panel %>
-<style>
-  /* ── Panel ── */
-  .stops-panel {
-    background: #fff;
-    border-radius: 14px;
-    border: 1px solid #e9ecef;
-    padding: 1.25rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,.06);
-  }
-
-  /* ── Card de grupo ── */
-  .stop-group {
-    border: 1px solid #dee2e6;
-    border-radius: 12px;
-    overflow: hidden;
-    transition: box-shadow 0.2s ease, transform 0.15s ease;
-    background: #fff;
-  }
-  .stop-group:hover {
-    box-shadow: 0 4px 16px rgba(13,110,253,.12);
-  }
-
-  /* ── Header de grupo ── */
-  .stop-group-header {
-    background: linear-gradient(135deg, #f8f9ff 0%, #eef2ff 100%);
-    border-bottom: 1px solid #e2e8ff;
-    min-height: 44px;
-  }
-
-  /* ── Items dentro del grupo ── */
-  .stop-item {
-    border-bottom: 1px solid #f1f3f5;
-    transition: background 0.15s ease;
-  }
-  .stop-item:last-child { border-bottom: none; }
-  .stop-item:hover { background: #f8f9ff; }
-
-  .stop-item-secondary {
-    background: #fafbff;
-    border-left: 3px solid #dee2e6;
-  }
-  .stop-item:not(.stop-item-secondary) {
-    border-left: 3px solid #0d6efd;
-  }
-
-  /* ── Drag & Drop ── */
-  .drag-handle:hover { color: #0056b3 !important; }
-  .drag-handle:active { cursor: grabbing !important; }
-
-  .sortable-ghost {
-    opacity: 0.35;
-    background: #e8f0fe !important;
-    border: 2px dashed #0d6efd !important;
-    border-radius: 12px;
-  }
-  .sortable-chosen {
-    box-shadow: 0 8px 24px rgba(13,110,253,.2) !important;
-    transform: scale(1.01);
-  }
-
-  /* ── Notas ── */
-  .note-block {
-    border-radius: 6px;
-    padding: 3px 7px;
-    border-left: 3px solid;
-    line-height: 1.3;
-  }
-  .note-orange { background: #fff8f0; border-color: #fd7e14; color: #7c3a00; }
-  .note-blue   { background: #f0f7ff; border-color: #0d6efd; color: #003580; }
-  .note-gray   { background: #f8f9fa; border-color: #adb5bd; color: #495057; }
-</style>
