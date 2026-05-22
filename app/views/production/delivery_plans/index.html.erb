@@ -183,7 +183,9 @@
                 <i class="bi bi-exclamation-triangle me-2"></i>Revisar faltantes
               <% end %>
             <% else %>
-              <%= link_to loading_production_delivery_plan_path(plan), class: "pd-plan-cta" do %>
+              <%= link_to loading_production_delivery_plan_path(plan),
+                  class: "pd-plan-cta",
+                  style: "background:linear-gradient(135deg,#6d28d9,#4f46e5);" do %>
                 <i class="bi bi-clipboard-check me-2"></i>Abrir Bitácora
               <% end %>
             <% end %>
