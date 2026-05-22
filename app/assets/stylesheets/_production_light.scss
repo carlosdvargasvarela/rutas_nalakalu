@@ -401,7 +401,7 @@
 
 .pd-plan-cta {
   display: block;
-  background: linear-gradient(135deg, #0d6efd, #6610f2);
+  background: linear-gradient(135deg, #6d28d9, #4f46e5);
   color: #fff;
   border-radius: 12px;
   padding: 11px;
@@ -412,6 +412,8 @@
   border: none;
   cursor: pointer;
 }
+.pd-plan-cta--loaded  { background: linear-gradient(135deg, #166534, #16a34a); }
+.pd-plan-cta--missing { background: linear-gradient(135deg, #7f1d1d, #b91c1c); }
 
 @keyframes pd-flash-success {
   0%   { background: #d1e7dd; }
@@ -425,3 +427,96 @@
 
 .pd-flash-success { animation: pd-flash-success 0.6s ease-out; }
 .pd-flash-error   { animation: pd-flash-error   0.6s ease-out; }
+
+// ── Index page extras (production/delivery_plans/index) ──────
+
+// Header subtitle (date line below title)
+.pd-header-subtitle {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.6);
+}
+
+// Date navigation buttons (prev/next chevron)
+.pd-nav-btn {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+// Date input inside header
+.pd-date-input {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  border-radius: 10px;
+}
+
+// "Hoy" / today button
+.pd-today-btn {
+  background: #fff;
+  color: #6d28d9;
+  border-radius: 10px;
+  padding: 6px 12px;
+}
+
+// Empty-state elements
+.pd-empty-icon {
+  font-size: 3rem;
+  color: #2d2d4e;
+}
+.pd-empty-title {
+  color: #64748b;
+}
+.pd-empty-subtitle {
+  color: #475569;
+  font-size: 0.85rem;
+}
+.pd-empty-link {
+  border: 1px solid #7c3aed;
+  color: #a78bfa;
+  border-radius: 10px;
+}
+
+// Stat cell value colors
+.pd-stat-value        { color: #94a3b8; }
+.pd-stat-value--ok    { color: #4ade80; }
+.pd-stat-value--warn  { color: #fbbf24; }
+.pd-stat-value--error { color: #f87171; }
+
+// Stat / mini-stat label
+.pd-stat-label {
+  font-size: 0.7rem;
+  color: #475569;
+}
+
+// Mini-stat value colors (inside pd-card)
+.pd-mini-value        { color: #94a3b8; }
+.pd-mini-value--ok    { color: #4ade80; }
+
+// Mini-stat label (inside pd-card, smaller)
+.pd-mini-label {
+  font-size: 0.65rem;
+  color: #475569;
+}
+
+// Avatar size override for plan cards
+.pd-avatar-lg {
+  width: 42px;
+  height: 42px;
+  font-size: 0.9rem;
+}
+
+// Driver name inside plan card header
+.pd-driver-name {
+  font-size: 0.95rem;
+  color: #f1f5f9;
+}
+
+// Progress caption label
+.pd-progress-label {
+  color: #64748b;
+  font-size: 0.72rem;
+}
