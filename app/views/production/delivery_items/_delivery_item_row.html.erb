@@ -1,83 +1,125 @@
 <%# app/views/production/delivery_items/_delivery_item_row.html.erb %>
 <%
-  item_color = case item.load_status
-    when "loaded"  then "success"
-    when "missing" then "danger"
-    else "secondary"
+  row_class = case item.load_status
+    when "loaded"  then "pd-item-row--loaded"
+    when "missing" then "pd-item-row--missing"
+    else ""
   end
+  badge_class = case item.load_status
+    when "loaded"  then "pd-badge--ok"
+    when "missing" then "pd-badge--missing"
+    else nil
+  end
+  badge_html = case item.load_status
+    when "loaded"  then "<i class='bi bi-check-circle-fill me-1'></i>Cargado"
+    when "missing" then "<i class='bi bi-exclamation-triangle-fill me-1'></i>Faltante"
+    else nil
+  end
+  note_btn_class = item.notes.present? ? "pd-btn-note--active" : ""
 %>
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3"
+<div class="pd-item-row <%= row_class %>"
      data-controller="delivery-item"
      data-delivery-item-item-id-value="<%= item.id %>"
-  data-delivery-item-delivery-id-value="<%= item.delivery_id %>"
-    data-delivery-item-status-value="<%= item.load_status %>">
+     data-delivery-item-delivery-id-value="<%= item.delivery_id %>"
+     data-delivery-item-status-value="<%= item.load_status %>"
+     data-delivery-item-note-value="<%= item.notes.to_s %>"
+     data-delivery-item-product-value="<%= item.order_item&.product_name.to_s %>"
+     data-delivery-item-save-note-url-value="<%= add_note_production_delivery_item_path(item) %>">
+
   <%# Info del producto %>
-  <div class="d-flex align-items-center gap-3 flex-grow-1">
-    <%# Ícono de estado %>
-    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-         style="width:32px; height:32px; background: var(--bs-<%= item_color %>); opacity: 0.15;">
-    </div>
-    <div style="margin-left: -40px; padding-left: 40px;">
-      <%# Ícono superpuesto %>
-    </div>
-    <div>
-      <div class="fw-semibold"><%= item.order_item&.product_name || "Producto sin nombre" %></div>
-      <div class="small text-muted d-flex flex-wrap gap-2 mt-1">
-        <span><i class="bi bi-layers me-1"></i>Cant: <strong><%= item.quantity %></strong></span>
+  <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+    <div class="flex-grow-1" style="min-width:0;">
+      <div class="fw-bold text-truncate" style="font-size:0.9rem;color:#f1f5f9;">
+        <%= item.order_item&.product_name || "Producto sin nombre" %>
+      </div>
+      <div class="d-flex flex-wrap gap-2 mt-1" style="font-size:0.75rem;color:#64748b;">
+        <span><i class="bi bi-layers me-1"></i>&times;<%= item.quantity %></span>
         <% if item.service_case? %>
-          <span class="badge bg-warning text-dark">
+          <span class="pd-badge pd-badge--partial">
             <i class="bi bi-tools me-1"></i>Caso de servicio
           </span>
         <% end %>
-        <% if item.notes.present? %>
-          <span class="text-muted fst-italic">
-            <i class="bi bi-chat-left-text me-1"></i><%= item.notes.truncate(40) %>
-          </span>
-        <% end %>
       </div>
+      <%# Preview de nota en amarillo %>
+      <% if item.notes.present? %>
+        <div class="pd-note-preview" data-delivery-item-target="notePreview">
+          <i class="bi bi-chat-left-text me-1"></i><%= item.notes.truncate(50) %>
+        </div>
+      <% else %>
+        <div class="pd-note-preview" data-delivery-item-target="notePreview" style="display:none;"></div>
+      <% end %>
     </div>
-  </div>
-  <%# Badge + Botones de acción táctiles %>
-  <div class="d-flex align-items-center gap-2 flex-shrink-0">
-    <span data-delivery-item-target="badge">
-      <%= load_status_badge(item.load_status) %>
+    <%# Badge de estado %>
+    <span data-delivery-item-target="badge"
+          class="pd-badge <%= badge_class %> flex-shrink-0">
+      <%= badge_html&.html_safe %>
     </span>
-    <div class="d-flex gap-2" data-delivery-item-target="buttons">
-      <% if policy(item).mark_loaded? %>
-        <%= link_to mark_loaded_production_delivery_item_path(item),
-            class: "btn btn-success btn-sm px-3 fw-semibold",
-            title: "Marcar cargado",
-            data: {
-              turbo_method: :patch,
-              action: "click->delivery-item#markLoaded"
-            } do %>
-          <i class="bi bi-check-lg me-1"></i>
-          <span class="d-none d-md-inline">Cargado</span>
+  </div>
+
+  <%# Botones de acción — mínimo 44px de altura ── %>
+  <div class="d-flex gap-2" data-delivery-item-target="buttons">
+    <% if item.load_status == "loaded" %>
+      <%# Estado: cargado — mostrar desmarcar %>
+      <% if policy(item).mark_unloaded? %>
+        <%= link_to mark_unloaded_production_delivery_item_path(item),
+            class: "pd-btn-undo flex-grow-1",
+            data: { action: "click->delivery-item#markUnloaded" } do %>
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Desmarcar
         <% end %>
       <% end %>
-      <% if policy(item).mark_missing? %>
-        <%= link_to mark_missing_production_delivery_item_path(item),
-            class: "btn btn-outline-danger btn-sm px-3",
-            title: "Marcar faltante",
-            data: {
-              turbo_method: :patch,
-              action: "click->delivery-item#markMissing"
-            } do %>
-          <i class="bi bi-x-lg me-1"></i>
-          <span class="d-none d-md-inline">Faltante</span>
+      <% if policy(item).add_note? %>
+        <button class="pd-btn-note pd-btn-note--loaded"
+                data-action="click->delivery-item#openNoteSheet">
+          <i class="bi bi-chat-left-text"></i>
+        </button>
+      <% end %>
+
+    <% elsif item.load_status == "missing" %>
+      <%# Estado: faltante — mostrar cargar + desmarcar %>
+      <% if policy(item).mark_loaded? %>
+        <%= link_to mark_loaded_production_delivery_item_path(item),
+            class: "pd-btn-ok",
+            data: { action: "click->delivery-item#markLoaded" } do %>
+          <i class="bi bi-check-lg me-1"></i>Cargado
         <% end %>
       <% end %>
       <% if policy(item).mark_unloaded? %>
         <%= link_to mark_unloaded_production_delivery_item_path(item),
-            class: "btn btn-outline-secondary btn-sm",
-            title: "Desmarcar",
-            data: {
-              turbo_method: :patch,
-              action: "click->delivery-item#markUnloaded"
-            } do %>
-          <i class="bi bi-arrow-counterclockwise"></i>
+            class: "pd-btn-undo",
+            data: { action: "click->delivery-item#markUnloaded" } do %>
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Desmarcar
         <% end %>
       <% end %>
-    </div>
+      <% if policy(item).add_note? %>
+        <button class="pd-btn-note <%= note_btn_class %>"
+                data-action="click->delivery-item#openNoteSheet">
+          <i class="bi bi-chat-left-text"></i>
+        </button>
+      <% end %>
+
+    <% else %>
+      <%# Estado: pendiente — mostrar cargado + faltante %>
+      <% if policy(item).mark_loaded? %>
+        <%= link_to mark_loaded_production_delivery_item_path(item),
+            class: "pd-btn-ok",
+            data: { action: "click->delivery-item#markLoaded" } do %>
+          <i class="bi bi-check-lg me-1"></i>Cargado
+        <% end %>
+      <% end %>
+      <% if policy(item).mark_missing? %>
+        <%= link_to mark_missing_production_delivery_item_path(item),
+            class: "pd-btn-miss",
+            data: { action: "click->delivery-item#markMissing" } do %>
+          <i class="bi bi-x-lg me-1"></i>Faltante
+        <% end %>
+      <% end %>
+      <% if policy(item).add_note? %>
+        <button class="pd-btn-note <%= note_btn_class %>"
+                data-action="click->delivery-item#openNoteSheet">
+          <i class="bi bi-chat-left-text"></i>
+        </button>
+      <% end %>
+    <% end %>
   </div>
+
 </div>
