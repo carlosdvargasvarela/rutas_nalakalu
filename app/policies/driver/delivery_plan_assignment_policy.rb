@@ -2,7 +2,7 @@
 module Driver
   class DeliveryPlanAssignmentPolicy < ApplicationPolicy
     def complete?
-      user.driver? && record.delivery_plan.driver_id == user.id
+      user.driver?
     end
 
     def fail?

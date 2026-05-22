@@ -1,136 +1,197 @@
 // app/javascript/controllers/driver_assignment_controller.js
-import { Controller } from "@hotwired/stimulus";
+import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static values = {
     id: Number,
     url: String,
-  };
-
-  static targets = ["statusBadge", "actionsContainer", "notesTextarea"];
-
-  connect() {
-    // console.log(`🚚 Assignment ${this.idValue} conectado`)
   }
 
-  // Marcar como ENTREGADO
+  static targets = ["statusBadge", "actionsContainer", "notesTextarea", "failReasonTextarea"]
+
+  connect() {
+    this._selectedReason = null
+  }
+
+  // ── Marcar como entregado ───────────────────────────────
   async complete(event) {
-    event.preventDefault();
-    if (!confirm("¿Confirmar que la entrega fue exitosa?")) return;
-
-    this.setLoading(true);
-
+    event.preventDefault()
+    this.setLoading(true)
     try {
       const response = await fetch(`${this.urlValue}/complete`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": this.csrfToken,
-        },
-      });
-
+        headers: this._headers(),
+      })
+      const data = await response.json()
       if (response.ok) {
-        const data = await response.json();
-        this.updateUI("delivered", "Entregado", "success");
-        console.log("✅ Entrega completada");
+        this._markCompleted()
+        this._dispatchProgress(data.progress)
+        this._toast("Entrega completada ✓", "success")
       } else {
-        throw new Error("Error en el servidor");
+        this._toast(data.error || "Error al completar", "error")
       }
-    } catch (error) {
-      alert("Error al marcar como entregado. Reintenta.");
-      console.error(error);
+    } catch {
+      this._toast("Sin conexión. Intenta de nuevo.", "warning")
     } finally {
-      this.setLoading(false);
+      this.setLoading(false)
     }
   }
 
-  // Marcar como FALLIDO
-  async fail(event) {
-    event.preventDefault();
-    const reason = prompt("¿Por qué falló la entrega? (Opcional)");
-    if (reason === null) return; // Usuario canceló el prompt
+  // ── Abrir modal de nota ─────────────────────────────────
+  openNoteModal(event) {
+    event.preventDefault()
+    const modalEl = this.element.querySelector(`#notaModal${this.idValue}`)
+    if (modalEl) new bootstrap.Modal(modalEl).show()
+  }
 
-    this.setLoading(true);
+  // ── Abrir modal de fallo ────────────────────────────────
+  openFailModal(event) {
+    event.preventDefault()
+    this._selectedReason = null
 
+    // Reset reason buttons dentro del controller element
+    this.element.querySelectorAll(".fail-reason-btn").forEach(btn => {
+      btn.classList.remove("selected")
+    })
+
+    // Limpiar textarea de razón personalizada
+    if (this.hasFailReasonTextareaTarget) {
+      this.failReasonTextareaTarget.value = ""
+    }
+
+    const modalEl = this.element.querySelector(`#failModal${this.idValue}`)
+    if (modalEl) new bootstrap.Modal(modalEl).show()
+  }
+
+  // ── Seleccionar razón predefinida ───────────────────────
+  selectReason(event) {
+    const btn = event.currentTarget
+    this._selectedReason = btn.dataset.reason
+
+    this.element.querySelectorAll(".fail-reason-btn").forEach(b => {
+      b.classList.remove("selected")
+    })
+    btn.classList.add("selected")
+
+    // Limpiar textarea para que la razón predefinida tenga prioridad
+    if (this.hasFailReasonTextareaTarget) {
+      this.failReasonTextareaTarget.value = ""
+    }
+  }
+
+  // ── Confirmar fallo ─────────────────────────────────────
+  async confirmFail(event) {
+    event.preventDefault()
+
+    const customReason = this.hasFailReasonTextareaTarget
+      ? this.failReasonTextareaTarget.value.trim()
+      : ""
+    const reason = customReason || this._selectedReason || "No especificado"
+
+    // Cerrar modal
+    const modalEl = this.element.querySelector(`#failModal${this.idValue}`)
+    if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide()
+
+    this.setLoading(true)
     try {
       const response = await fetch(`${this.urlValue}/fail`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": this.csrfToken,
-        },
-        body: JSON.stringify({ reason: reason }),
-      });
-
+        headers: this._headers(),
+        body: JSON.stringify({ reason }),
+      })
+      const data = await response.json()
       if (response.ok) {
-        this.updateUI("failed", "Fallido", "danger");
-        console.log("❌ Entrega marcada como fallida");
+        this._markFailed()
+        this._dispatchProgress(data.progress)
+        this._toast("Marcado como no entregado. Se reagendará en 7 días.", "warning")
+      } else {
+        this._toast(data.error || "Error al procesar", "error")
       }
-    } catch (error) {
-      alert("Error al marcar como fallida.");
+    } catch {
+      this._toast("Sin conexión. Intenta de nuevo.", "warning")
     } finally {
-      this.setLoading(false);
+      this.setLoading(false)
     }
   }
 
-  // Guardar NOTA
+  // ── Guardar nota ────────────────────────────────────────
   async saveNote(event) {
-    event.preventDefault();
-    const note = this.notesTextareaTarget.value;
-    if (!note) return;
-
-    const btn = event.currentTarget;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = "Guardando...";
-    btn.disabled = true;
-
+    event.preventDefault()
+    if (!this.hasNotesTextareaTarget) return
+    const note = this.notesTextareaTarget.value.trim()
+    if (!note) return
     try {
       const response = await fetch(`${this.urlValue}/add_note`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": this.csrfToken,
-        },
-        body: JSON.stringify({ note: note }),
-      });
-
+        headers: this._headers(),
+        body: JSON.stringify({ note }),
+      })
       if (response.ok) {
-        btn.innerHTML = "✅ Guardado";
-        setTimeout(() => {
-          btn.innerHTML = originalText;
-          btn.disabled = false;
-        }, 2000);
+        this._toast("Nota guardada", "success")
+      } else {
+        this._toast("Error al guardar nota", "error")
       }
-    } catch (error) {
-      alert("Error al guardar nota");
-      btn.innerHTML = originalText;
-      btn.disabled = false;
+    } catch {
+      this._toast("Sin conexión", "warning")
     }
   }
 
-  // Helpers de UI
-  updateUI(status, label, badgeClass) {
-    // Actualizar badge de estado
-    if (this.hasStatusBadgeTarget) {
-      this.statusBadgeTarget.textContent = label;
-      this.statusBadgeTarget.className = `badge bg-${badgeClass}`;
-    }
-
-    // Ocultar botones de acción si ya terminó
-    if (this.hasActionsContainerTarget) {
-      this.actionsContainerTarget.classList.add("d-none");
-    }
-
-    // Opcional: Recargar la página o usar Turbo para actualizar progreso general
-    // window.location.reload()
-  }
-
+  // ── Helpers ─────────────────────────────────────────────
   setLoading(isLoading) {
-    this.element.style.opacity = isLoading ? "0.5" : "1";
-    this.element.style.pointerEvents = isLoading ? "none" : "auto";
+    this.element.style.opacity = isLoading ? "0.6" : "1"
+    this.element.style.pointerEvents = isLoading ? "none" : "auto"
   }
 
-  get csrfToken() {
-    return document.querySelector('meta[name="csrf-token"]')?.content || "";
+  _markCompleted() {
+    if (this.hasStatusBadgeTarget) {
+      this.statusBadgeTarget.textContent = "Completado"
+      this.statusBadgeTarget.className = "dk-pill dk-pill-success"
+    }
+    // Actualizar borde del card
+    this.element.dataset.status = "completed"
+    const stopNum = this.element.querySelector(".dk-stop-num")
+    if (stopNum) stopNum.dataset.status = "completed"
+
+    if (this.hasActionsContainerTarget) {
+      this.actionsContainerTarget.innerHTML = `
+        <div class="dk-delivered-state">
+          <i class="bi bi-check-circle-fill" style="font-size:1.8rem;"></i>
+          <span>Entrega completada</span>
+        </div>`
+    }
+  }
+
+  _markFailed() {
+    if (this.hasStatusBadgeTarget) {
+      this.statusBadgeTarget.textContent = "No entregado"
+      this.statusBadgeTarget.className = "dk-pill dk-pill-danger"
+    }
+    this.element.dataset.status = "cancelled"
+    const stopNum = this.element.querySelector(".dk-stop-num")
+    if (stopNum) stopNum.dataset.status = "cancelled"
+
+    if (this.hasActionsContainerTarget) {
+      this.actionsContainerTarget.innerHTML = `
+        <div class="dk-failed-state">
+          <i class="bi bi-x-circle-fill" style="font-size:1.8rem;"></i>
+          <span>No se pudo entregar – reagendado en 7 días</span>
+        </div>`
+    }
+  }
+
+  _dispatchProgress(progress) {
+    if (!progress) return
+    document.dispatchEvent(new CustomEvent("driver:assignment:updated", { detail: { progress } }))
+  }
+
+  _headers() {
+    return {
+      "Content-Type": "application/json",
+      "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content,
+    }
+  }
+
+  _toast(message, type = "info") {
+    document.dispatchEvent(new CustomEvent("toast:show", { detail: { message, type } }))
   }
 }

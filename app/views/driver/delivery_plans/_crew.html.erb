@@ -1,39 +1,20 @@
-<% driver = @delivery_plan.driver %>
+<%# app/views/driver/delivery_plans/_crew.html.erb %>
+<% driver = delivery_plan.driver %>
+<% return unless driver.present? && driver.crew_members.any? %>
 
-<div class="card shadow-sm">
-  <div class="card-header bg-light d-flex align-items-center justify-content-between">
-    <div class="d-flex align-items-center">
-      <i class="bi bi-people-fill me-2"></i>
-      <strong>Tripulación</strong>
+<div class="dk-card" style="margin-bottom:14px;">
+  <div class="dk-card-body">
+    <div class="dk-label" style="margin-bottom:10px;">
+      <i class="bi bi-people-fill me-1"></i>Tripulación
     </div>
-  </div>
-
-  <div class="card-body">
-    <div class="mb-2">
-      <strong><i class="bi bi-person-badge me-1"></i>Conductor:</strong>
-      <% if driver.present? %>
-        <span><%= driver.name %></span>
-      <% else %>
-        <span class="text-muted">Sin asignar</span>
-      <% end %>
-    </div>
-
-    <% if driver.present? && driver.crew_members.any? %>
-      <div>
-        <strong><i class="bi bi-people me-1"></i>Equipo:</strong>
-        <ul class="list-unstyled mb-0 mt-1 small">
-          <% driver.crew_members.each do |cm| %>
-            <li class="d-flex justify-content-between align-items-center py-1">
-              <span><i class="bi bi-person me-1"></i><%= cm.name %></span>
-              <span class="badge bg-light text-dark">
-                <i class="bi bi-card-text me-1"></i><%= cm.id_number %>
-              </span>
-            </li>
-          <% end %>
-        </ul>
+    <% driver.crew_members.each do |cm| %>
+      <div class="dk-info-row">
+        <i class="bi bi-person-fill"></i>
+        <span style="flex:1;font-weight:600;"><%= cm.name %></span>
+        <span style="font-size:.75rem;color:var(--dk-muted);">
+          <i class="bi bi-card-text me-1"></i><%= cm.id_number %>
+        </span>
       </div>
-    <% else %>
-      <div class="text-muted small">Sin tripulación registrada</div>
     <% end %>
   </div>
 </div>

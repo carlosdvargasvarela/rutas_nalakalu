@@ -1,217 +1,324 @@
-<!-- app/views/driver/delivery_plans/_assignment_card.html.erb -->
-<% delivery = assignment.delivery %>
-<div class="card shadow-sm mb-3" 
+<%# app/views/driver/delivery_plans/_assignment_card.html.erb %>
+<% delivery    = assignment.delivery %>
+<% addr        = delivery.delivery_address %>
+<% actionable  = assignment.pending? || assignment.in_route? %>
+
+<%#
+  IMPORTANTE: los modales están DENTRO del data-controller para que
+  Stimulus pueda encontrar los targets y despachar las acciones.
+%>
+<div class="dk-card dk-stop-card"
      id="assignment_<%= assignment.id %>"
+     data-status="<%= assignment.status %>"
      data-controller="driver-assignment"
      data-driver-assignment-id-value="<%= assignment.id %>"
-  data-driver-assignment-url-value="<%= driver_assignment_path(assignment) %>">
-  <div class="card-body">
-    <!-- Encabezado con número de parada y estado -->
-    <div class="d-flex justify-content-between align-items-start mb-3">
-      <h6 class="fw-bold mb-0">
-        <span class="badge bg-primary me-1">#<%= assignment.stop_order %></span>
-        Pedido: <%= delivery.order.number %>
-      </h6>
-      <span class="badge bg-<%= assignment_status_badge_class(assignment.status) %>" 
+     data-driver-assignment-url-value="<%= driver_assignment_path(assignment) %>">
+
+  <div class="dk-card-body">
+
+    <%# ── Fila superior: número de parada + estado ── %>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+      <div class="dk-stop-num" data-status="<%= assignment.status %>">
+        <%= assignment.stop_order %>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:1rem;font-weight:800;color:var(--dk-text);">
+          <%= delivery.order.client.name %>
+        </div>
+        <div style="font-size:.78rem;color:var(--dk-muted);">
+          Pedido <strong><%= delivery.order.number %></strong>
+          · Agente: <%= delivery.order.seller.seller_code %>
+        </div>
+      </div>
+      <span class="dk-pill dk-pill-<%= assignment.completed? ? 'success' : assignment.cancelled? ? 'danger' : assignment.in_route? ? 'primary' : 'muted' %>"
             data-driver-assignment-target="statusBadge">
         <%= assignment.display_status %>
       </span>
     </div>
-    <!-- Agente de ventas -->
-    <div class="mb-2">
-      <strong><i class="bi bi-person-square me-1"></i>Agente de ventas:</strong>
-      <%= delivery.order.seller.seller_code %>
-    </div>
-    <!-- Cliente -->
-    <div class="mb-2">
-      <strong><i class="bi bi-person me-1"></i>Cliente:</strong>
-      <%= delivery.order.client.name %>
-    </div>
-    <!-- Dirección con enlace a Waze -->
-    <% if delivery.delivery_address.present? %>
-      <div class="mb-2">
-        <strong><i class="bi bi-geo-alt me-1"></i>Dirección:</strong>
-        <% addr = [delivery.delivery_address.address, delivery.delivery_address.description.presence].compact.join(" - ") %>
-        <% if delivery.delivery_address.latitude.present? && delivery.delivery_address.longitude.present? %>
-          <%= link_to addr,
-                      "https://waze.com/ul?ll=#{delivery.delivery_address.latitude},#{delivery.delivery_address.longitude}&navigate=yes",
-                      target: "_blank", 
-                      rel: "noopener", 
-                      class: "text-decoration-none fw-bold text-primary" %>
-        <% else %>
-          <%= link_to addr,
-                      "https://waze.com/ul?q=#{ERB::Util.url_encode(delivery.delivery_address.address)}&navigate=yes",
-                      target: "_blank", 
-                      rel: "noopener", 
-                      class: "text-decoration-none fw-bold text-primary" %>
-        <% end %>
-      </div>
+
+    <%# ── Dirección → Waze (texto completo, sin cortar) ── %>
+    <% if addr.present? %>
+      <% addr_text = [addr.address, addr.description.presence].compact.join(" – ") %>
+      <% waze_url  = addr.latitude.present? && addr.longitude.present? ?
+             "https://waze.com/ul?ll=#{addr.latitude},#{addr.longitude}&navigate=yes" :
+             "https://waze.com/ul?q=#{ERB::Util.url_encode(addr.address)}&navigate=yes" %>
+      <a href="<%= waze_url %>" target="_blank" rel="noopener" class="dk-link-btn dk-link-waze">
+        <div class="dk-link-icon"><i class="bi bi-geo-alt-fill"></i></div>
+        <div style="flex:1;">
+          <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;
+                      letter-spacing:.05em;margin-bottom:2px;opacity:.7;">
+            Ir con Waze
+          </div>
+          <div style="font-size:.88rem;line-height:1.35;">
+            <%= addr_text %>
+          </div>
+        </div>
+        <i class="bi bi-chevron-right" style="opacity:.4;flex-shrink:0;"></i>
+      </a>
     <% end %>
-    <!-- Condominio / Casa -->
+
+    <%# ── Número de casa / condominio ── %>
     <% if delivery.condominio_number.present? || delivery.casa_number.present? %>
-      <div class="mb-2 small">
+      <div style="font-size:.82rem;color:var(--dk-muted);margin-bottom:8px;display:flex;gap:12px;">
         <% if delivery.condominio_number.present? %>
-          <i class="bi bi-buildings me-1"></i><strong><%= delivery.condominio_number %></strong>
+          <span><i class="bi bi-buildings me-1"></i><strong><%= delivery.condominio_number %></strong></span>
         <% end %>
         <% if delivery.casa_number.present? %>
-          <span class="ms-2"><i class="bi bi-house-door me-1"></i>Casa <strong><%= delivery.casa_number %></strong></span>
+          <span><i class="bi bi-house-door me-1"></i>Casa <strong><%= delivery.casa_number %></strong></span>
         <% end %>
       </div>
     <% end %>
-    <!-- Fecha y hora preferida -->
+
+    <%# ── Teléfono ── %>
+    <% if delivery.contact_phone.present? %>
+      <a href="tel:<%= delivery.contact_phone %>" class="dk-link-btn dk-link-phone">
+        <div class="dk-link-icon"><i class="bi bi-telephone-fill"></i></div>
+        <div style="flex:1;">
+          <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;
+                      letter-spacing:.05em;margin-bottom:2px;opacity:.7;">
+            Llamar
+          </div>
+          <div style="font-size:.88rem;">
+            <%= delivery.contact_name.presence || "Contacto" %> &nbsp;·&nbsp; <%= delivery.contact_phone %>
+          </div>
+        </div>
+        <i class="bi bi-chevron-right" style="opacity:.4;flex-shrink:0;"></i>
+      </a>
+    <% end %>
+
+    <%# ── Fecha / hora ── %>
     <% if delivery.delivery_date.present? || delivery.delivery_time_preference.present? %>
-      <div class="mb-2 small text-muted">
+      <div style="font-size:.8rem;color:var(--dk-muted);margin-bottom:8px;display:flex;gap:10px;">
         <% if delivery.delivery_date.present? %>
-          <i class="bi bi-calendar-event me-1"></i><%= l delivery.delivery_date, format: :short %>
+          <span><i class="bi bi-calendar-event me-1"></i><%= l delivery.delivery_date, format: :short %></span>
         <% end %>
         <% if delivery.delivery_time_preference.present? %>
-          · <i class="bi bi-clock ms-1 me-1"></i><%= delivery.delivery_time_preference %>
+          <span><i class="bi bi-clock me-1"></i><%= delivery.delivery_time_preference %></span>
         <% end %>
       </div>
     <% end %>
-    <!-- Contacto -->
-    <% if delivery.contact_name.present? || delivery.contact_phone.present? %>
-      <div class="mb-2">
-        <strong><i class="bi bi-telephone me-1"></i>Contacto:</strong>
-        <%= delivery.contact_name.presence || "Sin nombre" %>
-        <% if delivery.contact_phone.present? %>
-          <a href="tel:<%= delivery.contact_phone %>" class="btn btn-sm btn-outline-success ms-2">
-            <i class="bi bi-telephone-fill"></i> <%= delivery.contact_phone %>
-          </a>
-        <% end %>
-      </div>
-    <% end %>
-    <!-- Notas de entrega -->
+
+    <%# ── Notas de entrega ── %>
     <% if delivery.delivery_notes.present? %>
-      <div class="mb-2">
-        <strong><i class="bi bi-info-circle me-1"></i>Notas de entrega:</strong>
-        <div class="alert alert-info py-1 px-2 mb-0 small">
-          <%= simple_format(delivery.delivery_notes) %>
-        </div>
+      <div class="dk-alert dk-alert-info" style="margin-bottom:8px;padding:10px 12px;">
+        <i class="bi bi-info-circle-fill" style="font-size:1rem;flex-shrink:0;"></i>
+        <span style="font-size:.82rem;font-weight:500;"><%= delivery.delivery_notes %></span>
       </div>
     <% end %>
-    <!-- Productos -->
-    <% items = (delivery.respond_to?(:active_items_for_plan_for) ? delivery.active_items_for_plan_for(current_user) : delivery.delivery_items) %>
-    <% if items.present? %>
-      <div class="mb-2">
-        <strong><i class="bi bi-box-seam me-1"></i>Productos:</strong>
-        <ul class="small ps-3 mb-0 mt-1">
-          <% items.each do |item| %>
-            <li class="mb-1">
-              <strong><%= item.order_item.product %></strong>
-              <span class="badge bg-secondary ms-1"><%= item.quantity %></span>
-              <% if item.notes.present? %>
-                <br>
-                <span class="text-primary"><i class="bi bi-pin-angle-fill"></i> <em><%= item.notes %></em></span>
-              <% end %>
-              <% if item.order_item.respond_to?(:notes) && item.order_item.notes.present? %>
-                <br>
-                <span class="text-muted"><i class="bi bi-info-circle"></i> <%= item.order_item.notes %></span>
-              <% end %>
-            </li>
+
+    <%# ── Productos ── %>
+    <% items = delivery.delivery_items %>
+    <% if items.any? %>
+      <%# Verificar si algún item tiene notas para destacar la sección %>
+      <% items_with_notes = items.select { |i| i.notes.present? || i.order_item.notes.present? } %>
+      <div style="margin-bottom:10px;">
+        <div class="dk-label" style="margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+          <i class="bi bi-box-seam"></i>Productos
+          <% if items_with_notes.any? %>
+            <span style="background:var(--dk-warning);color:#fff;border-radius:10px;
+                         padding:1px 8px;font-size:.65rem;font-weight:700;">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>HAY INDICACIONES
+            </span>
           <% end %>
-        </ul>
-      </div>
-    <% else %>
-      <div class="mb-2 small text-muted">
-        <i class="bi bi-box"></i> Sin productos asociados a esta entrega.
-      </div>
-    <% end %>
-    <!-- Notas del chofer (preview) -->
-    <% if assignment.driver_notes.present? %>
-      <div class="mb-2">
-        <strong><i class="bi bi-journal-text me-1"></i>Notas del chofer:</strong>
-        <div class="alert alert-secondary py-1 px-2 mb-0 small">
-          <ul class="mb-0 ps-3">
-            <% assignment.driver_notes.to_s.split("\n").each do |line| %>
-              <li><%= line %></li>
-            <% end %>
-          </ul>
         </div>
+        <% items.each do |item| %>
+          <% has_notes = item.notes.present? || item.order_item.notes.present? %>
+          <div class="dk-product"
+               style="<%= has_notes ? 'flex-direction:column;align-items:flex-start;' : '' %>">
+            <% if has_notes %>
+              <%# Item con notas: layout vertical con indicación destacada %>
+              <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px;">
+                <div style="font-weight:700;font-size:.9rem;"><%= item.order_item.product %></div>
+                <span class="dk-product-qty"><%= item.quantity %></span>
+              </div>
+              <% if item.notes.present? %>
+                <div style="background:var(--dk-warning-lt);border-left:3px solid var(--dk-warning);
+                            border-radius:0 6px 6px 0;padding:7px 10px;width:100%;
+                            font-size:.82rem;color:var(--dk-warning);font-weight:600;line-height:1.4;">
+                  <i class="bi bi-exclamation-triangle-fill me-1"></i><%= item.notes %>
+                </div>
+              <% end %>
+              <% if item.order_item.notes.present? %>
+                <div style="background:#F3F4F6;border-left:3px solid #9CA3AF;
+                            border-radius:0 6px 6px 0;padding:7px 10px;width:100%;margin-top:4px;
+                            font-size:.82rem;color:var(--dk-muted);line-height:1.4;">
+                  <i class="bi bi-info-circle me-1"></i><%= item.order_item.notes %>
+                </div>
+              <% end %>
+            <% else %>
+              <%# Item sin notas: layout normal %>
+              <div style="font-weight:600;font-size:.875rem;"><%= item.order_item.product %></div>
+              <span class="dk-product-qty"><%= item.quantity %></span>
+            <% end %>
+          </div>
+        <% end %>
       </div>
     <% end %>
-    <!-- Botones de acción -->
-    <div class="d-grid gap-2 mt-3" data-driver-assignment-target="actionsContainer">
-      <% if assignment.pending? || assignment.in_route? %>
-        <button type="button" 
-                class="btn btn-success btn-lg"
-                data-action="click->driver-assignment#complete">
-          <i class="bi bi-check-circle-fill me-2"></i>Marcar como entregado
-        </button>
-        <button type="button" 
-                class="btn btn-outline-danger"
-                data-action="click->driver-assignment#fail">
-          <i class="bi bi-exclamation-triangle-fill me-2"></i>Marcar como fallida
-        </button>
+
+    <%# ── Notas del chofer ── %>
+    <% if assignment.driver_notes.present? %>
+      <div style="background:#F9FAFB;border-radius:8px;padding:10px 12px;margin-bottom:10px;">
+        <div class="dk-label" style="margin-bottom:4px;">
+          <i class="bi bi-journal-text me-1"></i>Mis notas
+        </div>
+        <% assignment.driver_notes.to_s.split("\n").each do |line| %>
+          <div style="font-size:.8rem;color:var(--dk-muted);"><%= line %></div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# ── Botones de acción ── %>
+    <div data-driver-assignment-target="actionsContainer">
+      <% if actionable %>
+        <div style="display:grid;gap:8px;">
+          <button type="button"
+                  class="dk-btn dk-btn-green"
+                  style="font-size:1.05rem;"
+                  data-action="click->driver-assignment#complete">
+            <i class="bi bi-check-circle-fill" style="font-size:1.2rem;"></i>
+            ENTREGADO
+          </button>
+          <button type="button"
+                  class="dk-btn dk-btn-red-outline"
+                  data-action="click->driver-assignment#openFailModal">
+            <i class="bi bi-x-circle" style="font-size:1.1rem;"></i>
+            No se pudo entregar
+          </button>
+        </div>
       <% elsif assignment.completed? %>
-        <div class="alert alert-success mb-0 py-2 text-center fw-bold">
-          <i class="bi bi-check-circle-fill me-2"></i>Entrega completada
+        <div class="dk-delivered-state">
+          <i class="bi bi-check-circle-fill" style="font-size:1.8rem;"></i>
+          <span>Entrega completada</span>
         </div>
       <% elsif assignment.cancelled? %>
-        <div class="alert alert-danger mb-0 py-2 text-center fw-bold">
-          <i class="bi bi-x-circle-fill me-2"></i>Entrega cancelada
+        <div class="dk-failed-state">
+          <i class="bi bi-x-circle-fill" style="font-size:1.8rem;"></i>
+          <span>No se pudo entregar – reagendado en 7 días</span>
         </div>
       <% end %>
-      <!-- Botón de agregar nota (siempre visible) -->
-      <button type="button" 
-              class="btn btn-outline-primary btn-sm"
-              data-bs-toggle="modal"
-              data-bs-target="#notaModal<%= assignment.id %>">
-        <i class="bi bi-sticky me-1"></i>Agregar nota
+    </div>
+
+    <%# ── Acciones secundarias ── %>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button type="button"
+              class="dk-btn dk-btn-ghost dk-btn-sm"
+              style="flex:1;"
+              data-action="click->driver-assignment#openNoteModal">
+        <i class="bi bi-pencil"></i> Nota
       </button>
-    </div>
-    <div class="d-grid gap-2 mt-3">
-      <!-- Botón de WhatsApp para el Chofer -->
-      <%= link_to whatsapp_tracking_link(assignment.delivery), 
-              target: "_blank", 
-              class: "btn btn-outline-success d-flex align-items-center justify-content-center gap-2" do %>
-        <i class="bi bi-whatsapp"></i> Compartir Tracking con Cliente
+      <%= link_to whatsapp_tracking_link(assignment.delivery),
+              target: "_blank", rel: "noopener",
+              class: "dk-btn dk-btn-ghost dk-btn-sm",
+              style: "flex:1;color:#25D366;border-color:#25D366;" do %>
+        <i class="bi bi-whatsapp" style="font-size:1rem;"></i> Compartir
       <% end %>
-      <div class="row g-2" data-driver-assignment-target="actionsContainer">
-        <div class="col-6">
-          <button class="btn btn-success w-100 py-2" data-action="driver-assignment#complete">
-            Entregado
-          </button>
-        </div>
-        <div class="col-6">
-          <button class="btn btn-danger w-100 py-2" data-action="driver-assignment#fail">
-            Fallida
-          </button>
+    </div>
+
+    <%# ══════════════════════════════════════════════════
+        MODALES — dentro del controller para que Stimulus
+        encuentre los targets y acciones correctamente
+        ══════════════════════════════════════════════════ %>
+
+    <%# ── Modal: nota ── %>
+    <div class="modal fade"
+         id="notaModal<%= assignment.id %>"
+         tabindex="-1"
+         aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:16px;border:none;">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold">
+              <i class="bi bi-pencil me-2" style="color:var(--dk-primary);"></i>Agregar nota
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div style="font-size:.8rem;color:var(--dk-muted);margin-bottom:8px;">
+              Pedido <%= delivery.order.number %> · <%= delivery.order.client.name %>
+            </div>
+            <textarea class="form-control"
+                      rows="4"
+                      placeholder="Observaciones sobre la entrega..."
+                      data-driver-assignment-target="notesTextarea"
+                      style="border-radius:10px;resize:none;"><%= assignment.driver_notes %></textarea>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button"
+                    class="btn btn-primary fw-bold"
+                    data-action="click->driver-assignment#saveNote"
+                    data-bs-dismiss="modal">
+              <i class="bi bi-check-lg me-1"></i>Guardar
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
-<!-- Modal para agregar notas -->
-<div class="modal fade" 
-     id="notaModal<%= assignment.id %>" 
-     tabindex="-1" 
-     aria-labelledby="notaModalLabel<%= assignment.id %>"
-     aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="notaModalLabel<%= assignment.id %>">
-          <i class="bi bi-sticky me-2"></i>
-          Nota para pedido <%= delivery.order.number %>
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body">
-        <textarea class="form-control" 
-                  rows="4" 
-                  placeholder="Escribe aquí cualquier observación sobre la entrega..."
-                  data-driver-assignment-target="notesTextarea"><%= assignment.driver_notes %></textarea>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" 
-                class="btn btn-primary"
-                data-action="click->driver-assignment#saveNote"
-          data-bs-dismiss="modal">
-          <i class="bi bi-save me-1"></i>Guardar nota
-        </button>
+
+    <%# ── Modal: razón de fallo ── %>
+    <div class="modal fade"
+         id="failModal<%= assignment.id %>"
+         tabindex="-1"
+         aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:16px;border:none;">
+          <div class="modal-header border-0 pb-0"
+               style="background:var(--dk-danger-lt);border-radius:16px 16px 0 0;">
+            <div>
+              <h5 class="modal-title fw-bold" style="color:var(--dk-danger);">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                ¿Por qué no se pudo entregar?
+              </h5>
+              <div style="font-size:.78rem;color:var(--dk-muted);margin-top:2px;">
+                Pedido <%= delivery.order.number %> · <%= delivery.order.client.name %>
+              </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <% [
+                 "Cliente no estaba en casa",
+                 "Dirección no encontrada",
+                 "Cliente canceló la entrega",
+                 "Acceso al lugar bloqueado",
+                 "Problema con el producto",
+                 "Sin tiempo suficiente"
+               ].each do |reason| %>
+              <button type="button"
+                      class="dk-reason-btn fail-reason-btn"
+                      data-action="click->driver-assignment#selectReason"
+                      data-reason="<%= reason %>">
+                <%= reason %>
+              </button>
+            <% end %>
+
+            <div style="margin-top:8px;">
+              <div class="dk-label" style="margin-bottom:4px;">Otro motivo (opcional):</div>
+              <textarea class="form-control"
+                        rows="2"
+                        placeholder="Describir aquí..."
+                        data-driver-assignment-target="failReasonTextarea"
+                        style="border-radius:10px;resize:none;font-size:.875rem;"></textarea>
+            </div>
+
+            <div style="background:var(--dk-warning-lt);border-radius:8px;padding:10px 12px;
+                        margin-top:10px;display:flex;align-items:center;gap:8px;
+                        font-size:.78rem;color:var(--dk-warning);">
+              <i class="bi bi-arrow-clockwise" style="font-size:1rem;flex-shrink:0;"></i>
+              <span>La entrega se <strong>reagendará automáticamente en 7 días</strong>.</span>
+            </div>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button"
+                    class="btn btn-danger fw-bold px-4"
+                    data-action="click->driver-assignment#confirmFail">
+              <i class="bi bi-x-circle me-1"></i>Confirmar
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
+
+  </div><%# /dk-card-body %>
+</div><%# /data-controller %>
