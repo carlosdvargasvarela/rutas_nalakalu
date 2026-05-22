@@ -11,9 +11,9 @@
 @import "production_dark";
 // Estilos globales para consistencia
 body {
-  background-color: #fff7ee !important; // nalakalu-cream
+  background-color: var(--color-brand-bg) !important;
 
   &.bg-light {
-    background-color: #fff7ee !important; // Sobreescribir bg-light de Bootstrap
+    background-color: var(--color-brand-bg) !important;
   }
 }
