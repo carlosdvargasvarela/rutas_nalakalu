@@ -1,75 +1,110 @@
 <%# app/views/production/delivery_plans/loading.html.erb %>
-<div class="container-fluid mt-3 px-2 px-md-4"
+<div class="production-dark"
      data-controller="loading"
      data-loading-plan-id-value="<%= @delivery_plan.id %>">
-  <%# Header sticky %>
-  <div id="plan_header" class="sticky-top" style="top: 56px; z-index: 100;">
+
+  <%# ── Header sticky (Turbo Stream target: plan_header) ── %>
+  <div id="plan_header" class="sticky-top" style="top:56px;z-index:100;">
     <%= render "plan_header", delivery_plan: @delivery_plan, load_stats: @load_stats %>
   </div>
-  <%# Resumen de carga %>
+
+  <%# ── Resumen de productos (Turbo Stream target: load_summary) ── %>
   <div id="load_summary">
     <%= render "load_summary", delivery_plan: @delivery_plan, load_stats: @load_stats %>
   </div>
-  <%# ── Filtros inline (chips + búsqueda) ── %>
-  <div class="card border-0 shadow-sm mb-3"
-       data-controller="loading-filters"
-       data-loading-filters-plan-id-value="<%= @delivery_plan.id %>">
-    <div class="card-body py-3">
-      <div class="d-flex flex-column flex-md-row gap-3 align-items-start align-items-md-center">
-        <%# Buscador en tiempo real %>
-        <div class="flex-grow-1">
-          <div class="input-group input-group-sm">
-            <span class="input-group-text bg-white border-end-0">
-              <i class="bi bi-search text-muted"></i>
-            </span>
-            <input type="text"
-                   class="form-control border-start-0 ps-0"
-                   placeholder="Buscar cliente, pedido..."
-                   data-action="input->loading#filterDeliveries"
-            data-loading-target="searchInput"
-            value="<%= @filter_search %>">
-          </div>
-        </div>
-        <%# Chips de filtro por estado %>
-        <div class="d-flex flex-wrap gap-2 align-items-center">
-          <small class="text-muted fw-semibold me-1">Estado:</small>
-          <%
-            chip_filters = [
-              { value: "",             label: "Todos",       icon: "bi-list-ul",                  color: "secondary" },
-              { value: "empty",        label: "Sin cargar",  icon: "bi-circle",                   color: "secondary" },
-              { value: "partial",      label: "Parcial",     icon: "bi-hourglass-split",           color: "warning"   },
-              { value: "all_loaded",   label: "Cargado",     icon: "bi-check-circle-fill",         color: "success"   },
-              { value: "some_missing", label: "Faltantes",   icon: "bi-exclamation-triangle-fill", color: "danger"    },
-            ]
-          %>
-          <% chip_filters.each do |chip| %>
-            <% active = @filter_load_status.to_s == chip[:value] %>
-            <%= link_to loading_production_delivery_plan_path(@delivery_plan, load_status: chip[:value], search: @filter_search),
-                class: "btn btn-sm #{active ? "btn-#{chip[:color]}" : "btn-outline-#{chip[:color]}"} rounded-pill",
-                data: { turbo_action: "replace" } do %>
-              <i class="bi <%= chip[:icon] %> me-1"></i><%= chip[:label] %>
-            <% end %>
-          <% end %>
-        </div>
-      </div>
-    </div>
+
+  <%# ── Barra de búsqueda ── %>
+  <div class="pd-search-wrap">
+    <i class="bi bi-search pd-search-icon"></i>
+    <input type="text"
+           class="pd-search-input"
+           placeholder="Buscar cliente o pedido..."
+           data-action="input->loading#filterDeliveries"
+           data-loading-target="searchInput"
+           value="<%= @filter_search %>">
   </div>
+
+  <%# ── Chips de filtro ── %>
+  <div class="pd-filter-bar">
+    <%
+      chip_filters = [
+        { value: "",             label: "Todos",      css: "pd-chip--all"     },
+        { value: "empty",        label: "Sin cargar", css: "pd-chip--unloaded"},
+        { value: "partial",      label: "Parcial",    css: "pd-chip--partial" },
+        { value: "all_loaded",   label: "Cargado",    css: "pd-chip--loaded"  },
+        { value: "some_missing", label: "Faltantes",  css: "pd-chip--missing" },
+      ]
+    %>
+    <% chip_filters.each do |chip| %>
+      <% active = @filter_load_status.to_s == chip[:value] %>
+      <%= link_to loading_production_delivery_plan_path(@delivery_plan,
+                    load_status: chip[:value], search: @filter_search),
+          class: "pd-chip #{active ? chip[:css] : 'pd-chip--unloaded'}",
+          data: { turbo_action: "replace" } do %>
+        <%= chip[:label] %>
+      <% end %>
+    <% end %>
+  </div>
+
   <%# ── Lista de entregas ── %>
-  <div id="delivery_cards_list" data-loading-target="deliveryList">
+  <div id="delivery_cards_list"
+       class="px-2 pb-5 pt-2 d-flex flex-column gap-3"
+       data-loading-target="deliveryList">
     <% if @assignments.empty? %>
       <div class="text-center py-5">
-        <i class="bi bi-inbox" style="font-size: 3rem; color: #cbd5e1;"></i>
-        <p class="text-muted mt-3 mb-0">No hay entregas que coincidan con los filtros.</p>
+        <i class="bi bi-inbox" style="font-size:2.5rem;color:#2d2d4e;"></i>
+        <p class="mt-3" style="color:#64748b;">No hay entregas que coincidan.</p>
         <%= link_to "Ver todas", loading_production_delivery_plan_path(@delivery_plan),
-            class: "btn btn-outline-secondary btn-sm mt-2" %>
+            class: "btn btn-sm mt-1",
+            style: "border:1px solid #7c3aed;color:#a78bfa;border-radius:10px;" %>
       </div>
     <% else %>
-      <% @assignments.each_with_index do |assignment, index| %>
-        <% delivery = assignment.delivery %>
+      <% @assignments.each do |assignment| %>
         <%= render "production/deliveries/delivery_card",
-            delivery: delivery,
+            delivery: assignment.delivery,
             assignment: assignment %>
       <% end %>
     <% end %>
   </div>
+
+  <%# ── Bottom sheet de notas (gestionado por note-sheet controller) ── %>
+  <div id="pd-note-sheet-container"
+       data-controller="note-sheet"
+       data-note-sheet-save-url-value="">
+    <div class="pd-sheet-overlay"
+         data-action="click->note-sheet#close"></div>
+    <div class="pd-sheet">
+      <div class="pd-sheet-handle"></div>
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h6 class="fw-bold mb-0 text-white">
+          <i class="bi bi-chat-left-text me-2"></i>Nota del producto
+        </h6>
+        <button class="btn p-0"
+                style="color:#64748b;font-size:1.1rem;background:none;border:none;"
+                data-action="click->note-sheet#close">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="pd-sheet-product mb-3"
+           data-note-sheet-target="productLabel">
+        Producto
+      </div>
+      <label class="d-block mb-1"
+             style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">
+        Observación
+      </label>
+      <textarea class="pd-sheet-textarea"
+                data-note-sheet-target="textarea"
+                placeholder="Escribe una nota..."></textarea>
+      <div class="d-flex gap-2 mt-3">
+        <button class="pd-sheet-cancel"
+                data-action="click->note-sheet#close">Cancelar</button>
+        <button class="pd-sheet-save"
+                data-action="click->note-sheet#save">
+          <i class="bi bi-floppy me-1"></i>Guardar nota
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>
