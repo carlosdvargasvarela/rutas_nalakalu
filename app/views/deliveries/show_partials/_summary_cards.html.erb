@@ -5,8 +5,8 @@
   <div class="col-md-6">
     <div class="border rounded-3 overflow-hidden h-100 bg-white shadow-sm">
       <div class="px-3 py-2 border-bottom bg-light d-flex align-items-center gap-2">
-        <i class="bi bi-truck text-primary" style="font-size: 0.8rem;"></i>
-        <span style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">
+        <i class="bi bi-truck text-primary card-header-icon"></i>
+        <span class="card-section-label">
           Información de Entrega
         </span>
       </div>
@@ -30,45 +30,42 @@
         <% if delivery.condominio_number.present? || delivery.casa_number.present? %>
           <div class="d-flex flex-wrap gap-2 mb-3">
             <% if delivery.condominio_number.present? %>
-              <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill" style="font-size:0.75rem;">
+              <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill badge-sm">
                 <i class="bi bi-buildings me-1"></i><%= delivery.condominio_number %>
               </span>
             <% end %>
             <% if delivery.casa_number.present? %>
-              <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill" style="font-size:0.75rem;">
+              <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill badge-sm">
                 <i class="bi bi-house-door me-1"></i>Casa <%= delivery.casa_number %>
               </span>
             <% end %>
           </div>
         <% end %>
         <div class="d-flex align-items-center gap-2 mb-2">
-          <span class="bg-primary-subtle text-primary rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
-                style="width:32px; height:32px;">
+          <span class="bg-primary-subtle text-primary rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 icon-square-sm">
             <i class="bi bi-calendar-event"></i>
           </span>
           <div>
-            <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Fecha programada</div>
+            <div class="card-field-label">Fecha programada</div>
             <div class="fw-semibold small"><%= l delivery.delivery_date, format: :long %></div>
           </div>
         </div>
         <div class="d-flex align-items-center gap-2 mb-2">
-          <span class="bg-info-subtle text-info rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
-                style="width:32px; height:32px;">
+          <span class="bg-info-subtle text-info rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 icon-square-sm">
             <i class="bi bi-clock"></i>
           </span>
           <div>
-            <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Preferencia horaria</div>
+            <div class="card-field-label">Preferencia horaria</div>
             <div class="fw-semibold small"><%= delivery.delivery_time_preference.presence || 'Sin especificar' %></div>
           </div>
         </div>
         <% if delivery.approved? %>
           <div class="d-flex align-items-center gap-2">
-            <span class="bg-success-subtle text-success rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
-                  style="width:32px; height:32px;">
+            <span class="bg-success-subtle text-success rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 icon-square-sm">
               <i class="bi bi-shield-check"></i>
             </span>
             <div>
-              <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Producción</div>
+              <div class="card-field-label">Producción</div>
               <div class="fw-semibold small text-success">Aprobada para entrega</div>
             </div>
           </div>
@@ -81,8 +78,8 @@
     <div class="border rounded-3 overflow-hidden h-100 bg-white shadow-sm d-flex flex-column">
       <div class="px-3 py-2 border-bottom bg-light d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-2">
-          <i class="bi bi-receipt text-dark" style="font-size: 0.8rem;"></i>
-          <span style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">
+          <i class="bi bi-receipt text-dark card-header-icon"></i>
+          <span class="card-section-label">
             Detalles del Pedido
           </span>
         </div>
@@ -97,18 +94,17 @@
       </div>
       <div class="p-3 flex-grow-1 d-flex flex-column">
         <div class="d-flex align-items-center gap-2 mb-3">
-          <span class="badge bg-dark px-3 py-2" style="font-size: 0.85rem;">#<%= delivery.order.number %></span>
+          <span class="badge bg-dark px-3 py-2 order-number-badge">#<%= delivery.order.number %></span>
           <%= status_badge(delivery.order, with_icon: false, classes: "status-badge-soft rounded-pill") %>
         </div>
         <div class="d-flex align-items-center gap-2 mb-3">
-          <span class="bg-light text-secondary rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
-                style="width:32px; height:32px; border: 1px solid #e2e8f0;">
+          <span class="bg-light text-secondary rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 icon-square-sm-bordered">
             <i class="bi bi-person-badge"></i>
           </span>
           <div>
-            <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Vendedor</div>
+            <div class="card-field-label">Vendedor</div>
             <div class="fw-semibold small"><%= delivery.order.seller.name %></div>
-            <div class="text-muted" style="font-size: 0.7rem;">Cód: <%= delivery.order.seller.seller_code %></div>
+            <div class="text-muted seller-code-text">Cód: <%= delivery.order.seller.seller_code %></div>
           </div>
         </div>
         <div class="mt-auto">
@@ -124,24 +120,21 @@
   </div>
   <%# ══ CARD: Ubicación ══ %>
   <div class="col-12">
-    <div class="border rounded-3 bg-white shadow-sm"
-         style="border-left: 4px solid var(--bs-danger) !important;">
+    <div class="border rounded-3 bg-white shadow-sm card-accent-danger">
       <div class="p-3 d-flex align-items-start gap-3">
-        <span class="bg-danger-subtle text-danger rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
-              style="width:36px; height:36px;">
+        <span class="bg-danger-subtle text-danger rounded-2 d-flex align-items-center justify-content-center flex-shrink-0 icon-square-md">
           <i class="bi bi-geo-alt-fill fs-5"></i>
         </span>
         <div>
-          <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">
+          <div class="card-field-label mb-1">
             Ubicación de Destino
           </div>
-          <div class="fw-bold" style="font-size: 0.9rem;"><%= delivery.delivery_address.address %></div>
+          <div class="fw-bold delivery-address-text"><%= delivery.delivery_address.address %></div>
           <% if delivery.delivery_address.description.present? %>
             <div class="text-muted small fst-italic mt-1"><%= delivery.delivery_address.description %></div>
           <% end %>
           <% if delivery.address_error? %>
-            <span class="badge bg-danger-subtle text-danger border border-danger-subtle mt-2 d-inline-flex align-items-center gap-1"
-                  style="font-size: 0.65rem;">
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle mt-2 d-inline-flex align-items-center gap-1 badge-xs">
               <i class="bi bi-exclamation-triangle-fill"></i> Coordenadas no verificadas
             </span>
           <% end %>
@@ -154,34 +147,32 @@
     <% dpa = delivery.delivery_plan_assignment %>
     <% plan = dpa.delivery_plan %>
     <div class="col-12">
-      <div class="border rounded-3 bg-white shadow-sm"
-           style="border-left: 4px solid var(--bs-info) !important;">
+      <div class="border rounded-3 bg-white shadow-sm card-accent-info">
         <div class="p-3">
           <div class="d-flex align-items-center justify-content-between mb-2">
-            <div style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">
+            <div class="card-field-label">
               Plan de Entrega
             </div>
             <% if plan.truck.present? %>
-              <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill"
-                    style="font-size: 0.65rem;">
+              <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill badge-xs">
                 <i class="bi bi-truck me-1"></i><%= plan.truck %>
               </span>
             <% end %>
           </div>
           <div class="row g-2 text-center">
             <div class="col-4 border-end">
-              <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase;">Plan</div>
+              <div class="card-field-label">Plan</div>
               <%= link_to plan.full_name, delivery_plan_path(plan),
                     class: "fw-bold small d-block text-truncate",
                     target: "_blank",
                     rel: "noopener noreferrer" %>
             </div>
             <div class="col-4 border-end">
-              <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase;">Conductor</div>
+              <div class="card-field-label">Conductor</div>
               <div class="fw-bold small"><%= plan.driver&.name.presence || '—' %></div>
             </div>
             <div class="col-4">
-              <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase;">Parada</div>
+              <div class="card-field-label">Parada</div>
               <div class="fw-bold small">#<%= dpa.stop_order || '—' %></div>
             </div>
           </div>
@@ -195,8 +186,8 @@
     <div class="border rounded-3 bg-white shadow-sm">
       <div class="px-3 py-2 border-bottom bg-light d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-2">
-          <i class="bi bi-sticky-fill text-warning" style="font-size: 0.8rem;"></i>
-          <span style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">
+          <i class="bi bi-sticky-fill text-warning card-header-icon"></i>
+          <span class="card-section-label">
             Notas del Cliente - Estas NO son notas de la entrega, sino del cliente en general. Para notas específicas de esta entrega, ver sección de editar entrega. Estas notas sólo las ve el equipo de logística, no los conductores.
           </span>
         </div>
@@ -218,17 +209,16 @@
           <% if client.pinned_notes.any? %>
             <%= render "client_notes/pinned_banner", client: client %>
           <% else %>
-            <div class="text-center text-muted py-2" style="font-size: 0.8rem;">
+            <div class="text-center text-muted py-2 no-pinned-notes">
               <i class="bi bi-sticky opacity-25 d-block fs-4 mb-1"></i>
               Sin alertas fijadas para este cliente.
             </div>
           <% end %>
         </div>
         <%# Botón para abrir modal con todas las notas %>
-        <button class="btn btn-sm btn-outline-secondary w-100 mt-2 d-flex align-items-center justify-content-center gap-1"
+        <button class="btn btn-sm btn-outline-secondary w-100 mt-2 d-flex align-items-center justify-content-center gap-1 btn-notes-toggle"
               data-bs-toggle="modal"
-              data-bs-target="#clientNotesModal_<%= client.id %>"
-              style="font-size: 0.78rem;">
+              data-bs-target="#clientNotesModal_<%= client.id %>">
           <i class="bi bi-chat-left-text"></i>
           Ver todas las notas / Agregar nota
         </button>
