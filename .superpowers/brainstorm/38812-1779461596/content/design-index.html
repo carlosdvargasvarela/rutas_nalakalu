@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Diseño: Índice de Planes</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0a14; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; color: #f1f5f9; padding: 24px 16px; }
+
+  .page-title { font-size: 15px; font-weight: 700; color: #a78bfa; text-align: center; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .page-sub { font-size: 12px; color: #64748b; text-align: center; margin-bottom: 24px; }
+
+  /* Phone frame */
+  .phone-frame {
+    max-width: 390px;
+    margin: 0 auto;
+    background: #0f0f1a;
+    border-radius: 36px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px #2d2d4e;
+    border: 3px solid #1e1e38;
+  }
+  .phone-status { height: 44px; background: #0f0f1a; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 24px 8px; }
+  .status-time { font-size: 12px; font-weight: 700; color: #f1f5f9; }
+  .status-icons { display: flex; gap: 6px; align-items: center; font-size: 10px; color: #94a3b8; }
+
+  /* ── TOP NAV BAR ── */
+  .top-nav {
+    background: linear-gradient(135deg, #6d28d9, #4338ca);
+    padding: 14px 16px 16px;
+  }
+  .nav-top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .nav-title { font-size: 16px; font-weight: 800; color: #fff; }
+  .nav-subtitle { font-size: 11px; color: rgba(255,255,255,0.65); margin-top: 2px; }
+  .nav-avatar { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+
+  /* Navegación de fecha */
+  .date-nav { display: flex; align-items: center; gap: 8px; }
+  .date-arrow { width: 32px; height: 32px; border-radius: 10px; background: rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; font-size: 14px; color: #fff; flex-shrink: 0; }
+  .date-pill { flex: 1; background: rgba(255,255,255,0.1); border-radius: 10px; padding: 7px 12px; text-align: center; font-size: 12px; font-weight: 600; color: #fff; border: 1px solid rgba(255,255,255,0.15); }
+  .date-today { width: 56px; height: 32px; border-radius: 10px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #6d28d9; flex-shrink: 0; }
+
+  /* ── STATS ROW ── */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 12px 12px 4px; }
+  .stat-card { background: #1a1a2e; border-radius: 12px; padding: 10px 6px; text-align: center; border: 1px solid #2d2d4e; }
+  .stat-num { font-size: 20px; font-weight: 800; line-height: 1; }
+  .stat-label { font-size: 8px; color: #64748b; margin-top: 4px; font-weight: 500; }
+
+  /* ── PLAN CARDS ── */
+  .plans-list { padding: 8px 12px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .plan-card { background: #1a1a2e; border-radius: 16px; overflow: hidden; border: 1px solid #2d2d4e; }
+  .plan-card-top { height: 3px; }
+  .plan-card-body { padding: 12px; }
+
+  .plan-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .driver-avatar { width: 40px; height: 40px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .plan-driver-name { font-size: 13px; font-weight: 700; color: #f1f5f9; line-height: 1.2; }
+  .plan-meta { display: flex; gap: 6px; margin-top: 3px; flex-wrap: wrap; }
+  .meta-pill { font-size: 9px; padding: 2px 7px; border-radius: 20px; font-weight: 600; }
+  .meta-truck { background: #1e1e38; color: #94a3b8; border: 1px solid #2d2d4e; }
+  .meta-plan { background: #1e1e38; color: #64748b; border: 1px solid #2d2d4e; }
+  .plan-status-badge { margin-left: auto; font-size: 9px; padding: 4px 10px; border-radius: 20px; font-weight: 700; }
+
+  /* Barra de progreso del plan */
+  .progress-section { margin-bottom: 10px; }
+  .progress-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .progress-label { font-size: 9px; color: #64748b; }
+  .progress-pct { font-size: 12px; font-weight: 800; }
+  .progress-bar-wrap { height: 8px; background: #0f0f1a; border-radius: 4px; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 4px; }
+
+  /* Mini stats del plan */
+  .plan-mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+  .mini-stat { background: #0f0f1a; border-radius: 8px; padding: 6px 4px; text-align: center; }
+  .mini-stat-num { font-size: 14px; font-weight: 800; }
+  .mini-stat-label { font-size: 7px; color: #475569; margin-top: 2px; }
+
+  /* Botón CTA */
+  .plan-cta { display: block; background: linear-gradient(135deg, #6d28d9, #4f46e5); color: #fff; border-radius: 12px; padding: 10px; text-align: center; font-size: 12px; font-weight: 700; text-decoration: none; }
+
+  /* Colors */
+  .c-success { color: #4ade80; }
+  .c-warning { color: #fbbf24; }
+  .c-danger { color: #f87171; }
+  .c-secondary { color: #94a3b8; }
+  .bg-success-top { background: #22c55e; }
+  .bg-warning-top { background: #f59e0b; }
+  .bg-danger-top { background: #ef4444; }
+  .bg-secondary-top { background: #475569; }
+  .avatar-blue { background: linear-gradient(135deg, #6d28d9, #4f46e5); }
+  .avatar-teal { background: linear-gradient(135deg, #0891b2, #06b6d4); }
+  .avatar-orange { background: linear-gradient(135deg, #c2410c, #ea580c); }
+
+  .badge-success { background: #166534; color: #4ade80; }
+  .badge-warning { background: #78350f; color: #fbbf24; }
+  .badge-danger { background: #7f1d1d; color: #f87171; }
+
+  /* Annotation layer */
+  .annotations { max-width: 390px; margin: 20px auto 0; }
+  .ann { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid #1e1e38; }
+  .ann-num { width: 22px; height: 22px; border-radius: 50%; background: #7c3aed; color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .ann-text { font-size: 11px; color: #94a3b8; line-height: 1.5; }
+  .ann-text strong { color: #e2e8f0; }
+</style>
+</head>
+<body>
+
+<div class="page-title">Diseño: Índice de Planes</div>
+<div class="page-sub">Pantalla que ve el despachador al entrar al módulo</div>
+
+<div class="phone-frame">
+  <!-- Status bar -->
+  <div class="phone-status">
+    <span class="status-time">9:41</span>
+    <div class="status-icons">
+      <span>●●●</span><span>WiFi</span><span>🔋</span>
+    </div>
+  </div>
+
+  <!-- Header con fecha -->
+  <div class="top-nav">
+    <div class="nav-top-row">
+      <div>
+        <div class="nav-title">🚛 Bitácora de Carga</div>
+        <div class="nav-subtitle">jueves, 22 de mayo de 2026</div>
+      </div>
+      <div class="nav-avatar">👤</div>
+    </div>
+    <div class="date-nav">
+      <div class="date-arrow">‹</div>
+      <div class="date-pill">jue 22 mayo</div>
+      <div class="date-arrow">›</div>
+      <div class="date-today">Hoy</div>
+    </div>
+  </div>
+
+  <!-- Stats del día -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num c-secondary">4</div>
+      <div class="stat-label">Planes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num c-success">1</div>
+      <div class="stat-label">Completos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num c-warning">2</div>
+      <div class="stat-label">En progreso</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num c-danger">1</div>
+      <div class="stat-label">Faltantes</div>
+    </div>
+  </div>
+
+  <!-- Lista de planes -->
+  <div class="plans-list">
+
+    <!-- Plan 1: completado -->
+    <div class="plan-card">
+      <div class="plan-card-top bg-success-top"></div>
+      <div class="plan-card-body">
+        <div class="plan-card-header">
+          <div class="driver-avatar avatar-blue">RV</div>
+          <div style="flex:1;">
+            <div class="plan-driver-name">Rodrigo Vargas</div>
+            <div class="plan-meta">
+              <span class="meta-pill meta-truck">🚛 Camión 03</span>
+              <span class="meta-pill meta-plan">#47</span>
+            </div>
+          </div>
+          <div class="plan-status-badge badge-success">✓ Completo</div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-top">
+            <span class="progress-label">Progreso de carga</span>
+            <span class="progress-pct c-success">100%</span>
+          </div>
+          <div class="progress-bar-wrap"><div class="progress-bar bg-success-top" style="width:100%"></div></div>
+        </div>
+        <div class="plan-mini-stats">
+          <div class="mini-stat"><div class="mini-stat-num c-secondary">6</div><div class="mini-stat-label">Entregas</div></div>
+          <div class="mini-stat"><div class="mini-stat-num c-success">18</div><div class="mini-stat-label">Cargados</div></div>
+          <div class="mini-stat"><div class="mini-stat-num c-secondary">0</div><div class="mini-stat-label">Faltantes</div></div>
+        </div>
+        <div class="plan-cta" style="background:linear-gradient(135deg,#166534,#16a34a);">✓ Ver bitácora completa</div>
+      </div>
+    </div>
+
+    <!-- Plan 2: en progreso -->
+    <div class="plan-card">
+      <div class="plan-card-top bg-warning-top"></div>
+      <div class="plan-card-body">
+        <div class="plan-card-header">
+          <div class="driver-avatar avatar-teal">MC</div>
+          <div style="flex:1;">
+            <div class="plan-driver-name">Mario Cascante</div>
+            <div class="plan-meta">
+              <span class="meta-pill meta-truck">🚛 Camión 01</span>
+              <span class="meta-pill meta-plan">#45</span>
+            </div>
+          </div>
+          <div class="plan-status-badge badge-warning">⏳ En progreso</div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-top">
+            <span class="progress-label">Progreso de carga</span>
+            <span class="progress-pct c-warning">62%</span>
+          </div>
+          <div class="progress-bar-wrap"><div class="progress-bar bg-warning-top" style="width:62%"></div></div>
+        </div>
+        <div class="plan-mini-stats">
+          <div class="mini-stat"><div class="mini-stat-num c-secondary">8</div><div class="mini-stat-label">Entregas</div></div>
+          <div class="mini-stat"><div class="mini-stat-num c-success">11</div><div class="mini-stat-label">Cargados</div></div>
+          <div class="mini-stat"><div class="mini-stat-num c-secondary">7</div><div class="mini-stat-label">Pendientes</div></div>
+        </div>
+        <div class="plan-cta">📋 Abrir Bitácora</div>
+      </div>
+    </div>
+
+    <!-- Plan 3: con faltantes -->
+    <div class="plan-card">
+      <div class="plan-card-top bg-danger-top"></div>
+      <div class="plan-card-body">
+        <div class="plan-card-header">
+          <div class="driver-avatar avatar-orange">JR</div>
+          <div style="flex:1;">
+            <div class="plan-driver-name">Juan Rojas</div>
+            <div class="plan-meta">
+              <span class="meta-pill meta-truck">🚛 Camión 05</span>
+              <span class="meta-pill meta-plan">#48</span>
+            </div>
+          </div>
+          <div class="plan-status-badge badge-danger">⚠ Faltantes</div>
+        </div>
+        <div class="progress-section">
+          <div class="progress-top">
+            <span class="progress-label">Progreso de carga</span>
+            <span class="progress-pct c-danger">85%</span>
+          </div>
+          <div class="progress-bar-wrap"><div class="progress-bar bg-danger-top" style="width:85%"></div></div>
+        </div>
+        <div class="plan-mini-stats">
+          <div class="mini-stat"><div class="mini-stat-num c-secondary">5</div><div class="mini-stat-label">Entregas</div></div>
+          <div class="mini-stat"><div class="mini-stat-num c-success">14</div><div class="mini-stat-label">Cargados</div></div>
+          <div class="mini-stat"><div class="mini-stat-num c-danger">2</div><div class="mini-stat-label">Faltantes</div></div>
+        </div>
+        <div class="plan-cta" style="background:linear-gradient(135deg,#7f1d1d,#b91c1c);">⚠ Revisar faltantes</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Anotaciones -->
+<div class="annotations">
+  <div class="ann">
+    <div class="ann-num">1</div>
+    <div class="ann-text"><strong>Header con gradiente púrpura</strong> — navegación de fecha integrada con flechas + campo de fecha + botón "Hoy". Más compacto que la versión actual.</div>
+  </div>
+  <div class="ann">
+    <div class="ann-num">2</div>
+    <div class="ann-text"><strong>Stats del día en 4 celdas</strong> — total, completos, en progreso, faltantes. Idéntica info que hoy pero en el tema oscuro.</div>
+  </div>
+  <div class="ann">
+    <div class="ann-num">3</div>
+    <div class="ann-text"><strong>Cards con franja de color semántico</strong> — verde = completo, amarillo = parcial, rojo = faltantes. La franja en el tope es inmediatamente legible.</div>
+  </div>
+  <div class="ann">
+    <div class="ann-num">4</div>
+    <div class="ann-text"><strong>El CTA cambia según estado</strong> — "Abrir Bitácora" normal, "Ver completo" en verde cuando está terminado, "Revisar faltantes" en rojo cuando hay problemas.</div>
+  </div>
+  <div class="ann">
+    <div class="ann-num">5</div>
+    <div class="ann-text"><strong>Todo dentro de production/</strong> — no se toca layout, navbar, ni ninguna otra vista fuera del módulo.</div>
+  </div>
+</div>
+
+</body>
+</html>

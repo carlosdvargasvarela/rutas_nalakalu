@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Diseño: Bitácora de Carga</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0a14; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; color: #f1f5f9; padding: 20px 12px 40px; }
+
+  .page-title { font-size: 15px; font-weight: 700; color: #a78bfa; text-align: center; margin-bottom: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .page-sub { font-size: 11px; color: #64748b; text-align: center; margin-bottom: 20px; }
+
+  /* Split layout: phone + annotations side by side on wide screens */
+  .layout { display: flex; gap: 32px; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
+
+  .phone-frame {
+    width: 360px;
+    flex-shrink: 0;
+    background: #0f0f1a;
+    border-radius: 36px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px #2d2d4e;
+    border: 3px solid #1e1e38;
+  }
+  .phone-status { height: 40px; background: #0f0f1a; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 22px 8px; }
+  .status-time { font-size: 12px; font-weight: 700; color: #f1f5f9; }
+  .status-icons { font-size: 10px; color: #94a3b8; }
+
+  /* ── STICKY HEADER ── */
+  .sticky-header {
+    background: linear-gradient(160deg, #6d28d9 0%, #4338ca 60%, #1e1b4b 100%);
+    padding: 12px 14px 14px;
+  }
+  .sh-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .sh-back { width: 30px; height: 30px; border-radius: 10px; background: rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; font-size: 14px; color: #fff; flex-shrink: 0; }
+  .sh-avatar { width: 38px; height: 38px; border-radius: 12px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .sh-name { font-size: 14px; font-weight: 800; color: #fff; line-height: 1.2; }
+  .sh-meta { font-size: 9px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+  .sh-badge { margin-left: auto; font-size: 9px; padding: 4px 10px; border-radius: 20px; font-weight: 700; background: #78350f; color: #fbbf24; }
+
+  .sh-progress { }
+  .sh-prog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .sh-prog-label { font-size: 9px; color: rgba(255,255,255,0.55); }
+  .sh-prog-pct { font-size: 14px; font-weight: 800; color: #fbbf24; }
+  .sh-prog-bar-wrap { height: 9px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; }
+  .sh-prog-bar { height: 100%; background: linear-gradient(90deg, #fbbf24, #f59e0b); border-radius: 5px; width: 62%; }
+  .sh-stats-row { display: flex; gap: 6px; margin-top: 8px; }
+  .sh-stat { flex: 1; background: rgba(255,255,255,0.08); border-radius: 10px; padding: 5px 4px; text-align: center; }
+  .sh-stat-num { font-size: 14px; font-weight: 800; }
+  .sh-stat-label { font-size: 8px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+
+  /* ── FILTER CHIPS ── */
+  .filter-bar { background: #12122a; padding: 8px 10px; display: flex; gap: 5px; overflow-x: auto; border-bottom: 1px solid #1e1e38; }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-chip { font-size: 9px; padding: 5px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; flex-shrink: 0; cursor: pointer; }
+  .chip-all { background: #7c3aed; color: #fff; }
+  .chip-unloaded { background: #1e1e38; color: #94a3b8; border: 1px solid #2d2d4e; }
+  .chip-partial { background: #1e1e38; color: #fbbf24; border: 1px solid #78350f44; }
+  .chip-loaded { background: #1e1e38; color: #4ade80; border: 1px solid #16653444; }
+  .chip-missing { background: #1e1e38; color: #f87171; border: 1px solid #7f1d1d44; }
+
+  /* Search bar */
+  .search-bar { background: #12122a; padding: 6px 10px 8px; }
+  .search-input { width: 100%; background: #1e1e38; border: 1px solid #2d2d4e; border-radius: 10px; padding: 7px 10px 7px 30px; font-size: 11px; color: #94a3b8; outline: none; position: relative; }
+  .search-wrap { position: relative; }
+  .search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 11px; color: #475569; }
+
+  /* ── DELIVERY CARDS ── */
+  .cards-list { background: #0f0f1a; padding: 8px 10px; display: flex; flex-direction: column; gap: 8px; }
+
+  .del-card { background: #1a1a2e; border-radius: 16px; overflow: hidden; border: 1px solid #2d2d4e; }
+  .del-card-top { height: 3px; }
+  .del-card-hdr { display: flex; align-items: center; gap: 9px; padding: 10px 12px; cursor: pointer; }
+  .del-stop-badge { width: 28px; height: 28px; border-radius: 9px; background: #7c3aed; color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .del-stop-badge-done { background: #166534; }
+  .del-client-name { font-size: 12px; font-weight: 700; color: #f1f5f9; flex: 1; }
+  .del-client-addr { font-size: 9px; color: #64748b; margin-top: 1px; }
+  .del-hdr-right { display: flex; align-items: center; gap: 7px; }
+  .del-prog-mini { width: 36px; height: 5px; background: #0f0f1a; border-radius: 3px; overflow: hidden; }
+  .del-prog-mini-bar { height: 100%; border-radius: 3px; }
+  .del-chevron { font-size: 10px; color: #475569; }
+  .del-badge { font-size: 8px; padding: 3px 8px; border-radius: 20px; font-weight: 700; }
+  .del-badge-ok { background: #166534; color: #4ade80; }
+  .del-badge-partial { background: #78350f; color: #fbbf24; }
+  .del-badge-missing { background: #7f1d1d; color: #f87171; }
+
+  /* Item rows */
+  .del-items { border-top: 1px solid #0f0f1a; }
+  .item-row { padding: 9px 12px; border-bottom: 1px solid #0f0f1a; position: relative; }
+  .item-row:last-child { border-bottom: none; }
+  .item-row-missing { background: #1c0505; }
+  .item-row-loaded { background: #051c0a; }
+  .item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .item-name { font-size: 11px; font-weight: 700; color: #f1f5f9; }
+  .item-qty { font-size: 9px; color: #64748b; margin-top: 2px; }
+  .item-note-preview { font-size: 8px; color: #fbbf24; font-style: italic; margin-top: 3px; }
+  .item-badge { font-size: 8px; padding: 3px 8px; border-radius: 20px; font-weight: 700; flex-shrink: 0; }
+  .item-badge-loaded { background: #166534; color: #4ade80; }
+  .item-badge-missing { background: #7f1d1d; color: #f87171; }
+  .item-badge-pending { background: #1e1e38; color: #64748b; border: 1px solid #2d2d4e; }
+
+  /* Action buttons — BIG touch targets */
+  .item-actions { display: flex; gap: 5px; margin-top: 7px; }
+  .act-ok { flex: 3; background: linear-gradient(135deg, #15803d, #16a34a); color: #dcfce7; border-radius: 10px; padding: 9px 0; text-align: center; font-size: 10px; font-weight: 800; }
+  .act-miss { flex: 3; background: #1c0505; color: #f87171; border-radius: 10px; padding: 9px 0; text-align: center; font-size: 10px; font-weight: 700; border: 1px solid #7f1d1d; }
+  .act-note { flex: 1; background: #1e1e38; color: #94a3b8; border-radius: 10px; padding: 9px 0; text-align: center; font-size: 12px; border: 1px solid #2d2d4e; }
+  .act-undo { flex: 2; background: #1e1e38; color: #64748b; border-radius: 10px; padding: 9px 0; text-align: center; font-size: 9px; border: 1px solid #2d2d4e; }
+
+  /* ── "MARCAR TODO" footer dentro del card ── */
+  .del-card-footer { border-top: 1px solid #0f0f1a; padding: 8px 12px; display: flex; gap: 6px; background: #12122a; }
+  .footer-btn-all { flex: 1; background: #166534; color: #4ade80; border-radius: 10px; padding: 7px; text-align: center; font-size: 9px; font-weight: 700; }
+  .footer-btn-reset { background: #1e1e38; color: #64748b; border-radius: 10px; padding: 7px 10px; text-align: center; font-size: 9px; border: 1px solid #2d2d4e; }
+
+  /* ── BOTTOM SHEET (fijo en el phone) ── */
+  .phone-relative { position: relative; overflow: hidden; }
+  .bottom-sheet-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.65); z-index: 10; }
+  .bottom-sheet {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 11;
+    background: #1e1e38;
+    border-radius: 24px 24px 0 0;
+    padding: 10px 16px 20px;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
+  }
+  .bs-handle { width: 40px; height: 4px; background: #2d2d4e; border-radius: 2px; margin: 0 auto 12px; }
+  .bs-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .bs-title { font-size: 13px; font-weight: 800; color: #f1f5f9; }
+  .bs-close { font-size: 16px; color: #475569; line-height: 1; }
+  .bs-product { font-size: 10px; color: #7c3aed; margin-bottom: 10px; background: #7c3aed1a; padding: 5px 9px; border-radius: 8px; display: inline-block; }
+  .bs-label { font-size: 9px; color: #64748b; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .bs-textarea {
+    width: 100%; background: #12122a; border: 1px solid #2d2d4e;
+    border-radius: 12px; color: #fde68a; font-size: 11px;
+    padding: 10px 12px; resize: none; height: 70px; outline: none;
+    font-style: italic; font-family: inherit;
+  }
+  .bs-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .bs-cancel { flex: 1; background: #12122a; color: #64748b; border-radius: 12px; padding: 10px; text-align: center; font-size: 11px; border: 1px solid #2d2d4e; }
+  .bs-save { flex: 2; background: linear-gradient(135deg, #d97706, #f59e0b); color: #000; border-radius: 12px; padding: 10px; text-align: center; font-size: 11px; font-weight: 800; }
+
+  /* Annotations panel */
+  .ann-panel { max-width: 320px; }
+  .ann-title { font-size: 13px; font-weight: 700; color: #a78bfa; margin-bottom: 14px; letter-spacing: 0.3px; }
+  .ann { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid #1a1a2e; }
+  .ann:last-child { border-bottom: none; }
+  .ann-num { width: 22px; height: 22px; border-radius: 50%; background: #7c3aed; color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .ann-text { font-size: 11px; color: #94a3b8; line-height: 1.55; }
+  .ann-text strong { color: #e2e8f0; }
+  .ann-text code { font-size: 10px; background: #1e1e38; color: #a78bfa; padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="page-title">Diseño: Bitácora de Carga</div>
+<div class="page-sub">Pantalla principal de trabajo + bottom sheet de notas</div>
+
+<div class="layout">
+
+  <!-- PHONE 1: Pantalla normal -->
+  <div>
+    <div style="text-align:center;font-size:10px;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Vista principal</div>
+    <div class="phone-frame">
+      <div class="phone-status">
+        <span class="status-time">9:41</span>
+        <span class="status-icons">🔋 62%</span>
+      </div>
+
+      <!-- Sticky header -->
+      <div class="sticky-header">
+        <div class="sh-top">
+          <div class="sh-back">‹</div>
+          <div class="sh-avatar">MC</div>
+          <div style="flex:1;">
+            <div class="sh-name">Mario Cascante</div>
+            <div class="sh-meta">🚛 Camión 01 · Plan #45 · Semana 21</div>
+          </div>
+          <div class="sh-badge">⏳ Parcial</div>
+        </div>
+        <div class="sh-progress">
+          <div class="sh-prog-top">
+            <span class="sh-prog-label">Progreso de carga del plan</span>
+            <span class="sh-prog-pct">62%</span>
+          </div>
+          <div class="sh-prog-bar-wrap"><div class="sh-prog-bar"></div></div>
+        </div>
+        <div class="sh-stats-row">
+          <div class="sh-stat"><div class="sh-stat-num" style="color:#94a3b8;">18</div><div class="sh-stat-label">Total</div></div>
+          <div class="sh-stat"><div class="sh-stat-num" style="color:#4ade80;">11</div><div class="sh-stat-label">Cargados</div></div>
+          <div class="sh-stat"><div class="sh-stat-num" style="color:#fbbf24;">5</div><div class="sh-stat-label">Pendientes</div></div>
+          <div class="sh-stat"><div class="sh-stat-num" style="color:#f87171;">2</div><div class="sh-stat-label">Faltantes</div></div>
+        </div>
+      </div>
+
+      <!-- Search + Filters -->
+      <div class="search-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" placeholder="Buscar cliente o pedido..." readonly>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="filter-chip chip-all">Todos (8)</div>
+        <div class="filter-chip chip-unloaded">Sin cargar</div>
+        <div class="filter-chip chip-partial">Parcial</div>
+        <div class="filter-chip chip-loaded">Cargado ✓</div>
+        <div class="filter-chip chip-missing">Faltantes ⚠</div>
+      </div>
+
+      <!-- Cards -->
+      <div class="cards-list">
+
+        <!-- Entrega 1: completada, colapsada -->
+        <div class="del-card">
+          <div class="del-card-top" style="background:#22c55e;"></div>
+          <div class="del-card-hdr">
+            <div class="del-stop-badge del-stop-badge-done">1</div>
+            <div>
+              <div class="del-client-name">Súper Norte ✓</div>
+              <div class="del-client-addr">Av. 2 Norte, San José</div>
+            </div>
+            <div class="del-hdr-right">
+              <div class="del-badge del-badge-ok">3/3</div>
+              <div class="del-chevron">▸</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entrega 2: en progreso, expandida -->
+        <div class="del-card">
+          <div class="del-card-top" style="background:#f59e0b;"></div>
+          <div class="del-card-hdr">
+            <div class="del-stop-badge">2</div>
+            <div style="flex:1;">
+              <div class="del-client-name">Mini Mkt Belén</div>
+              <div class="del-client-addr">Belén, Heredia</div>
+            </div>
+            <div class="del-hdr-right">
+              <div class="del-prog-mini"><div class="del-prog-mini-bar" style="width:50%;background:#f59e0b;"></div></div>
+              <div class="del-badge del-badge-partial">1/2</div>
+              <div class="del-chevron">▾</div>
+            </div>
+          </div>
+          <div class="del-items">
+            <!-- Item cargado -->
+            <div class="item-row item-row-loaded">
+              <div class="item-top">
+                <div>
+                  <div class="item-name">Leche Dos Pinos 1L</div>
+                  <div class="item-qty">×12 unidades</div>
+                </div>
+                <div class="item-badge item-badge-loaded">✓ OK</div>
+              </div>
+              <div class="item-actions">
+                <div class="act-undo">↺ Desmarcar</div>
+                <div class="act-note" style="color:#4ade80;border-color:#16653444;">📝</div>
+              </div>
+            </div>
+            <!-- Item faltante -->
+            <div class="item-row item-row-missing">
+              <div class="item-top">
+                <div>
+                  <div class="item-name">Jugo Del Valle 2L</div>
+                  <div class="item-qty">×6 unidades</div>
+                  <div class="item-note-preview">📝 "No llegó en pedido de hoy"</div>
+                </div>
+                <div class="item-badge item-badge-missing">✗ Falta</div>
+              </div>
+              <div class="item-actions">
+                <div class="act-ok">✓ Cargado</div>
+                <div class="act-undo">↺ Desmarcar</div>
+                <div class="act-note" style="color:#f59e0b;border-color:#f59e0b44;">📝</div>
+              </div>
+            </div>
+          </div>
+          <div class="del-card-footer">
+            <div class="footer-btn-all">✓✓ Marcar todo cargado</div>
+            <div class="footer-btn-reset">↺</div>
+          </div>
+        </div>
+
+        <!-- Entrega 3: pendiente, colapsada -->
+        <div class="del-card">
+          <div class="del-card-top" style="background:#475569;"></div>
+          <div class="del-card-hdr">
+            <div class="del-stop-badge" style="background:#2d2d4e;color:#64748b;">3</div>
+            <div style="flex:1;">
+              <div class="del-client-name" style="color:#94a3b8;">Distribuidora Ríos</div>
+              <div class="del-client-addr">Cartago Centro</div>
+            </div>
+            <div class="del-hdr-right">
+              <div class="del-badge" style="background:#1e1e38;color:#64748b;border:1px solid #2d2d4e;">0/4</div>
+              <div class="del-chevron">▸</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- PHONE 2: Bottom sheet de notas abierto -->
+  <div>
+    <div style="text-align:center;font-size:10px;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Al tocar 📝 en un ítem</div>
+    <div class="phone-frame phone-relative" style="position:relative;">
+      <div class="phone-status" style="background:#0f0f1a;">
+        <span class="status-time">9:41</span>
+        <span class="status-icons">🔋 62%</span>
+      </div>
+      <!-- Contenido difuminado detrás -->
+      <div style="opacity:0.3;pointer-events:none;">
+        <div class="sticky-header">
+          <div class="sh-top">
+            <div class="sh-back">‹</div>
+            <div class="sh-avatar">MC</div>
+            <div><div class="sh-name">Mario Cascante</div><div class="sh-meta">Camión 01 · Plan #45</div></div>
+          </div>
+        </div>
+        <div class="cards-list" style="padding-bottom:0;">
+          <div class="del-card">
+            <div class="del-card-top" style="background:#f59e0b;"></div>
+            <div class="del-card-hdr"><div class="del-stop-badge">2</div><div><div class="del-client-name">Mini Mkt Belén</div></div></div>
+            <div class="del-items">
+              <div class="item-row">
+                <div class="item-name">Jugo Del Valle 2L</div>
+                <div class="item-qty">×6 · pendiente</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Overlay oscuro -->
+      <div class="bottom-sheet-overlay"></div>
+      <!-- Bottom sheet -->
+      <div class="bottom-sheet">
+        <div class="bs-handle"></div>
+        <div class="bs-header">
+          <div class="bs-title">📝 Agregar nota</div>
+          <div class="bs-close">✕</div>
+        </div>
+        <div class="bs-product">Jugo Del Valle 2L · ×6 · Mini Mkt Belén</div>
+        <div class="bs-label">Observación</div>
+        <textarea class="bs-textarea" readonly>No llegó en el pedido de hoy, verificar con bodega...</textarea>
+        <div class="bs-actions">
+          <div class="bs-cancel">Cancelar</div>
+          <div class="bs-save">💾 Guardar nota</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Annotations -->
+  <div class="ann-panel">
+    <div class="ann-title">Notas de diseño</div>
+    <div class="ann">
+      <div class="ann-num">1</div>
+      <div class="ann-text"><strong>Header sticky con todo el contexto</strong> — nombre del chofer, camión, barra de progreso y contadores (total / cargados / pendientes / faltantes) siempre visible al hacer scroll.</div>
+    </div>
+    <div class="ann">
+      <div class="ann-num">2</div>
+      <div class="ann-text"><strong>Cards colapsables por cliente</strong> — numeradas por parada. La franja de color en el tope indica estado: gris = sin empezar, amarillo = parcial, verde = completo, rojo = faltantes.</div>
+    </div>
+    <div class="ann">
+      <div class="ann-num">3</div>
+      <div class="ann-text"><strong>Botones de acción grandes</strong> — <code>✓ Cargado</code> (verde) y <code>✗ Faltante</code> (rojo) con padding generoso para dedos gordos. El <code>↺ Desmarcar</code> aparece solo cuando el ítem ya tiene estado.</div>
+    </div>
+    <div class="ann">
+      <div class="ann-num">4</div>
+      <div class="ann-text"><strong>Bottom sheet de notas</strong> — el botón 📝 abre un panel deslizable con el nombre del producto en contexto. Si ya tiene nota, se muestra un preview en amarillo bajo el nombre del ítem.</div>
+    </div>
+    <div class="ann">
+      <div class="ann-num">5</div>
+      <div class="ann-text"><strong>Footer del card con acciones masivas</strong> — "✓✓ Marcar todo cargado" y "↺ resetear" viven en el pie de cada tarjeta de cliente, no en un botón flotante.</div>
+    </div>
+    <div class="ann">
+      <div class="ann-num">6</div>
+      <div class="ann-text"><strong>Sin <code>confirm()</code> nativo</strong> — "Faltante" se aplica sin diálogo del browser. Se puede desmarcar con <code>↺</code> inmediatamente (patrón undo vs. confirm).</div>
+    </div>
+    <div class="ann">
+      <div class="ann-num">7</div>
+      <div class="ann-text"><strong>Scope: solo production/</strong> — <code>app/views/production/</code>, <code>delivery_item_controller.js</code>, <code>driver_plan_controller.js</code>. El layout, navbar y resto del sistema no se toca.</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

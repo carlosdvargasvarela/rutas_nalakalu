@@ -1,0 +1,237 @@
+<h2>¿Qué tono visual debe tener la Bitácora de Carga?</h2>
+<p class="subtitle">Los compañeros de despacho lo usarán de noche/madrugada, en bodega, en mobile. ¿Cuál de estas direcciones se siente correcta?</p>
+
+<style>
+  .phone-wrap {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .phone {
+    width: 220px;
+    border-radius: 32px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    border: 3px solid #e2e8f0;
+    flex-shrink: 0;
+  }
+  .phone-notch {
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .notch-dot {
+    width: 60px;
+    height: 6px;
+    border-radius: 3px;
+    opacity: 0.3;
+  }
+  .phone-screen {
+    padding: 0;
+    min-height: 360px;
+  }
+
+  /* ── Opción A: Oscuro Operacional ── */
+  .dark-op .phone { border-color: #1e293b; }
+  .dark-op .phone-notch { background: #0f172a; }
+  .dark-op .notch-dot { background: #94a3b8; }
+  .dark-op .phone-screen { background: #0f172a; font-family: 'Inter', sans-serif; color: #f1f5f9; }
+  .dark-op-header { background: #1e293b; padding: 12px 14px 10px; border-bottom: 1px solid #334155; }
+  .dark-op-title { font-size: 13px; font-weight: 700; color: #f1f5f9; letter-spacing: 0.5px; }
+  .dark-op-sub { font-size: 10px; color: #64748b; margin-top: 2px; }
+  .dark-op-progress { background: #1e293b; padding: 8px 14px; margin-top: 1px; }
+  .dark-op-bar-wrap { height: 8px; background: #334155; border-radius: 4px; overflow: hidden; }
+  .dark-op-bar { height: 100%; background: linear-gradient(90deg, #22d3ee, #06b6d4); width: 62%; border-radius: 4px; }
+  .dark-op-stat { font-size: 9px; color: #94a3b8; margin-top: 4px; display: flex; justify-content: space-between; }
+  .dark-op-item { background: #1e293b; margin: 8px 10px; border-radius: 12px; padding: 10px 12px; }
+  .dark-op-item-name { font-size: 11px; font-weight: 600; color: #e2e8f0; }
+  .dark-op-item-qty { font-size: 9px; color: #64748b; margin-top: 2px; }
+  .dark-op-btns { display: flex; gap: 6px; margin-top: 8px; }
+  .dark-op-btn-ok { flex: 1; background: #166534; color: #4ade80; border-radius: 8px; text-align: center; font-size: 10px; font-weight: 700; padding: 7px 0; }
+  .dark-op-btn-miss { flex: 1; background: #1c1917; color: #ef4444; border-radius: 8px; text-align: center; font-size: 10px; padding: 7px 0; border: 1px solid #ef4444; }
+  .dark-op-badge-miss { background: #7f1d1d; color: #fca5a5; font-size: 9px; padding: 2px 6px; border-radius: 4px; }
+  .dark-op-item-miss { background: #1c0a0a; border: 1px solid #991b1b; }
+
+  /* ── Opción B: Limpio y Claro ── */
+  .clean .phone { border-color: #e2e8f0; }
+  .clean .phone-notch { background: #ffffff; border-bottom: 1px solid #f1f5f9; }
+  .clean .notch-dot { background: #94a3b8; }
+  .clean .phone-screen { background: #f8fafc; font-family: sans-serif; }
+  .clean-header { background: #fff; padding: 12px 14px 10px; border-bottom: 1px solid #e2e8f0; }
+  .clean-title { font-size: 13px; font-weight: 700; color: #0f172a; }
+  .clean-sub { font-size: 10px; color: #94a3b8; margin-top: 1px; }
+  .clean-progress { background: #fff; padding: 8px 14px; margin-top: 6px; border-radius: 0; }
+  .clean-bar-wrap { height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }
+  .clean-bar { height: 100%; background: linear-gradient(90deg, #6366f1, #818cf8); width: 62%; border-radius: 5px; }
+  .clean-stat { font-size: 9px; color: #94a3b8; margin-top: 4px; display: flex; justify-content: space-between; }
+  .clean-item { background: #fff; margin: 8px 10px; border-radius: 12px; padding: 10px 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); border-left: 3px solid #6366f1; }
+  .clean-item-name { font-size: 11px; font-weight: 600; color: #1e293b; }
+  .clean-item-qty { font-size: 9px; color: #94a3b8; margin-top: 2px; }
+  .clean-btns { display: flex; gap: 6px; margin-top: 8px; }
+  .clean-btn-ok { flex: 1; background: #6366f1; color: #fff; border-radius: 8px; text-align: center; font-size: 10px; font-weight: 700; padding: 7px 0; }
+  .clean-btn-miss { flex: 1; background: #fff; color: #ef4444; border-radius: 8px; text-align: center; font-size: 10px; padding: 7px 0; border: 1px solid #fecaca; }
+  .clean-item-miss { border-left-color: #ef4444; background: #fff5f5; }
+  .clean-badge-miss { background: #fee2e2; color: #ef4444; font-size: 9px; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 3px; }
+
+  /* ── Opción C: Vibrante Táctil ── */
+  .vibrant .phone { border-color: #f59e0b; }
+  .vibrant .phone-notch { background: #1a1a2e; }
+  .vibrant .notch-dot { background: #fbbf24; }
+  .vibrant .phone-screen { background: #1a1a2e; font-family: sans-serif; color: #fff; }
+  .vibrant-header { background: linear-gradient(135deg, #7c3aed, #4f46e5); padding: 12px 14px 14px; }
+  .vibrant-title { font-size: 13px; font-weight: 800; color: #fff; letter-spacing: 0.3px; }
+  .vibrant-sub { font-size: 9px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+  .vibrant-chips { display: flex; gap: 5px; margin-top: 8px; }
+  .vibrant-chip { font-size: 9px; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
+  .vibrant-chip-ok { background: #4ade80; color: #14532d; }
+  .vibrant-chip-miss { background: #f87171; color: #450a0a; }
+  .vibrant-chip-pend { background: rgba(255,255,255,0.15); color: #fff; }
+  .vibrant-item { background: #16213e; margin: 8px 8px 0; border-radius: 14px; padding: 10px 12px; }
+  .vibrant-item-name { font-size: 11px; font-weight: 700; color: #f1f5f9; }
+  .vibrant-item-qty { font-size: 9px; color: #64748b; margin-top: 1px; }
+  .vibrant-btns { display: flex; gap: 5px; margin-top: 8px; }
+  .vibrant-btn-ok { flex: 1; background: linear-gradient(135deg, #16a34a, #22c55e); color: #fff; border-radius: 10px; text-align: center; font-size: 10px; font-weight: 800; padding: 8px 0; }
+  .vibrant-btn-miss { flex: 1; background: #1c1c2e; color: #f87171; border-radius: 10px; text-align: center; font-size: 10px; font-weight: 600; padding: 8px 0; border: 1px solid #f87171; }
+  .vibrant-item-miss { border: 1.5px solid #f87171; background: #1c0a0a; }
+  .vibrant-badge { display: inline-block; background: #f87171; color: #fff; font-size: 8px; padding: 2px 6px; border-radius: 20px; font-weight: 700; margin-top: 3px; }
+
+  .option { cursor: pointer; }
+  .option .phone-wrap { pointer-events: none; }
+</style>
+
+<div class="options">
+
+  <!-- Opción A -->
+  <div class="option dark-op" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Oscuro Operacional</h3>
+      <p>Fondo oscuro, alto contraste, ideal para bodega con poca luz. Estilo "terminal de logística".</p>
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><div class="notch-dot"></div></div>
+          <div class="phone-screen">
+            <div class="dark-op-header">
+              <div class="dark-op-title">🚛 Camión 03 — Rodrigo V.</div>
+              <div class="dark-op-sub">Plan #47 · 18 productos</div>
+            </div>
+            <div class="dark-op-progress">
+              <div class="dark-op-bar-wrap"><div class="dark-op-bar"></div></div>
+              <div class="dark-op-stat"><span>11 cargados</span><span style="color:#22d3ee; font-weight:700;">62%</span></div>
+            </div>
+            <div class="dark-op-item">
+              <div class="dark-op-item-name">Leche Dos Pinos 1L</div>
+              <div class="dark-op-item-qty">×12 · Cliente: Súper Norte</div>
+              <div class="dark-op-btns">
+                <div class="dark-op-btn-ok">✓ Cargado</div>
+                <div class="dark-op-btn-miss">✗ Falta</div>
+              </div>
+            </div>
+            <div class="dark-op-item dark-op-item-miss">
+              <div style="display:flex;justify-content:space-between;align-items:start">
+                <div class="dark-op-item-name">Jugo Del Valle 2L</div>
+                <div class="dark-op-badge-miss">FALTA</div>
+              </div>
+              <div class="dark-op-item-qty">×6 · Cliente: Mini Mkt Belén</div>
+              <div class="dark-op-btns">
+                <div class="dark-op-btn-ok">✓ Cargado</div>
+                <div style="flex:1;background:#2d1515;color:#888;border-radius:8px;text-align:center;font-size:10px;padding:7px 0;">↺ Desmarcar</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Opción B -->
+  <div class="option clean" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Limpio y Claro</h3>
+      <p>Blanco con acentos índigo. Legible, familiar, parecido a otras apps del sistema. Menos fatiga visual en luz.</p>
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><div class="notch-dot"></div></div>
+          <div class="phone-screen">
+            <div class="clean-header">
+              <div class="clean-title">Camión 03 — Rodrigo V.</div>
+              <div class="clean-sub">Plan #47 · 18 productos</div>
+            </div>
+            <div class="clean-progress">
+              <div class="clean-bar-wrap"><div class="clean-bar"></div></div>
+              <div class="clean-stat"><span>11 cargados</span><span style="color:#6366f1;font-weight:700;">62%</span></div>
+            </div>
+            <div class="clean-item">
+              <div class="clean-item-name">Leche Dos Pinos 1L</div>
+              <div class="clean-item-qty">×12 · Súper Norte</div>
+              <div class="clean-btns">
+                <div class="clean-btn-ok">✓ Cargado</div>
+                <div class="clean-btn-miss">✗ Faltante</div>
+              </div>
+            </div>
+            <div class="clean-item clean-item-miss">
+              <div style="display:flex;justify-content:space-between;">
+                <div class="clean-item-name">Jugo Del Valle 2L</div>
+              </div>
+              <div class="clean-badge-miss">⚠ Faltante</div>
+              <div class="clean-item-qty">×6 · Mini Mkt Belén</div>
+              <div class="clean-btns">
+                <div class="clean-btn-ok">✓ Cargado</div>
+                <div style="flex:1;background:#f1f5f9;color:#94a3b8;border-radius:8px;text-align:center;font-size:10px;padding:7px 0;">↺</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Opción C -->
+  <div class="option vibrant" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Vibrante Táctil</h3>
+      <p>Oscuro con degradados y colores llamativos. Máximo impacto visual, botones muy notorios. Estilo "app de delivery moderna".</p>
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><div class="notch-dot"></div></div>
+          <div class="phone-screen">
+            <div class="vibrant-header">
+              <div class="vibrant-title">🚛 Camión 03 — Rodrigo V.</div>
+              <div class="vibrant-sub">Plan #47 · 18 productos</div>
+              <div class="vibrant-chips">
+                <div class="vibrant-chip vibrant-chip-ok">11 cargados</div>
+                <div class="vibrant-chip vibrant-chip-miss">2 faltantes</div>
+                <div class="vibrant-chip vibrant-chip-pend">5 pendientes</div>
+              </div>
+            </div>
+            <div class="vibrant-item">
+              <div class="vibrant-item-name">Leche Dos Pinos 1L</div>
+              <div class="vibrant-item-qty">×12 · Súper Norte</div>
+              <div class="vibrant-btns">
+                <div class="vibrant-btn-ok">✓ CARGADO</div>
+                <div class="vibrant-btn-miss">✗ FALTA</div>
+              </div>
+            </div>
+            <div class="vibrant-item vibrant-item-miss" style="margin-top:6px">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div class="vibrant-item-name">Jugo Del Valle 2L</div>
+                <div class="vibrant-badge">FALTA</div>
+              </div>
+              <div class="vibrant-item-qty">×6 · Mini Mkt Belén</div>
+              <div class="vibrant-btns" style="margin-top:6px;">
+                <div class="vibrant-btn-ok">✓ CARGADO</div>
+                <div style="flex:1;background:#16213e;color:#64748b;border-radius:10px;text-align:center;font-size:10px;padding:8px 0;">↺ Desmarcar</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

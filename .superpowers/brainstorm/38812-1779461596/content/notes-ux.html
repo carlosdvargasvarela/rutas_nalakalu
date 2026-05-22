@@ -1,0 +1,206 @@
+<h2>¿Cómo se agregan notas a un producto?</h2>
+<p class="subtitle">Las notas permiten aclarar faltantes, cantidades parciales u otras observaciones. ¿Cuál flujo es más cómodo para hacerlo rápido en mobile?</p>
+
+<style>
+  body { background: #0f0f1a; }
+  .options { gap: 20px; }
+  .option { background: #1a1a2e !important; border-color: #2d2d4e !important; }
+  .option h3 { color: #f1f5f9 !important; }
+  .option p { color: #94a3b8 !important; }
+  .option.selected { border-color: #7c3aed !important; }
+  .letter { background: #7c3aed !important; }
+
+  .phone-wrap { display: flex; justify-content: center; margin-top: 12px; }
+  .phone {
+    width: 210px; border-radius: 28px; overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    border: 3px solid #2d2d4e; position: relative;
+  }
+  .phone-notch { height: 22px; background: #12122a; display: flex; align-items: center; justify-content: center; }
+  .notch-pill { width: 48px; height: 5px; background: #7c3aed; border-radius: 3px; opacity: 0.4; }
+
+  /* ── BASE ITEM CARD (shared) ── */
+  .base-body { background: #12122a; padding: 8px; }
+  .del-card { background: #1e1e38; border-radius: 12px; overflow: hidden; }
+  .del-hdr { display: flex; align-items: center; gap: 7px; padding: 8px 10px; background: linear-gradient(135deg, #7c3aed22, #1e1e38); }
+  .del-stop { width: 22px; height: 22px; border-radius: 50%; background: #7c3aed; color: #fff; font-size: 9px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .del-name { font-size: 10px; font-weight: 700; color: #e2e8f0; }
+  .item-row { padding: 7px 10px; border-top: 1px solid #2d2d4e; }
+  .item-name { font-size: 10px; font-weight: 600; color: #f1f5f9; }
+  .item-qty { font-size: 8px; color: #64748b; margin-top: 1px; }
+  .item-btns { display: flex; gap: 4px; margin-top: 6px; }
+  .btn-ok { flex: 2; background: linear-gradient(135deg, #166534, #16a34a); color: #4ade80; border-radius: 8px; text-align: center; font-size: 9px; font-weight: 800; padding: 6px 0; }
+  .btn-miss { flex: 2; background: #1c0a0a; color: #f87171; border-radius: 8px; text-align: center; font-size: 9px; padding: 6px 0; border: 1px solid #f87171; }
+  .btn-note { flex: 1; background: #1e1e38; color: #94a3b8; border-radius: 8px; text-align: center; font-size: 9px; padding: 6px 0; border: 1px solid #2d2d4e; }
+  .btn-note-active { color: #f59e0b; border-color: #f59e0b; }
+
+  /* ── A: Inline expandable ── */
+  .inline-note-box { background: #12122a; border: 1px solid #f59e0b44; border-radius: 8px; padding: 6px 8px; margin-top: 6px; display: flex; gap: 6px; align-items: center; }
+  .inline-note-input { flex: 1; background: transparent; border: none; color: #fde68a; font-size: 9px; outline: none; font-style: italic; }
+  .inline-note-save { background: #f59e0b; color: #000; font-size: 8px; padding: 3px 8px; border-radius: 6px; font-weight: 800; white-space: nowrap; }
+
+  /* ── B: Bottom sheet ── */
+  .bottom-sheet { position: absolute; bottom: 0; left: 0; right: 0; background: #1e1e38; border-radius: 20px 20px 0 0; padding: 14px 14px 16px; box-shadow: 0 -4px 30px rgba(0,0,0,0.6); }
+  .bs-handle { width: 36px; height: 4px; background: #2d2d4e; border-radius: 2px; margin: 0 auto 10px; }
+  .bs-title { font-size: 10px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+  .bs-product { font-size: 9px; color: #7c3aed; margin-bottom: 8px; }
+  .bs-textarea { width: 100%; background: #12122a; border: 1px solid #2d2d4e; border-radius: 8px; color: #fde68a; font-size: 9px; padding: 7px 8px; box-sizing: border-box; resize: none; height: 50px; font-style: italic; }
+  .bs-actions { display: flex; gap: 6px; margin-top: 8px; }
+  .bs-cancel { flex: 1; background: #12122a; color: #64748b; border-radius: 8px; text-align: center; font-size: 9px; padding: 6px 0; border: 1px solid #2d2d4e; }
+  .bs-save { flex: 2; background: #f59e0b; color: #000; border-radius: 8px; text-align: center; font-size: 9px; font-weight: 800; padding: 6px 0; }
+
+  /* ── C: Nota a nivel de entrega ── */
+  .delivery-note-row { padding: 7px 10px; border-top: 1px solid #2d2d4e; display: flex; align-items: center; gap: 8px; }
+  .dn-icon { color: #f59e0b; font-size: 12px; }
+  .dn-label { font-size: 9px; color: #94a3b8; flex: 1; font-style: italic; }
+  .dn-edit { font-size: 8px; color: #7c3aed; padding: 2px 7px; border: 1px solid #7c3aed44; border-radius: 5px; }
+  .dn-filled { color: #fde68a; font-style: italic; }
+</style>
+
+<div class="options">
+
+  <!-- A: Inline expandable -->
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Nota inline por producto</h3>
+      <p>Un ícono 📝 junto al ítem. Al tocarlo, se expande un campo de texto justo debajo sin salir de la pantalla. Rápido, sin navegación.</p>
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><div class="notch-pill"></div></div>
+          <div class="base-body">
+            <div class="del-card">
+              <div class="del-hdr">
+                <div class="del-stop">2</div>
+                <div class="del-name">Mini Mkt Belén</div>
+              </div>
+              <!-- Item 1: con nota abierta -->
+              <div class="item-row">
+                <div style="display:flex;justify-content:space-between;align-items:start;">
+                  <div>
+                    <div class="item-name">Jugo Del Valle 2L</div>
+                    <div class="item-qty">×6 · pendiente</div>
+                  </div>
+                  <span style="background:#7f1d1d;color:#fca5a5;font-size:7px;padding:2px 6px;border-radius:10px;font-weight:700;">FALTA</span>
+                </div>
+                <!-- Nota expandida -->
+                <div class="inline-note-box">
+                  <span style="color:#f59e0b;font-size:11px;">📝</span>
+                  <span class="inline-note-input">No llegó en el pedido de hoy...</span>
+                  <div class="inline-note-save">Guardar</div>
+                </div>
+                <div class="item-btns" style="margin-top:5px;">
+                  <div class="btn-ok">✓ Cargado</div>
+                  <div class="btn-miss" style="background:#2d1515;color:#888;border:1px solid #444;">✗ Faltante ✓</div>
+                  <div class="btn-note btn-note-active">📝</div>
+                </div>
+              </div>
+              <!-- Item 2: normal -->
+              <div class="item-row">
+                <div class="item-name">Leche Dos Pinos 1L</div>
+                <div class="item-qty">×12</div>
+                <div class="item-btns">
+                  <div class="btn-ok">✓ Cargado</div>
+                  <div class="btn-miss">✗ Faltante</div>
+                  <div class="btn-note">📝</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B: Bottom sheet modal -->
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Panel deslizable (Bottom Sheet)</h3>
+      <p>Al tocar 📝, sube un panel desde abajo con un campo de texto más grande y espacio para escribir cómodamente. Más claro, menos saturado.</p>
+      <div class="phone-wrap">
+        <div class="phone" style="position:relative; min-height: 340px;">
+          <div class="phone-notch"><div class="notch-pill"></div></div>
+          <div class="base-body">
+            <div class="del-card">
+              <div class="del-hdr">
+                <div class="del-stop">2</div>
+                <div class="del-name">Mini Mkt Belén</div>
+              </div>
+              <div class="item-row" style="opacity:0.4;">
+                <div class="item-name">Jugo Del Valle 2L</div>
+                <div class="item-qty">×6</div>
+                <div class="item-btns">
+                  <div class="btn-ok">✓</div>
+                  <div class="btn-miss">✗</div>
+                  <div class="btn-note btn-note-active">📝</div>
+                </div>
+              </div>
+              <div class="item-row" style="opacity:0.4;">
+                <div class="item-name">Leche 1L</div>
+                <div class="item-qty">×12</div>
+              </div>
+            </div>
+          </div>
+          <!-- Bottom sheet overlay -->
+          <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);border-radius:0 0 25px 25px;"></div>
+          <div class="bottom-sheet">
+            <div class="bs-handle"></div>
+            <div class="bs-title">📝 Nota del producto</div>
+            <div class="bs-product">Jugo Del Valle 2L · ×6 · Mini Mkt Belén</div>
+            <textarea class="bs-textarea" readonly>No llegó en el pedido de hoy...</textarea>
+            <div class="bs-actions">
+              <div class="bs-cancel">Cancelar</div>
+              <div class="bs-save">Guardar nota</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C: Nota a nivel de entrega -->
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Nota por entrega (no por producto)</h3>
+      <p>Una sola nota al final de cada tarjeta de cliente. Más simple: se escribe una observación general para esa parada, no producto por producto.</p>
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><div class="notch-pill"></div></div>
+          <div class="base-body">
+            <div class="del-card">
+              <div class="del-hdr">
+                <div class="del-stop">2</div>
+                <div class="del-name">Mini Mkt Belén</div>
+              </div>
+              <div class="item-row">
+                <div class="item-name">Jugo Del Valle 2L</div>
+                <div class="item-qty">×6</div>
+                <div class="item-btns">
+                  <div class="btn-ok">✓ Cargado</div>
+                  <div class="btn-miss" style="background:#2d1515;color:#888;border:1px solid #444;">✗ Faltante ✓</div>
+                </div>
+              </div>
+              <div class="item-row">
+                <div class="item-name">Leche Dos Pinos 1L</div>
+                <div class="item-qty">×12</div>
+                <div class="item-btns">
+                  <div class="btn-ok">✓ Cargado</div>
+                  <div class="btn-miss">✗ Faltante</div>
+                </div>
+              </div>
+              <!-- Nota de entrega al fondo -->
+              <div class="delivery-note-row">
+                <span class="dn-icon">📝</span>
+                <span class="dn-label dn-filled">"Falta Jugo, avisar al cliente"</span>
+                <span class="dn-edit">Editar</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

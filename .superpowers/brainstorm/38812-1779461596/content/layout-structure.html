@@ -1,0 +1,292 @@
+<h2>¿Cómo se organiza la lista de productos en la pantalla principal?</h2>
+<p class="subtitle">Estilo Vibrante Táctil ya confirmado. Ahora: ¿cómo agrupamos los ítems para que sea más fácil cargar el camión?</p>
+
+<style>
+  body { background: #0f0f1a; }
+  .options { gap: 20px; }
+  .option { background: #1a1a2e !important; border-color: #2d2d4e !important; }
+  .option h3 { color: #f1f5f9 !important; }
+  .option p { color: #94a3b8 !important; }
+  .option.selected { border-color: #7c3aed !important; }
+  .letter { background: #7c3aed !important; }
+
+  .phone-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 12px;
+  }
+  .phone {
+    width: 200px;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    border: 3px solid #2d2d4e;
+  }
+  .phone-notch {
+    height: 24px;
+    background: #12122a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .notch-pill {
+    width: 50px; height: 5px;
+    background: #7c3aed; border-radius: 3px; opacity: 0.5;
+  }
+
+  /* ── ESTILOS COMPARTIDOS ── */
+  .vs-header {
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    padding: 10px 12px 12px;
+  }
+  .vs-title { font-size: 11px; font-weight: 800; color: #fff; }
+  .vs-sub { font-size: 9px; color: rgba(255,255,255,0.65); margin-top: 1px; }
+  .vs-chips { display: flex; gap: 4px; margin-top: 7px; flex-wrap: wrap; }
+  .chip { font-size: 8px; padding: 2px 7px; border-radius: 20px; font-weight: 700; }
+  .chip-ok { background: #4ade80; color: #14532d; }
+  .chip-miss { background: #f87171; color: #450a0a; }
+  .chip-pend { background: rgba(255,255,255,0.15); color: #fff; }
+  .vs-body { background: #12122a; min-height: 280px; padding: 8px; }
+
+  /* ── A: Por entrega / cliente (colapsable) ── */
+  .del-card { background: #1e1e38; border-radius: 12px; margin-bottom: 6px; overflow: hidden; }
+  .del-header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+  .del-stop { width: 24px; height: 24px; border-radius: 50%; background: #7c3aed; color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .del-client { font-size: 10px; font-weight: 700; color: #e2e8f0; flex: 1; }
+  .del-progress { width: 30px; height: 5px; background: #2d2d4e; border-radius: 3px; overflow: hidden; }
+  .del-prog-bar { height: 100%; background: #4ade80; }
+  .del-toggle { color: #64748b; font-size: 10px; }
+  .del-items { padding: 0 10px 8px; display: flex; flex-direction: column; gap: 4px; }
+  .del-item { background: #12122a; border-radius: 8px; padding: 6px 8px; display: flex; justify-content: space-between; align-items: center; }
+  .del-item-name { font-size: 9px; color: #e2e8f0; }
+  .del-item-qty { font-size: 8px; color: #64748b; margin-top: 1px; }
+  .del-item-ok { background: #166534; color: #4ade80; font-size: 8px; padding: 3px 7px; border-radius: 6px; font-weight: 700; }
+  .del-item-pend { background: #1e1e38; color: #94a3b8; font-size: 8px; padding: 3px 7px; border-radius: 6px; border: 1px solid #2d2d4e; }
+  .del-card-collapsed .del-items { display: none; }
+
+  /* ── B: Lista plana de todos los productos ── */
+  .flat-section { margin-bottom: 4px; }
+  .flat-section-label { font-size: 8px; font-weight: 700; color: #7c3aed; padding: 4px 2px 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .flat-item { background: #1e1e38; border-radius: 10px; padding: 8px 10px; margin-bottom: 4px; }
+  .flat-item-top { display: flex; justify-content: space-between; align-items: center; }
+  .flat-item-name { font-size: 10px; font-weight: 700; color: #f1f5f9; }
+  .flat-item-client { font-size: 8px; color: #64748b; margin-top: 1px; }
+  .flat-btns { display: flex; gap: 4px; margin-top: 6px; }
+  .flat-btn-ok { flex: 1; background: linear-gradient(135deg, #16a34a, #22c55e); color: #fff; border-radius: 7px; text-align: center; font-size: 9px; font-weight: 800; padding: 5px 0; }
+  .flat-btn-miss { flex: 1; background: #1c0a0a; color: #f87171; border-radius: 7px; text-align: center; font-size: 9px; padding: 5px 0; border: 1px solid #f87171; }
+  .flat-item-miss { border: 1.5px solid #f87171; background: #1c0a0a; }
+  .flat-badge-miss { background: #f87171; color: #fff; font-size: 7px; padding: 1px 5px; border-radius: 10px; font-weight: 700; }
+
+  /* ── C: Timeline por parada ── */
+  .tl-stop { display: flex; gap: 6px; margin-bottom: 8px; }
+  .tl-spine { display: flex; flex-direction: column; align-items: center; }
+  .tl-dot { width: 22px; height: 22px; border-radius: 50%; background: #7c3aed; color: #fff; font-size: 9px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .tl-dot-done { background: #16a34a; }
+  .tl-line { width: 2px; flex: 1; background: #2d2d4e; margin-top: 2px; }
+  .tl-content { flex: 1; }
+  .tl-client { font-size: 10px; font-weight: 700; color: #e2e8f0; }
+  .tl-addr { font-size: 8px; color: #64748b; margin-top: 1px; }
+  .tl-items-row { display: flex; gap: 3px; margin-top: 5px; flex-wrap: wrap; }
+  .tl-item-pill { font-size: 8px; padding: 3px 7px; border-radius: 20px; font-weight: 600; cursor: pointer; }
+  .tl-item-ok { background: #166534; color: #4ade80; }
+  .tl-item-pend { background: #1e1e38; color: #94a3b8; border: 1px solid #2d2d4e; }
+  .tl-item-miss { background: #7f1d1d; color: #fca5a5; }
+</style>
+
+<div class="options">
+
+  <!-- Opción A: Cards por entrega -->
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Cards por cliente</h3>
+      <p>Cada entrega es una tarjeta expandible. Primero ves todos los clientes, abres uno y marcas sus productos. Igual al diseño actual pero rediseñado.</p>
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><div class="notch-pill"></div></div>
+          <div class="vs-header">
+            <div class="vs-title">🚛 Rodrigo V. · Camión 03</div>
+            <div class="vs-sub">18 productos · 6 paradas</div>
+            <div class="vs-chips">
+              <div class="chip chip-ok">8 ✓</div>
+              <div class="chip chip-miss">2 ✗</div>
+              <div class="chip chip-pend">8 pend.</div>
+            </div>
+          </div>
+          <div class="vs-body">
+            <!-- Entrega 1: completada -->
+            <div class="del-card del-card-collapsed">
+              <div class="del-header">
+                <div class="del-stop">1</div>
+                <div style="flex:1;">
+                  <div class="del-client">Súper Norte ✓</div>
+                </div>
+                <div class="del-progress"><div class="del-prog-bar" style="width:100%"></div></div>
+                <div class="del-toggle">▸</div>
+              </div>
+            </div>
+            <!-- Entrega 2: abierta -->
+            <div class="del-card">
+              <div class="del-header">
+                <div class="del-stop">2</div>
+                <div style="flex:1;">
+                  <div class="del-client">Mini Mkt Belén</div>
+                </div>
+                <div class="del-progress"><div class="del-prog-bar" style="width:50%"></div></div>
+                <div class="del-toggle">▾</div>
+              </div>
+              <div class="del-items">
+                <div class="del-item">
+                  <div><div class="del-item-name">Leche Dos Pinos 1L</div><div class="del-item-qty">×12</div></div>
+                  <div class="del-item-ok">✓ OK</div>
+                </div>
+                <div class="del-item">
+                  <div><div class="del-item-name">Jugo Del Valle 2L</div><div class="del-item-qty">×6</div></div>
+                  <div class="del-item-pend">Marcar</div>
+                </div>
+              </div>
+            </div>
+            <!-- Entrega 3: colapsada -->
+            <div class="del-card del-card-collapsed">
+              <div class="del-header">
+                <div class="del-stop">3</div>
+                <div style="flex:1;"><div class="del-client">Distribuidora Ríos</div></div>
+                <div class="del-progress"><div class="del-prog-bar" style="width:0%"></div></div>
+                <div class="del-toggle">▸</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Opción B: Lista plana de productos -->
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Lista plana de productos</h3>
+      <p>Todos los productos en una lista continua, agrupados por parada. Se puede marcar uno por uno sin navegar entre tarjetas.</p>
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><div class="notch-pill"></div></div>
+          <div class="vs-header">
+            <div class="vs-title">🚛 Rodrigo V. · Camión 03</div>
+            <div class="vs-sub">18 productos · 6 paradas</div>
+            <div class="vs-chips">
+              <div class="chip chip-ok">8 ✓</div>
+              <div class="chip chip-miss">2 ✗</div>
+              <div class="chip chip-pend">8 pend.</div>
+            </div>
+          </div>
+          <div class="vs-body">
+            <div class="flat-section">
+              <div class="flat-section-label">🛑 Parada 2 · Mini Mkt Belén</div>
+              <div class="flat-item">
+                <div class="flat-item-top">
+                  <div>
+                    <div class="flat-item-name">Leche Dos Pinos 1L</div>
+                    <div class="flat-item-client">×12</div>
+                  </div>
+                  <span style="background:#166534;color:#4ade80;font-size:8px;padding:2px 7px;border-radius:8px;font-weight:700;">✓ OK</span>
+                </div>
+              </div>
+              <div class="flat-item">
+                <div class="flat-item-top">
+                  <div>
+                    <div class="flat-item-name">Jugo Del Valle 2L</div>
+                    <div class="flat-item-client">×6</div>
+                  </div>
+                </div>
+                <div class="flat-btns">
+                  <div class="flat-btn-ok">✓ Cargado</div>
+                  <div class="flat-btn-miss">✗ Falta</div>
+                </div>
+              </div>
+            </div>
+            <div class="flat-section">
+              <div class="flat-section-label">🛑 Parada 3 · Dist. Ríos</div>
+              <div class="flat-item flat-item-miss">
+                <div class="flat-item-top">
+                  <div>
+                    <div class="flat-item-name">Queso Turrialba 500g</div>
+                    <div class="flat-item-client">×4</div>
+                  </div>
+                  <span class="flat-badge-miss">FALTA</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Opción C: Timeline por parada -->
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Timeline de paradas</h3>
+      <p>Vista tipo ruta: una línea vertical con cada parada. Los productos de cada parada aparecen como "píldoras" que se tocan para cambiar su estado.</p>
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"><div class="notch-pill"></div></div>
+          <div class="vs-header">
+            <div class="vs-title">🚛 Rodrigo V. · Camión 03</div>
+            <div class="vs-sub">18 productos · 6 paradas</div>
+            <div class="vs-chips">
+              <div class="chip chip-ok">8 ✓</div>
+              <div class="chip chip-miss">2 ✗</div>
+            </div>
+          </div>
+          <div class="vs-body">
+            <!-- Parada 1: completada -->
+            <div class="tl-stop">
+              <div class="tl-spine">
+                <div class="tl-dot tl-dot-done">1</div>
+                <div class="tl-line"></div>
+              </div>
+              <div class="tl-content">
+                <div class="tl-client">Súper Norte ✓</div>
+                <div class="tl-items-row">
+                  <div class="tl-item-pill tl-item-ok">Leche 1L ×12 ✓</div>
+                  <div class="tl-item-pill tl-item-ok">Yogur ×6 ✓</div>
+                </div>
+              </div>
+            </div>
+            <!-- Parada 2: en progreso -->
+            <div class="tl-stop">
+              <div class="tl-spine">
+                <div class="tl-dot">2</div>
+                <div class="tl-line"></div>
+              </div>
+              <div class="tl-content">
+                <div class="tl-client">Mini Mkt Belén</div>
+                <div class="tl-addr">Av. Central 45</div>
+                <div class="tl-items-row">
+                  <div class="tl-item-pill tl-item-ok">Leche 1L ×12 ✓</div>
+                  <div class="tl-item-pill tl-item-miss">Jugo 2L ×6 ✗</div>
+                  <div class="tl-item-pill tl-item-pend">Pan ×3</div>
+                </div>
+              </div>
+            </div>
+            <!-- Parada 3: sin empezar -->
+            <div class="tl-stop">
+              <div class="tl-spine">
+                <div class="tl-dot" style="background:#2d2d4e;color:#64748b;">3</div>
+              </div>
+              <div class="tl-content">
+                <div class="tl-client" style="color:#64748b;">Dist. Ríos</div>
+                <div class="tl-items-row">
+                  <div class="tl-item-pill tl-item-pend">Queso ×4</div>
+                  <div class="tl-item-pill tl-item-pend">Crema ×8</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
