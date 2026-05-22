@@ -79,6 +79,24 @@ Nota/observación:   texto #fde68a (amarillo)
 
 **No se toca:** layout, navbar, helpers fuera de `production/`, modelos, lógica de negocio.
 
+### Iconografía
+
+Todos los íconos usan **Bootstrap Icons** (`<i class="bi bi-..."></i>`). No usar emojis en el HTML final. Equivalencias clave:
+
+| Concepto | Clase Bootstrap Icon |
+|---|---|
+| Cargado / OK | `bi-check-lg` o `bi-check-circle-fill` |
+| Faltante | `bi-x-lg` o `bi-exclamation-triangle-fill` |
+| Desmarcar / reset | `bi-arrow-counterclockwise` |
+| Nota / comentario | `bi-chat-left-text` |
+| Camión | `bi-truck` |
+| Atrás | `bi-chevron-left` |
+| Expandir / colapsar | `bi-chevron-down` / `bi-chevron-up` |
+| Buscar | `bi-search` |
+| Calendario | `bi-calendar3` |
+| Guardar | `bi-floppy` |
+| Marcar todo | `bi-check-all` |
+
 ---
 
 ## 5. Diseño de pantallas
