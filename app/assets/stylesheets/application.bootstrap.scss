@@ -5,8 +5,9 @@
 @import "notifications";
 @import "dashboard";
 @import "devise_sessions";
-@import "application"; 
+@import "application";
 @import "delivery_plans";
+@import "production_dark";
 // Estilos globales para consistencia
 body {
   background-color: #fff7ee !important; // nalakalu-cream
