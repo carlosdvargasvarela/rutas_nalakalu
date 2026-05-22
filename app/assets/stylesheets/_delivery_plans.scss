@@ -1,3 +1,84 @@
+// ── Driver delivery plans index ──────────────────────────────
+
+// Summary stat cards (gradient backgrounds)
+.stat-card--purple {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+.stat-card--pink {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+}
+.stat-card-body {
+  background: transparent !important;
+}
+
+// Label row inside gradient cards
+.stat-card-label {
+  color: rgba(255,255,255,.75) !important;
+  letter-spacing: 0.5px;
+}
+.stat-card-number {
+  color: #fff !important;
+}
+
+// Circular icon container on stat cards
+.stat-card-icon-circle {
+  width: 52px;
+  height: 52px;
+  background: rgba(255,255,255,.2) !important;
+}
+.stat-card-icon-circle i {
+  color: #fff !important;
+}
+
+// Sub-text row inside gradient cards
+.stat-card-subtext {
+  color: rgba(255,255,255,.9) !important;
+}
+
+// Status badge inside gradient cards
+.stat-card-status-badge {
+  background: rgba(255,255,255,.25) !important;
+  color: #fff !important;
+  font-size: 0.7rem;
+}
+
+// Empty-state icon circle (80×80)
+.empty-state-icon-circle {
+  width: 80px;
+  height: 80px;
+}
+
+// Driver avatar circle in table (32×32)
+.driver-avatar-circle {
+  width: 32px;
+  height: 32px;
+}
+
+// Deliveries count icon circle in table (32×32)
+.deliveries-count-circle {
+  width: 32px;
+  height: 32px;
+}
+
+// Badge that should shrink to content width
+.badge-fit {
+  width: fit-content;
+}
+
+// Progress cell column min-width
+.progress-col {
+  min-width: 140px;
+}
+
+// Progress bar heights
+.progress-bar-mobile { height: 6px; }
+.progress-bar-desktop { height: 8px; }
+
+// Progress label min-width
+.progress-label {
+  min-width: 45px;
+}
+
 // Reducir altura del mapa en móviles
 @media (max-width: 576px) {
   [data-delivery-plan-map-target="map"] {

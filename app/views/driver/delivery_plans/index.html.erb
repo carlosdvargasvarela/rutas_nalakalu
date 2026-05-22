@@ -20,22 +20,21 @@
     <div class="row g-2 mb-3">
       <%# Card 1: Total Planes %>
       <div class="col-12 col-md-6">
-        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
-          <div class="card-body text-white" style="background: transparent !important;">
+        <div class="card border-0 shadow-sm stat-card--purple">
+          <div class="card-body text-white stat-card-body">
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <div class="small text-uppercase" style="color: rgba(255,255,255,.75) !important; letter-spacing: 0.5px;">Total Planes</div>
-                <div class="fs-2 fw-bold" style="color: #fff !important;"><%= @stats[:total_plans] %></div>
+                <div class="small text-uppercase stat-card-label">Total Planes</div>
+                <div class="fs-2 fw-bold stat-card-number"><%= @stats[:total_plans] %></div>
               </div>
-              <div class="rounded-circle d-flex align-items-center justify-content-center" 
-                   style="width: 52px; height: 52px; background: rgba(255,255,255,.2) !important;">
-                <i class="bi bi-map fs-3" style="color: #fff !important;"></i>
+              <div class="rounded-circle d-flex align-items-center justify-content-center stat-card-icon-circle">
+                <i class="bi bi-map fs-3"></i>
               </div>
             </div>
             <%# Badges por estado %>
             <div class="d-flex flex-wrap gap-1 mt-3">
               <% @stats[:by_status].sort_by { |status, _| DeliveryPlan.statuses[status.to_s] || 999 }.each do |status, count| %>
-                <span class="badge" style="background: rgba(255,255,255,.25) !important; color: #fff !important; font-size: 0.7rem;">
+                <span class="badge stat-card-status-badge">
                   <%= status.to_s.humanize %>: <%= count %>
                 </span>
               <% end %>
@@ -45,19 +44,18 @@
       </div>
       <%# Card 2: Total Entregas %>
       <div class="col-12 col-md-6">
-        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;">
-          <div class="card-body text-white" style="background: transparent !important;">
+        <div class="card border-0 shadow-sm stat-card--pink">
+          <div class="card-body text-white stat-card-body">
             <div class="d-flex justify-content-between align-items-center">
               <div>
-                <div class="small text-uppercase" style="color: rgba(255,255,255,.75) !important; letter-spacing: 0.5px;">Entregas Totales</div>
-                <div class="fs-2 fw-bold" style="color: #fff !important;"><%= @stats[:total_deliveries] %></div>
+                <div class="small text-uppercase stat-card-label">Entregas Totales</div>
+                <div class="fs-2 fw-bold stat-card-number"><%= @stats[:total_deliveries] %></div>
               </div>
-              <div class="rounded-circle d-flex align-items-center justify-content-center" 
-                   style="width: 52px; height: 52px; background: rgba(255,255,255,.2) !important;">
-                <i class="bi bi-box-seam fs-3" style="color: #fff !important;"></i>
+              <div class="rounded-circle d-flex align-items-center justify-content-center stat-card-icon-circle">
+                <i class="bi bi-box-seam fs-3"></i>
               </div>
             </div>
-            <div class="small mt-3" style="color: rgba(255,255,255,.9) !important;">
+            <div class="small mt-3 stat-card-subtext">
               <i class="bi bi-info-circle me-1"></i> Selecciona una ruta para ver el mapa y las paradas.
             </div>
           </div>
@@ -174,7 +172,7 @@
                 <small class="text-muted">Progreso</small>
                 <small class="fw-semibold"><%= done %>/<%= total %></small>
               </div>
-              <div class="progress" style="height: 6px;">
+              <div class="progress progress-bar-mobile">
                 <div class="progress-bar bg-success" style="width: <%= pct %>%"></div>
               </div>
             </div>
@@ -188,8 +186,7 @@
     <% else %>
       <div class="card border-0 shadow-sm">
         <div class="card-body text-center py-5">
-          <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
-               style="width: 80px; height: 80px;">
+          <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3 empty-state-icon-circle">
             <i class="bi bi-calendar-x fs-1 text-muted"></i>
           </div>
           <h5 class="text-muted mb-2">No hay planes de entrega</h5>
@@ -239,8 +236,7 @@
                 <td>
                   <% if plan.driver.present? %>
                     <div class="d-flex align-items-center">
-                      <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2" 
-                           style="width: 32px; height: 32px;">
+                      <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2 driver-avatar-circle">
                         <i class="bi bi-person-fill text-primary"></i>
                       </div>
                       <span class="fw-semibold"><%= plan.driver.name %></span>
@@ -271,15 +267,14 @@
                   <% end %>
                 </td>
                 <td>
-                  <span class="badge bg-<%= delivery_plan_status_color(plan.status) %> d-flex align-items-center gap-1" 
-                        style="width: fit-content;">
+                  <span class="badge bg-<%= delivery_plan_status_color(plan.status) %> d-flex align-items-center gap-1 badge-fit">
                     <i class="bi bi-circle-fill small"></i>
                     <%= plan.display_status %>
                   </span>
                 </td>
                 <td>
                   <% if plan.truck.present? %>
-                    <span class="badge bg-dark d-flex align-items-center gap-1" style="width: fit-content;">
+                    <span class="badge bg-dark d-flex align-items-center gap-1 badge-fit">
                       <i class="bi bi-truck-front"></i>
                       <%= plan.truck %>
                     </span>
@@ -289,24 +284,23 @@
                 </td>
                 <td>
                   <div class="d-flex align-items-center gap-2">
-                    <div class="bg-info bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" 
-                         style="width: 32px; height: 32px;">
+                    <div class="bg-info bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center deliveries-count-circle">
                       <i class="bi bi-box-seam text-info"></i>
                     </div>
                     <span class="fw-semibold"><%= total %></span>
                   </div>
                 </td>
-                <td style="min-width: 140px;">
+                <td class="progress-col">
                   <div class="d-flex align-items-center gap-2">
-                    <div class="progress flex-grow-1" style="height: 8px;">
-                      <div class="progress-bar bg-success" 
+                    <div class="progress flex-grow-1 progress-bar-desktop">
+                      <div class="progress-bar bg-success"
                            role="progressbar"
                            style="width: <%= pct %>%"
                            aria-valuenow="<%= pct %>"
                            aria-valuemin="0"
                            aria-valuemax="100"></div>
                     </div>
-                    <small class="text-muted fw-semibold" style="min-width: 45px;"><%= done %>/<%= total %></small>
+                    <small class="text-muted fw-semibold progress-label"><%= done %>/<%= total %></small>
                   </div>
                 </td>
                 <td class="text-center">
@@ -323,8 +317,7 @@
               <tr>
                 <td colspan="8" class="text-center text-muted py-5">
                   <div class="d-flex flex-column align-items-center">
-                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mb-3" 
-                         style="width: 80px; height: 80px;">
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mb-3 empty-state-icon-circle">
                       <i class="bi bi-calendar-x fs-1 text-muted"></i>
                     </div>
                     <h5 class="text-muted mb-2">No hay planes de entrega</h5>
