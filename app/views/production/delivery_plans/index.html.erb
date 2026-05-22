@@ -1,164 +1,192 @@
 <%# app/views/production/delivery_plans/index.html.erb %>
-<div class="container-fluid mt-3 px-2 px-md-4" data-controller="loading">
+<div class="production-dark px-2 px-md-3 pb-5">
+
   <%# ── Header ── %>
-  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
-    <div>
-      <h4 class="mb-1 fw-bold">
-        <i class="bi bi-truck me-2 text-primary"></i>Bitácora de Carga
-      </h4>
-      <p class="text-muted mb-0 small">
-        <i class="bi bi-calendar3 me-1"></i><%= l @date, format: :long %>
-      </p>
+  <div class="pd-header">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <h5 class="fw-bold mb-0 text-white">
+          <i class="bi bi-truck me-2"></i>Bitácora de Carga
+        </h5>
+        <p class="mb-0" style="font-size:0.8rem;color:rgba(255,255,255,0.6);">
+          <%= l @date, format: :long %>
+        </p>
+      </div>
     </div>
     <%# Navegación de fecha %>
     <div class="d-flex align-items-center gap-2">
       <%= link_to production_delivery_plans_path(date: @date - 1.day),
-          class: "btn btn-outline-secondary btn-sm",
-          title: "Día anterior" do %>
+          class: "btn btn-sm d-flex align-items-center justify-content-center flex-shrink-0",
+          style: "background:rgba(255,255,255,0.12);color:#fff;border:none;width:36px;height:36px;border-radius:10px;" do %>
         <i class="bi bi-chevron-left"></i>
       <% end %>
-      <%= form_with url: production_delivery_plans_path, method: :get,
-          class: "d-flex align-items-center gap-2" do %>
+      <%= form_with url: production_delivery_plans_path, method: :get, class: "flex-grow-1" do %>
         <%= date_field_tag :date, @date,
-            class: "form-control form-control-sm",
-            style: "max-width: 160px;",
+            class: "form-control form-control-sm text-center fw-semibold",
+            style: "background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:10px;",
             onchange: "this.form.submit()" %>
       <% end %>
       <%= link_to production_delivery_plans_path(date: @date + 1.day),
-          class: "btn btn-outline-secondary btn-sm",
-          title: "Día siguiente" do %>
+          class: "btn btn-sm d-flex align-items-center justify-content-center flex-shrink-0",
+          style: "background:rgba(255,255,255,0.12);color:#fff;border:none;width:36px;height:36px;border-radius:10px;" do %>
         <i class="bi bi-chevron-right"></i>
       <% end %>
       <%= link_to "Hoy", production_delivery_plans_path(date: Date.current),
-          class: "btn btn-primary btn-sm" %>
+          class: "btn btn-sm fw-bold flex-shrink-0",
+          style: "background:#fff;color:#6d28d9;border-radius:10px;padding:6px 12px;" %>
     </div>
   </div>
+
   <% if @delivery_plans.empty? %>
     <%# ── Estado vacío ── %>
     <div class="text-center py-5 my-4">
-      <div class="mb-3">
-        <i class="bi bi-calendar-x" style="font-size: 3.5rem; color: #cbd5e1;"></i>
-      </div>
-      <h5 class="text-muted fw-semibold">Sin planes para esta fecha</h5>
-      <p class="text-muted small mb-4">No hay planes de entrega programados para el <%= l @date, format: :long %>.</p>
+      <i class="bi bi-calendar-x" style="font-size:3rem;color:#2d2d4e;"></i>
+      <h6 class="mt-3 fw-semibold" style="color:#64748b;">Sin planes para esta fecha</h6>
+      <p style="color:#475569;font-size:0.85rem;">No hay planes programados para el <%= l @date, format: :long %>.</p>
       <%= link_to "Ver hoy", production_delivery_plans_path(date: Date.current),
-          class: "btn btn-outline-primary btn-sm" %>
+          class: "btn btn-sm mt-1",
+          style: "border:1px solid #7c3aed;color:#a78bfa;border-radius:10px;" %>
     </div>
+
   <% else %>
-    <%# ── Stats globales del día ── %>
+    <%# ── Stats del día ── %>
     <%
       total_plans   = @delivery_plans.count
       loaded_plans  = @delivery_plans.count { |p| p.load_status == "all_loaded" }
       partial_plans = @delivery_plans.count { |p| p.load_status == "partial" }
       missing_plans = @delivery_plans.count { |p| p.load_status == "some_missing" }
     %>
-    <div class="row g-3 mb-4">
-      <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm text-center py-3">
-          <div class="fs-2 fw-bold text-primary"><%= total_plans %></div>
-          <div class="small text-muted"><i class="bi bi-clipboard-list me-1"></i>Total planes</div>
+    <div class="row g-2 my-3">
+      <div class="col-3">
+        <div class="pd-stat-cell">
+          <div class="fw-bold fs-5" style="color:#94a3b8;"><%= total_plans %></div>
+          <div style="font-size:0.7rem;color:#475569;">Planes</div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm text-center py-3">
-          <div class="fs-2 fw-bold text-success"><%= loaded_plans %></div>
-          <div class="small text-muted"><i class="bi bi-check-circle me-1"></i>Completamente cargados</div>
+      <div class="col-3">
+        <div class="pd-stat-cell">
+          <div class="fw-bold fs-5" style="color:#4ade80;"><%= loaded_plans %></div>
+          <div style="font-size:0.7rem;color:#475569;">Completos</div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm text-center py-3">
-          <div class="fs-2 fw-bold text-warning"><%= partial_plans %></div>
-          <div class="small text-muted"><i class="bi bi-hourglass-split me-1"></i>En progreso</div>
+      <div class="col-3">
+        <div class="pd-stat-cell">
+          <div class="fw-bold fs-5" style="color:#fbbf24;"><%= partial_plans %></div>
+          <div style="font-size:0.7rem;color:#475569;">En progreso</div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm text-center py-3">
-          <div class="fs-2 fw-bold text-danger"><%= missing_plans %></div>
-          <div class="small text-muted"><i class="bi bi-exclamation-triangle me-1"></i>Con faltantes</div>
+      <div class="col-3">
+        <div class="pd-stat-cell">
+          <div class="fw-bold fs-5" style="color:#f87171;"><%= missing_plans %></div>
+          <div style="font-size:0.7rem;color:#475569;">Faltantes</div>
         </div>
       </div>
     </div>
+
     <%# ── Cards de planes ── %>
-    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+    <div class="d-flex flex-column gap-3">
       <% @delivery_plans.each do |plan| %>
         <% stats = plan.load_stats %>
         <%
-          load_color = case plan.load_status
-            when "all_loaded"  then "success"
-            when "partial"     then "warning"
-            when "some_missing" then "danger"
-            else "secondary"
+          top_color = case plan.load_status
+            when "all_loaded"   then "#22c55e"
+            when "partial"      then "#f59e0b"
+            when "some_missing" then "#ef4444"
+            else "#475569"
           end
-          driver_initials = plan.driver&.name&.split&.map { |w| w[0] }&.first(2)&.join&.upcase || "?"
+          pct_color = case plan.load_status
+            when "all_loaded"   then "#4ade80"
+            when "partial"      then "#fbbf24"
+            when "some_missing" then "#f87171"
+            else "#94a3b8"
+          end
+          badge_class = case plan.load_status
+            when "all_loaded"   then "pd-badge--ok"
+            when "partial"      then "pd-badge--partial"
+            when "some_missing" then "pd-badge--missing"
+            else "pd-badge--pending"
+          end
+          badge_label = case plan.load_status
+            when "all_loaded"   then "Completo"
+            when "partial"      then "En progreso"
+            when "some_missing" then "Faltantes"
+            else "Pendiente"
+          end
+          initials = plan.driver&.name&.split&.map { |w| w[0] }&.first(2)&.join&.upcase || "?"
         %>
-        <div class="col">
-          <div class="card border-0 shadow-sm h-100" style="border-top: 3px solid var(--bs-<%= load_color %>) !important;">
-            <%# Card header %>
-            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
-              <div class="d-flex align-items-center gap-3">
-                <%# Avatar del driver %>
-                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
-                     style="width:40px; height:40px; background: var(--bs-primary); font-size: 0.85rem; flex-shrink:0;">
-                  <%= driver_initials %>
+        <div class="pd-card">
+          <div class="pd-card-top" style="background:<%= top_color %>;"></div>
+          <div class="p-3">
+            <%# Header del card %>
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="pd-avatar" style="width:42px;height:42px;font-size:0.9rem;">
+                <%= initials %>
+              </div>
+              <div class="flex-grow-1 min-width-0">
+                <div class="fw-bold text-truncate" style="font-size:0.95rem;color:#f1f5f9;">
+                  <%= plan.driver&.name || "Sin asignar" %>
                 </div>
-                <div>
-                  <div class="fw-semibold lh-1"><%= plan.driver&.name || "Sin asignar" %></div>
-                  <div class="small text-muted mt-1">
-                    <span class="badge bg-light text-dark border me-1">
-                      <i class="bi bi-truck me-1"></i><%= plan.truck_label || "N/A" %>
-                    </span>
-                    <span class="text-muted">Plan #<%= plan.id %></span>
-                  </div>
+                <div class="d-flex gap-2 mt-1 flex-wrap">
+                  <span class="pd-badge pd-badge--pending">
+                    <i class="bi bi-truck me-1"></i><%= plan.truck_label || "N/A" %>
+                  </span>
+                  <span class="pd-badge pd-badge--pending">#<%= plan.id %></span>
                 </div>
               </div>
-              <%= load_status_badge(plan.load_status) %>
+              <span class="pd-badge <%= badge_class %> flex-shrink-0"><%= badge_label %></span>
             </div>
-            <div class="card-body pb-2">
-              <%# Barra de progreso %>
-              <div class="mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <small class="text-muted fw-semibold">Progreso de carga</small>
-                  <small class="fw-bold text-<%= load_color %>"><%= plan.load_percentage %>%</small>
-                </div>
-                <div class="progress rounded-pill" style="height: 10px;">
-                  <div class="progress-bar bg-<%= load_color %> progress-bar-striped"
-                       role="progressbar"
-                       style="width: <%= plan.load_percentage %>%"
-                       aria-valuenow="<%= plan.load_percentage %>"
-                    aria-valuemin="0" aria-valuemax="100">
-                  </div>
+
+            <%# Barra de progreso %>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <small style="color:#64748b;font-size:0.72rem;">Progreso de carga</small>
+              <span class="fw-bold" style="color:<%= pct_color %>;font-size:0.85rem;"><%= plan.load_percentage %>%</span>
+            </div>
+            <div class="pd-progress-wrap mb-3">
+              <div class="pd-progress-bar" style="width:<%= plan.load_percentage %>%;background:<%= top_color %>;"></div>
+            </div>
+
+            <%# Mini stats %>
+            <div class="row g-2 mb-3">
+              <div class="col-4">
+                <div class="pd-mini-stat">
+                  <div class="fw-bold" style="color:#94a3b8;"><%= plan.deliveries.count %></div>
+                  <div style="font-size:0.65rem;color:#475569;">Entregas</div>
                 </div>
               </div>
-              <%# Mini stats inline %>
-              <div class="row text-center g-2 mb-3">
-                <div class="col-4">
-                  <div class="rounded-3 py-2 px-1" style="background:#f8fafc;">
-                    <div class="fw-bold text-primary"><%= plan.deliveries.count %></div>
-                    <div class="text-muted" style="font-size:0.7rem;">Entregas</div>
-                  </div>
+              <div class="col-4">
+                <div class="pd-mini-stat">
+                  <div class="fw-bold" style="color:#4ade80;"><%= stats[:loaded_items] %></div>
+                  <div style="font-size:0.65rem;color:#475569;">Cargados</div>
                 </div>
-                <div class="col-4">
-                  <div class="rounded-3 py-2 px-1" style="background:#f8fafc;">
-                    <div class="fw-bold text-success"><%= stats[:loaded_items] %></div>
-                    <div class="text-muted" style="font-size:0.7rem;">Cargados</div>
+              </div>
+              <div class="col-4">
+                <div class="pd-mini-stat">
+                  <div class="fw-bold" style="color:<%= stats[:missing_items] > 0 ? '#f87171' : '#94a3b8' %>;">
+                    <%= stats[:missing_items] %>
                   </div>
-                </div>
-                <div class="col-4">
-                  <div class="rounded-3 py-2 px-1" style="background:#f8fafc;">
-                    <div class="fw-bold <%= stats[:missing_items] > 0 ? "text-danger" : "text-muted" %>">
-                      <%= stats[:missing_items] %>
-                    </div>
-                    <div class="text-muted" style="font-size:0.7rem;">Faltantes</div>
-                  </div>
+                  <div style="font-size:0.65rem;color:#475569;">Faltantes</div>
                 </div>
               </div>
             </div>
-            <div class="card-footer bg-white border-top-0 pt-0 pb-3 px-3">
+
+            <%# CTA %>
+            <% if plan.load_status == "all_loaded" %>
               <%= link_to loading_production_delivery_plan_path(plan),
-                  class: "btn btn-primary w-100 fw-semibold" do %>
+                  class: "pd-plan-cta",
+                  style: "background:linear-gradient(135deg,#166534,#16a34a);" do %>
+                <i class="bi bi-check-circle me-2"></i>Ver bitácora completa
+              <% end %>
+            <% elsif plan.load_status == "some_missing" %>
+              <%= link_to loading_production_delivery_plan_path(plan),
+                  class: "pd-plan-cta",
+                  style: "background:linear-gradient(135deg,#7f1d1d,#b91c1c);" do %>
+                <i class="bi bi-exclamation-triangle me-2"></i>Revisar faltantes
+              <% end %>
+            <% else %>
+              <%= link_to loading_production_delivery_plan_path(plan), class: "pd-plan-cta" do %>
                 <i class="bi bi-clipboard-check me-2"></i>Abrir Bitácora
               <% end %>
-            </div>
+            <% end %>
           </div>
         </div>
       <% end %>
