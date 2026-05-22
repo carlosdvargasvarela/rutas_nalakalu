@@ -113,6 +113,70 @@
   font-size: 0.8rem;
 }
 
+// ── Delivery card content (_delivery_card_content.html.erb) ──
+
+// Warehousing badge (purple)
+.badge-warehousing {
+  background-color: #6f42c1;
+  color: white;
+  font-size: 0.65rem;
+}
+
+// Warehousing days row color
+.text-warehousing {
+  color: #6f42c1;
+}
+
+// Client name in card row
+.card-client-name {
+  font-size: 0.95rem;
+}
+
+// Small row icons (calendar, geo, contact)
+.card-row-icon {
+  font-size: 0.75rem;
+}
+
+// Person icon in client row
+.card-person-icon {
+  font-size: 0.8rem;
+}
+
+// Time preference text
+.card-time-pref {
+  font-size: 0.7rem;
+}
+
+// Address / contact name truncated span
+.card-truncate-col {
+  max-width: 200px;
+}
+
+// Footer badges (very small: 0.6rem)
+.badge-xxs {
+  font-size: 0.6rem;
+}
+
+// Warehousing expiring soon badge
+.badge-warehousing-expiring {
+  font-size: 0.6rem;
+  background-color: #fce4ec;
+  color: #880e4f;
+  border: 1px solid #f48fb1;
+}
+
+// Inline alert rows at card bottom
+.card-alert-row {
+  font-size: 0.72rem;
+}
+
+// Warehousing alert (purple tint)
+.card-alert-warehousing {
+  font-size: 0.72rem;
+  background-color: #f3e8ff;
+  color: #4a148c;
+}
+
 // ── Detail panel (visual) ─────────────────────────────────────
 .detail-header {
   background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);

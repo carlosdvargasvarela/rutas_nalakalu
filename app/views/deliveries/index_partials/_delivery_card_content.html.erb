@@ -18,48 +18,47 @@
         <div class="d-flex align-items-center gap-1">
           <%# Badge bodegaje (reemplaza el badge de status cuando aplica) %>
           <% if delivery.warehousing? %>
-            <span class="badge rounded-pill px-2 py-1 small fw-semibold"
-                  style="background-color:#6f42c1; color:white; font-size:0.65rem;">
+            <span class="badge rounded-pill px-2 py-1 small fw-semibold badge-warehousing">
               <i class="bi bi-building me-1"></i>Bodegaje
             </span>
           <% else %>
-            <span class="badge <%= status_badge_class(delivery) %> rounded-pill" style="font-size: 0.65rem;">
+            <span class="badge <%= status_badge_class(delivery) %> rounded-pill badge-xs">
               <%= delivery.display_status %>
             </span>
           <% end %>
         </div>
       </div>
       <%# Fila 2: Cliente %>
-      <div class="fw-semibold text-dark mb-2 text-truncate" style="font-size: 0.95rem;">
-        <i class="bi bi-person-fill text-secondary me-1" style="font-size: 0.8rem;"></i>
+      <div class="fw-semibold text-dark mb-2 text-truncate card-client-name">
+        <i class="bi bi-person-fill text-secondary me-1 card-person-icon"></i>
         <%= delivery.order&.client&.name || delivery.client_name %>
       </div>
       <%# Fila 3: Fecha + dirección %>
       <div class="d-flex flex-column gap-1 mb-2">
         <div class="small text-secondary d-flex align-items-center gap-1">
-          <i class="bi bi-calendar3 text-primary" style="font-size: 0.75rem;"></i>
+          <i class="bi bi-calendar3 text-primary card-row-icon"></i>
           <span><%= delivery.delivery_date ? l(delivery.delivery_date, format: :short) : "Sin fecha" %></span>
           <% if delivery.delivery_time_preference.present? %>
             <span class="text-muted">·</span>
-            <span class="text-muted" style="font-size: 0.7rem;"><%= delivery.delivery_time_preference %></span>
+            <span class="text-muted card-time-pref"><%= delivery.delivery_time_preference %></span>
           <% end %>
         </div>
         <div class="small text-secondary d-flex align-items-center gap-1">
-          <i class="bi bi-geo-alt text-danger" style="font-size: 0.75rem;"></i>
-          <span class="text-truncate" style="max-width: 200px;">
+          <i class="bi bi-geo-alt text-danger card-row-icon"></i>
+          <span class="text-truncate card-truncate-col">
             <%= delivery.delivery_address&.address&.truncate(35) || "Sin dirección" %>
           </span>
         </div>
         <% if delivery.contact_name.present? %>
           <div class="small text-secondary d-flex align-items-center gap-1">
-            <i class="bi bi-person-lines-fill text-secondary" style="font-size: 0.75rem;"></i>
-            <span class="text-truncate" style="max-width: 200px;"><%= delivery.contact_name.truncate(35) %></span>
+            <i class="bi bi-person-lines-fill text-secondary card-row-icon"></i>
+            <span class="text-truncate card-truncate-col"><%= delivery.contact_name.truncate(35) %></span>
           </div>
         <% end %>
         <%# Fecha de fin de bodegaje %>
         <% if delivery.warehousing? && delivery.warehousing_until.present? %>
-          <div class="small d-flex align-items-center gap-1" style="color:#6f42c1;">
-            <i class="bi bi-building" style="font-size: 0.75rem;"></i>
+          <div class="small d-flex align-items-center gap-1 text-warehousing">
+            <i class="bi bi-building card-row-icon"></i>
             <span>Bodega hasta: <strong><%= l(delivery.warehousing_until, format: :short) %></strong></span>
           </div>
         <% end %>
@@ -72,33 +71,28 @@
         </span>
         <div class="d-flex gap-1 flex-wrap justify-content-end">
           <% if delivery.delivery_items.pending.any? %>
-            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill"
-                  style="font-size: 0.6rem;">
+            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill badge-xxs">
               <i class="bi bi-clock me-1"></i><%= delivery.delivery_items.pending.count %> pend.
             </span>
           <% end %>
           <% if delivery.delivery_plan.present? %>
-            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill"
-                  style="font-size: 0.6rem;">
+            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill badge-xxs">
               <i class="bi bi-truck"></i>
             </span>
           <% end %>
           <% if delivery.requires_service_case_action? %>
-            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill"
-                  style="font-size: 0.6rem;"
+            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill badge-xxs"
                   title="Contiene casos de servicio">
               <i class="bi bi-tools me-1"></i>Servicio
             </span>
           <% end %>
           <% if delivery.requires_sala_pickup? %>
-            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill"
-                  style="font-size: 0.6rem;">
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill badge-xxs">
               <i class="bi bi-shop me-1"></i>Recoger en Sala
             </span>
           <% end %>
           <% if delivery.warehousing? && delivery.warehousing_expiring_soon? %>
-            <span class="badge rounded-pill"
-                  style="font-size:0.6rem; background-color:#fce4ec; color:#880e4f; border:1px solid #f48fb1;">
+            <span class="badge rounded-pill badge-warehousing-expiring">
               <i class="bi bi-exclamation-triangle me-1"></i>Vence pronto
             </span>
           <% end %>
@@ -107,16 +101,14 @@
       <%# Alertas inline al pie de la tarjeta %>
       <%# Alerta dirección %>
       <% if delivery.address_error? %>
-        <div class="mt-2 px-2 py-1 bg-danger-subtle text-danger rounded-2 small d-flex align-items-center gap-1"
-             style="font-size: 0.72rem;">
+        <div class="mt-2 px-2 py-1 bg-danger-subtle text-danger rounded-2 small d-flex align-items-center gap-1 card-alert-row">
           <i class="bi bi-exclamation-triangle-fill"></i> Dirección requiere revisión
         </div>
       <% end %>
       <%# Alerta Bodegaje vencido o por vencer %>
       <% if delivery.warehousing? %>
         <% days = delivery.warehousing_days_remaining.to_i %>
-        <div class="mt-2 px-2 py-1 rounded-2 small d-flex align-items-center gap-1"
-             style="font-size: 0.72rem; background-color:#f3e8ff; color:#4a148c;">
+        <div class="mt-2 px-2 py-1 rounded-2 small d-flex align-items-center gap-1 card-alert-warehousing">
           <% if days <= 0 %>
             <i class="bi bi-exclamation-triangle-fill"></i> Bodegaje vencido
           <% elsif delivery.warehousing_expiring_soon? %>
@@ -128,15 +120,13 @@
       <% end %>
       <%# Alerta Sala Pickup %>
       <% if delivery.requires_sala_pickup? %>
-        <div class="mt-2 px-2 py-1 bg-danger-subtle text-danger rounded-2 small d-flex align-items-center gap-1"
-             style="font-size: 0.72rem;">
+        <div class="mt-2 px-2 py-1 bg-danger-subtle text-danger rounded-2 small d-flex align-items-center gap-1 card-alert-row">
           <i class="bi bi-shop"></i> Pendiente de retiro en sala — retirar antes de la entrega
         </div>
       <% end %>
       <%# Alerta Caso de Servicio %>
       <% if delivery.requires_service_case_action? %>
-        <div class="mt-2 px-2 py-1 bg-warning-subtle text-warning-emphasis rounded-2 small d-flex align-items-center gap-1"
-             style="font-size: 0.72rem;">
+        <div class="mt-2 px-2 py-1 bg-warning-subtle text-warning-emphasis rounded-2 small d-flex align-items-center gap-1 card-alert-row">
           <i class="bi bi-tools"></i> Contiene productos de caso de servicio
         </div>
       <% end %>
