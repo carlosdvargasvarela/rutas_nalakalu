@@ -7,9 +7,14 @@
 @import "dashboard";
 @import "devise_sessions";
 @import "application";
+@import "components";
+@import "searchable_select";
+@import "status_system";
+@import "deliveries";
 @import "delivery_plans";
-@import "production_dark";
-// Estilos globales para consistencia
+@import "production";
+@import "production_light";
+
 body {
   background-color: var(--color-brand-bg) !important;
 
