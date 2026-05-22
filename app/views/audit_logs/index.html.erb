@@ -3,7 +3,7 @@
   <%# Header %>
   <div class="d-flex align-items-end justify-content-between mb-4">
     <div>
-      <p class="text-uppercase text-muted small fw-semibold mb-1" style="letter-spacing:0.05em;">
+      <p class="text-uppercase text-muted small fw-semibold mb-1 audit-header-label">
         <i class="bi bi-shield-lock me-1"></i>Auditoría
       </p>
       <h3 class="fw-bold mb-0">Historial de cambios</h3>
@@ -94,12 +94,12 @@
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
-              <th class="ps-3 py-3 text-muted small fw-semibold text-uppercase" style="width:140px;">Fecha</th>
-              <th class="py-3 text-muted small fw-semibold text-uppercase" style="width:110px;">Entrega</th>
-              <th class="py-3 text-muted small fw-semibold text-uppercase" style="width:160px;">Acción</th>
+              <th class="ps-3 py-3 text-muted small fw-semibold text-uppercase audit-col-date">Fecha</th>
+              <th class="py-3 text-muted small fw-semibold text-uppercase audit-col-delivery">Entrega</th>
+              <th class="py-3 text-muted small fw-semibold text-uppercase audit-col-action">Acción</th>
               <th class="py-3 text-muted small fw-semibold text-uppercase">Descripción</th>
-              <th class="py-3 text-muted small fw-semibold text-uppercase" style="width:160px;">Actor</th>
-              <th class="py-3 pe-3 text-muted small fw-semibold text-uppercase text-center" style="width:70px;"></th>
+              <th class="py-3 text-muted small fw-semibold text-uppercase audit-col-actor">Actor</th>
+              <th class="py-3 pe-3 text-muted small fw-semibold text-uppercase text-center audit-col-actions"></th>
             </tr>
           </thead>
           <tbody>
@@ -110,7 +110,7 @@
                     <div class="small fw-semibold">
                       <%= event.created_at.in_time_zone("America/Costa_Rica").strftime("%d/%m/%Y") %>
                     </div>
-                    <div class="text-muted" style="font-size:0.72rem;">
+                    <div class="text-muted audit-time-sub">
                       <%= event.created_at.in_time_zone("America/Costa_Rica").strftime("%H:%M") %>
                     </div>
                   </td>
@@ -232,12 +232,12 @@
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
-              <th class="ps-3 py-3 text-muted small fw-semibold text-uppercase" style="width:150px;">Fecha y hora</th>
-              <th class="py-3 text-muted small fw-semibold text-uppercase" style="width:170px;">Usuario</th>
+              <th class="ps-3 py-3 text-muted small fw-semibold text-uppercase audit-col-date-v">Fecha y hora</th>
+              <th class="py-3 text-muted small fw-semibold text-uppercase audit-col-user">Usuario</th>
               <th class="py-3 text-muted small fw-semibold text-uppercase">Recurso</th>
-              <th class="py-3 text-muted small fw-semibold text-uppercase text-center" style="width:110px;">Evento</th>
+              <th class="py-3 text-muted small fw-semibold text-uppercase text-center audit-col-event">Evento</th>
               <th class="py-3 text-muted small fw-semibold text-uppercase">Cambios</th>
-              <th class="py-3 pe-3 text-muted small fw-semibold text-uppercase text-center" style="width:70px;"></th>
+              <th class="py-3 pe-3 text-muted small fw-semibold text-uppercase text-center audit-col-actions"></th>
             </tr>
           </thead>
           <tbody>

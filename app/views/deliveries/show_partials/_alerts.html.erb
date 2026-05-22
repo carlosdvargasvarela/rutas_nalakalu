@@ -2,12 +2,11 @@
 <%# ── ALERTA BODEGAJE ── %>
 <% if delivery.warehousing? %>
   <% days = delivery.warehousing_days_remaining.to_i %>
-  <div class="alert d-flex align-items-start gap-2 py-2 px-3 mb-2 rounded-3 border-0 shadow-sm"
-       style="background-color:#f3e8ff; border-left: 4px solid #6f42c1 !important;">
-    <i class="bi bi-building fs-5 mt-1 flex-shrink-0" style="color:#6f42c1;"></i>
+  <div class="alert d-flex align-items-start gap-2 py-2 px-3 mb-2 rounded-3 border-0 shadow-sm warehousing-alert">
+    <i class="bi bi-building fs-5 mt-1 flex-shrink-0 warehousing-alert-icon"></i>
     <div class="flex-grow-1">
       <% if days <= 0 %>
-        <strong class="d-block" style="color:#4a148c;">⚠️ Bodegaje vencido</strong>
+        <strong class="d-block warehousing-alert-title">⚠️ Bodegaje vencido</strong>
         <span class="small text-muted">
           El bodegaje venció el <strong><%= I18n.l delivery.warehousing_until, format: :long %></strong>.
           Definí una nueva fecha o finalizá el bodegaje.
@@ -16,13 +15,12 @@
           <%= button_to warehousing_form_delivery_path(delivery),
                 method: :get,
                 form: { data: { turbo_frame: "modal" } },
-                class: "btn btn-sm",
-                style: "color:#6f42c1; border:1px solid #6f42c1; background-color:transparent;" do %>
+                class: "btn btn-sm warehousing-btn" do %>
             <i class="bi bi-calendar-range me-1"></i> Actualizar fecha
           <% end %>
         </div>
       <% elsif delivery.warehousing_expiring_soon? %>
-        <strong class="d-block" style="color:#4a148c;">⚠️ Bodegaje por vencer</strong>
+        <strong class="d-block warehousing-alert-title">⚠️ Bodegaje por vencer</strong>
         <span class="small text-muted">
           Vence en <strong><%= days %> día(s)</strong>
           (<%= I18n.l delivery.warehousing_until, format: :long %>).
@@ -32,13 +30,12 @@
           <%= button_to warehousing_form_delivery_path(delivery),
                 method: :get,
                 form: { data: { turbo_frame: "modal" } },
-                class: "btn btn-sm",
-                style: "color:#6f42c1; border:1px solid #6f42c1; background-color:transparent;" do %>
+                class: "btn btn-sm warehousing-btn" do %>
             <i class="bi bi-calendar-range me-1"></i> Extender fecha
           <% end %>
         </div>
       <% else %>
-        <strong class="d-block" style="color:#4a148c;">📦 En Bodegaje</strong>
+        <strong class="d-block warehousing-alert-title">📦 En Bodegaje</strong>
         <span class="small text-muted">
           Productos en bodega hasta el <strong><%= I18n.l delivery.warehousing_until, format: :long %></strong>
           (<%= days %> días restantes).

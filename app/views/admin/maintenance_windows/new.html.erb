@@ -1,5 +1,5 @@
 <%# app/views/admin/maintenance_windows/new.html.erb %>
-<div class="container mt-4" style="max-width: 760px;">
+<div class="container mt-4 admin-container-md">
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><%= link_to "Dashboard", root_path %></li>
@@ -51,7 +51,7 @@
           <div class="row g-2 align-items-center">
             <div class="col-auto">
               <%= number_field_tag "maintenance_window[duration_minutes]",
-                    60, min: 0, class: "form-control", style: "width: 120px;" %>
+                    60, min: 0, class: "form-control mw-duration-input" %>
             </div>
             <div class="col-auto text-muted small">minutos &mdash; usa <strong>0</strong> para tiempo indefinido</div>
           </div>
@@ -61,7 +61,7 @@
           <label class="form-label fw-semibold small">
             <i class="bi bi-people-fill me-1"></i>Usuarios con acceso permitido durante el mantenimiento
           </label>
-          <div class="card border rounded" style="max-height: 280px; overflow-y: auto;">
+          <div class="card border rounded mw-users-list">
             <div class="list-group list-group-flush">
               <% User.order(:name).each do |user| %>
                 <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-2 px-3 <%= user == current_user ? 'bg-light' : '' %>">

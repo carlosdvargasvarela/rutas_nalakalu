@@ -17,7 +17,7 @@
                 style="font-size: 0.62rem; letter-spacing: 0.07em; color: var(--bs-<%= config[:color] %>);">
             <%= config[:label] %>
           </span>
-          <span class="text-muted" style="font-size: 0.72rem; white-space: nowrap;">
+          <span class="text-muted notif-time-text">
             <i class="bi bi-clock me-1"></i><%= time_ago_in_words(notification.created_at) %> atrás
           </span>
         </div>
@@ -31,13 +31,12 @@
         <%# Footer: fecha + badge + acción %>
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
           <div class="d-flex align-items-center gap-2">
-            <small class="text-muted" style="font-size: 0.7rem;">
+            <small class="text-muted notif-date-text">
               <i class="bi bi-calendar3 me-1"></i>
               <%= l(notification.created_at, format: :short) %>
             </small>
             <% unless notification.read %>
-              <span class="badge rounded-pill bg-primary"
-                    style="font-size: 0.58rem; letter-spacing: 0.04em;">
+              <span class="badge rounded-pill bg-primary notif-new-badge">
                 NUEVA
               </span>
             <% end %>
@@ -45,14 +44,12 @@
           <% unless notification.read %>
             <%= button_to mark_as_read_notification_path(notification),
                   method: :patch,
-                  class: "btn btn-link btn-sm text-decoration-none p-0 text-success fw-semibold d-flex align-items-center gap-1",
-                  style: "font-size: 0.75rem;",
+                  class: "btn btn-link btn-sm text-decoration-none p-0 text-success fw-semibold d-flex align-items-center gap-1 notif-mark-read-btn",
                   form: { data: { turbo_stream: true } } do %>
               <i class="bi bi-check-circle"></i> Marcar leída
             <% end %>
           <% else %>
-            <span class="text-success d-flex align-items-center gap-1"
-                  style="font-size: 0.72rem;">
+            <span class="text-success d-flex align-items-center gap-1 notif-read-text">
               <i class="bi bi-check-circle-fill"></i> Leída
             </span>
           <% end %>

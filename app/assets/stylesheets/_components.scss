@@ -162,3 +162,65 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+// ── Audit logs (audit_logs/index, _related_version_compact) ──────
+.audit-header-label    { letter-spacing: 0.05em; }
+.audit-col-date        { width: 140px; }
+.audit-col-delivery    { width: 110px; }
+.audit-col-action      { width: 160px; }
+.audit-col-actor       { width: 160px; }
+.audit-col-actions     { width: 70px; }
+.audit-col-date-v      { width: 150px; }
+.audit-col-user        { width: 170px; }
+.audit-col-event       { width: 110px; }
+.audit-time-sub        { font-size: 0.72rem; }
+.audit-badge-font      { font-size: 0.65rem; }
+.audit-diff-code       { font-size: 0.72rem; word-break: break-word; }
+.audit-arrow-icon      { font-size: 0.7rem; }
+
+// ── client_notes/_modal ──────────────────────────────────────────
+.cn-section-label      { letter-spacing: 0.05em; }
+
+// ── client_notes/_pinned_banner ──────────────────────────────────
+.pinned-alert-text     { font-size: 0.82rem; }
+.pinned-alert-meta     { font-size: 0.72rem; }
+
+// ── shared/_timeline ─────────────────────────────────────────────
+.tc-title              { font-size: 0.9rem; }
+.tc-diff-arrow         { font-size: 0.62rem; }
+.tc-payload-toggle     { font-size: 0.72rem; }
+.tc-payload-body       { font-size: 0.7rem; }
+
+// ── clients/index ────────────────────────────────────────────────
+.notes-badge-sm        { font-size: 0.7rem; }
+
+// ── public_trackings/show ────────────────────────────────────────
+.tracking-map          { height: 400px; border-radius: 0.375rem; }
+
+// ── admin/maintenance_windows ────────────────────────────────────
+.admin-container-md    { max-width: 760px; }
+.mw-duration-input     { width: 120px; }
+.mw-users-list         { max-height: 280px; overflow-y: auto; }
+.mw-active-alert       { background-color: #fffbeb; border-left: 4px solid #f59e0b !important; }
+.mw-inactive-desc      { max-width: 420px; }
+
+// ── admin/quickbooks/show ────────────────────────────────────────
+.qb-current-date-box   { background-color: #f8f9fa; }
+.qb-date-input         { max-width: 220px; }
+
+// ── deliveries/show_partials/_alerts ─────────────────────────────
+.warehousing-alert        { background-color: #f3e8ff; border-left: 4px solid #6f42c1 !important; }
+.warehousing-alert-icon   { color: #6f42c1; }
+.warehousing-alert-title  { color: #4a148c; }
+.warehousing-btn          { color: #6f42c1; border: 1px solid #6f42c1; background-color: transparent; }
+
+// ── deliveries/show_partials/_history ────────────────────────────
+.history-header-cursor    { cursor: pointer; }
+.history-cal-icon         { font-size: 0.8rem; }
+.history-badge-sm         { font-size: 0.65rem; }
+.history-badge-xs         { font-size: 0.6rem; }
+.history-chevron          { font-size: 0.75rem; }
+.history-empty-icon       { font-size: 2.5rem; opacity: 0.3; }
+
+// ── dashboard/_pending_tasks ─────────────────────────────────────
+.task-icon-circle      { width: 40px; height: 40px; }

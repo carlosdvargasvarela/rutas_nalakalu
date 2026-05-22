@@ -10,27 +10,24 @@
                style="width: 4px; background-color: <%= delivery_status_border_color(d.status) %>;"></div>
           <div class="flex-grow-1">
             <%# Header colapsable %>
-            <div class="d-flex justify-content-between align-items-center px-3 py-2 bg-light border-bottom"
+            <div class="d-flex justify-content-between align-items-center px-3 py-2 bg-light border-bottom history-header-cursor"
                  data-bs-toggle="collapse"
-                 data-bs-target="#history-collapse-<%= d.id %>"
-                 style="cursor: pointer;">
+                 data-bs-target="#history-collapse-<%= d.id %>">
               <div class="d-flex align-items-center gap-2 flex-wrap">
-                <i class="bi bi-calendar3 text-muted" style="font-size: 0.8rem;"></i>
+                <i class="bi bi-calendar3 text-muted history-cal-icon"></i>
                 <span class="fw-semibold small">
                   <%= d.delivery_date ? l(d.delivery_date, format: :short) : '—' %>
                 </span>
-                <span class="badge rounded-pill <%= delivery_status_badge_class(d.status) %>"
-                      style="font-size: 0.65rem;">
+                <span class="badge rounded-pill history-badge-sm <%= delivery_status_badge_class(d.status) %>">
                   <%= d.display_status %>
                 </span>
                 <% if d == delivery %>
-                  <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle rounded-pill"
-                        style="font-size: 0.6rem;">
+                  <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle rounded-pill history-badge-xs">
                     actual
                   </span>
                 <% end %>
               </div>
-              <i class="bi bi-chevron-down text-muted" style="font-size: 0.75rem;"></i>
+              <i class="bi bi-chevron-down text-muted history-chevron"></i>
             </div>
             <%# Cuerpo colapsable %>
             <div id="history-collapse-<%= d.id %>"
@@ -45,8 +42,7 @@
                           <%= item.order_item&.product_name || 'Producto' %>
                           <span class="text-muted ms-1">x<%= item.quantity %></span>
                         </span>
-                        <span class="badge rounded-pill <%= delivery_status_badge_class(item.status) %>"
-                              style="font-size: 0.6rem;">
+                        <span class="badge rounded-pill history-badge-xs <%= delivery_status_badge_class(item.status) %>">
                           <%= item.display_status %>
                         </span>
                       </div>
@@ -64,7 +60,7 @@
   </div>
 <% else %>
   <div class="text-center py-5 text-muted">
-    <i class="bi bi-clock-history" style="font-size: 2.5rem; opacity: 0.3;"></i>
+    <i class="bi bi-clock-history history-empty-icon"></i>
     <p class="mt-2 mb-0 small">Sin historial de reagendamientos.</p>
   </div>
 <% end %>

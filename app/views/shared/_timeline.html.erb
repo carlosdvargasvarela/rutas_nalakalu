@@ -21,7 +21,7 @@
         <%# Header %>
         <div class="tc-header">
           <div class="d-flex align-items-center gap-2 flex-wrap">
-            <span class="fw-semibold text-dark" style="font-size:0.9rem;">
+            <span class="fw-semibold text-dark tc-title">
               <%= timeline_title(primary) %>
             </span>
             <%= timeline_source_badge(primary) %>
@@ -46,7 +46,7 @@
                     <%= attribute_label(attr, primary.record.item_type) %>
                   </span>
                   <code class="tc-diff-val text-danger"><%= format_change_value(before, attr, primary.record.item_type) %></code>
-                  <i class="bi bi-arrow-right mx-1 text-muted" style="font-size:0.62rem;"></i>
+                  <i class="bi bi-arrow-right mx-1 text-muted tc-diff-arrow"></i>
                   <code class="tc-diff-val text-success"><%= format_change_value(after, attr, primary.record.item_type) %></code>
                 </div>
               <% end %>
@@ -69,7 +69,7 @@
                     <%= attribute_label(attr, pt_item_type) %>
                   </span>
                   <code class="tc-diff-val text-danger"><%= format_change_value(before, attr, pt_item_type) %></code>
-                  <i class="bi bi-arrow-right mx-1 text-muted" style="font-size:0.62rem;"></i>
+                  <i class="bi bi-arrow-right mx-1 text-muted tc-diff-arrow"></i>
                   <code class="tc-diff-val text-success"><%= format_change_value(after, attr, pt_item_type) %></code>
                 </div>
               <% end %>
@@ -86,15 +86,14 @@
             ) %>
           <% if extra.any? %>
             <div class="mt-2">
-              <button class="btn btn-link btn-sm p-0 text-muted"
-                      style="font-size:0.72rem;"
+              <button class="btn btn-link btn-sm p-0 text-muted tc-payload-toggle"
                       type="button"
                       data-bs-toggle="collapse"
                       data-bs-target="#payload-<%= primary.record.id %>">
                 <i class="bi bi-chevron-down me-1"></i>Datos adicionales
               </button>
               <div class="collapse mt-1" id="payload-<%= primary.record.id %>">
-                <div class="p-2 rounded-2 bg-light border" style="font-size:0.7rem;">
+                <div class="p-2 rounded-2 bg-light border tc-payload-body">
                   <% extra.each do |k, v| %>
                     <div class="d-flex gap-2 mb-1">
                       <span class="text-muted fw-semibold text-nowrap"><%= k %>:</span>

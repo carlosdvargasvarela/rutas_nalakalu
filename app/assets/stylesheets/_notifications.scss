@@ -26,3 +26,10 @@
   100% { background-color: #f8f9fa; }
 }
 .bg-light { animation: pulse-light 2s ease-in-out; }
+
+// ── notifications/_notification partial ──────────────────────────
+.notif-time-text        { font-size: 0.72rem; white-space: nowrap; }
+.notif-date-text        { font-size: 0.7rem; }
+.notif-new-badge        { font-size: 0.58rem; letter-spacing: 0.04em; }
+.notif-mark-read-btn    { font-size: 0.75rem; }
+.notif-read-text        { font-size: 0.72rem; }

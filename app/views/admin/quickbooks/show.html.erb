@@ -1,4 +1,4 @@
-<div class="container mt-4" style="max-width: 760px;">
+<div class="container mt-4 admin-container-md">
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><%= link_to "Dashboard", root_path %></li>
@@ -33,7 +33,7 @@
       <% current_value = AppSetting.get("qb_sync_from_date") %>
       <% display_date = current_value.present? ? current_value.split("T").first : nil %>
 
-      <div class="mb-4 p-3 rounded" style="background-color: #f8f9fa;">
+      <div class="mb-4 p-3 rounded qb-current-date-box">
         <p class="mb-1 small text-muted fw-semibold">Fecha activa actualmente:</p>
         <% if display_date.present? %>
           <span class="fw-semibold"><i class="bi bi-calendar-check me-1 text-success"></i><%= display_date %></span>
@@ -48,8 +48,7 @@
           <input type="date"
                  id="from_date"
                  name="from_date"
-                 class="form-control"
-                 style="max-width: 220px;"
+                 class="form-control qb-date-input"
                  value="<%= display_date %>"
                  max="<%= Date.today.strftime('%Y-%m-%d') %>">
           <div class="form-text">QB buscará órdenes modificadas a partir de esta fecha.</div>

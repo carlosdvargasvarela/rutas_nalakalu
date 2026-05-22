@@ -10,7 +10,7 @@
     </div>
     <div class="text-end flex-shrink-0 ms-2">
       <div class="small text-muted"><%= version.created_at.strftime('%d/%m/%Y') %></div>
-      <div class="text-muted" style="font-size:0.72rem;"><%= version.created_at.strftime('%H:%M') %></div>
+      <div class="text-muted audit-time-sub"><%= version.created_at.strftime('%H:%M') %></div>
     </div>
   </div>
   <div class="small text-muted mb-2">
@@ -24,15 +24,14 @@
       <div class="p-2 rounded-2 bg-light border-start border-2 border-secondary mb-2">
         <% all_changes.each do |attr, (before, after)| %>
           <div class="small mb-1">
-            <span class="badge bg-<%= change_severity(attr) %>-subtle text-<%= change_severity(attr) %>-emphasis me-1"
-                  style="font-size:0.65rem;">
+            <span class="badge bg-<%= change_severity(attr) %>-subtle text-<%= change_severity(attr) %>-emphasis me-1 audit-badge-font">
               <%= attribute_label(attr, version.item_type) %>
             </span>
-            <code class="text-danger" style="font-size:0.72rem; word-break:break-word;">
+            <code class="text-danger audit-diff-code">
               <%= format_change_value(before, attr, version.item_type) %>
             </code>
-            <i class="bi bi-arrow-right mx-1 text-muted" style="font-size:0.7rem;"></i>
-            <code class="text-success" style="font-size:0.72rem; word-break:break-word;">
+            <i class="bi bi-arrow-right mx-1 text-muted audit-arrow-icon"></i>
+            <code class="text-success audit-diff-code">
               <%= format_change_value(after, attr, version.item_type) %>
             </code>
           </div>
@@ -45,10 +44,10 @@
       <div class="p-2 rounded-2 bg-success bg-opacity-10 border-start border-2 border-success mb-2">
         <% fields.each do |attr, value| %>
           <div class="small mb-1">
-            <span class="badge bg-success-subtle text-success-emphasis me-1" style="font-size:0.65rem;">
+            <span class="badge bg-success-subtle text-success-emphasis me-1 audit-badge-font">
               <%= attribute_label(attr, version.item_type) %>
             </span>
-            <code class="text-success" style="font-size:0.72rem; word-break:break-word;">
+            <code class="text-success audit-diff-code">
               <%= format_change_value(value, attr, version.item_type) %>
             </code>
           </div>
@@ -65,10 +64,10 @@
       <div class="p-2 rounded-2 bg-danger bg-opacity-10 border-start border-2 border-danger mb-2">
         <% fields.each do |attr, value| %>
           <div class="small mb-1">
-            <span class="badge bg-danger-subtle text-danger-emphasis me-1" style="font-size:0.65rem;">
+            <span class="badge bg-danger-subtle text-danger-emphasis me-1 audit-badge-font">
               <%= attribute_label(attr, version.item_type) %>
             </span>
-            <code class="text-danger" style="font-size:0.72rem; word-break:break-word;">
+            <code class="text-danger audit-diff-code">
               <%= format_change_value(value, attr, version.item_type) %>
             </code>
           </div>
