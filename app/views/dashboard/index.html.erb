@@ -14,6 +14,9 @@
     </div>
     <div class="d-flex gap-2">
       <% if current_user.admin? || current_user.production_manager? %>
+        <%= link_to new_internal_delivery_deliveries_path, class: "btn btn-success rounded-pill shadow-sm" do %>
+          <i class="bi bi-plus-lg me-1"></i> Nuevo Mandado
+        <% end %>
         <%= link_to new_delivery_import_path, class: "btn btn-outline-primary rounded-pill shadow-sm" do %>
           <i class="bi bi-file-earmark-excel me-1"></i> Importar
         <% end %>

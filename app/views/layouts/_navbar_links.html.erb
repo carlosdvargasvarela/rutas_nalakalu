@@ -14,6 +14,13 @@
       <i class="bi bi-truck me-1"></i> Entregas
     <% end %>
   </li>
+  <% if current_user.production_manager? %>
+    <li class="nav-item">
+      <%= link_to deliveries_path, class: "nav-link" do %>
+        <i class="bi bi-list-ul me-1"></i> Todas las Entregas
+      <% end %>
+    </li>
+  <% end %>
   <li class="nav-item">
     <%= link_to delivery_plans_path, class: "nav-link" do %>
       <i class="bi bi-calendar-check me-1"></i> Planes de Entrega
