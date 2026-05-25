@@ -12,9 +12,29 @@
 }
 
 .workspace-container {
-  height: calc(100vh - 65px);
+  height: calc(100vh - 80px); // 56px navbar + 24px (mt-4 en <main>)
   overflow: hidden;
   background-color: #f8f9fa;
+}
+
+.workspace-row {
+  height: 100%;
+}
+
+.workspace-col {
+  height: 100%;
+}
+
+// En móvil no hay panel derecho — dejar que la página scrollee normal
+@media (max-width: 991.98px) {
+  .workspace-container {
+    height: auto;
+    overflow: visible;
+  }
+
+  .workspace-col {
+    height: auto;
+  }
 }
 
 .scroll-panel {
