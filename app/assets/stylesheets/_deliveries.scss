@@ -213,3 +213,9 @@
   background-color: #f8f9fa;
   font-size: 0.78rem;
 }
+
+// Fix: dropdown de opciones queda detrás de filas posteriores — clase gestionada por JS
+.product-table-workspace tbody tr.dropdown-row-open {
+  position: relative;
+  z-index: 1000;
+}

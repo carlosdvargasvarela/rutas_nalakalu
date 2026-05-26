@@ -1,5 +1,5 @@
 <%# app/views/production/delivery_plans/_load_summary.html.erb %>
-<div class="px-2 py-2" style="background:#12122a;border-bottom:1px solid #2d2d4e;">
+<div class="px-2 py-2" style="background:#f8f9fa;border-bottom:1px solid #dee2e6;">
   <div class="d-flex justify-content-between align-items-center mb-2">
     <small class="fw-semibold" style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;">
       <i class="bi bi-box-seam me-1"></i>Resumen de productos
@@ -8,7 +8,7 @@
       <%= button_to mark_all_loaded_production_delivery_plan_path(delivery_plan),
           method: :post,
           class: "btn btn-sm fw-bold",
-          style: "background:#166534;color:#4ade80;border:none;border-radius:8px;font-size:0.72rem;padding:4px 10px;",
+          style: "background:#d1e7dd;color:#198754;border:none;border-radius:8px;font-size:0.72rem;padding:4px 10px;",
           data: { turbo_confirm: "¿Marcar TODOS los productos del plan como cargados?" } do %>
         <i class="bi bi-check-all me-1"></i>Marcar todo
       <% end %>
@@ -17,28 +17,28 @@
   <div class="row g-2">
     <div class="col-3">
       <div class="pd-mini-stat">
-        <div class="fw-bold" style="color:#94a3b8;font-size:1rem;"><%= load_stats[:total_items] %></div>
-        <div style="font-size:0.65rem;color:#475569;">Total</div>
+        <div class="fw-bold" style="color:#475569;font-size:1rem;"><%= load_stats[:total_items] %></div>
+        <div style="font-size:0.65rem;color:#94a3b8;">Total</div>
       </div>
     </div>
     <div class="col-3">
       <div class="pd-mini-stat">
-        <div class="fw-bold" style="color:#4ade80;font-size:1rem;"><%= load_stats[:loaded_items] %></div>
-        <div style="font-size:0.65rem;color:#475569;">Cargados</div>
+        <div class="fw-bold" style="color:#16a34a;font-size:1rem;"><%= load_stats[:loaded_items] %></div>
+        <div style="font-size:0.65rem;color:#94a3b8;">Cargados</div>
       </div>
     </div>
     <div class="col-3">
       <div class="pd-mini-stat">
-        <div class="fw-bold" style="color:#fbbf24;font-size:1rem;"><%= load_stats[:unloaded_items] %></div>
-        <div style="font-size:0.65rem;color:#475569;">Pendientes</div>
+        <div class="fw-bold" style="color:#d97706;font-size:1rem;"><%= load_stats[:unloaded_items] %></div>
+        <div style="font-size:0.65rem;color:#94a3b8;">Pendientes</div>
       </div>
     </div>
     <div class="col-3">
       <div class="pd-mini-stat">
-        <div class="fw-bold" style="color:<%= load_stats[:missing_items] > 0 ? '#f87171' : '#94a3b8' %>;font-size:1rem;">
+        <div class="fw-bold" style="color:<%= load_stats[:missing_items] > 0 ? '#dc2626' : '#94a3b8' %>;font-size:1rem;">
           <%= load_stats[:missing_items] %>
         </div>
-        <div style="font-size:0.65rem;color:#475569;">Faltantes</div>
+        <div style="font-size:0.65rem;color:#94a3b8;">Faltantes</div>
       </div>
     </div>
   </div>

@@ -6,6 +6,21 @@ export default class extends Controller {
 
   connect() {
     this.updateUI();
+    this._onDropdownShow = (e) => {
+      const tr = e.target.closest("tr");
+      if (tr) tr.classList.add("dropdown-row-open");
+    };
+    this._onDropdownHide = (e) => {
+      const tr = e.target.closest("tr");
+      if (tr) tr.classList.remove("dropdown-row-open");
+    };
+    this.element.addEventListener("show.bs.dropdown", this._onDropdownShow);
+    this.element.addEventListener("hidden.bs.dropdown", this._onDropdownHide);
+  }
+
+  disconnect() {
+    this.element.removeEventListener("show.bs.dropdown", this._onDropdownShow);
+    this.element.removeEventListener("hidden.bs.dropdown", this._onDropdownHide);
   }
 
   toggleAll(event) {

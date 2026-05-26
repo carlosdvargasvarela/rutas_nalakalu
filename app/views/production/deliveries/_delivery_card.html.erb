@@ -29,7 +29,7 @@
        aria-expanded="<%= delivery.load_status == 'all_loaded' ? 'false' : 'true' %>">
     <div class="pd-stop-badge <%= stop_badge_class %>"><%= stop_num %></div>
     <div class="flex-grow-1" style="min-width:0;">
-      <div class="fw-bold text-truncate" style="font-size:0.9rem;color:#f1f5f9;">
+      <div class="fw-bold text-truncate" style="font-size:0.9rem;color:#1e293b;">
         <%= delivery.client&.name %>
       </div>
       <div class="text-truncate" style="font-size:0.75rem;color:#64748b;">
@@ -38,7 +38,7 @@
     </div>
     <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
       <%# Mini progress bar %>
-      <div style="width:36px;height:5px;background:#0f0f1a;border-radius:3px;overflow:hidden;">
+      <div style="width:36px;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;">
         <div style="height:100%;width:<%= delivery.load_percentage %>%;background:<%= top_color %>;border-radius:3px;"></div>
       </div>
       <%# Badge count %>
@@ -53,7 +53,7 @@
         end
       %>
       <span class="pd-badge <%= count_badge_class %>"><%= loaded %>/<%= total %></span>
-      <i class="bi bi-chevron-down" style="color:#475569;font-size:0.8rem;"></i>
+      <i class="bi bi-chevron-down" style="color:#94a3b8;font-size:0.8rem;"></i>
     </div>
   </div>
 
