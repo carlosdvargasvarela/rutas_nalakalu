@@ -31,16 +31,16 @@ module DeliveryItems
     attr_reader :delivery_item, :delivery, :note_text, :target, :current_user
 
     def validate_note_text!
-      raise StandardError, "La nota no puede estar vacía." if note_text.blank?
+      raise ArgumentError, "Parámetro de nota no recibido." if note_text.nil?
     end
 
     def update_single_item
-      delivery_item.update!(notes: note_text)
+      delivery_item.update!(notes: note_text.presence)
       delivery_item
     end
 
     def update_all_items
-      delivery.delivery_items.update_all(notes: note_text)
+      delivery.delivery_items.update_all(notes: note_text.presence)
       delivery
     end
 

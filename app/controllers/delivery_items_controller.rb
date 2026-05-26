@@ -3,7 +3,7 @@ class DeliveryItemsController < ApplicationController
 
   before_action :set_delivery_item, only: [
     :show, :confirm, :mark_delivered, :reschedule,
-    :cancel, :update_notes, :reschedule_form
+    :cancel, :update_notes, :reschedule_form, :note_form
   ]
 
   def show
@@ -22,6 +22,27 @@ class DeliveryItemsController < ApplicationController
       .order(:delivery_date)
 
     render layout: false
+  end
+
+  def note_form
+    authorize @delivery_item, :update_notes?
+    render layout: false
+  end
+
+  def bulk_add_notes
+    authorize DeliveryItem, :update_notes?
+    delivery = Delivery.find(params[:delivery_id])
+
+    DeliveryItems::NotesUpdater.new(
+      delivery: delivery,
+      note_text: params.dig(:note, :body),
+      current_user: current_user,
+      target: params[:target]
+    ).call
+
+    respond_with_delivery_update(delivery.reload, notice: "Nota guardada correctamente.")
+  rescue => e
+    handle_item_error(e, fallback: delivery_path(delivery), prefix: "Error al guardar la nota")
   end
 
   def confirm
@@ -85,7 +106,7 @@ class DeliveryItemsController < ApplicationController
   end
 
   def update_notes
-    authorize @delivery_item, :confirm?
+    authorize @delivery_item, :update_notes?
 
     DeliveryItems::NotesUpdater.new(
       delivery_item: @delivery_item,

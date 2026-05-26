@@ -1,0 +1,38 @@
+<%# app/views/delivery_items/note_form.html.erb %>
+<%= turbo_frame_tag "modal" do %>
+  <div class="modal-header bg-warning-subtle">
+    <h5 class="modal-title fw-semibold">
+      <i class="bi bi-sticky me-2"></i>
+      <%= @delivery_item.notes.present? ? "Editar nota" : "Agregar nota" %>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  </div>
+  <div class="modal-body">
+    <div class="mb-3 p-3 bg-light rounded-3 border">
+      <div class="fw-semibold small"><%= @delivery_item.product %></div>
+      <div class="text-muted" style="font-size: 0.75rem;">
+        Cantidad: <strong><%= @delivery_item.quantity_delivered %></strong>
+      </div>
+    </div>
+    <%= form_with url: update_notes_delivery_item_path(@delivery_item),
+          method: :patch,
+          data: { turbo_stream: true } do |f| %>
+      <div class="mb-3">
+        <%= label_tag "delivery_item[notes]", "Nota", class: "form-label fw-semibold small" %>
+        <%= text_area_tag "delivery_item[notes]",
+              @delivery_item.notes,
+              class: "form-control form-control-sm",
+              rows: 3,
+              placeholder: "Escribe la nota aquí..." %>
+      </div>
+      <div class="modal-footer px-0 pb-0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <%= f.submit @delivery_item.notes.present? ? "Actualizar Nota" : "Guardar Nota",
+              class: "btn btn-sm btn-warning fw-semibold",
+              data: { disable_with: "Guardando..." } %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

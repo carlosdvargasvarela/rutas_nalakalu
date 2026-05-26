@@ -109,6 +109,31 @@
               <% end %>
             </li>
           <% end %>
+          <%# Notas %>
+          <% is_terminal = item.delivered? || item.rescheduled? || item.cancelled? %>
+          <% unless is_terminal %><li><hr class="dropdown-divider my-1"></li><% end %>
+          <li>
+            <%= link_to note_form_delivery_item_path(item),
+                  class: "dropdown-item py-2",
+                  data: { turbo_frame: "modal" } do %>
+              <i class="bi bi-sticky me-2 text-warning"></i>
+              <%= item.notes.present? ? "Editar nota" : "Agregar nota" %>
+            <% end %>
+          </li>
+          <% if item.notes.present? %>
+            <li>
+              <%= button_to update_notes_delivery_item_path(item),
+                    method: :patch,
+                    params: { delivery_item: { notes: "" } },
+                    class: "dropdown-item py-2 text-danger",
+                    data: {
+                      turbo_stream: true,
+                      turbo_confirm: "¿Eliminar la nota de este producto?"
+                    } do %>
+                <i class="bi bi-trash me-2"></i>Eliminar nota
+              <% end %>
+            </li>
+          <% end %>
         </ul>
       </div>
     <% end %>

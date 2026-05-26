@@ -744,6 +744,7 @@ class DeliveriesController < ApplicationController
   end
 
   def note
+    authorize @delivery, :edit?
     render partial: "delivery_items/form_note", locals: {delivery: @delivery}
   end
 

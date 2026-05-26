@@ -66,6 +66,14 @@
         </button>
       <% end %>
       <% if can_confirm %>
+        <%# Nota bulk %>
+        <%= link_to note_delivery_path(delivery),
+              class: "btn btn-sm btn-outline-warning shadow-sm px-3",
+              data: { turbo_frame: "modal" } do %>
+          <i class="bi bi-sticky me-1"></i>Nota
+        <% end %>
+      <% end %>
+      <% if can_confirm %>
         <%# Sala Pickup bulk %>
         <% if delivery.requires_sala_pickup? %>
           <button type="button"

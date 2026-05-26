@@ -130,6 +130,7 @@ Rails.application.routes.draw do
   resources :delivery_items do
     member do
       get :reschedule_form
+      get :note_form
       patch :confirm
       patch :mark_delivered
       patch :reschedule

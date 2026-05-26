@@ -1,0 +1,42 @@
+<%# app/views/delivery_items/_form_note.html.erb %>
+<%= turbo_frame_tag "modal" do %>
+  <div class="modal-header bg-warning-subtle">
+    <h5 class="modal-title fw-semibold">
+      <i class="bi bi-sticky me-2"></i>Nota — Pedido <%= delivery.order.number %>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  </div>
+  <div class="modal-body">
+    <%= form_with url: bulk_add_notes_delivery_items_path,
+          method: :patch,
+          data: { turbo_stream: true } do |f| %>
+      <%= hidden_field_tag :delivery_id, delivery.id %>
+      <div class="mb-3">
+        <%= label_tag :target, "Aplicar a:", class: "form-label fw-semibold small" %>
+        <%= select_tag :target,
+              options_for_select(
+                [["📌 Todos los productos", "all"]] +
+                delivery.delivery_items.includes(:order_item).map { |i|
+                  ["#{i.product} (#{i.quantity})", i.id]
+                }
+              ),
+              class: "form-select form-select-sm" %>
+      </div>
+      <div class="mb-3">
+        <%= label_tag "note[body]", "Nota", class: "form-label fw-semibold small" %>
+        <%= text_area_tag "note[body]", nil,
+              class: "form-control form-control-sm",
+              rows: 3,
+              placeholder: "Escribe la nota aquí..." %>
+      </div>
+      <div class="modal-footer px-0 pb-0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <%= f.submit "Guardar Nota",
+              class: "btn btn-sm btn-warning fw-semibold",
+              data: { disable_with: "Guardando..." } %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
