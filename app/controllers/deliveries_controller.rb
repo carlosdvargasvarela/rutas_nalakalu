@@ -7,7 +7,8 @@ class DeliveriesController < ApplicationController
     :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing,
     :update_status, :reassign_seller, :take_order, :sala_pickup_form,
     :create_sala_pickup, :service_case_form, :create_service_case_from_workspace,
-    :warehousing_form, :start_warehousing, :end_warehousing, :unconfirm, :reopen
+    :warehousing_form, :start_warehousing, :end_warehousing, :unconfirm, :reopen,
+    :split_form, :split
   ]
   before_action :set_addresses, only: [:new, :edit, :create, :update]
 
@@ -369,6 +370,39 @@ class DeliveriesController < ApplicationController
       end
       format.html { redirect_to @delivery, notice: "Bodegaje finalizado." }
     end
+  end
+
+  def split_form
+    authorize @delivery, :edit?
+    @items = @delivery.delivery_items.bulk_reschedulable.includes(:order_item)
+
+    if @items.empty?
+      redirect_to delivery_path(@delivery), alert: "Esta entrega no tiene productos que se puedan dividir."
+      return
+    end
+
+    @existing_deliveries = Delivery
+      .where(order_id: @delivery.order_id, delivery_address_id: @delivery.delivery_address_id)
+      .where("delivery_date >= ?", Date.current)
+      .where.not(id: @delivery.id)
+      .where.not(status: %i[rescheduled cancelled archived])
+      .order(:delivery_date)
+  end
+
+  def split
+    authorize @delivery, :edit?
+
+    count = Deliveries::Splitter.new(
+      delivery:      @delivery,
+      target_dates:  params[:target_dates].to_a,
+      splits_params: params[:splits].to_unsafe_h,
+      reason:        params[:reason].presence,
+      current_user:  current_user
+    ).call
+
+    redirect_to delivery_path(@delivery), notice: "Entrega dividida: #{count} movimiento(s) realizados exitosamente."
+  rescue => e
+    redirect_to split_form_delivery_path(@delivery), alert: e.message
   end
 
   def reassign_seller

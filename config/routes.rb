@@ -102,6 +102,9 @@ Rails.application.routes.draw do
       get :warehousing_form
       patch :start_warehousing
       patch :end_warehousing
+
+      get :split_form
+      patch :split
     end
   end
 

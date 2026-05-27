@@ -1,0 +1,144 @@
+<%# app/views/deliveries/split_form.html.erb %>
+<% content_for :title, "Dividir Entrega \##{@delivery.id}" %>
+
+<% existing_deliveries_json = @existing_deliveries.map { |d|
+  { date: d.delivery_date.iso8601, id: d.id, label: d.delivery_date.strftime("%d/%m/%Y") }
+}.to_json %>
+
+<div class="container-fluid py-4"
+     style="max-width: 100%; padding-left: 1.5rem; padding-right: 1.5rem;"
+     data-controller="delivery-split"
+     data-delivery-split-min-date-value="<%= (Date.today + 1).iso8601 %>"
+     data-delivery-split-existing-deliveries-value="<%= existing_deliveries_json %>">
+
+  <%# Header %>
+  <div class="d-flex align-items-start mb-4 gap-3">
+    <%= link_to delivery_path(@delivery), class: "btn btn-sm btn-outline-secondary mt-1" do %>
+      <i class="bi bi-arrow-left me-1"></i>Volver
+    <% end %>
+    <div>
+      <h4 class="mb-1 fw-bold">
+        <i class="bi bi-diagram-2 me-2 text-warning"></i>
+        Dividir Entrega #<%= @delivery.id %>
+      </h4>
+      <p class="text-muted mb-0 small">
+        Definí las fechas destino y distribuí las cantidades de cada producto.
+        Las unidades sin distribuir quedan en la entrega original
+        (<strong><%= @delivery.delivery_date.strftime("%d/%m/%Y") %></strong>).
+        <% if @existing_deliveries.any? %>
+          <br>
+          <span class="badge bg-info text-dark mt-1">+existente</span>
+          indica que ya existe una entrega en esa fecha — los productos se sumarán a ella automáticamente.
+        <% end %>
+      </p>
+    </div>
+  </div>
+
+  <%= form_with url: split_delivery_path(@delivery), method: :patch,
+                data: { action: "submit->delivery-split#validateBeforeSubmit" } do |f| %>
+
+    <%# ══ PASO 1: Fechas ══ %>
+    <div class="card shadow-sm border-0 mb-3">
+      <div class="card-header bg-light border-bottom py-2 px-3">
+        <span class="fw-bold text-muted small text-uppercase">
+          <i class="bi bi-calendar3 me-1"></i>Paso 1 — Fechas de las entregas nuevas
+        </span>
+      </div>
+      <div class="card-body">
+        <div data-delivery-split-target="datesList"
+             class="d-flex flex-wrap gap-2 align-items-center mb-2">
+          <%# los chips se insertan por el controller de Stimulus %>
+        </div>
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary"
+                data-delivery-split-target="addDateBtn"
+                data-action="click->delivery-split#addColumn">
+          <i class="bi bi-plus-circle me-1"></i>Agregar fecha
+        </button>
+        <span class="text-muted small ms-2">Hasta 8 fechas.</span>
+      </div>
+    </div>
+
+    <%# ══ PASO 2: Tabla de distribución ══ %>
+    <div class="card shadow-sm border-0 mb-3">
+      <div class="card-header bg-light border-bottom py-2 px-3 d-flex align-items-center">
+        <span class="fw-bold text-muted small text-uppercase">
+          <i class="bi bi-grid-3x3 me-1"></i>Paso 2 — Distribuí las cantidades
+        </span>
+        <span class="ms-auto text-muted small">
+          0 o vacío = el producto se queda en la entrega original.
+        </span>
+      </div>
+      <div class="card-body p-0" style="overflow-x: auto;">
+        <table class="table table-bordered table-sm align-middle mb-0"
+               style="min-width: 500px;">
+          <thead class="table-light">
+            <tr data-delivery-split-target="headerRow">
+              <th class="ps-3 py-2" style="min-width: 220px;">Producto</th>
+              <th class="text-center py-2" style="width: 70px; font-size: 0.7rem; text-transform: uppercase;">
+                Original
+              </th>
+              <%# columnas de fecha insertadas por Stimulus %>
+              <th class="text-center py-2 table-warning"
+                  style="width: 90px; font-size: 0.7rem; text-transform: uppercase;"
+                  data-role="remaining-th">
+                Quedan
+              </th>
+            </tr>
+          </thead>
+          <tbody data-delivery-split-target="tableBody">
+            <% @items.each do |item| %>
+              <tr data-item-id="<%= item.id %>"
+                  data-original-qty="<%= item.quantity_delivered.to_i %>">
+                <td class="ps-3 py-2">
+                  <div class="fw-semibold" style="font-size: 0.88rem;"><%= item.product %></div>
+                  <% if item.service_case? %>
+                    <span class="badge bg-warning text-dark" style="font-size: 0.6rem;">
+                      <i class="bi bi-tools me-1"></i>Caso Servicio
+                    </span>
+                  <% end %>
+                </td>
+                <td class="text-center py-2">
+                  <span class="badge bg-light text-dark border fw-bold">
+                    <%= item.quantity_delivered.to_i %>
+                  </span>
+                </td>
+                <%# celdas de cantidad insertadas por Stimulus %>
+                <td class="text-center py-2 table-warning"
+                    data-role="remaining-td">
+                  <span class="remaining-badge fw-bold" style="font-size: 0.9rem;">
+                    <%= item.quantity_delivered.to_i %>
+                  </span>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <%# Motivo %>
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-body py-2 px-3">
+        <label class="form-label small fw-bold text-muted text-uppercase mb-1">
+          <i class="bi bi-chat-left-text me-1"></i>Motivo de la división
+        </label>
+        <%= f.text_area :reason,
+            class: "form-control form-control-sm",
+            rows: 2,
+            placeholder: "Ej: No hay camiones suficientes para toda la entrega..." %>
+      </div>
+    </div>
+
+    <%# Botones %>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+      <%= link_to delivery_path(@delivery), class: "btn btn-outline-secondary" do %>
+        Cancelar
+      <% end %>
+      <%= f.submit "Dividir Entrega",
+          class: "btn btn-warning fw-bold px-4" %>
+      <span class="text-muted small" data-delivery-split-target="summaryText"></span>
+    </div>
+
+  <% end %>
+</div>
