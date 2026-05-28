@@ -62,7 +62,7 @@
           <%= date_field_tag :new_date,
                 Date.current + 7.days,
                 class: "form-control form-control-sm",
-                min: Date.current + 1.day %>
+                min: (current_user.admin_or_manager? ? nil : Date.current + 1.day) %>
         </div>
       </div>
       <%# Opción B: Entrega existente %>

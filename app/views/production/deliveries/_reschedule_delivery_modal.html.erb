@@ -17,7 +17,7 @@
           <%= date_field_tag :new_date, Date.current + 1,
               class: "form-control shadow-sm",
               required: true,
-              min: Date.current + 1 %>
+              min: (current_user.admin_or_manager? ? nil : Date.current + 1) %>
         </div>
         <div class="modal-footer border-0 bg-light">
           <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>

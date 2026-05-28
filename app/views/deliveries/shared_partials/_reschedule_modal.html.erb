@@ -16,7 +16,7 @@
             <%= f.date_field :new_date,
                   class: "form-control",
                   required: true,
-                  min: Date.current,
+                  min: (current_user.admin_or_manager? ? nil : Date.current),
                   value: (delivery.delivery_date + 1.day) %>
             <div class="form-text">
               Fecha actual: <%= l delivery.delivery_date, format: :long %>
