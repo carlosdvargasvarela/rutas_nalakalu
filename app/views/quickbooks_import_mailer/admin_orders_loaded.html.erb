@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+      .mail-body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; max-width: 900px; margin: 0 auto; background-color: #f8fafc; padding: 20px; }
+      .main-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); }
+      .header { background-color: #059669; color: white; padding: 36px 30px; text-align: center; }
+      .header h1 { margin: 0; font-size: 26px; font-weight: 800; }
+      .header p { margin: 8px 0 0; opacity: 0.9; font-size: 15px; }
+      .content { padding: 30px; }
+      .stats-grid { display: table; width: 100%; margin: 20px 0 30px; }
+      .stat-cell { display: table-cell; text-align: center; padding: 18px 10px; background: #f1f5f9; border-radius: 8px; }
+      .stat-val { display: block; font-size: 28px; font-weight: 800; color: #059669; }
+      .stat-val-alt { color: #16a34a; }
+      .stat-val-warn { color: #d97706; }
+      .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; margin-top: 2px; }
+      .seller-block { border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 24px; overflow: hidden; }
+      .seller-header { background: #f8fafc; padding: 14px 20px; border-bottom: 1px solid #e2e8f0; }
+      .seller-name { font-size: 16px; font-weight: 700; color: #0f172a; }
+      .seller-code { font-size: 12px; color: #94a3b8; margin-left: 8px; }
+      .seller-stats { float: right; font-size: 12px; color: #64748b; }
+      table.orders-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .orders-table th { text-align: left; padding: 10px 16px; background: #f1f5f9; color: #475569; font-size: 11px; text-transform: uppercase; font-weight: 700; }
+      .orders-table td { padding: 12px 16px; border-bottom: 1px solid #f8fafc; vertical-align: top; }
+      .orders-table tr:last-child td { border-bottom: none; }
+      .badge-new { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+      .badge-updated { background: #fef9c3; color: #854d0e; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+      .items-list { margin: 0; padding: 0; list-style: none; }
+      .items-list li { font-size: 12px; color: #475569; margin-bottom: 2px; }
+      .items-list li span { font-weight: 700; color: #0f172a; }
+      .notes-inline { font-size: 11px; color: #94a3b8; margin-top: 4px; font-style: italic; }
+      .footer { text-align: center; padding: 24px; color: #94a3b8; font-size: 12px; border-top: 1px solid #f1f5f9; }
+    </style>
+  </head>
+  <body class="mail-body">
+    <div class="main-container">
+      <div class="header">
+        <h1>📊 QuickBooks — Pedidos Procesados</h1>
+        <p><%= l(Date.today, format: :long) %></p>
+      </div>
+
+      <div class="content">
+        <p>Hola <strong><%= @admin.name %></strong>, se procesaron los siguientes pedidos desde QuickBooks:</p>
+
+        <div class="stats-grid">
+          <%# spacer cells with border-spacing trick via table-cell padding %>
+          <table width="100%" cellspacing="8">
+            <tr>
+              <td class="stat-cell">
+                <span class="stat-val"><%= @all_orders.size %></span>
+                <span class="stat-label">Total Pedidos</span>
+              </td>
+              <td class="stat-cell">
+                <span class="stat-val stat-val-alt"><%= @created_count %></span>
+                <span class="stat-label">Nuevos</span>
+              </td>
+              <td class="stat-cell">
+                <span class="stat-val stat-val-warn"><%= @updated_count %></span>
+                <span class="stat-label">Actualizados</span>
+              </td>
+              <td class="stat-cell">
+                <span class="stat-val" style="color:#6366f1"><%= @sellers_data.size %></span>
+                <span class="stat-label">Vendedores</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <% @sellers_data.each do |data| %>
+          <% seller = data[:seller]; orders = data[:orders] %>
+          <div class="seller-block">
+            <div class="seller-header">
+              <span class="seller-name"><%= seller&.name || data[:seller_code] %></span>
+              <span class="seller-code"><%= data[:seller_code] %></span>
+              <span class="seller-stats">
+                <%= orders.size %> pedido<%= orders.size == 1 ? "" : "s" %> &nbsp;·&nbsp;
+                <%= orders.count { |o| o[:action] == "created" } %> nuevo<%= orders.count { |o| o[:action] == "created" } == 1 ? "" : "s" %> &nbsp;·&nbsp;
+                <%= orders.count { |o| o[:action] == "updated" } %> actualizado<%= orders.count { |o| o[:action] == "updated" } == 1 ? "" : "s" %>
+              </span>
+            </div>
+
+            <table class="orders-table">
+              <thead>
+                <tr>
+                  <th>Pedido</th>
+                  <th>Cliente</th>
+                  <th>Fecha Entrega</th>
+                  <th>Productos</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% orders.each do |order| %>
+                  <tr>
+                    <td><strong>#<%= order[:order_number] %></strong></td>
+                    <td><%= order[:client_name].presence || "—" %></td>
+                    <td style="white-space:nowrap">
+                      <% if order[:delivery_date].present? %>
+                        <%= Date.parse(order[:delivery_date]).strftime("%d/%m/%Y") rescue order[:delivery_date] %>
+                      <% else %>
+                        <span style="color:#94a3b8">—</span>
+                      <% end %>
+                    </td>
+                    <td>
+                      <% if order[:items].present? %>
+                        <ul class="items-list">
+                          <% order[:items].each do |item| %>
+                            <li>
+                              <span><%= item[:quantity].to_f == item[:quantity].to_f.to_i ? item[:quantity].to_i : item[:quantity] %>×</span>
+                              <%= item[:product] %>
+                            </li>
+                          <% end %>
+                        </ul>
+                      <% end %>
+                      <% if order[:notes].present? %>
+                        <div class="notes-inline">Nota: <%= order[:notes].truncate(80) %></div>
+                      <% end %>
+                    </td>
+                    <td>
+                      <% if order[:action] == "created" %>
+                        <span class="badge-new">✦ Nuevo</span>
+                      <% else %>
+                        <span class="badge-updated">↻ Actualizado</span>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="footer">
+        <p>Sistema de Rutas NaLakalu • Generado automáticamente</p>
+      </div>
+    </div>
+  </body>
+</html>

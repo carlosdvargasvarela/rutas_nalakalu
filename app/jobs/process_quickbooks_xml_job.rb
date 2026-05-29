@@ -5,11 +5,16 @@ class ProcessQuickbooksXmlJob
 
   def perform(orders)
     orders = Array.wrap(orders)
+    results_by_seller = Hash.new { |h, k| h[k] = [] }
+
     orders.each do |so|
-      process_sales_order(so)
+      result = process_sales_order(so)
+      results_by_seller[result[:seller_code]] << result if result
     rescue => e
       Rails.logger.error "ProcessQuickbooksXmlJob: Error en SO #{so["ref_number"]}: #{e.message}"
     end
+
+    send_import_notifications(results_by_seller) if results_by_seller.any?
   end
 
   private
@@ -19,6 +24,7 @@ class ProcessQuickbooksXmlJob
     ref_number = so["ref_number"].to_s.strip
     order_number = ref_number.start_with?("PED-") ? ref_number : "PED-#{ref_number}"
     qb_modified_at = parse_qb_time(so["time_modified"])
+    seller_code = so.dig("sales_rep_ref", "full_name")&.strip
 
     existing = Order.find_by(number: order_number)
 
@@ -52,6 +58,33 @@ class ProcessQuickbooksXmlJob
           DeliveryEvent.record(delivery: delivery, action: event_action, payload: {source: "quickbooks"})
         end
       end
+    end
+
+    return unless event_action.present?
+
+    {
+      seller_code: seller_code,
+      order_number: order_number,
+      client_name: so.dig("customer_ref", "full_name")&.strip,
+      delivery_date: due_date,
+      action: event_action,
+      items: lines.map { |l| {product: build_product_name(l), quantity: l["quantity"].to_s.tr(",", ".").to_f} },
+      notes: so["memo"]&.strip.presence
+    }
+  end
+
+  def send_import_notifications(results_by_seller)
+    results_by_seller.each do |seller_code, orders_data|
+      seller = Seller.find_by(seller_code: seller_code)
+      next unless seller&.user&.send_notifications?
+      QuickbooksImportMailer.with(seller: seller, orders_data: orders_data)
+        .seller_orders_loaded.deliver_later
+    end
+
+    User.where(role: :admin).find_each do |admin|
+      next unless admin.send_notifications?
+      QuickbooksImportMailer.with(admin: admin, results_by_seller: results_by_seller)
+        .admin_orders_loaded.deliver_later
     end
   end
 
