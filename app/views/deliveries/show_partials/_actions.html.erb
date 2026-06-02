@@ -29,26 +29,6 @@
     <% end %>
   <% else %>
     <%# ── FLUJO NORMAL ── %>
-    <%# Confirmar Productos %>
-    <% if can_edit && delivery.delivery_items.pending.any? %>
-      <%= button_to confirm_all_items_delivery_path(delivery),
-            method: :patch,
-            class: "btn btn-sm btn-primary d-inline-flex align-items-center gap-2 px-3 shadow-sm",
-            data: { turbo_confirm: "¿Confirmar todos los productos?" } do %>
-        <i class="bi bi-box-seam"></i>
-        <span>Confirmar Productos</span>
-      <% end %>
-    <% end %>
-    <%# Marcar como Entregada %>
-    <% if can_edit && !delivery.delivered? && !delivery.cancelled? && !delivery.archived? && !delivery.rescheduled? %>
-      <%= button_to mark_as_delivered_delivery_path(delivery),
-            method: :patch,
-            class: "btn btn-sm btn-success d-inline-flex align-items-center gap-2 px-3 shadow-sm",
-            data: { turbo_confirm: "¿Marcar esta entrega y todos sus productos como entregados?" } do %>
-        <i class="bi bi-check-circle-fill"></i>
-        <span>Marcar como Entregada</span>
-      <% end %>
-    <% end %>
     <%# Reabrir Entrega (solo para admin/gerente cuando está cerrada) %>
     <% if can_reopen && delivery.reopenable? %>
       <%= button_to reopen_delivery_path(delivery),
@@ -80,6 +60,29 @@
         </button>
         <ul class="dropdown-menu dropdown-menu-end shadow border-0 m-0">
           <% if can_edit %>
+            <% if delivery.delivery_items.pending.any? %>
+              <li>
+                <%= button_to confirm_all_items_delivery_path(delivery),
+                      method: :patch,
+                      class: "dropdown-item d-flex align-items-center gap-2 py-2 border-0 bg-transparent text-start",
+                      data: { turbo_confirm: "¿Confirmar todos los productos?" } do %>
+                  <i class="bi bi-box-seam text-primary"></i> Confirmar Productos
+                <% end %>
+              </li>
+            <% end %>
+            <% if !delivery.delivered? && !delivery.cancelled? && !delivery.archived? && !delivery.rescheduled? %>
+              <li>
+                <%= button_to mark_as_delivered_delivery_path(delivery),
+                      method: :patch,
+                      class: "dropdown-item d-flex align-items-center gap-2 py-2 border-0 bg-transparent text-start",
+                      data: { turbo_confirm: "¿Marcar esta entrega y todos sus productos como entregados?" } do %>
+                  <i class="bi bi-check-circle-fill text-success"></i> Marcar como Entregada
+                <% end %>
+              </li>
+            <% end %>
+            <% if delivery.delivery_items.pending.any? || (!delivery.delivered? && !delivery.cancelled? && !delivery.archived? && !delivery.rescheduled?) %>
+              <li><hr class="dropdown-divider"></li>
+            <% end %>
             <li>
               <%= link_to edit_delivery_path(delivery),
                     class: "dropdown-item d-flex align-items-center gap-2 py-2",

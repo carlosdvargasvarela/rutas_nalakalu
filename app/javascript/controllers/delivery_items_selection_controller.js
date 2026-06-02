@@ -86,6 +86,14 @@ export default class extends Controller {
     this._submitBulkAction(btn.dataset.url, btn.dataset.deliveryId, ids);
   }
 
+  bulkDeconfirm(event) {
+    const ids = this._selectedIds();
+    if (ids.length === 0) return;
+    if (!confirm(`¿Desconfirmar ${ids.length} producto(s) seleccionado(s)?`)) return;
+    const btn = event.currentTarget;
+    this._submitBulkAction(btn.dataset.url, btn.dataset.deliveryId, ids);
+  }
+
   bulkCancel(event) {
     const ids = this._selectedIds();
     if (ids.length === 0) return;

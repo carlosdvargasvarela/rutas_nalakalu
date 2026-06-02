@@ -187,6 +187,25 @@ class DeliveryItemsController < ApplicationController
     render layout: false
   end
 
+  def bulk_deconfirm
+    authorize DeliveryItem, :confirm?
+    delivery = Delivery.find(params[:delivery_id])
+
+    return render_bulk_locked(delivery) if delivery.bulk_locked?
+
+    items = delivery.delivery_items.bulk_deconfirmable
+    items = items.where(id: params[:item_ids].to_s.split(",").map(&:strip)) if params[:item_ids].present?
+    items.each do |item|
+      DeliveryItems::StatusUpdater.new(
+        delivery_item: item,
+        new_status: :pending,
+        current_user: current_user
+      ).call
+    end
+
+    respond_with_delivery_update(delivery.reload, notice: "#{items.count} producto(s) desconfirmado(s).")
+  end
+
   def bulk_cancel
     authorize DeliveryItem, :confirm?
     delivery = Delivery.find(params[:delivery_id])

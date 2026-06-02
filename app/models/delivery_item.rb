@@ -41,6 +41,7 @@ class DeliveryItem < ApplicationRecord
   scope :missing_items, -> { where(load_status: :missing) }
   scope :bulk_actionable, -> { where.not(status: %i[delivered rescheduled cancelled failed]) }
   scope :bulk_confirmable, -> { where(status: :pending) }
+  scope :bulk_deconfirmable, -> { where(status: :confirmed) }
   scope :bulk_deliverable, -> { where(status: %i[pending confirmed in_plan in_route loaded_on_truck]) }
   scope :bulk_cancellable, -> { where(status: %i[pending confirmed in_plan]) }
   scope :bulk_reschedulable, -> { where(status: %i[pending confirmed in_plan]) }

@@ -10,6 +10,9 @@ module DeliveryItems
       validate_can_update!
 
       case new_status
+      when :pending
+        delivery_item.update!(status: :pending)
+        record_event("item_deconfirmed")
       when :confirmed
         delivery_item.update!(status: :confirmed)
         record_event("item_confirmed")

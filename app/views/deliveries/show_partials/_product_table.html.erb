@@ -31,6 +31,16 @@
           <i class="bi bi-check2-all me-1"></i>
           Confirmar
         </button>
+        <%# Desconfirmar bulk %>
+        <button class="btn btn-sm btn-outline-secondary shadow-sm px-3"
+                data-delivery-items-selection-target="bulkButton"
+                data-action="click->delivery-items-selection#bulkDeconfirm"
+                data-url="<%= bulk_deconfirm_delivery_items_path %>"
+                data-delivery-id="<%= delivery.id %>"
+                disabled>
+          <i class="bi bi-arrow-counterclockwise me-1"></i>
+          Desconfirmar
+        </button>
         <%# Entregar bulk %>
         <button class="btn btn-sm btn-success shadow-sm border-0 px-3"
                 data-delivery-items-selection-target="bulkButton"

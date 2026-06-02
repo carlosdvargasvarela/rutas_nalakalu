@@ -143,6 +143,7 @@ Rails.application.routes.draw do
     collection do
       patch :bulk_confirm
       patch :bulk_deliver
+      patch :bulk_deconfirm
       patch :bulk_cancel
       patch :bulk_reschedule
       patch :bulk_add_notes
