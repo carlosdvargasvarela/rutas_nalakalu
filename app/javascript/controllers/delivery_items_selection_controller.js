@@ -1,5 +1,6 @@
 // app/javascript/controllers/delivery_items_selection_controller.js
 import { Controller } from "@hotwired/stimulus";
+import { confirmDialog } from "confirm_dialog";
 
 export default class extends Controller {
   static targets = ["checkbox", "bulkButton", "count"];
@@ -70,35 +71,35 @@ export default class extends Controller {
 
   // ─── Acciones bulk directas ───────────────────────────────────────────────────
 
-  bulkConfirm(event) {
+  async bulkConfirm(event) {
+    const btn = event.currentTarget;
     const ids = this._selectedIds();
     if (ids.length === 0) return;
-    if (!confirm(`¿Confirmar ${ids.length} producto(s) seleccionado(s)?`)) return;
-    const btn = event.currentTarget;
+    if (!await confirmDialog(`¿Confirmar ${ids.length} producto(s) seleccionado(s)?`)) return;
     this._submitBulkAction(btn.dataset.url, btn.dataset.deliveryId, ids);
   }
 
-  bulkDeliver(event) {
+  async bulkDeliver(event) {
+    const btn = event.currentTarget;
     const ids = this._selectedIds();
     if (ids.length === 0) return;
-    if (!confirm(`¿Marcar ${ids.length} producto(s) como entregado(s)?`)) return;
-    const btn = event.currentTarget;
+    if (!await confirmDialog(`¿Marcar ${ids.length} producto(s) como entregado(s)?`)) return;
     this._submitBulkAction(btn.dataset.url, btn.dataset.deliveryId, ids);
   }
 
-  bulkDeconfirm(event) {
+  async bulkDeconfirm(event) {
+    const btn = event.currentTarget;
     const ids = this._selectedIds();
     if (ids.length === 0) return;
-    if (!confirm(`¿Desconfirmar ${ids.length} producto(s) seleccionado(s)?`)) return;
-    const btn = event.currentTarget;
+    if (!await confirmDialog(`¿Desconfirmar ${ids.length} producto(s) seleccionado(s)?`, { danger: true })) return;
     this._submitBulkAction(btn.dataset.url, btn.dataset.deliveryId, ids);
   }
 
-  bulkCancel(event) {
+  async bulkCancel(event) {
+    const btn = event.currentTarget;
     const ids = this._selectedIds();
     if (ids.length === 0) return;
-    if (!confirm(`¿Cancelar ${ids.length} producto(s) seleccionado(s)?`)) return;
-    const btn = event.currentTarget;
+    if (!await confirmDialog(`¿Cancelar ${ids.length} producto(s) seleccionado(s)?`, { danger: true })) return;
     this._submitBulkAction(btn.dataset.url, btn.dataset.deliveryId, ids);
   }
 

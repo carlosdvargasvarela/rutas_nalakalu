@@ -4,62 +4,67 @@ import { Controller } from "@hotwired/stimulus";
 export default class extends Controller {
   static values = {
     message: String,
-    type: String, // success, error, warning, info
-    duration: { type: Number, default: 3000 },
+    type: { type: String, default: "info" },
+    duration: { type: Number, default: 4000 },
   };
 
   connect() {
-    this.show();
+    if (this.messageValue) this.show();
   }
 
   show() {
-    // Crear toast element
-    const toast = this.createToast();
-    document.body.appendChild(toast);
+    const container = this._getOrCreateContainer();
+    const toast = this._createToast();
+    container.appendChild(toast);
 
-    // Mostrar con animación
-    setTimeout(() => toast.classList.add("show"), 100);
+    requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add("show")));
 
-    // Auto-ocultar
-    setTimeout(() => this.hide(toast), this.durationValue);
+    if (this.durationValue > 0) {
+      setTimeout(() => this._hide(toast), this.durationValue);
+    }
   }
 
-  createToast() {
+  close(event) {
+    const toast = event.currentTarget.closest(".toast-notification");
+    if (toast) this._hide(toast);
+  }
+
+  _getOrCreateContainer() {
+    let container = document.getElementById("toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "toast-container";
+      document.body.appendChild(container);
+    }
+    return container;
+  }
+
+  _createToast() {
     const toast = document.createElement("div");
     toast.className = `toast-notification toast-${this.typeValue}`;
-
-    const icon = this.getIcon(this.typeValue);
-
     toast.innerHTML = `
       <div class="toast-content">
-        <i class="bi ${icon} me-2"></i>
-        <span>${this.messageValue}</span>
+        <i class="bi ${this._icon()} toast-icon"></i>
+        <span class="toast-message">${this.messageValue}</span>
       </div>
       <button type="button" class="toast-close" data-action="click->toast#close">
         <i class="bi bi-x-lg"></i>
       </button>
     `;
-
     return toast;
   }
 
-  getIcon(type) {
-    const icons = {
+  _icon() {
+    return {
       success: "bi-check-circle-fill",
-      error: "bi-exclamation-circle-fill",
+      error:   "bi-exclamation-circle-fill",
       warning: "bi-exclamation-triangle-fill",
-      info: "bi-info-circle-fill",
-    };
-    return icons[type] || icons.info;
+      info:    "bi-info-circle-fill",
+    }[this.typeValue] || "bi-info-circle-fill";
   }
 
-  hide(toast) {
+  _hide(toast) {
     toast.classList.remove("show");
     setTimeout(() => toast.remove(), 300);
-  }
-
-  close(event) {
-    const toast = event.currentTarget.closest(".toast-notification");
-    this.hide(toast);
   }
 }

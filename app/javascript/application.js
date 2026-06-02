@@ -2,6 +2,9 @@
 import "@hotwired/turbo-rails"
 import "controllers"
 import "channels"
+import { confirmDialog } from "confirm_dialog"
+
+Turbo.config.forms.confirm = (message) => confirmDialog(message, { danger: true })
 
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker

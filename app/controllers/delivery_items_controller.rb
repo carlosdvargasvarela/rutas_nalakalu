@@ -132,6 +132,7 @@ class DeliveryItemsController < ApplicationController
 
     items = delivery.delivery_items.bulk_confirmable
     items = items.where(id: params[:item_ids].to_s.split(",").map(&:strip)) if params[:item_ids].present?
+    count = items.count
     items.each do |item|
       DeliveryItems::StatusUpdater.new(
         delivery_item: item,
@@ -140,7 +141,7 @@ class DeliveryItemsController < ApplicationController
       ).call
     end
 
-    respond_with_delivery_update(delivery.reload, notice: "#{items.count} producto(s) confirmado(s).")
+    respond_with_delivery_update(delivery.reload, notice: "#{count} producto(s) confirmado(s).")
   end
 
   def bulk_deliver
@@ -151,6 +152,7 @@ class DeliveryItemsController < ApplicationController
 
     items = delivery.delivery_items.bulk_deliverable
     items = items.where(id: params[:item_ids].to_s.split(",").map(&:strip)) if params[:item_ids].present?
+    count = items.count
     items.each do |item|
       DeliveryItems::StatusUpdater.new(
         delivery_item: item,
@@ -159,7 +161,7 @@ class DeliveryItemsController < ApplicationController
       ).call
     end
 
-    respond_with_delivery_update(delivery.reload, notice: "#{items.count} producto(s) marcado(s) como entregado(s).")
+    respond_with_delivery_update(delivery.reload, notice: "#{count} producto(s) marcado(s) como entregado(s).")
   end
 
   def bulk_reschedule_form
@@ -195,6 +197,7 @@ class DeliveryItemsController < ApplicationController
 
     items = delivery.delivery_items.bulk_deconfirmable
     items = items.where(id: params[:item_ids].to_s.split(",").map(&:strip)) if params[:item_ids].present?
+    count = items.count
     items.each do |item|
       DeliveryItems::StatusUpdater.new(
         delivery_item: item,
@@ -203,7 +206,7 @@ class DeliveryItemsController < ApplicationController
       ).call
     end
 
-    respond_with_delivery_update(delivery.reload, notice: "#{items.count} producto(s) desconfirmado(s).")
+    respond_with_delivery_update(delivery.reload, notice: "#{count} producto(s) desconfirmado(s).")
   end
 
   def bulk_cancel
@@ -214,6 +217,7 @@ class DeliveryItemsController < ApplicationController
 
     items = delivery.delivery_items.bulk_cancellable
     items = items.where(id: params[:item_ids].to_s.split(",").map(&:strip)) if params[:item_ids].present?
+    count = items.count
     items.each do |item|
       DeliveryItems::StatusUpdater.new(
         delivery_item: item,
@@ -222,7 +226,7 @@ class DeliveryItemsController < ApplicationController
       ).call
     end
 
-    respond_with_delivery_update(delivery.reload, notice: "#{items.count} producto(s) cancelado(s).")
+    respond_with_delivery_update(delivery.reload, notice: "#{count} producto(s) cancelado(s).")
   end
 
   def bulk_reschedule
