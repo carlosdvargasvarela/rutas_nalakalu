@@ -47,7 +47,8 @@
     </div>
   </div>
   <%# ═══ ALERTAS CONTEXTUALES ═══ %>
-  <% if delivery.rescheduled? || delivery.address_error? || delivery.requires_sala_pickup? || delivery.requires_service_case_action? %>
+  <% sc_alert = delivery.requires_service_case_action? || (delivery.service_case? && !delivery.bulk_locked?) %>
+  <% if delivery.rescheduled? || delivery.address_error? || delivery.requires_sala_pickup? || sc_alert %>
     <div class="mt-4">
       <% if delivery.requires_sala_pickup? %>
         <div class="alert alert-danger border-0 shadow-sm d-flex justify-content-between align-items-center mb-2 px-3 py-2">
@@ -64,10 +65,17 @@
           <% end %>
         </div>
       <% end %>
-      <% if delivery.requires_service_case_action? %>
+      <% if sc_alert %>
+        <% sc_labels = { "pickup_with_return" => "Recolección + devolución", "only_pickup" => "Recolección", "return_delivery" => "Devolución", "onsite_repair" => "Reparación en sitio" } %>
         <div class="alert alert-warning border-0 shadow-sm d-flex justify-content-between align-items-center mb-2 px-3 py-2">
           <div class="small fw-medium">
-            <i class="bi bi-tools me-2"></i>Contiene productos de caso de servicio
+            <i class="bi bi-headset me-2"></i>
+            <% if delivery.service_case? %>
+              Caso de servicio —
+              <strong><%= sc_labels[delivery.delivery_type] || delivery.delivery_type.to_s.humanize %></strong>
+            <% else %>
+              Contiene productos de <strong>caso de servicio</strong>
+            <% end %>
           </div>
           <% if can_edit %>
             <%= button_to service_case_form_delivery_path(delivery),
@@ -75,7 +83,7 @@
                   form: { data: { turbo_frame: "modal" } },
                   class: "btn btn-sm btn-warning text-uppercase fw-bold",
                   style: "font-size: 0.65rem;" do %>
-              Gestionar
+              <i class="bi bi-headset me-1"></i>Gestionar caso
             <% end %>
           <% end %>
         </div>

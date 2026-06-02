@@ -1,8 +1,11 @@
 # app/services/deliveries/service_case_detector.rb
 module Deliveries
   class ServiceCaseDetector
-    KEYWORDS = [
-      "caso de servicio"
+    KEYWORDS = %w[
+      caso\ de\ servicio
+      caso\ servicio
+      recoleccion
+      devolucion
     ].freeze
 
     TERMINAL_STATUSES = %w[rescheduled cancelled archived delivered].freeze
@@ -17,7 +20,7 @@ module Deliveries
 
         name = normalize(item.order_item.product)
 
-        name.include?("caso de servicio") || item.service_case?
+        item.service_case? || KEYWORDS.any? { |kw| name.include?(kw) }
       end
     end
 

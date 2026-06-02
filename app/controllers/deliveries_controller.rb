@@ -622,18 +622,24 @@ class DeliveriesController < ApplicationController
   def create_service_case_from_workspace
     authorize @delivery, :edit?
 
-    result = Deliveries::ServiceCaseFromWorkspaceCreator.new(
-      original_delivery: @delivery,
-      params: params,
-      current_user: current_user
-    ).call
+    notice_msg = if params.dig(:delivery, :mode) == "devolucion"
+      register_devolucion_note
+      "Nota de devolución registrada correctamente."
+    else
+      Deliveries::ServiceCaseFromWorkspaceCreator.new(
+        original_delivery: @delivery,
+        params: params,
+        current_user: current_user
+      ).call
+      "Devolución agendada correctamente."
+    end
 
     respond_to do |format|
       format.turbo_stream do
         load_delivery_for_panel
         set_delivery_panel_data
 
-        flash.now[:notice] = "Caso de servicio creado correctamente."
+        flash.now[:notice] = notice_msg
 
         render turbo_stream: [
           turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
@@ -1074,6 +1080,19 @@ class DeliveriesController < ApplicationController
 
     flash.now[:alert] = "Error al actualizar la entrega: #{e.message}"
     render :edit, status: :unprocessable_entity
+  end
+
+  def register_devolucion_note
+    note = params.dig(:delivery, :delivery_notes).presence || "Devolución al cliente"
+    existing = @delivery.delivery_notes.to_s.strip
+    new_notes = existing.present? ? "#{existing}\n#{note}" : note
+    @delivery.update!(delivery_notes: new_notes)
+    DeliveryEvent.record(
+      delivery: @delivery,
+      action: "service_case_noted",
+      actor: current_user,
+      payload: { context: "devolucion", note: note }
+    )
   end
 
   def handle_service_case_error(e)
