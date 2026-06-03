@@ -3,7 +3,11 @@
   <% border_class = if delivery.address_error?
        "border-start border-3 border-danger"
      elsif delivery.warehousing?
-       "border-start border-3"
+       "border-start border-3 border-purple"
+     elsif delivery.showroom?
+       "border-start border-3 border-info"
+     elsif delivery.internal_delivery?
+       "border-start border-3 border-warning"
      else
        "border-start border-3 border-primary"
      end %>
@@ -70,6 +74,15 @@
           <%= delivery.order&.seller&.name&.truncate(20) || "S/V" %>
         </span>
         <div class="d-flex gap-1 flex-wrap justify-content-end">
+          <% if delivery.showroom? %>
+            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill badge-xxs">
+              <i class="bi bi-shop me-1"></i>Showroom
+            </span>
+          <% elsif delivery.internal_delivery? %>
+            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill badge-xxs">
+              <i class="bi bi-arrow-left-right me-1"></i>Mandado
+            </span>
+          <% end %>
           <% if delivery.delivery_items.pending.any? %>
             <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill badge-xxs">
               <i class="bi bi-clock me-1"></i><%= delivery.delivery_items.pending.count %> pend.

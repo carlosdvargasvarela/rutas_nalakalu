@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_17_120000) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_03_120000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -100,6 +100,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_17_120000) do
     t.date "warehousing_until"
     t.string "condominio_number"
     t.string "casa_number"
+    t.integer "source_showroom_id"
+    t.integer "destination_showroom_id"
     t.index ["approved"], name: "index_deliveries_on_approved"
     t.index ["archived"], name: "index_deliveries_on_archived"
     t.index ["confirmed_by_vendor"], name: "index_deliveries_on_confirmed_by_vendor"
@@ -107,8 +109,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_17_120000) do
     t.index ["delivery_address_id"], name: "index_deliveries_on_delivery_address_id"
     t.index ["delivery_date"], name: "index_deliveries_on_delivery_date"
     t.index ["delivery_type"], name: "index_deliveries_on_delivery_type"
+    t.index ["destination_showroom_id"], name: "index_deliveries_on_destination_showroom_id"
     t.index ["load_status"], name: "index_deliveries_on_load_status"
     t.index ["order_id"], name: "index_deliveries_on_order_id"
+    t.index ["source_showroom_id"], name: "index_deliveries_on_source_showroom_id"
     t.index ["tracking_token"], name: "index_deliveries_on_tracking_token", unique: true
     t.index ["warehousing_until"], name: "index_deliveries_on_warehousing_until"
   end
@@ -336,6 +340,21 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_17_120000) do
     t.index ["user_id"], name: "index_sellers_on_user_id"
   end
 
+  create_table "showrooms", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "code", null: false
+    t.integer "delivery_address_id"
+    t.text "order_number_prefixes", default: "[]", null: false
+    t.text "order_number_keywords", default: "[]", null: false
+    t.text "inter_sala_keywords", default: "[]", null: false
+    t.text "product_keywords", default: "[]", null: false
+    t.boolean "is_main", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_showrooms_on_code", unique: true
+    t.index ["delivery_address_id"], name: "index_showrooms_on_delivery_address_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -379,6 +398,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_17_120000) do
   add_foreign_key "crew_members", "users"
   add_foreign_key "deliveries", "delivery_addresses"
   add_foreign_key "deliveries", "orders"
+  add_foreign_key "deliveries", "showrooms", column: "destination_showroom_id"
+  add_foreign_key "deliveries", "showrooms", column: "source_showroom_id"
   add_foreign_key "delivery_addresses", "clients"
   add_foreign_key "delivery_events", "deliveries", on_delete: :cascade
   add_foreign_key "delivery_events", "users", column: "actor_id", on_delete: :nullify
@@ -398,4 +419,5 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_17_120000) do
   add_foreign_key "orders", "clients"
   add_foreign_key "orders", "sellers"
   add_foreign_key "sellers", "users"
+  add_foreign_key "showrooms", "delivery_addresses"
 end
