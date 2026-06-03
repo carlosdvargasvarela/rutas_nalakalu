@@ -26,6 +26,31 @@
       <i class="bi bi-calendar-check me-1"></i> Planes de Entrega
     <% end %>
   </li>
+
+  <% if policy(Delivery).new_internal_delivery? || policy(Delivery).new_showroom_movement? %>
+    <li class="nav-item dropdown">
+      <a class="nav-link dropdown-toggle" href="#" role="button"
+         data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-plus-circle me-1"></i> Nueva entrega
+      </a>
+      <ul class="dropdown-menu">
+        <% if policy(Delivery).new_internal_delivery? %>
+          <li>
+            <%= link_to new_internal_delivery_deliveries_path, class: "dropdown-item" do %>
+              <i class="bi bi-clipboard-check me-2 text-success"></i>Mandado interno
+            <% end %>
+          </li>
+        <% end %>
+        <% if policy(Delivery).new_showroom_movement? %>
+          <li>
+            <%= link_to new_showroom_movement_deliveries_path, class: "dropdown-item" do %>
+              <i class="bi bi-shop-window me-2 text-primary"></i>Movimiento de showroom
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </li>
+  <% end %>
   <li class="nav-item">
     <%= link_to "https://na-lakalalu.gitbook.io/na-lakalalu-docs",
                 class: "nav-link",
@@ -98,6 +123,11 @@
             <% end %>
           </li>
         <% end %>
+        <li>
+          <%= link_to admin_showrooms_path, class: "dropdown-item" do %>
+            <i class="bi bi-shop-window me-2"></i> Showrooms
+          <% end %>
+        </li>
         <li>
           <%= link_to admin_maintenance_window_path,
                       class: "dropdown-item #{'text-danger fw-semibold' if MaintenanceWindow.active?}" do %>
