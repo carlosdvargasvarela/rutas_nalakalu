@@ -1,0 +1,15 @@
+<div class="d-flex align-items-center mb-4">
+  <i class="bi bi-shop-window fs-2 text-primary me-3"></i>
+  <div>
+    <h1 class="h3 mb-0">Editar Showroom: <%= @showroom.name %></h1>
+    <p class="text-muted small mb-0">
+      <span class="badge bg-secondary font-monospace"><%= @showroom.code %></span>
+    </p>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="card-body">
+    <%= render "form", showroom: @showroom, addresses: @addresses %>
+  </div>
+</div>

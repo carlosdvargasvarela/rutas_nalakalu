@@ -1,0 +1,73 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-0"><i class="bi bi-shop me-2 text-primary"></i>Showrooms</h1>
+    <p class="text-muted small mb-0">Configura salas y sus reglas de detección automática</p>
+  </div>
+  <%= link_to new_admin_showroom_path, class: "btn btn-primary" do %>
+    <i class="bi bi-plus-circle me-1"></i>Nuevo showroom
+  <% end %>
+</div>
+
+<% if @showrooms.empty? %>
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-shop fs-1 d-block mb-3 opacity-25"></i>
+    <p>No hay showrooms configurados.</p>
+    <%= link_to "Crear el primero", new_admin_showroom_path, class: "btn btn-outline-primary" %>
+  </div>
+<% else %>
+  <div class="card shadow-sm border-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Nombre</th>
+            <th>Código</th>
+            <th>Dirección</th>
+            <th>Sala principal</th>
+            <th>Prefijos pedido</th>
+            <th>Palabras clave</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @showrooms.each do |showroom| %>
+            <tr>
+              <td class="fw-semibold"><%= showroom.name %></td>
+              <td><span class="badge bg-secondary font-monospace"><%= showroom.code %></span></td>
+              <td class="small text-muted"><%= showroom.address_display.truncate(50) %></td>
+              <td>
+                <% if showroom.is_main? %>
+                  <span class="badge bg-success"><i class="bi bi-star-fill me-1"></i>Principal</span>
+                <% end %>
+              </td>
+              <td>
+                <% showroom.order_number_prefixes.each do |p| %>
+                  <span class="badge bg-light text-dark border font-monospace"><%= p %></span>
+                <% end %>
+              </td>
+              <td>
+                <% all_kw = showroom.order_number_keywords + showroom.inter_sala_keywords + showroom.product_keywords %>
+                <% all_kw.first(4).each do |kw| %>
+                  <span class="badge bg-light text-secondary border small"><%= kw %></span>
+                <% end %>
+                <% if all_kw.size > 4 %>
+                  <span class="text-muted small">+<%= all_kw.size - 4 %> más</span>
+                <% end %>
+              </td>
+              <td class="text-end">
+                <%= link_to edit_admin_showroom_path(showroom), class: "btn btn-sm btn-outline-secondary me-1" do %>
+                  <i class="bi bi-pencil"></i>
+                <% end %>
+                <%= button_to admin_showroom_path(showroom), method: :delete,
+                    class: "btn btn-sm btn-outline-danger",
+                    form: { data: { turbo_confirm: "¿Eliminar el showroom '#{showroom.name}'?" } } do %>
+                  <i class="bi bi-trash"></i>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>

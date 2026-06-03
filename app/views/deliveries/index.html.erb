@@ -31,6 +31,9 @@
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0">
                   <% if policy(Delivery).create? && !current_user&.seller? %>
                     <li><%= link_to "Mandado interno", new_internal_delivery_deliveries_path, class: "dropdown-item" %></li>
+                    <% if policy(Delivery).new_showroom_movement? %>
+                      <li><%= link_to "Movimiento de showroom", new_showroom_movement_deliveries_path, class: "dropdown-item" %></li>
+                    <% end %>
                     <li><%= link_to "Caso de servicio", new_service_case_deliveries_path, class: "dropdown-item" %></li>
                     <li><hr class="dropdown-divider"></li>
                   <% end %>

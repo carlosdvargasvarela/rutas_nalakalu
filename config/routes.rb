@@ -71,6 +71,10 @@ Rails.application.routes.draw do
       get :new_internal_delivery
       post :create_internal_delivery
 
+      # Movimientos de showroom
+      get :new_showroom_movement
+      post :create_showroom_movement
+
       # Casos de servicio "nuevos", globales
       get :new_service_case
       post :create_service_case
@@ -222,6 +226,8 @@ Rails.application.routes.draw do
   end
 
   namespace :admin do
+    resources :showrooms, only: [:index, :new, :create, :edit, :update, :destroy]
+
     resources :users, only: [:index, :new, :create, :edit, :update] do
       member do
         post :send_reset_password

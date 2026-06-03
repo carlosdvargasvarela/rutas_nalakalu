@@ -447,6 +447,29 @@ class DeliveriesController < ApplicationController
     handle_internal_error(e)
   end
 
+  def new_showroom_movement
+    @showrooms = Showroom.order(:name)
+    @delivery = Delivery.new(
+      delivery_type: :showroom,
+      status: :scheduled,
+      delivery_date: Date.current
+    )
+    @delivery.delivery_items.build.build_order_item
+    authorize @delivery
+  end
+
+  def create_showroom_movement
+    authorize Delivery
+    @delivery = Deliveries::ShowroomMovementCreator.new(params: params, current_user: current_user).call
+    redirect_to deliveries_path, notice: "Movimiento de showroom registrado correctamente."
+  rescue => e
+    @showrooms = Showroom.order(:name)
+    @delivery ||= Delivery.new(delivery_type: :showroom, status: :scheduled, delivery_date: Date.current)
+    @delivery.delivery_items.build.build_order_item if @delivery.delivery_items.empty?
+    flash.now[:alert] = "Error al registrar el movimiento: #{e.message}"
+    render :new_showroom_movement, status: :unprocessable_entity
+  end
+
   def new_service_case
     @delivery = Delivery.new(
       delivery_type: :pickup_with_return,

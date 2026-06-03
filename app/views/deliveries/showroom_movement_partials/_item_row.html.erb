@@ -1,0 +1,28 @@
+<div class="item-row border rounded p-3 mb-2 bg-light position-relative" data-item-row>
+  <% if index > 0 %>
+    <button type="button" class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2"
+            data-action="click->showroom-movement-form#removeItem">
+      <i class="bi bi-x"></i>
+    </button>
+  <% end %>
+  <div class="row g-2">
+    <div class="col-md-8">
+      <label class="form-label fw-bold small">Producto / descripción <span class="text-danger">*</span></label>
+      <%= di.simple_fields_for :order_item do |oi| %>
+        <%= oi.input :product, label: false,
+            as: :string,
+            input_html: {
+              class: "form-control",
+              placeholder: "Ej: Mesa de centro modelo X"
+            } %>
+        <%= oi.hidden_field :quantity, value: 1 %>
+      <% end %>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label fw-bold small">Cantidad</label>
+      <%= di.input :quantity_delivered, label: false,
+          as: :integer,
+          input_html: { class: "form-control", value: 1, min: 1 } %>
+    </div>
+  </div>
+</div>

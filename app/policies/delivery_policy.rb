@@ -95,6 +95,14 @@ class DeliveryPolicy < ApplicationPolicy
     new_service_case?
   end
 
+  def new_showroom_movement?
+    user.admin? || user.logistics? || user.production_manager?
+  end
+
+  def create_showroom_movement?
+    new_showroom_movement?
+  end
+
   # =============================================================================
   # PERMISOS DE REASIGNACIÓN
   # =============================================================================

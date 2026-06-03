@@ -1,0 +1,170 @@
+<%= simple_form_for delivery,
+      url: create_showroom_movement_deliveries_path,
+      html: { data: { controller: "showroom-movement-form" } } do |f| %>
+
+  <% if delivery.errors.any? %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <h4 class="alert-heading"><i class="bi bi-exclamation-triangle me-2"></i>Errores:</h4>
+      <ul class="mb-0">
+        <% delivery.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <% end %>
+
+  <%# SALAS: origen y destino %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+      <i class="bi bi-arrow-left-right me-2"></i><strong>Origen y Destino</strong>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 align-items-start">
+        <div class="col-md-5">
+          <label class="form-label fw-bold">
+            <i class="bi bi-box-arrow-up-right me-1 text-danger"></i>Sala de origen <span class="text-danger">*</span>
+          </label>
+          <select name="source_showroom_id" class="form-select form-select-lg" required
+                  data-action="change->showroom-movement-form#validateShowrooms">
+            <option value="">— Seleccionar sala de origen —</option>
+            <% showrooms.each do |sr| %>
+              <option value="<%= sr.id %>"><%= sr.name %></option>
+            <% end %>
+          </select>
+          <div class="form-text">De dónde sale el stock</div>
+        </div>
+
+        <div class="col-md-2 text-center pt-4 mt-2">
+          <i class="bi bi-arrow-right fs-2 text-primary"></i>
+        </div>
+
+        <div class="col-md-5">
+          <label class="form-label fw-bold">
+            <i class="bi bi-box-arrow-in-down-right me-1 text-success"></i>Sala de destino <span class="text-danger">*</span>
+          </label>
+          <select name="destination_showroom_id" class="form-select form-select-lg" required
+                  data-action="change->showroom-movement-form#validateShowrooms"
+                  data-showroom-movement-form-target="destinationSelect">
+            <option value="">— Seleccionar sala de destino —</option>
+            <% showrooms.each do |sr| %>
+              <option value="<%= sr.id %>"><%= sr.name %></option>
+            <% end %>
+          </select>
+          <div class="form-text">A dónde llega el stock · La dirección se toma automáticamente</div>
+        </div>
+      </div>
+
+      <div class="alert alert-warning d-none mt-3 mb-0" data-showroom-movement-form-target="sameShowroomAlert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        El origen y destino no pueden ser la misma sala.
+      </div>
+    </div>
+  </div>
+
+  <%# PRODUCTOS (obligatorios) %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+      <i class="bi bi-box-seam me-2 text-primary"></i><strong>Productos a mover</strong>
+      <span class="text-danger ms-1">*</span>
+    </div>
+    <div class="card-body">
+      <div id="movement-items-container">
+        <%= f.simple_fields_for :delivery_items do |di| %>
+          <%= render "deliveries/showroom_movement_partials/item_row", di: di, index: 0 %>
+        <% end %>
+      </div>
+
+      <button type="button" class="btn btn-sm btn-outline-primary mt-2"
+              data-action="click->showroom-movement-form#addItem">
+        <i class="bi bi-plus-circle me-1"></i>Agregar producto
+      </button>
+
+      <%# Template oculto para JS %>
+      <template data-showroom-movement-form-target="itemTemplate">
+        <div class="item-row border rounded p-3 mb-2 bg-light position-relative" data-item-row>
+          <button type="button" class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2"
+                  data-action="click->showroom-movement-form#removeItem">
+            <i class="bi bi-x"></i>
+          </button>
+          <div class="row g-2">
+            <div class="col-md-8">
+              <label class="form-label fw-bold small">Producto / descripción</label>
+              <input type="text" name="delivery[delivery_items_attributes][__INDEX__][order_item_attributes][product]"
+                     class="form-control"
+                     placeholder="Ej: Mesa de centro modelo X, 5 unidades"
+                     required>
+              <input type="hidden" name="delivery[delivery_items_attributes][__INDEX__][order_item_attributes][quantity]" value="1">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold small">Cantidad</label>
+              <input type="number" name="delivery[delivery_items_attributes][__INDEX__][quantity_delivered]"
+                     class="form-control" value="1" min="1" required>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <%# FECHA Y HORARIO %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+      <i class="bi bi-calendar-event me-2 text-success"></i><strong>Fecha del movimiento</strong>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= f.label :delivery_date, "Fecha", class: "form-label fw-bold" %>
+          <%= f.date_field :delivery_date, class: "form-control form-control-lg", required: true %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :delivery_time_preference, "Horario preferido", class: "form-label fw-bold" %>
+          <%= f.select :delivery_time_preference,
+              [["Mañana (8:00 AM - 12:00 PM)", "Mañana"],
+               ["Tarde (12:00 PM - 5:00 PM)", "Tarde"],
+               ["Todo el día", "Todo el día"]],
+              { prompt: "Seleccione horario" },
+              class: "form-select form-select-lg" %>
+        </div>
+        <div class="col-12">
+          <%= f.label :delivery_notes, "Notas adicionales", class: "form-label fw-bold" %>
+          <%= f.text_area :delivery_notes,
+              class: "form-control",
+              rows: 2,
+              placeholder: "Instrucciones especiales para este movimiento..." %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# RESPONSABLE %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+      <i class="bi bi-person-badge me-2 text-success"></i><strong>Responsable en destino</strong>
+      <span class="text-muted small ms-2">(opcional)</span>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= f.input :contact_name, label: "Nombre",
+              input_html: { class: "form-control", placeholder: "Encargado de sala" },
+              label_html: { class: "form-label fw-bold" } %>
+        </div>
+        <div class="col-md-6">
+          <%= f.input :contact_phone, label: "Teléfono",
+              input_html: { class: "form-control", placeholder: "8888-8888" },
+              label_html: { class: "form-label fw-bold" } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mt-4">
+    <%= link_to "Cancelar", deliveries_path, class: "btn btn-outline-secondary" %>
+    <%= f.submit "Registrar movimiento",
+        class: "btn btn-primary btn-lg px-5",
+        data: { "showroom-movement-form-target": "submitButton" } %>
+  </div>
+
+<% end %>

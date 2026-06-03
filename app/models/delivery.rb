@@ -4,6 +4,8 @@ class Delivery < ApplicationRecord
   has_paper_trail
   belongs_to :order
   belongs_to :delivery_address
+  belongs_to :source_showroom,      class_name: "Showroom", optional: true
+  belongs_to :destination_showroom, class_name: "Showroom", optional: true
   has_many :delivery_items, dependent: :destroy
   has_many :order_items, through: :delivery_items
   has_one :delivery_plan_assignment, dependent: :destroy
@@ -51,7 +53,8 @@ class Delivery < ApplicationRecord
     return_delivery: 2,
     onsite_repair: 3,
     internal_delivery: 4,
-    only_pickup: 5
+    only_pickup: 5,
+    showroom: 6
   }
 
   enum :load_status, {
@@ -223,6 +226,7 @@ class Delivery < ApplicationRecord
     when "onsite_repair" then "Reparación en sitio"
     when "only_pickup" then "Solo retiro del producto (sin entrega posterior)"
     when "internal_delivery" then "Mandado Interno"
+    when "showroom" then "Movimiento de Showroom"
     else delivery_type.to_s.humanize
     end
   end

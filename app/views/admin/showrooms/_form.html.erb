@@ -1,0 +1,93 @@
+<%= simple_form_for [:admin, showroom] do |f| %>
+  <% if showroom.errors.any? %>
+    <div class="alert alert-danger">
+      <ul class="mb-0">
+        <% showroom.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <%= f.input :name, label: "Nombre del showroom",
+          input_html: { class: "form-control", placeholder: "Ej: Showroom Rohrmoser" },
+          label_html: { class: "form-label fw-bold" } %>
+    </div>
+    <div class="col-md-3">
+      <%= f.input :code, label: "Código único",
+          input_html: { class: "form-control text-uppercase font-monospace", placeholder: "Ej: ROHR" },
+          hint: "Solo letras y guiones, se guarda en mayúsculas",
+          label_html: { class: "form-label fw-bold" } %>
+    </div>
+    <div class="col-md-3">
+      <div class="form-check mt-4 pt-2">
+        <%= f.check_box :is_main, class: "form-check-input" %>
+        <%= f.label :is_main, "Sala principal (restock)", class: "form-check-label fw-bold" %>
+        <div class="form-text">Marca si esta es la sala central de restock</div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <label class="form-label fw-bold">Dirección vinculada</label>
+      <select name="showroom[delivery_address_id]" class="form-select" data-controller="tom-select">
+        <option value="">— Sin dirección —</option>
+        <% addresses.each do |addr| %>
+          <option value="<%= addr.id %>" <%= "selected" if showroom.delivery_address_id == addr.id %>>
+            <%= addr.address %><%= " · #{addr.description.truncate(40)}" if addr.description.present? %>
+          </option>
+        <% end %>
+      </select>
+      <div class="form-text">La entrega de un movimiento a esta sala irá a esta dirección</div>
+    </div>
+
+    <div class="col-12"><hr class="my-1"></div>
+    <div class="col-12">
+      <h6 class="text-muted mb-3"><i class="bi bi-funnel me-1"></i>Reglas de detección automática</h6>
+      <p class="small text-muted">Separar valores con comas. La detección es case-insensitive.</p>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label fw-bold">Prefijos de número de pedido</label>
+      <input type="text" name="showroom[order_number_prefixes_raw]"
+             class="form-control font-monospace"
+             value="<%= showroom.order_number_prefixes.join(', ') %>"
+             placeholder="Ej: 2, 3, SHOW-">
+      <div class="form-text">Pedidos que <em>empiecen</em> con estos valores → showroom</div>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label fw-bold">Palabras clave en número de pedido</label>
+      <input type="text" name="showroom[order_number_keywords_raw]"
+             class="form-control"
+             value="<%= showroom.order_number_keywords.join(', ') %>"
+             placeholder="Ej: restock, sala">
+      <div class="form-text">Pedidos que <em>contengan</em> estas palabras → showroom</div>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label fw-bold">Palabras clave de movimientos inter-sala</label>
+      <input type="text" name="showroom[inter_sala_keywords_raw]"
+             class="form-control"
+             value="<%= showroom.inter_sala_keywords.join(', ') %>"
+             placeholder="Ej: entre salas, traslado sala">
+      <div class="form-text">Si aparecen en pedido, dirección o producto → movimiento inter-sala</div>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label fw-bold">Palabras clave en productos</label>
+      <input type="text" name="showroom[product_keywords_raw]"
+             class="form-control"
+             value="<%= showroom.product_keywords.join(', ') %>"
+             placeholder="Ej: stock sala, muestra, exhibición">
+      <div class="form-text">Si aparecen en la descripción de productos → showroom</div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between mt-4">
+    <%= link_to "Cancelar", admin_showrooms_path, class: "btn btn-outline-secondary" %>
+    <%= f.submit showroom.new_record? ? "Crear showroom" : "Guardar cambios",
+        class: "btn btn-primary px-4" %>
+  </div>
+<% end %>
