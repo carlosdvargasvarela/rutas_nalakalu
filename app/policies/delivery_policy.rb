@@ -24,7 +24,7 @@ class DeliveryPolicy < ApplicationPolicy
   end
 
   def create?
-    user.admin? || user.manager? || user.logistics? || user.production_manager? || user.seller?
+    user.admin? || user.manager? || user.logistics? || user.production_manager?
   end
 
   def destroy?
@@ -72,7 +72,7 @@ class DeliveryPolicy < ApplicationPolicy
   # =============================================================================
 
   def new_internal_delivery?
-    user.admin? || user.logistics? || user.production_manager? || user.seller?
+    user.admin? || user.logistics? || user.production_manager?
   end
 
   def create_internal_delivery?
@@ -80,7 +80,7 @@ class DeliveryPolicy < ApplicationPolicy
   end
 
   def new_service_case?
-    user.admin? || user.logistics? || user.production_manager? || user.seller?
+    user.admin? || user.logistics? || user.production_manager?
   end
 
   def create_service_case?
@@ -96,7 +96,7 @@ class DeliveryPolicy < ApplicationPolicy
   end
 
   def new_showroom_movement?
-    user.admin? || user.logistics? || user.production_manager?
+    user.admin? || user.logistics? || user.production_manager? || user.seller?
   end
 
   def create_showroom_movement?

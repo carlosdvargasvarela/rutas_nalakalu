@@ -29,12 +29,16 @@
                   <i class="bi bi-three-dots"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                  <% if policy(Delivery).create? && !current_user&.seller? %>
+                  <% if policy(Delivery).new_internal_delivery? %>
                     <li><%= link_to "Mandado interno", new_internal_delivery_deliveries_path, class: "dropdown-item" %></li>
-                    <% if policy(Delivery).new_showroom_movement? %>
-                      <li><%= link_to "Movimiento de showroom", new_showroom_movement_deliveries_path, class: "dropdown-item" %></li>
-                    <% end %>
+                  <% end %>
+                  <% if policy(Delivery).new_showroom_movement? %>
+                    <li><%= link_to "Movimiento de showroom", new_showroom_movement_deliveries_path, class: "dropdown-item" %></li>
+                  <% end %>
+                  <% if policy(Delivery).new_service_case? %>
                     <li><%= link_to "Caso de servicio", new_service_case_deliveries_path, class: "dropdown-item" %></li>
+                  <% end %>
+                  <% if policy(Delivery).new_internal_delivery? || policy(Delivery).new_showroom_movement? || policy(Delivery).new_service_case? %>
                     <li><hr class="dropdown-divider"></li>
                   <% end %>
                   <li><%= link_to "Exportar Excel", deliveries_path(format: :xlsx, q: params[:q]&.to_unsafe_h), class: "dropdown-item" %></li>
