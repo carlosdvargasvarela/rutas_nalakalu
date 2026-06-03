@@ -58,7 +58,7 @@ module Deliveries
     end
 
     def create_showroom_order(client, seller, source, destination)
-      number = "SHOW-#{source.code}-#{destination.code}-#{Time.current.strftime('%Y%m%d%H%M')}"
+      number = "entre_sala_#{source.code}_#{destination.code}"
       client.orders.create!(
         number: number,
         seller: seller,
