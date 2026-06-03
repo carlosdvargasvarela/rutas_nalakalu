@@ -29,17 +29,98 @@
       </div>
     </div>
 
+    <%# DIRECCIÓN con mapa %>
     <div class="col-12">
-      <label class="form-label fw-bold">Dirección vinculada</label>
-      <select name="showroom[delivery_address_id]" class="form-select" data-controller="tom-select">
-        <option value="">— Sin dirección —</option>
-        <% addresses.each do |addr| %>
-          <option value="<%= addr.id %>" <%= "selected" if showroom.delivery_address_id == addr.id %>>
-            <%= addr.address %><%= " · #{addr.description.truncate(40)}" if addr.description.present? %>
-          </option>
+      <label class="form-label fw-bold">
+        <i class="bi bi-geo-alt-fill me-1 text-primary"></i>Ubicación del showroom
+      </label>
+      <div data-controller="address-autocomplete"
+           data-address-autocomplete-api-key-value="<%= ENV.fetch('GOOGLE_MAPS_API_KEY', '') %>">
+
+        <%# Búsqueda %>
+        <div class="mb-3">
+          <div class="input-group">
+            <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
+            <%= text_field_tag "showroom_address_search",
+                  showroom.delivery_address&.address,
+                  placeholder: "Plus Code, coordenadas o nombre del lugar...",
+                  class: "form-control",
+                  data: {
+                    "address-autocomplete-target": "input",
+                    action: "input->address-autocomplete#handleSmartInput blur->address-autocomplete#handleSmartInput"
+                  } %>
+          </div>
+          <div class="form-text">
+            <i class="bi bi-lightbulb me-1"></i>Pegá <code>9.93,-84.08</code>, un Plus Code o buscá el nombre del lugar
+          </div>
+        </div>
+
+        <%# Mapa %>
+        <div class="mb-3 position-relative">
+          <div data-address-autocomplete-target="map"
+               class="rounded border"
+               style="height: 300px; width: 100%; background: #e9ecef;"></div>
+          <div class="position-absolute bottom-0 start-0 m-2 px-2 py-1 bg-white rounded border small d-flex gap-3"
+               style="z-index: 1000;">
+            <span>
+              <span class="text-muted">Lat:</span>
+              <strong data-address-autocomplete-target="latDisplay" class="text-primary">--</strong>
+            </span>
+            <span>
+              <span class="text-muted">Lng:</span>
+              <strong data-address-autocomplete-target="lngDisplay" class="text-primary">--</strong>
+            </span>
+            <span>
+              <span class="text-muted">Plus:</span>
+              <strong data-address-autocomplete-target="plusDisplay" class="text-success font-monospace">--</strong>
+            </span>
+          </div>
+        </div>
+
+        <%# Dirección detectada %>
+        <div class="mb-3 p-2 bg-light rounded border d-flex align-items-start gap-2">
+          <i class="bi bi-geo-alt-fill text-primary mt-1 small"></i>
+          <div class="small flex-grow-1">
+            <div class="text-muted mb-1">Dirección detectada</div>
+            <div data-address-autocomplete-target="addressDisplay">
+              <% if showroom.delivery_address&.address.present? %>
+                <%= showroom.delivery_address.address %>
+              <% else %>
+                <span class="fst-italic text-muted">Se completará al seleccionar una ubicación</span>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <%# Referencia adicional %>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Referencia adicional</label>
+          <input type="text"
+                 name="showroom[delivery_address_attributes][description]"
+                 class="form-control"
+                 value="<%= showroom.delivery_address&.description %>"
+                 placeholder="Ej: Edificio blanco, local 3, frente al parque"
+                 data-address-autocomplete-target="description">
+        </div>
+
+        <%# Hidden fields %>
+        <input type="hidden" name="showroom[delivery_address_attributes][address]"
+               value="<%= showroom.delivery_address&.address %>"
+               data-address-autocomplete-target="addressName">
+        <input type="hidden" name="showroom[delivery_address_attributes][latitude]"
+               value="<%= showroom.delivery_address&.latitude %>"
+               data-address-autocomplete-target="lat">
+        <input type="hidden" name="showroom[delivery_address_attributes][longitude]"
+               value="<%= showroom.delivery_address&.longitude %>"
+               data-address-autocomplete-target="lng">
+        <input type="hidden" name="showroom[delivery_address_attributes][plus_code]"
+               value="<%= showroom.delivery_address&.plus_code %>"
+               data-address-autocomplete-target="plus">
+        <% if showroom.delivery_address_id.present? %>
+          <input type="hidden" name="showroom[delivery_address_attributes][id]"
+                 value="<%= showroom.delivery_address_id %>">
         <% end %>
-      </select>
-      <div class="form-text">La entrega de un movimiento a esta sala irá a esta dirección</div>
+      </div>
     </div>
 
     <div class="col-12"><hr class="my-1"></div>

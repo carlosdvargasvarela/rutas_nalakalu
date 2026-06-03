@@ -11,31 +11,30 @@ class Admin::ShowroomsController < ApplicationController
   def new
     @showroom = Showroom.new
     authorize @showroom
-    @addresses = DeliveryAddress.order(:address).limit(200)
   end
 
   def create
     @showroom = Showroom.new(showroom_params)
+    @showroom.delivery_address = build_or_update_address(@showroom.delivery_address)
     authorize @showroom
     if @showroom.save
       redirect_to admin_showrooms_path, notice: "Showroom '#{@showroom.name}' creado correctamente."
     else
-      @addresses = DeliveryAddress.order(:address).limit(200)
       render :new, status: :unprocessable_entity
     end
   end
 
   def edit
     authorize @showroom
-    @addresses = DeliveryAddress.order(:address).limit(200)
   end
 
   def update
+    @showroom.assign_attributes(showroom_params)
+    @showroom.delivery_address = build_or_update_address(@showroom.delivery_address)
     authorize @showroom
-    if @showroom.update(showroom_params)
+    if @showroom.save
       redirect_to admin_showrooms_path, notice: "Showroom '#{@showroom.name}' actualizado correctamente."
     else
-      @addresses = DeliveryAddress.order(:address).limit(200)
       render :edit, status: :unprocessable_entity
     end
   end
@@ -58,7 +57,7 @@ class Admin::ShowroomsController < ApplicationController
 
   def showroom_params
     p = params.require(:showroom).permit(
-      :name, :code, :delivery_address_id, :is_main,
+      :name, :code, :is_main,
       :order_number_prefixes_raw,
       :order_number_keywords_raw,
       :inter_sala_keywords_raw,
@@ -69,6 +68,29 @@ class Admin::ShowroomsController < ApplicationController
     p[:inter_sala_keywords]   = parse_keywords(p.delete(:inter_sala_keywords_raw))
     p[:product_keywords]      = parse_keywords(p.delete(:product_keywords_raw))
     p
+  end
+
+  def address_attrs
+    params.dig(:showroom, :delivery_address_attributes)
+  end
+
+  def build_or_update_address(existing)
+    attrs = address_attrs
+    return existing if attrs.blank? || attrs[:address].blank?
+
+    client = Client.find_or_create_by!(name: "NaLakalu Showrooms") do |c|
+      c.email = "showrooms@nalakalu.com"
+      c.phone  = "0000-0000"
+    end
+
+    address = existing || client.delivery_addresses.build
+    address.client  = client
+    address.address = attrs[:address]
+    address.description = attrs[:description].presence
+    address.latitude    = attrs[:latitude].presence
+    address.longitude   = attrs[:longitude].presence
+    address.plus_code   = attrs[:plus_code].presence
+    address
   end
 
   def parse_keywords(raw)
