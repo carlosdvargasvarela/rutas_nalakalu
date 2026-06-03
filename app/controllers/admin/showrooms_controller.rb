@@ -4,16 +4,19 @@ class Admin::ShowroomsController < ApplicationController
   before_action :set_showroom, only: [:edit, :update, :destroy]
 
   def index
+    authorize Showroom
     @showrooms = Showroom.includes(:delivery_address).order(:name)
   end
 
   def new
     @showroom = Showroom.new
+    authorize @showroom
     @addresses = DeliveryAddress.order(:address).limit(200)
   end
 
   def create
     @showroom = Showroom.new(showroom_params)
+    authorize @showroom
     if @showroom.save
       redirect_to admin_showrooms_path, notice: "Showroom '#{@showroom.name}' creado correctamente."
     else
@@ -23,10 +26,12 @@ class Admin::ShowroomsController < ApplicationController
   end
 
   def edit
+    authorize @showroom
     @addresses = DeliveryAddress.order(:address).limit(200)
   end
 
   def update
+    authorize @showroom
     if @showroom.update(showroom_params)
       redirect_to admin_showrooms_path, notice: "Showroom '#{@showroom.name}' actualizado correctamente."
     else
@@ -36,6 +41,7 @@ class Admin::ShowroomsController < ApplicationController
   end
 
   def destroy
+    authorize @showroom
     @showroom.destroy
     redirect_to admin_showrooms_path, notice: "Showroom eliminado."
   end
