@@ -89,29 +89,53 @@
                     </span>
                   <% end %>
                 </div>
-                <%# Productos (collapsible) %>
+                <%# Productos / Mandado (collapsible) %>
                 <div class="flex-shrink-0 stop-col-products">
-                  <a class="small text-decoration-none text-primary"
-                     data-bs-toggle="collapse"
-                     href="#products_<%= assignment.id %>"
-                     role="button">
-                    <i class="bi bi-box-seam me-1"></i>
-                    <%= d.delivery_items.size %> producto<%= d.delivery_items.size == 1 ? '' : 's' %>
-                    <i class="bi bi-chevron-down stop-chevron-icon"></i>
-                  </a>
-                  <div class="collapse mt-1" id="products_<%= assignment.id %>">
-                    <% d.delivery_items.includes(:order_item).each do |di| %>
-                      <div class="d-flex align-items-center gap-1 mb-1">
-                        <span class="badge bg-secondary stop-qty-badge">x<%= di.quantity_delivered %></span>
-                        <span class="small text-dark"><%= di.order_item.product %></span>
-                        <% if di.service_case? %>
-                          <span class="badge bg-warning text-dark stop-service-badge">
-                            <i class="bi bi-tools"></i>
-                          </span>
+                  <% if d.internal_delivery? %>
+                    <span class="badge bg-light text-secondary border small">
+                      <i class="bi bi-clipboard-check me-1"></i>Mandado
+                    </span>
+                    <% if d.delivery_items.any? %>
+                      <a class="small text-decoration-none text-secondary d-block mt-1"
+                         data-bs-toggle="collapse"
+                         href="#products_<%= assignment.id %>"
+                         role="button">
+                        <i class="bi bi-box-seam me-1"></i>
+                        <%= d.delivery_items.size %> ítem<%= d.delivery_items.size == 1 ? '' : 's' %>
+                        <i class="bi bi-chevron-down stop-chevron-icon"></i>
+                      </a>
+                      <div class="collapse mt-1" id="products_<%= assignment.id %>">
+                        <% d.delivery_items.includes(:order_item).each do |di| %>
+                          <div class="d-flex align-items-center gap-1 mb-1">
+                            <span class="badge bg-secondary stop-qty-badge">x<%= di.quantity_delivered %></span>
+                            <span class="small text-dark"><%= di.order_item.product %></span>
+                          </div>
                         <% end %>
                       </div>
                     <% end %>
-                  </div>
+                  <% else %>
+                    <a class="small text-decoration-none text-primary"
+                       data-bs-toggle="collapse"
+                       href="#products_<%= assignment.id %>"
+                       role="button">
+                      <i class="bi bi-box-seam me-1"></i>
+                      <%= d.delivery_items.size %> producto<%= d.delivery_items.size == 1 ? '' : 's' %>
+                      <i class="bi bi-chevron-down stop-chevron-icon"></i>
+                    </a>
+                    <div class="collapse mt-1" id="products_<%= assignment.id %>">
+                      <% d.delivery_items.includes(:order_item).each do |di| %>
+                        <div class="d-flex align-items-center gap-1 mb-1">
+                          <span class="badge bg-secondary stop-qty-badge">x<%= di.quantity_delivered %></span>
+                          <span class="small text-dark"><%= di.order_item.product %></span>
+                          <% if di.service_case? %>
+                            <span class="badge bg-warning text-dark stop-service-badge">
+                              <i class="bi bi-tools"></i>
+                            </span>
+                          <% end %>
+                        </div>
+                      <% end %>
+                    </div>
+                  <% end %>
                 </div>
                 <%# Notas %>
                 <div class="flex-shrink-0 stop-col-notes">

@@ -37,22 +37,29 @@
       </div>
     </div>
     <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
-      <%# Mini progress bar %>
-      <div style="width:36px;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;">
-        <div style="height:100%;width:<%= delivery.load_percentage %>%;background:<%= top_color %>;border-radius:3px;"></div>
-      </div>
-      <%# Badge count %>
-      <% loaded = delivery.delivery_items.count { |i| i.load_status == "loaded" } %>
-      <% total  = delivery.delivery_items.size %>
-      <%
-        count_badge_class = case delivery.load_status
-          when "all_loaded"   then "pd-badge--ok"
-          when "some_missing" then "pd-badge--missing"
-          when "partial"      then "pd-badge--partial"
-          else "pd-badge--pending"
-        end
-      %>
-      <span class="pd-badge <%= count_badge_class %>"><%= loaded %>/<%= total %></span>
+      <% if delivery.internal_delivery? && delivery.delivery_items.empty? %>
+        <%# Mandado sin ítems: solo badge de tipo %>
+        <span class="pd-badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;">
+          <i class="bi bi-clipboard-check me-1"></i>Mandado
+        </span>
+      <% else %>
+        <%# Mini progress bar %>
+        <div style="width:36px;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:<%= delivery.load_percentage %>%;background:<%= top_color %>;border-radius:3px;"></div>
+        </div>
+        <%# Badge count %>
+        <% loaded = delivery.delivery_items.count { |i| i.load_status == "loaded" } %>
+        <% total  = delivery.delivery_items.size %>
+        <%
+          count_badge_class = case delivery.load_status
+            when "all_loaded"   then "pd-badge--ok"
+            when "some_missing" then "pd-badge--missing"
+            when "partial"      then "pd-badge--partial"
+            else "pd-badge--pending"
+          end
+        %>
+        <span class="pd-badge <%= count_badge_class %>"><%= loaded %>/<%= total %></span>
+      <% end %>
       <i class="bi bi-chevron-down" style="color:#94a3b8;font-size:0.8rem;"></i>
     </div>
   </div>
@@ -61,10 +68,25 @@
   <div id="delivery_items_<%= delivery.id %>"
        class="collapse <%= delivery.load_status == 'all_loaded' ? '' : 'show' %>">
 
-    <% delivery.delivery_items.each do |item| %>
-      <div id="delivery_item_<%= item.id %>">
-        <%= render "production/delivery_items/delivery_item_row", item: item %>
+    <% if delivery.internal_delivery? && delivery.delivery_items.empty? %>
+      <div class="px-3 py-2">
+        <% if delivery.delivery_notes.present? %>
+          <div class="small p-2 rounded" style="background:#f0fdf4;border-left:3px solid #22c55e;color:#374151;font-size:0.82rem;">
+            <i class="bi bi-clipboard-check me-1 text-success"></i>
+            <%= delivery.delivery_notes %>
+          </div>
+        <% else %>
+          <div class="small text-muted py-1">
+            <i class="bi bi-dash-circle me-1"></i>Sin descripción de tarea
+          </div>
+        <% end %>
       </div>
+    <% else %>
+      <% delivery.delivery_items.each do |item| %>
+        <div id="delivery_item_<%= item.id %>">
+          <%= render "production/delivery_items/delivery_item_row", item: item %>
+        </div>
+      <% end %>
     <% end %>
 
     <%# Footer con acciones masivas %>

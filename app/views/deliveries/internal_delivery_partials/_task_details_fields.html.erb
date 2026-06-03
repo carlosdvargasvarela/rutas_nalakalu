@@ -3,36 +3,74 @@
     <i class="bi bi-pencil-square me-2 text-success"></i><strong>Detalle del mandado</strong>
   </div>
   <div class="card-body">
-    <div class="alert alert-info mb-3">
-      <i class="bi bi-lightbulb me-2"></i>
-      <strong>Descripción clara:</strong> Especifique qué se debe realizar, qué se debe entregar o recoger, y cualquier instrucción especial
-    </div>
-    
-    <%= f.simple_fields_for :delivery_items do |di| %>
-      <%= di.simple_fields_for :order_item do |oi| %>
-        <%= oi.input :product, 
-            as: :text, 
-            label: "Descripción del mandado",
-            input_html: { 
-              class: "form-control", 
-              rows: 5, 
-              placeholder: "Ej: Recoger 50 tornillos de 2 pulgadas en Ferretería El Tornillo y llevarlos a la bodega principal. Pedir factura a nombre de NaLakalu.",
-              data: { 
-                action: "input->internal-delivery-form#validateTaskDetails" 
-              }
-            },
-            hint: "Sea lo más específico posible para evitar confusiones",
-            label_html: { class: "form-label fw-bold" } %>
-        
-        <%= oi.hidden_field :quantity, value: 1 %>
-        <%= di.hidden_field :quantity_delivered, value: 1 %>
-      <% end %>
-    <% end %>
 
-    <!-- Ejemplos de mandados comunes -->
+    <%# Campo principal obligatorio: instrucciones del mandado %>
+    <div class="mb-4">
+      <%= f.label :delivery_notes, class: "form-label fw-bold fs-6" do %>
+        <i class="bi bi-clipboard-check me-1 text-success"></i>
+        ¿Qué hay que hacer? <span class="text-danger">*</span>
+      <% end %>
+      <%= f.text_area :delivery_notes,
+          class: "form-control",
+          rows: 5,
+          required: true,
+          placeholder: "Ej: Recoger 50 tornillos de 2 pulgadas en Ferretería El Tornillo y llevarlos a la bodega principal. Pedir factura a nombre de NaLakalu.",
+          data: {
+            action: "input->internal-delivery-form#validateTaskDetails"
+          } %>
+      <div class="form-text">
+        <i class="bi bi-info-circle me-1"></i>
+        Sea lo más específico posible para evitar confusiones al chofer
+      </div>
+    </div>
+
+    <%# Sección opcional de productos físicos %>
+    <div class="border-top pt-3">
+      <a class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2 w-auto"
+         style="width: fit-content;"
+         data-bs-toggle="collapse"
+         href="#optionalProductsSection"
+         role="button"
+         aria-expanded="false"
+         aria-controls="optionalProductsSection">
+        <i class="bi bi-box-seam"></i>
+        ¿Este mandado lleva productos físicos?
+        <i class="bi bi-chevron-down"></i>
+        <span class="badge bg-light text-secondary border ms-1" style="font-weight:400;">Opcional</span>
+      </a>
+      <div class="collapse mt-3" id="optionalProductsSection">
+        <div class="card bg-light border-0">
+          <div class="card-body">
+            <p class="small text-muted mb-3">
+              <i class="bi bi-info-circle me-1"></i>
+              Si el mandado implica llevar o recoger productos específicos, descríbelos aquí.
+              Dejar en blanco si no aplica.
+            </p>
+            <%= f.simple_fields_for :delivery_items do |di| %>
+              <%= di.simple_fields_for :order_item do |oi| %>
+                <%= oi.input :product,
+                    as: :text,
+                    label: "Lista de productos",
+                    input_html: {
+                      class: "form-control",
+                      rows: 3,
+                      placeholder: "Ej: 10 cajas de tornillos 2\", 5 rollos de cinta de embalaje..."
+                    },
+                    hint: "Un producto por línea o una descripción general",
+                    label_html: { class: "form-label fw-bold" } %>
+                <%= oi.hidden_field :quantity, value: 1 %>
+                <%= di.hidden_field :quantity_delivered, value: 1 %>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Ejemplos de mandados comunes %>
     <div class="card bg-light border-0 mt-3">
-      <div class="card-body">
-        <h6 class="text-muted mb-2">
+      <div class="card-body py-2">
+        <h6 class="text-muted mb-2 small">
           <i class="bi bi-lightbulb me-1"></i> Ejemplos de mandados comunes:
         </h6>
         <ul class="small mb-0 text-muted">
@@ -43,5 +81,6 @@
         </ul>
       </div>
     </div>
+
   </div>
 </div>

@@ -1220,6 +1220,7 @@ class DeliveriesController < ApplicationController
   def handle_internal_error(e)
     Rails.logger.error "Error crear mandado interno: #{e.message}"
     @delivery ||= Delivery.new(delivery_type: :internal_delivery, status: :scheduled, delivery_date: Date.current)
+    @delivery.delivery_items.build.build_order_item if @delivery.delivery_items.empty?
     flash.now[:alert] = "Error al crear el mandado interno: #{e.message}"
     render :new_internal_delivery, status: :unprocessable_entity
   end
