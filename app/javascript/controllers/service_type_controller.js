@@ -10,8 +10,10 @@ export default class extends Controller {
     "modeInput",
     "btnRecoleccion",
     "btnDevolucion",
+    "btnReparacion",
     "recoleccionFields",
     "devolucionSection",
+    "reparacionSection",
     "footerHint",
   ];
 
@@ -25,30 +27,29 @@ export default class extends Controller {
   selectRecoleccion() {
     this._setMode("recoleccion");
 
-    // Activate button styles
     this.btnRecoleccionTarget.classList.replace("btn-outline-secondary", "btn-warning");
     this.btnDevolucionTarget.classList.replace("btn-warning", "btn-outline-secondary");
+    if (this.hasBtnReparacionTarget) {
+      this.btnReparacionTarget.classList.replace("btn-warning", "btn-outline-secondary");
+    }
 
-    // Show recolección section (enable fieldset)
     this.recoleccionFieldsTarget.disabled = false;
     this.recoleccionFieldsTarget.classList.remove("d-none");
 
-    // Hide devolución info
     if (this.hasDevolucionSectionTarget) {
       this.devolucionSectionTarget.classList.add("d-none");
     }
+    if (this.hasReparacionSectionTarget) {
+      this.reparacionSectionTarget.classList.add("d-none");
+    }
 
-    // Show notes + autofill if empty
     this._showNotes();
     this._fillNotes("recoleccion");
-
-    // Update submit
     this._showSubmit();
+
     if (this.hasSubmitLabelTarget) {
       this.submitLabelTarget.textContent = "Agendar devolución";
     }
-
-    // Update footer hint
     if (this.hasFooterHintTarget) {
       this.footerHintTarget.innerHTML =
         '<i class="bi bi-calendar-event me-1"></i>La fecha indicada es para la devolución futura del producto.';
@@ -58,35 +59,64 @@ export default class extends Controller {
   selectDevolucion() {
     this._setMode("devolucion");
 
-    // Activate button styles
     this.btnDevolucionTarget.classList.replace("btn-outline-secondary", "btn-warning");
     this.btnRecoleccionTarget.classList.replace("btn-warning", "btn-outline-secondary");
+    if (this.hasBtnReparacionTarget) {
+      this.btnReparacionTarget.classList.replace("btn-warning", "btn-outline-secondary");
+    }
 
-    // Disable and hide recolección section
     if (this.hasRecoleccionFieldsTarget) {
       this.recoleccionFieldsTarget.disabled = true;
       this.recoleccionFieldsTarget.classList.add("d-none");
     }
-
-    // Show devolución info alert
     if (this.hasDevolucionSectionTarget) {
       this.devolucionSectionTarget.classList.remove("d-none");
     }
+    if (this.hasReparacionSectionTarget) {
+      this.reparacionSectionTarget.classList.add("d-none");
+    }
 
-    // Show notes + autofill if empty
     this._showNotes();
     this._fillNotes("devolucion");
-
-    // Update submit
     this._showSubmit();
+
     if (this.hasSubmitLabelTarget) {
       this.submitLabelTarget.textContent = "Registrar nota";
     }
-
-    // Update footer hint
     if (this.hasFooterHintTarget) {
       this.footerHintTarget.innerHTML =
         '<i class="bi bi-info-circle me-1"></i>Solo se registrará una nota. No se crea ninguna entrega adicional.';
+    }
+  }
+
+  selectReparacion() {
+    this._setMode("reparacion");
+
+    this.btnReparacionTarget.classList.replace("btn-outline-secondary", "btn-warning");
+    this.btnRecoleccionTarget.classList.replace("btn-warning", "btn-outline-secondary");
+    this.btnDevolucionTarget.classList.replace("btn-warning", "btn-outline-secondary");
+
+    if (this.hasRecoleccionFieldsTarget) {
+      this.recoleccionFieldsTarget.disabled = true;
+      this.recoleccionFieldsTarget.classList.add("d-none");
+    }
+    if (this.hasDevolucionSectionTarget) {
+      this.devolucionSectionTarget.classList.add("d-none");
+    }
+    if (this.hasReparacionSectionTarget) {
+      this.reparacionSectionTarget.classList.remove("d-none");
+    }
+
+    this._showNotes();
+    this._fillNotes("reparacion");
+    this._showSubmit();
+
+    if (this.hasSubmitLabelTarget) {
+      this.submitLabelTarget.textContent = "Registrar reparación";
+    }
+    if (this.hasFooterHintTarget) {
+      this.footerHintTarget.innerHTML =
+        '<i class="bi bi-wrench me-1"></i>Solo se registrará una nota. No se crea ninguna entrega adicional.';
     }
   }
 
@@ -110,6 +140,8 @@ export default class extends Controller {
     const hint = document.getElementById("sc_product_hint")?.value || "";
     if (mode === "devolucion") {
       this.notesTarget.value = `Devolución al cliente ${hint}`.trim();
+    } else if (mode === "reparacion") {
+      this.notesTarget.value = `Reparación en sitio ${hint}`.trim();
     } else {
       this.notesTarget.value = `Recolección ${hint}`.trim();
     }

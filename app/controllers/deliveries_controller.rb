@@ -460,8 +460,11 @@ class DeliveriesController < ApplicationController
 
   def create_showroom_movement
     authorize Delivery
-    @delivery = Deliveries::ShowroomMovementCreator.new(params: params, current_user: current_user).call
-    redirect_to deliveries_path, notice: "Movimiento de showroom registrado correctamente."
+    deliveries = Deliveries::ShowroomMovementCreator.new(params: params, current_user: current_user).call
+    notice = deliveries.size > 1 \
+      ? "Movimiento inter-sala registrado: #{deliveries.size} entregas creadas correctamente." \
+      : "Movimiento de showroom registrado correctamente."
+    redirect_to deliveries_path, notice: notice
   rescue => e
     @showrooms = Showroom.order(:name)
     @delivery ||= Delivery.new(delivery_type: :showroom, status: :scheduled, delivery_date: Date.current)
@@ -645,9 +648,13 @@ class DeliveriesController < ApplicationController
   def create_service_case_from_workspace
     authorize @delivery, :edit?
 
-    notice_msg = if params.dig(:delivery, :mode) == "devolucion"
+    notice_msg = case params.dig(:delivery, :mode)
+    when "devolucion"
       register_devolucion_note
       "Nota de devolución registrada correctamente."
+    when "reparacion"
+      register_reparacion_note
+      "Reparación en sitio registrada correctamente."
     else
       Deliveries::ServiceCaseFromWorkspaceCreator.new(
         original_delivery: @delivery,
@@ -1115,6 +1122,19 @@ class DeliveriesController < ApplicationController
       action: "service_case_noted",
       actor: current_user,
       payload: { context: "devolucion", note: note }
+    )
+  end
+
+  def register_reparacion_note
+    note = params.dig(:delivery, :delivery_notes).presence || "Reparación en sitio"
+    existing = @delivery.delivery_notes.to_s.strip
+    new_notes = existing.present? ? "#{existing}\n#{note}" : note
+    @delivery.update!(delivery_notes: new_notes)
+    DeliveryEvent.record(
+      delivery: @delivery,
+      action: "service_case_noted",
+      actor: current_user,
+      payload: { context: "reparacion", note: note }
     )
   end
 

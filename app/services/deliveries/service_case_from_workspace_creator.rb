@@ -71,7 +71,7 @@ module Deliveries
 
     def annotate_original_as_recoleccion(return_delivery)
       products = original_delivery.delivery_items.map { |i| i.order_item&.product }.compact.join(", ")
-      note = "Recolección de: #{products} — Devolución agendada para el #{return_delivery.delivery_date&.strftime('%d/%m/%Y')} (Entrega ##{return_delivery.id})"
+      note = "Recolección de: #{products} — Devolución agendada para el #{return_delivery.delivery_date&.strftime('%d/%m/%Y')} (Pedido ##{original_delivery.order_number})"
       existing = original_delivery.delivery_notes.to_s.strip
       new_notes = existing.present? ? "#{existing}\n#{note}" : note
       original_delivery.update!(delivery_notes: new_notes)
@@ -79,7 +79,7 @@ module Deliveries
 
     def auto_notes(type)
       products = original_delivery.delivery_items.map { |i| i.order_item&.product }.compact.join(", ")
-      ref = "Entrega ##{original_delivery.id}"
+      ref = "Pedido ##{original_delivery.order_number}"
       case type
       when "only_pickup", "pickup_with_return"
         "Recolección de: #{products} — #{ref}"

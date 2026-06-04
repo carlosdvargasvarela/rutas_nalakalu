@@ -15,7 +15,7 @@
 
   <% product_hint = @items.map { |i| i.order_item&.product }.compact.join(", ") %>
   <input type="hidden" id="sc_product_hint"
-         value="<%= product_hint.present? ? "de: #{product_hint} — Entrega ##{@delivery.id}" : "Entrega ##{@delivery.id}" %>">
+         value="<%= product_hint.present? ? "de: #{product_hint} — Pedido ##{@delivery.order_number}" : "Pedido ##{@delivery.order_number}" %>">
 
   <%= simple_form_for @service_delivery,
         url: create_service_case_from_workspace_delivery_path(@delivery),
@@ -54,6 +54,20 @@
               <i class="bi bi-arrow-counterclockwise fs-5 mt-1 flex-shrink-0"></i>
               <div>
                 <strong>Esta entrega es la Devolución</strong>
+                <div class="small text-muted mt-1">
+                  Solo se registra una nota. No se crea ninguna entrega adicional.
+                </div>
+              </div>
+            </div>
+          </button>
+          <button type="button"
+                  class="btn btn-outline-secondary text-start p-3"
+                  data-service-type-target="btnReparacion"
+                  data-action="click->service-type#selectReparacion">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-wrench fs-5 mt-1 flex-shrink-0"></i>
+              <div>
+                <strong>Esta entrega es una Reparación en sitio</strong>
                 <div class="small text-muted mt-1">
                   Solo se registra una nota. No se crea ninguna entrega adicional.
                 </div>
@@ -144,6 +158,19 @@
         </div>
 
       </fieldset>
+
+      <%# ── Sección Reparación en sitio (solo informativo) ── %>
+      <div data-service-type-target="reparacionSection" class="d-none mb-4">
+        <div class="alert alert-secondary d-flex gap-3 align-items-start">
+          <i class="bi bi-wrench fs-4 flex-shrink-0 mt-1"></i>
+          <div>
+            <strong class="d-block mb-1">Se registrará esta entrega como Reparación en sitio</strong>
+            <span class="small">
+              Se agregará una nota a esta entrega. No se creará ninguna entrega adicional.
+            </span>
+          </div>
+        </div>
+      </div>
 
       <%# ── Sección Devolución (solo informativo) ── %>
       <div data-service-type-target="devolucionSection" class="d-none mb-4">

@@ -26,10 +26,13 @@
             <i class="bi bi-box-arrow-up-right me-1 text-danger"></i>Sala de origen <span class="text-danger">*</span>
           </label>
           <select name="source_showroom_id" class="form-select form-select-lg" required
-                  data-action="change->showroom-movement-form#validateShowrooms">
+                  data-action="change->showroom-movement-form#validateShowrooms"
+                  data-showroom-movement-form-target="sourceSelect">
             <option value="">— Seleccionar sala de origen —</option>
             <% showrooms.each do |sr| %>
-              <option value="<%= sr.id %>"><%= sr.name %></option>
+              <option value="<%= sr.id %>" data-is-main="<%= sr.is_main %>">
+                <%= sr.name %><%= " (Principal)" if sr.is_main %>
+              </option>
             <% end %>
           </select>
           <div class="form-text">De dónde sale el stock</div>
@@ -48,11 +51,20 @@
                   data-showroom-movement-form-target="destinationSelect">
             <option value="">— Seleccionar sala de destino —</option>
             <% showrooms.each do |sr| %>
-              <option value="<%= sr.id %>"><%= sr.name %></option>
+              <option value="<%= sr.id %>" data-is-main="<%= sr.is_main %>">
+                <%= sr.name %><%= " (Principal)" if sr.is_main %>
+              </option>
             <% end %>
           </select>
           <div class="form-text">A dónde llega el stock · La dirección se toma automáticamente</div>
         </div>
+      </div>
+
+      <div class="alert alert-info d-none mt-3 mb-0" data-showroom-movement-form-target="interSalaInfo">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        <strong>Movimiento inter-sala:</strong> se generarán <strong>2 entregas</strong>:
+        una <em>recolección</em> en sala origen (con la fecha del movimiento) y una posterior
+        <em>entrega</em> a sala destino (con la fecha que indiques abajo). Las notas se asignan automáticamente.
       </div>
 
       <div class="alert alert-warning d-none mt-3 mb-0" data-showroom-movement-form-target="sameShowroomAlert">
@@ -115,7 +127,7 @@
     <div class="card-body">
       <div class="row g-3">
         <div class="col-md-6">
-          <%= f.label :delivery_date, "Fecha", class: "form-label fw-bold" %>
+          <label class="form-label fw-bold" data-showroom-movement-form-target="dateLabel">Fecha del movimiento</label>
           <%= f.date_field :delivery_date, class: "form-control form-control-lg", required: true %>
         </div>
         <div class="col-md-6">
@@ -127,12 +139,29 @@
               { prompt: "Seleccione horario" },
               class: "form-select form-select-lg" %>
         </div>
-        <div class="col-12">
+
+        <%# Campo visible solo en movimientos inter-sala %>
+        <div class="col-md-6 d-none" data-showroom-movement-form-target="deliveryDateDestinationWrapper">
+          <label class="form-label fw-bold">
+            <i class="bi bi-calendar-check me-1 text-success"></i>Fecha de entrega a sala destino
+            <span class="text-danger">*</span>
+          </label>
+          <input type="date"
+                 name="delivery[delivery_date_destination]"
+                 class="form-control form-control-lg"
+                 data-showroom-movement-form-target="deliveryDateDestinationInput">
+          <div class="form-text">Debe ser posterior a la fecha de recolección</div>
+        </div>
+
+        <div class="col-12" data-showroom-movement-form-target="notesWrapper">
           <%= f.label :delivery_notes, "Notas adicionales", class: "form-label fw-bold" %>
           <%= f.text_area :delivery_notes,
               class: "form-control",
               rows: 2,
               placeholder: "Instrucciones especiales para este movimiento..." %>
+          <div class="form-text d-none" data-showroom-movement-form-target="notesInterSalaHint">
+            Para movimientos inter-sala las notas se asignan automáticamente por el sistema.
+          </div>
         </div>
       </div>
     </div>

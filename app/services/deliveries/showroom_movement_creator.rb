@@ -10,29 +10,33 @@ module Deliveries
         source      = Showroom.find(params.require(:source_showroom_id))
         destination = Showroom.find(params.require(:destination_showroom_id))
 
-        client  = find_or_create_showroom_client
-        seller  = find_or_create_showroom_seller(client)
-        order   = create_showroom_order(client, seller, source, destination)
-        address = destination.delivery_address
+        client = find_or_create_showroom_client
+        seller = find_or_create_showroom_seller(client)
+        order  = create_showroom_order(client, seller, source, destination)
+        items  = build_items(order)
 
-        raise ArgumentError, "La sala destino '#{destination.name}' no tiene dirección configurada." unless address
-
-        items = build_items(order)
         raise ArgumentError, "Debes agregar al menos un producto al movimiento." if items.empty?
 
-        @delivery = Delivery.new(
-          movement_params.merge(
-            delivery_type:        :showroom,
-            status:               :ready_to_deliver,
-            order:                order,
-            delivery_address:     address,
-            source_showroom:      source,
-            destination_showroom: destination
+        if inter_sala?(source, destination)
+          create_inter_sala_deliveries(source, destination, order, items)
+        else
+          address = destination.delivery_address
+          raise ArgumentError, "La sala destino '#{destination.name}' no tiene dirección configurada." unless address
+
+          delivery = Delivery.new(
+            movement_params.merge(
+              delivery_type:        :showroom,
+              status:               :ready_to_deliver,
+              order:                order,
+              delivery_address:     address,
+              source_showroom:      source,
+              destination_showroom: destination
+            )
           )
-        )
-        @delivery.delivery_items = items
-        @delivery.save!
-        @delivery
+          delivery.delivery_items = items
+          delivery.save!
+          [delivery]
+        end
       end
     rescue ActiveRecord::RecordInvalid => e
       Rails.logger.error("ShowroomMovementCreator error: #{e.message}")
@@ -42,6 +46,69 @@ module Deliveries
     private
 
     attr_reader :params, :current_user
+
+    def inter_sala?(source, destination)
+      !source.is_main && !destination.is_main
+    end
+
+    def create_inter_sala_deliveries(source, destination, order, items)
+      pickup_address   = source.delivery_address
+      delivery_address = destination.delivery_address
+
+      raise ArgumentError, "La sala origen '#{source.name}' no tiene dirección configurada." unless pickup_address
+      raise ArgumentError, "La sala destino '#{destination.name}' no tiene dirección configurada." unless delivery_address
+
+      date_destination = params.require(:delivery)[:delivery_date_destination].presence
+      raise ArgumentError, "Debe seleccionar la fecha de entrega a sala destino." if date_destination.blank?
+
+      pickup_date = movement_params[:delivery_date]
+      if pickup_date.present? && date_destination.to_date <= pickup_date.to_date
+        raise ArgumentError, "La fecha de entrega a sala destino debe ser posterior a la fecha de recolección."
+      end
+
+      base = movement_params
+
+      # Entrega 1: recolección en sala origen
+      pickup = Delivery.new(
+        base.merge(
+          delivery_type:        :showroom,
+          status:               :ready_to_deliver,
+          order:                order,
+          delivery_address:     pickup_address,
+          source_showroom:      source,
+          destination_showroom: nil,
+          delivery_notes:       "recolección de productos"
+        )
+      )
+      pickup.delivery_items = items
+      pickup.save!
+
+      # Entrega 2: entrega a sala destino
+      items_for_delivery = items.map do |di|
+        DeliveryItem.new(
+          order_item:         di.order_item,
+          quantity_delivered: di.quantity_delivered,
+          status:             :confirmed
+        )
+      end
+
+      delivery = Delivery.new(
+        base.merge(
+          delivery_type:        :showroom,
+          status:               :scheduled,
+          order:                order,
+          delivery_address:     delivery_address,
+          source_showroom:      source,
+          destination_showroom: destination,
+          delivery_date:        date_destination,
+          delivery_notes:       "entrega de productos"
+        )
+      )
+      delivery.delivery_items = items_for_delivery
+      delivery.save!
+
+      [pickup, delivery]
+    end
 
     def find_or_create_showroom_client
       Client.find_or_create_by!(name: "NaLakalu Showrooms") do |c|
