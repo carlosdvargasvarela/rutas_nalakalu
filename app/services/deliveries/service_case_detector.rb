@@ -4,8 +4,6 @@ module Deliveries
     KEYWORDS = %w[
       caso\ de\ servicio
       caso\ servicio
-      recoleccion
-      devolucion
     ].freeze
 
     TERMINAL_STATUSES = %w[rescheduled cancelled archived delivered].freeze
