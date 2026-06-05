@@ -49,20 +49,55 @@
                 class: "form-control border-primary"
               } %>
       </div>
-      <%# 3. Dirección de la Sala (con Google Maps) %>
-      <div class="card border-primary shadow-sm mb-4"
-           data-controller="address-autocomplete"
-           data-address-autocomplete-api-key-value="<%= ENV.fetch('GOOGLE_MAPS_API_KEY', '') %>">
-        <div class="card-header bg-primary-subtle text-primary-emphasis py-2 d-flex align-items-center gap-2">
-          <i class="bi bi-geo-alt-fill"></i>
-          <span class="fw-semibold small">Ubicación de la Sala</span>
+      <%# 3. Dirección de la Sala %>
+      <% default_code = @items_by_sala.keys.first %>
+      <div data-controller="sala-pickup"
+           data-sala-pickup-showrooms-value="<%= @showrooms_data.to_json %>">
+
+        <%# Selector de sala %>
+        <div class="mb-3">
+          <label class="form-label fw-bold small text-uppercase text-muted">Sala de recogida</label>
+          <select class="form-select form-select-sm"
+                  name="showroom_code"
+                  data-sala-pickup-target="select"
+                  data-action="change->sala-pickup#updateAddress">
+            <% @showrooms_data.each do |s| %>
+              <option value="<%= s[:code] %>" <%= "selected" if s[:code] == default_code %>>
+                <%= s[:name] %>
+              </option>
+            <% end %>
+          </select>
         </div>
-        <div class="card-body">
-          <%= render "deliveries/upsert_partials/address_fields",
-                f: f,
-                addresses: @addresses,
-                delivery: @pickup_delivery %>
+
+        <%# Dirección de la sala seleccionada (actualizada por Stimulus) %>
+        <div class="card border-success shadow-sm mb-4 d-none" data-sala-pickup-target="addressCard">
+          <div class="card-header bg-success-subtle text-success-emphasis py-2 d-flex align-items-center gap-2">
+            <i class="bi bi-geo-alt-fill"></i>
+            <span class="fw-semibold small">Dirección de la sala</span>
+          </div>
+          <div class="card-body py-3 d-flex align-items-start gap-2">
+            <i class="bi bi-shop-window text-success mt-1 flex-shrink-0"></i>
+            <div>
+              <div class="fw-semibold small" data-sala-pickup-target="nameDisplay"></div>
+              <div class="small text-muted" data-sala-pickup-target="addressDisplay"></div>
+              <div class="small text-muted fst-italic mt-1 d-none" data-sala-pickup-target="descriptionDisplay"></div>
+            </div>
+          </div>
         </div>
+
+        <%# Sin dirección configurada %>
+        <div class="alert alert-warning small mb-4 py-2 d-none" data-sala-pickup-target="noAddress">
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          Esta sala no tiene dirección configurada. Configurala en el panel de administración.
+        </div>
+
+        <%# Hidden fields — actualizados por el Stimulus controller %>
+        <%= hidden_field_tag "delivery_address[latitude]",    nil, data: { "sala-pickup-target": "lat" } %>
+        <%= hidden_field_tag "delivery_address[longitude]",   nil, data: { "sala-pickup-target": "lng" } %>
+        <%= hidden_field_tag "delivery_address[plus_code]",   nil, data: { "sala-pickup-target": "plusCode" } %>
+        <%= hidden_field_tag "delivery_address[address]",     nil, data: { "sala-pickup-target": "address" } %>
+        <%= hidden_field_tag "delivery_address[description]", nil, data: { "sala-pickup-target": "description" } %>
+        <%= hidden_field_tag "delivery_address[client_id]",   @delivery.order.client_id %>
       </div>
       <%# 4. Contacto en Sala %>
       <div class="row g-3">

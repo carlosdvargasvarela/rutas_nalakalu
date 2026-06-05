@@ -652,7 +652,21 @@ class DeliveriesController < ApplicationController
 
     # Cargamos las direcciones existentes del cliente para el select
     @addresses = @delivery.order.client.delivery_addresses.to_a
-    # -----------------------
+
+    # Datos de todos los showrooms para el selector del modal (serializado para Stimulus).
+    @showrooms_data = Showroom.includes(:delivery_address).order(:name).map do |s|
+      addr = s.delivery_address
+      {
+        code:        s.code,
+        name:        s.name,
+        has_address: addr.present?,
+        address:     addr&.address,
+        description: addr&.description,
+        latitude:    addr&.latitude,
+        longitude:   addr&.longitude,
+        plus_code:   addr&.plus_code
+      }
+    end
 
     render layout: false
   end

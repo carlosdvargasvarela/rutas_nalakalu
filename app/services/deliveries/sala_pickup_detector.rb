@@ -1,14 +1,15 @@
 # app/services/deliveries/sala_pickup_detector.rb
 module Deliveries
   class SalaPickupDetector
-    KEYWORDS = [
+    # Códigos cortos: se verifican case-sensitive en texto original para evitar
+    # confundir pronombres españoles ("se", "sp") con códigos de sala.
+    CODE_PATTERN = /\b(SP|SE|SG)\b/.freeze
+
+    PHRASE_KEYWORDS = [
       "recoger de sala",
       "pendiente sp",
       "pendiente se",
-      "pendiente sg",
-      "\\bsp\\b",
-      "\\bse\\b",
-      "\\bsg\\b"
+      "pendiente sg"
     ].freeze
 
     EXCLUSIONS = [
@@ -38,8 +39,8 @@ module Deliveries
         item.status.in?(%w[delivered rescheduled cancelled archived]) ||
         item.sala_pickup_requested?
       }.select { |item|
-        name = normalize(item.product.to_s)
-        contains_keyword?(name) && !contains_exclusion?(name)
+        name = item.product.to_s
+        contains_keyword?(name) && !contains_exclusion?(normalize(name))
       }
     end
 
@@ -52,22 +53,23 @@ module Deliveries
     def normalize(text)
       text.downcase
         .unicode_normalize(:nfd)
-        .gsub(/\p{Mn}/, "") # Elimina tildes
+        .gsub(/\p{Mn}/, "")
     end
 
-    def contains_keyword?(name)
-      KEYWORDS.any? { |kw| name.match?(/#{kw}/i) }
+    def contains_keyword?(original_name)
+      original_name.match?(CODE_PATTERN) ||
+        PHRASE_KEYWORDS.any? { |kw| normalize(original_name).include?(kw) }
     end
 
-    def contains_exclusion?(name)
-      EXCLUSIONS.any? { |ex| name.match?(/#{Regexp.escape(ex)}/i) }
+    def contains_exclusion?(normalized_name)
+      EXCLUSIONS.any? { |ex| normalized_name.include?(ex) }
     end
 
     def detect_sala(name)
       n = normalize(name)
-      return "SP" if n.match?(/\bsp\b/) || n.include?("palmares")
-      return "SE" if n.match?(/\bse\b/) || n.include?("escazu")
-      return "SG" if n.match?(/\bsg\b/) || n.include?("guanacaste")
+      return "SP" if name.match?(/\bSP\b/) || n.include?("palmares")
+      return "SE" if name.match?(/\bSE\b/) || n.include?("escazu")
+      return "SG" if name.match?(/\bSG\b/) || n.include?("guanacaste")
       "SALA"
     end
   end
