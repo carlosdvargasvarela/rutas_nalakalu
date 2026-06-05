@@ -69,6 +69,15 @@ export default class extends Controller {
     this._openModal(btn.dataset.url, ids);
   }
 
+  prepareRepairService(event) {
+    const btn = event.currentTarget;
+    const preselected = this._preselectedIds(btn);
+    this._applyPreselection(preselected);
+    const ids = preselected.length > 0 ? preselected : this._selectedIds();
+    if (ids.length === 0) return;
+    this._openModal(btn.dataset.url, ids);
+  }
+
   // ─── Acciones bulk directas ───────────────────────────────────────────────────
 
   async bulkConfirm(event) {

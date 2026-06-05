@@ -78,6 +78,10 @@ Rails.application.routes.draw do
       # Casos de servicio "nuevos", globales
       get :new_service_case
       post :create_service_case
+
+      # Servicios de reparación "nuevos", globales
+      get :new_repair_service
+      post :create_repair_service
     end
 
     member do
@@ -96,6 +100,9 @@ Rails.application.routes.draw do
       get :new_service_case_for_existing
       post :create_service_case_for_existing
 
+      get :new_repair_service_for_existing
+      post :create_repair_service_for_existing
+
       patch :reassign_seller
       patch :take_order
       get :sala_pickup_form
@@ -103,6 +110,8 @@ Rails.application.routes.draw do
 
       get :service_case_form
       post :create_service_case_from_workspace
+      get :repair_service_form
+      post :create_repair_service_from_workspace
       get :warehousing_form
       patch :start_warehousing
       patch :end_warehousing

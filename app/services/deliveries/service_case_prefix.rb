@@ -6,6 +6,8 @@ module Deliveries
       when "pickup_with_return", "only_pickup" then "Retiro - "
       when "return_delivery" then "Devolución - "
       when "onsite_repair" then "Reparación - "
+      when "repair_pickup", "workspace_recoleccion" then "Recolección - "
+      when "repair_return" then "Devolución - "
       else ""
       end
     end

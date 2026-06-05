@@ -54,7 +54,9 @@ class Delivery < ApplicationRecord
     onsite_repair: 3,
     internal_delivery: 4,
     only_pickup: 5,
-    showroom: 6
+    showroom: 6,
+    repair_pickup: 7,
+    repair_return: 8
   }
 
   enum :load_status, {
@@ -69,6 +71,7 @@ class Delivery < ApplicationRecord
   # ============================================================================
 
   SERVICE_CASE_TYPES = %w[pickup_with_return return_delivery onsite_repair only_pickup].freeze
+  REPAIR_SERVICE_TYPES = %w[repair_pickup repair_return].freeze
   BULK_LOCKED_STATUSES = %w[delivered rescheduled cancelled archived failed warehousing].freeze
   REOPENABLE_STATUSES = %w[delivered cancelled archived].freeze
 
@@ -88,6 +91,7 @@ class Delivery < ApplicationRecord
   # ============================================================================
 
   scope :service_cases, -> { where(delivery_type: SERVICE_CASE_TYPES) }
+  scope :repair_services, -> { where(delivery_type: REPAIR_SERVICE_TYPES) }
   scope :normal_deliveries, -> { where(delivery_type: :normal) }
   scope :pending, -> { where(status: [:scheduled, :ready_to_deliver, :in_route]) }
   scope :overdue, -> {
@@ -201,6 +205,10 @@ class Delivery < ApplicationRecord
     delivery_type.in?(SERVICE_CASE_TYPES)
   end
 
+  def repair_service?
+    delivery_type.in?(REPAIR_SERVICE_TYPES)
+  end
+
   def display_status
     case status
     when "scheduled" then "Pendiente de confirmar"
@@ -227,6 +235,8 @@ class Delivery < ApplicationRecord
     when "only_pickup" then "Solo retiro del producto (sin entrega posterior)"
     when "internal_delivery" then "Mandado Interno"
     when "showroom" then "Movimiento de Showroom"
+    when "repair_pickup" then "Servicio de Reparación — Recolección"
+    when "repair_return" then "Servicio de Reparación — Devolución"
     else delivery_type.to_s.humanize
     end
   end
@@ -315,6 +325,14 @@ class Delivery < ApplicationRecord
 
   def requires_service_case_action?
     service_case_items.any?
+  end
+
+  def repair_service_items
+    @repair_service_items ||= Deliveries::RepairServiceDetector.new(self).actionable_items
+  end
+
+  def requires_repair_service_action?
+    repair_service_items.any?
   end
 
   def requires_sala_pickup?

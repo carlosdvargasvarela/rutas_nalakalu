@@ -99,6 +99,12 @@
               <i class="bi bi-tools me-1"></i>Servicio
             </span>
           <% end %>
+          <% if delivery.repair_service? || delivery.requires_repair_service_action? %>
+            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill badge-xxs"
+                  title="Servicio de reparación">
+              <i class="bi bi-wrench-adjustable me-1"></i>Reparación
+            </span>
+          <% end %>
           <% if delivery.requires_sala_pickup? %>
             <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill badge-xxs">
               <i class="bi bi-shop me-1"></i>Recoger en Sala
@@ -141,6 +147,17 @@
       <% if delivery.requires_service_case_action? %>
         <div class="mt-2 px-2 py-1 bg-warning-subtle text-warning-emphasis rounded-2 small d-flex align-items-center gap-1 card-alert-row">
           <i class="bi bi-tools"></i> Contiene productos de caso de servicio
+        </div>
+      <% end %>
+      <%# Alerta Servicio de Reparación %>
+      <% if delivery.repair_service? || delivery.requires_repair_service_action? %>
+        <div class="mt-2 px-2 py-1 bg-info-subtle text-info-emphasis rounded-2 small d-flex align-items-center gap-1 card-alert-row">
+          <i class="bi bi-wrench-adjustable"></i>
+          <% if delivery.repair_service? %>
+            <%= delivery.display_type %>
+          <% else %>
+            Contiene productos de servicio de reparación
+          <% end %>
         </div>
       <% end %>
     </div>

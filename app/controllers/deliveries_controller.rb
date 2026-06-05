@@ -8,7 +8,9 @@ class DeliveriesController < ApplicationController
     :update_status, :reassign_seller, :take_order, :sala_pickup_form,
     :create_sala_pickup, :service_case_form, :create_service_case_from_workspace,
     :warehousing_form, :start_warehousing, :end_warehousing, :unconfirm, :reopen,
-    :split_form, :split
+    :split_form, :split,
+    :new_repair_service_for_existing, :create_repair_service_for_existing,
+    :repair_service_form, :create_repair_service_from_workspace
   ]
   before_action :set_addresses, only: [:new, :edit, :create, :update]
 
@@ -497,6 +499,32 @@ class DeliveriesController < ApplicationController
     handle_service_case_error(e)
   end
 
+  def new_repair_service
+    @delivery = Delivery.new(
+      delivery_type: :repair_pickup,
+      status: :scheduled,
+      delivery_date: Date.current
+    )
+    @delivery.delivery_items.build.build_order_item
+
+    @clients = Client.all.order(:name)
+    @addresses = []
+
+    authorize @delivery
+    render :new_repair_service
+  end
+
+  def create_repair_service
+    authorize Delivery
+    deliveries = Deliveries::RepairServiceCreator.new(params: params, current_user: current_user).call
+    notice = deliveries.size > 1 \
+      ? "Servicio de reparación creado: retiro y entrega programados correctamente." \
+      : "Servicio de reparación creado correctamente."
+    redirect_to deliveries_path, notice: notice
+  rescue => e
+    handle_repair_service_error(e)
+  end
+
   def new_service_case_for_existing
     authorize @delivery, :edit?
 
@@ -546,6 +574,56 @@ class DeliveriesController < ApplicationController
     end
   rescue => e
     handle_service_case_existing_error(e, parent_delivery)
+  end
+
+  def new_repair_service_for_existing
+    authorize @delivery, :edit?
+
+    @repair_delivery = Delivery.new(
+      order: @delivery.order,
+      delivery_address: @delivery.delivery_address,
+      contact_name: @delivery.contact_name,
+      contact_phone: @delivery.contact_phone,
+      delivery_type: :repair_pickup,
+      delivery_date: Date.today,
+      status: :scheduled
+    )
+
+    @addresses = @delivery.order.client.delivery_addresses.to_a
+
+    @delivery.order.order_items.each do |oi|
+      @repair_delivery.delivery_items.build(
+        order_item: oi,
+        quantity_delivered: oi.quantity,
+        status: :pending
+      )
+    end
+  end
+
+  def create_repair_service_for_existing
+    parent_delivery = Delivery.find(params[:id])
+    authorize parent_delivery, :edit?
+
+    service = Deliveries::RepairServiceForExistingCreator.new(
+      parent_delivery: parent_delivery,
+      params: params,
+      current_user: current_user
+    )
+    main = service.call
+    created = service.created_deliveries
+
+    if created.size == 1
+      redirect_to delivery_path(main),
+        notice: "Se creó un servicio de reparación (#{main.display_type}) para el #{I18n.l main.delivery_date, format: :long}."
+    else
+      pickup, ret = created
+      redirect_to delivery_path(main),
+        notice: "Se crearon 2 entregas de servicio de reparación: " \
+                "Retiro (#{I18n.l pickup.delivery_date, format: :long}) y " \
+                "Entrega (#{I18n.l ret.delivery_date, format: :long})."
+    end
+  rescue => e
+    handle_repair_service_existing_error(e, parent_delivery)
   end
 
   def sala_pickup_form
@@ -662,6 +740,65 @@ class DeliveriesController < ApplicationController
         current_user: current_user
       ).call
       "Devolución agendada correctamente."
+    end
+
+    respond_to do |format|
+      format.turbo_stream do
+        load_delivery_for_panel
+        set_delivery_panel_data
+
+        flash.now[:notice] = notice_msg
+
+        render turbo_stream: [
+          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          turbo_stream.update("modal", ""),
+          turbo_stream.replace(
+            dom_id(@delivery, :detail),
+            partial: "deliveries/show_partials/detail_data",
+            locals: {
+              delivery: @delivery,
+              future_deliveries: @future_deliveries,
+              delivery_history: @delivery_history
+            }
+          )
+        ]
+      end
+    end
+  end
+
+  def repair_service_form
+    authorize @delivery, :edit?
+
+    @detector = Deliveries::RepairServiceDetector.new(@delivery)
+    @items    = @detector.actionable_items
+
+    @repair_delivery = Delivery.new(
+      order:            @delivery.order,
+      delivery_address: @delivery.delivery_address,
+      contact_name:     @delivery.contact_name,
+      contact_phone:    @delivery.contact_phone,
+      delivery_date:    Date.current
+    )
+
+    @addresses = @delivery.order.client.delivery_addresses.to_a
+
+    render layout: false
+  end
+
+  def create_repair_service_from_workspace
+    authorize @delivery, :edit?
+
+    notice_msg = case params.dig(:delivery, :mode)
+    when "repair_entrega"
+      register_repair_entrega_note
+      "Entrega de reparación registrada correctamente."
+    else
+      Deliveries::RepairServiceFromWorkspaceCreator.new(
+        original_delivery: @delivery,
+        params: params,
+        current_user: current_user
+      ).call
+      "Entrega de reparación agendada correctamente."
     end
 
     respond_to do |format|
@@ -1138,6 +1275,19 @@ class DeliveriesController < ApplicationController
     )
   end
 
+  def register_repair_entrega_note
+    note = params.dig(:delivery, :delivery_notes).presence || "Entrega de producto reparado al cliente"
+    existing = @delivery.delivery_notes.to_s.strip
+    new_notes = existing.present? ? "#{existing}\n#{note}" : note
+    @delivery.update!(delivery_notes: new_notes)
+    DeliveryEvent.record(
+      delivery: @delivery,
+      action: "repair_service_noted",
+      actor: current_user,
+      payload: { context: "repair_entrega", note: note }
+    )
+  end
+
   def handle_service_case_error(e)
     @delivery ||= Delivery.new
     @delivery.delivery_type ||= params.dig(:delivery, :delivery_type) || :pickup
@@ -1258,6 +1408,67 @@ class DeliveriesController < ApplicationController
 
     flash.now[:alert] = "Error al generar caso de servicio: #{e.message}"
     render :new_service_case_for_existing, status: :unprocessable_entity
+  end
+
+  def handle_repair_service_error(e)
+    @delivery ||= Delivery.new
+    @delivery.delivery_type ||= params.dig(:delivery, :delivery_type) || :repair_pickup
+    @delivery.status ||= :scheduled
+
+    if params[:delivery].present?
+      permitted = params.require(:delivery).permit(
+        :delivery_date, :delivery_address_id, :order_id,
+        :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
+        delivery_items_attributes: [
+          :id, :order_item_id, :quantity_delivered, :status, :notes, :_destroy,
+          {order_item_attributes: [:id, :product, :quantity, :notes]}
+        ]
+      )
+      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
+      permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
+      @delivery.assign_attributes(permitted)
+    end
+
+    @client = if params[:client_id].present?
+      Client.find_by(id: params[:client_id])
+    elsif params[:client].present?
+      Client.new(params.require(:client).permit(:name, :phone, :email))
+    else
+      @delivery.order&.client || Client.new
+    end
+
+    @clients = Client.all.order(:name)
+    @addresses = @client.present? ? @client.delivery_addresses.to_a : []
+
+    flash.now[:alert] = "Error al crear el servicio de reparación: #{e.message}"
+    render :new_repair_service, status: :unprocessable_entity
+  end
+
+  def handle_repair_service_existing_error(e, parent_delivery)
+    Rails.logger.error("Error RepairServiceExisting: #{e.message}")
+    @delivery = parent_delivery
+
+    @repair_delivery ||= Delivery.new(
+      order: parent_delivery.order,
+      delivery_address: parent_delivery.delivery_address,
+      delivery_type: :repair_pickup,
+      delivery_date: Date.current
+    )
+
+    @addresses = parent_delivery.order.client.delivery_addresses.to_a
+
+    if @repair_delivery.delivery_items.blank?
+      parent_delivery.order.order_items.each do |oi|
+        @repair_delivery.delivery_items.build(
+          order_item: oi,
+          quantity_delivered: oi.quantity,
+          status: :pending
+        )
+      end
+    end
+
+    flash.now[:alert] = "Error al generar servicio de reparación: #{e.message}"
+    render :new_repair_service_for_existing, status: :unprocessable_entity
   end
 
   def handle_internal_error(e)

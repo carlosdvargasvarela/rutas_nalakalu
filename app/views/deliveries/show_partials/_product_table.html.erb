@@ -3,6 +3,7 @@
 <% can_confirm = policy(delivery).edit? %>
 <% sala_items = Deliveries::SalaPickupDetector.new(delivery).actionable_items %>
 <% service_case_items = Deliveries::ServiceCaseDetector.new(delivery).actionable_items %>
+<% repair_service_items = Deliveries::RepairServiceDetector.new(delivery).actionable_items %>
 <div id="delivery_items_list"
      data-controller="delivery-items-selection"
      class="product-table-workspace">
@@ -102,6 +103,16 @@
             data-url="<%= service_case_form_delivery_path(delivery) %>"
             data-preselect-ids="<%= service_case_items.map(&:id).join(',') %>">
             <i class="bi bi-tools me-1"></i> Caso de Servicio
+          </button>
+        <% end %>
+        <%# Servicio de Reparación bulk %>
+        <% if delivery.requires_repair_service_action? || delivery.repair_service? %>
+          <button type="button"
+                  class="btn btn-sm btn-outline-info"
+                  data-action="click->delivery-items-selection#prepareRepairService"
+            data-url="<%= repair_service_form_delivery_path(delivery) %>"
+            data-preselect-ids="<%= repair_service_items.map(&:id).join(',') %>">
+            <i class="bi bi-wrench-adjustable me-1"></i> Reparación
           </button>
         <% end %>
       <% end %>

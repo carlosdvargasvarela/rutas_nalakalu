@@ -48,7 +48,8 @@
   </div>
   <%# ═══ ALERTAS CONTEXTUALES ═══ %>
   <% sc_alert = delivery.requires_service_case_action? || (delivery.service_case? && !delivery.bulk_locked?) %>
-  <% if delivery.rescheduled? || delivery.address_error? || delivery.requires_sala_pickup? || sc_alert %>
+  <% rs_alert = delivery.requires_repair_service_action? || (delivery.repair_service? && !delivery.bulk_locked?) %>
+  <% if delivery.rescheduled? || delivery.address_error? || delivery.requires_sala_pickup? || sc_alert || rs_alert %>
     <div class="mt-4">
       <% if delivery.requires_sala_pickup? %>
         <div class="alert alert-danger border-0 shadow-sm d-flex justify-content-between align-items-center mb-2 px-3 py-2">
@@ -84,6 +85,29 @@
                   class: "btn btn-sm btn-warning text-uppercase fw-bold",
                   style: "font-size: 0.65rem;" do %>
               <i class="bi bi-headset me-1"></i>Gestionar caso
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+      <% if rs_alert %>
+        <% rs_labels = { "repair_pickup" => "Recolección para reparación", "repair_return" => "Devolución de reparación" } %>
+        <div class="alert alert-info border-0 shadow-sm d-flex justify-content-between align-items-center mb-2 px-3 py-2">
+          <div class="small fw-medium">
+            <i class="bi bi-wrench-adjustable me-2"></i>
+            <% if delivery.repair_service? %>
+              Serv. Reparación —
+              <strong><%= rs_labels[delivery.delivery_type] || delivery.delivery_type.to_s.humanize %></strong>
+            <% else %>
+              Contiene productos de <strong>servicio de reparación</strong>
+            <% end %>
+          </div>
+          <% if can_edit %>
+            <%= button_to repair_service_form_delivery_path(delivery),
+                  method: :get,
+                  form: { data: { turbo_frame: "modal" } },
+                  class: "btn btn-sm btn-info text-white text-uppercase fw-bold",
+                  style: "font-size: 0.65rem;" do %>
+              <i class="bi bi-wrench-adjustable me-1"></i>Gestionar reparación
             <% end %>
           <% end %>
         </div>

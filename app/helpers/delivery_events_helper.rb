@@ -126,7 +126,9 @@ module DeliveryEventsHelper
       "return_delivery" => "Devolución",
       "onsite_repair" => "Reparación en sitio",
       "only_pickup" => "Solo retiro del producto",
-      "internal_delivery" => "Mandado interno"
+      "internal_delivery" => "Mandado interno",
+      "repair_pickup" => "Servicio de Reparación — Recolección",
+      "repair_return" => "Servicio de Reparación — Devolución"
     }[type.to_s] || type.to_s.humanize
   end
 

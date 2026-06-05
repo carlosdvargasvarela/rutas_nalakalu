@@ -1,0 +1,192 @@
+<%# app/views/deliveries/repair_service_form.html.erb %>
+<style>
+  .pac-container { z-index: 9999 !important; }
+</style>
+<%= turbo_frame_tag "modal" do %>
+  <div class="modal-header bg-info bg-opacity-10 border-bottom">
+    <div>
+      <h5 class="modal-title text-info mb-0">
+        <i class="bi bi-wrench-adjustable me-2"></i>Servicio de Reparación
+      </h5>
+      <small class="text-muted">Entrega #<%= @delivery.id %> — <%= @delivery.client_name %></small>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  </div>
+
+  <% product_hint = @items.map { |i| i.order_item&.product }.compact.join(", ") %>
+  <input type="hidden" id="rs_product_hint"
+         value="<%= product_hint.present? ? "de: #{product_hint} — Pedido ##{@delivery.order_number}" : "Pedido ##{@delivery.order_number}" %>">
+
+  <%= simple_form_for @repair_delivery,
+        url: create_repair_service_from_workspace_delivery_path(@delivery),
+        method: :post,
+        html: { data: { controller: "service-type" } } do |f| %>
+
+    <%# modo: "repair_recoleccion" o "repair_entrega" %>
+    <input type="hidden" name="delivery[mode]" data-service-type-target="modeInput" value="">
+    <input type="hidden" name="delivery[delivery_type]" value="repair_return">
+
+    <div class="modal-body">
+
+      <%# ── Selección del tipo de esta entrega ── %>
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Esta entrega corresponde a:</label>
+        <div class="d-grid gap-2">
+          <button type="button"
+                  class="btn btn-outline-secondary text-start p-3"
+                  data-service-type-target="btnRepairRecoleccion"
+                  data-action="click->service-type#selectRepairRecoleccion">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-wrench-adjustable fs-5 mt-1 flex-shrink-0"></i>
+              <div>
+                <strong>Esta entrega es la Recolección para reparación</strong>
+                <div class="small text-muted mt-1">
+                  Se generará la Devolución del producto reparado en la fecha que indiques a continuación.
+                </div>
+              </div>
+            </div>
+          </button>
+          <button type="button"
+                  class="btn btn-outline-secondary text-start p-3"
+                  data-service-type-target="btnRepairEntrega"
+                  data-action="click->service-type#selectRepairEntrega">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-wrench-adjustable-circle fs-5 mt-1 flex-shrink-0"></i>
+              <div>
+                <strong>Esta entrega es la Devolución del producto reparado</strong>
+                <div class="small text-muted mt-1">
+                  Solo se registra una nota. No se crea ninguna entrega adicional.
+                </div>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <%# ── Sección Retiro (fieldset: se deshabilita cuando no corresponde) ── %>
+      <fieldset data-service-type-target="repairPickupFields" disabled class="d-none border-0 p-0 m-0">
+
+        <div class="alert alert-info d-flex gap-3 align-items-start mb-4">
+          <i class="bi bi-info-circle-fill fs-4 flex-shrink-0 mt-1"></i>
+          <div>
+            <strong class="d-block fs-6 mb-1">
+              La fecha que estás indicando es para la DEVOLUCIÓN del producto reparado al cliente
+            </strong>
+            <span class="small">
+              Esta entrega es la recolección (ya está registrada).
+              La fecha de abajo determina cuándo se realizará la <strong>devolución del producto reparado</strong>.
+            </span>
+          </div>
+        </div>
+
+        <% if @items.any? %>
+          <div class="mb-4">
+            <label class="form-label fw-semibold small text-uppercase text-muted">
+              <i class="bi bi-box-seam me-1"></i>Productos del servicio
+            </label>
+            <div class="list-group list-group-flush border rounded-3 overflow-hidden">
+              <% @items.each do |item| %>
+                <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <%= check_box_tag "item_ids[]", item.id, true,
+                          class: "form-check-input flex-shrink-0" %>
+                    <span class="small"><%= item.order_item&.product || "Producto" %></span>
+                  </div>
+                  <span class="badge bg-secondary rounded-pill">x<%= item.quantity_delivered %></span>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <div class="mb-4">
+          <label class="form-label fw-bold text-info">
+            <i class="bi bi-calendar-event-fill me-1"></i>
+            Fecha de la Devolución del producto reparado
+          </label>
+          <%= f.date_field :delivery_date,
+                class: "form-control form-control-lg border-info",
+                required: true,
+                value: Date.current %>
+          <div class="form-text fw-semibold text-info-emphasis">
+            <i class="bi bi-arrow-up me-1"></i>
+            Esta fecha determina cuándo se entregará el producto reparado al cliente.
+          </div>
+        </div>
+
+        <div class="card border-info shadow-sm mb-4"
+             data-controller="address-autocomplete"
+             data-address-autocomplete-api-key-value="<%= ENV.fetch('GOOGLE_MAPS_API_KEY', '') %>">
+          <div class="card-header bg-info-subtle text-info-emphasis py-2 d-flex align-items-center gap-2">
+            <i class="bi bi-geo-alt-fill"></i>
+            <span class="fw-semibold small">Dirección de la entrega</span>
+          </div>
+          <div class="card-body">
+            <%= render "deliveries/upsert_partials/address_fields",
+                  f: f, addresses: @addresses, delivery: @repair_delivery %>
+          </div>
+        </div>
+
+        <div class="row g-2 mb-4">
+          <div class="col-md-6">
+            <%= f.input :contact_name, label: "Nombre de contacto",
+                  input_html: { class: "form-control-sm", value: @delivery.contact_name.to_s } %>
+          </div>
+          <div class="col-md-6">
+            <%= f.input :contact_phone, label: "Teléfono",
+                  input_html: { class: "form-control-sm", value: @delivery.contact_phone.to_s } %>
+          </div>
+        </div>
+
+      </fieldset>
+
+      <%# ── Sección Entrega (solo informativo) ── %>
+      <div data-service-type-target="repairReturnSection" class="d-none mb-4">
+        <div class="alert alert-secondary d-flex gap-3 align-items-start">
+          <i class="bi bi-wrench-adjustable-circle fs-4 flex-shrink-0 mt-1"></i>
+          <div>
+            <strong class="d-block mb-1">Se registrará esta entrega como la Devolución del producto reparado</strong>
+            <span class="small">
+              Se agregará una nota a esta entrega. No se creará ninguna entrega adicional.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <%# ── Notas (compartidas) ── %>
+      <div data-service-type-target="notesSection" class="d-none">
+        <%= f.input :delivery_notes,
+              as: :text,
+              label: "Notas del servicio",
+              input_html: {
+                class: "form-control form-control-sm",
+                rows: 2,
+                data: { "service-type-target": "notes" },
+                placeholder: "Se completarán automáticamente"
+              } %>
+        <div class="form-text">
+          <i class="bi bi-pencil me-1"></i>Podés editarlas antes de guardar.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer bg-light d-flex justify-content-between align-items-center">
+      <span class="text-muted small" data-service-type-target="footerHint">
+        <i class="bi bi-arrow-up-circle me-1"></i>Seleccioná el tipo de gestión para continuar.
+      </span>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button type="submit"
+                class="btn btn-info text-white px-4 shadow-sm d-none"
+                data-service-type-target="submitBtn">
+          <i class="bi bi-check-circle me-1"></i>
+          <span data-service-type-target="submitLabel">Confirmar</span>
+        </button>
+      </div>
+    </div>
+
+  <% end %>
+<% end %>

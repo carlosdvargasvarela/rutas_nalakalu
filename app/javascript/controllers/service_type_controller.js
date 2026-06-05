@@ -15,6 +15,10 @@ export default class extends Controller {
     "devolucionSection",
     "reparacionSection",
     "footerHint",
+    "btnRepairRecoleccion",
+    "btnRepairEntrega",
+    "repairPickupFields",
+    "repairReturnSection",
   ];
 
   // ─── Legacy action (full forms: only updates the notice) ───────────────────
@@ -120,6 +124,61 @@ export default class extends Controller {
     }
   }
 
+  // ─── Modal workspace: repair service mode selection ───────────────────────
+
+  selectRepairRecoleccion() {
+    this._setMode("repair_recoleccion");
+
+    this.btnRepairRecoleccionTarget.classList.replace("btn-outline-secondary", "btn-info");
+    this.btnRepairEntregaTarget.classList.replace("btn-info", "btn-outline-secondary");
+
+    this.repairPickupFieldsTarget.disabled = false;
+    this.repairPickupFieldsTarget.classList.remove("d-none");
+
+    if (this.hasRepairReturnSectionTarget) {
+      this.repairReturnSectionTarget.classList.add("d-none");
+    }
+
+    this._showNotes();
+    this._fillRepairNotes("repair_recoleccion");
+    this._showSubmit();
+
+    if (this.hasSubmitLabelTarget) {
+      this.submitLabelTarget.textContent = "Agendar devolución de reparación";
+    }
+    if (this.hasFooterHintTarget) {
+      this.footerHintTarget.innerHTML =
+        '<i class="bi bi-calendar-event me-1"></i>La fecha indicada es para la devolución del producto reparado al cliente.';
+    }
+  }
+
+  selectRepairEntrega() {
+    this._setMode("repair_entrega");
+
+    this.btnRepairEntregaTarget.classList.replace("btn-outline-secondary", "btn-info");
+    this.btnRepairRecoleccionTarget.classList.replace("btn-info", "btn-outline-secondary");
+
+    if (this.hasRepairPickupFieldsTarget) {
+      this.repairPickupFieldsTarget.disabled = true;
+      this.repairPickupFieldsTarget.classList.add("d-none");
+    }
+    if (this.hasRepairReturnSectionTarget) {
+      this.repairReturnSectionTarget.classList.remove("d-none");
+    }
+
+    this._showNotes();
+    this._fillRepairNotes("repair_entrega");
+    this._showSubmit();
+
+    if (this.hasSubmitLabelTarget) {
+      this.submitLabelTarget.textContent = "Registrar nota";
+    }
+    if (this.hasFooterHintTarget) {
+      this.footerHintTarget.innerHTML =
+        '<i class="bi bi-info-circle me-1"></i>Solo se registrará una nota. No se crea ninguna entrega adicional.';
+    }
+  }
+
   // ─── Private helpers ───────────────────────────────────────────────────────
 
   _setMode(mode) {
@@ -153,6 +212,16 @@ export default class extends Controller {
     }
   }
 
+  _fillRepairNotes(mode) {
+    if (!this.hasNotesTarget) return;
+    if (this.notesTarget.value.trim()) return;
+    const hint = document.getElementById("rs_product_hint")?.value || "";
+    this.notesTarget.value = (mode === "repair_entrega"
+      ? `Entrega de producto reparado ${hint}`
+      : `Retiro para reparación ${hint}`
+    ).trim();
+  }
+
   _updateNotice(type) {
     if (!this.hasNoticeTarget) return;
     const messages = {
@@ -165,6 +234,13 @@ export default class extends Controller {
         Se registrará una <strong>Devolución al cliente</strong>.`,
       onsite_repair: `<i class="bi bi-wrench me-1 text-secondary"></i>
         Se registrará una <strong>Reparación en sitio</strong>.`,
+      repair_with_return: `<i class="bi bi-arrow-return-right me-1 text-info"></i>
+        Se crearán <strong>dos gestiones</strong>: Recolección para reparación en la fecha indicada
+        y Devolución automáticamente <strong>+15 días</strong> después.`,
+      repair_pickup: `<i class="bi bi-wrench-adjustable me-1 text-secondary"></i>
+        Solo se registrará la <strong>Recolección del producto</strong> para reparación.`,
+      repair_return: `<i class="bi bi-wrench-adjustable-circle me-1 text-secondary"></i>
+        Solo se registrará la <strong>Devolución del producto reparado</strong> al cliente.`,
       "": `<i class="bi bi-info-circle me-1 text-muted"></i>
         Seleccioná el tipo para ver los detalles.`,
     };

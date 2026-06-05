@@ -19,6 +19,9 @@ module Deliveries
           return_delivery = create_return_delivery(base)
         end
 
+        # Renombrar ítems originales con prefijo Recolección
+        prefix_original_items("workspace_recoleccion")
+
         # Anotar en la entrega original que fue marcada como recolección
         annotate_original_as_recoleccion(base)
 
@@ -98,6 +101,13 @@ module Deliveries
           service_case: true,
           status: :pending
         )
+      end
+    end
+
+    def prefix_original_items(prefix_type)
+      selected_items.each do |item|
+        prefixed = duplicate_order_item_with_prefix(item.order_item, prefix_type)
+        item.update!(order_item: prefixed)
       end
     end
 
