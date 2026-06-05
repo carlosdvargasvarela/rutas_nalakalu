@@ -59,13 +59,32 @@
 
     <%# ── Número de casa / condominio ── %>
     <% if delivery.condominio_number.present? || delivery.casa_number.present? %>
-      <div style="font-size:.82rem;color:var(--dk-muted);margin-bottom:8px;display:flex;gap:12px;">
-        <% if delivery.condominio_number.present? %>
-          <span><i class="bi bi-buildings me-1"></i><strong><%= delivery.condominio_number %></strong></span>
-        <% end %>
-        <% if delivery.casa_number.present? %>
-          <span><i class="bi bi-house-door me-1"></i>Casa <strong><%= delivery.casa_number %></strong></span>
-        <% end %>
+      <div style="background:var(--dk-warning-lt);border-radius:10px;padding:10px 14px;
+                  margin-bottom:10px;border:1.5px solid rgba(230,81,0,.25);">
+        <div style="font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+                    color:var(--dk-warning);margin-bottom:8px;">
+          <i class="bi bi-123 me-1"></i>N.° de unidad
+        </div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;">
+          <% if delivery.condominio_number.present? %>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <i class="bi bi-buildings" style="font-size:1.6rem;color:var(--dk-warning);flex-shrink:0;"></i>
+              <div>
+                <div style="font-size:.63rem;color:var(--dk-warning);font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Condominio</div>
+                <div style="font-size:1.05rem;font-weight:800;color:var(--dk-text);line-height:1.2;"><%= delivery.condominio_number %></div>
+              </div>
+            </div>
+          <% end %>
+          <% if delivery.casa_number.present? %>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <i class="bi bi-house-door-fill" style="font-size:1.6rem;color:var(--dk-warning);flex-shrink:0;"></i>
+              <div>
+                <div style="font-size:.63rem;color:var(--dk-warning);font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Casa / Apto</div>
+                <div style="font-size:1.05rem;font-weight:800;color:var(--dk-text);line-height:1.2;"><%= delivery.casa_number %></div>
+              </div>
+            </div>
+          <% end %>
+        </div>
       </div>
     <% end %>
 
