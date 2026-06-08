@@ -82,6 +82,19 @@ module Api
           scope = scope.where(delivery_type: Delivery.delivery_types[params[:delivery_type]])
         end
 
+        # order_number / seller_code viven en Order — un solo join cubre ambo
+        if params[:order_number].present? || params[:seller_code].present?
+          scope = scope.joins(order: :seller)
+        end
+
+        if params[:order_number].present?
+          scope = scope.where(orders: {number: params[:order_number]})
+        end
+
+        if params[:seller_code].present?
+          scope = scope.where(sellers: {seller_code: params[:seller_code]})
+        end
+
         # Sincronización incremental: sólo entregas modificadas desde cierto momento
         if params[:updated_since].present?
           scope = scope.where("deliveries.updated_at >= ?", Time.zone.parse(params[:updated_since]))
