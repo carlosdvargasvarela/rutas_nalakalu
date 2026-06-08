@@ -1,5 +1,7 @@
 module Deliveries
   class ServiceCaseFromWorkspaceCreator
+    include Deliveries::ServiceCasePrefix
+
     def initialize(original_delivery:, params:, current_user:)
       @original_delivery = original_delivery
       @params = params
