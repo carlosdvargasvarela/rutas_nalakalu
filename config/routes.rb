@@ -118,6 +118,14 @@ Rails.application.routes.draw do
 
       get :split_form
       patch :split
+
+      patch :propagate_to_associated
+    end
+  end
+
+  resources :delivery_groups, only: [:create] do
+    member do
+      delete :remove_member
     end
   end
 

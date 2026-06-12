@@ -93,7 +93,17 @@
       </div>
     </div>
   </div>
-  <%# ── BLOQUE 3: DIRECCIÓN ── %>
+  <%# ── BLOQUE 3: PEDIDOS RELACIONADOS ── %>
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-light border-bottom d-flex align-items-center gap-2 py-3">
+      <i class="bi bi-link-45deg text-primary fs-5"></i>
+      <h6 class="mb-0 fw-bold text-primary">Pedidos relacionados</h6>
+    </div>
+    <div class="card-body">
+      <%= render "deliveries/associated_deliveries", delivery: delivery %>
+    </div>
+  </div>
+  <%# ── BLOQUE 4: DIRECCIÓN ── %>
   <%= render "deliveries/upsert_partials/address_fields",
         f: f,
         delivery: delivery,

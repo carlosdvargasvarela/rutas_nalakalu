@@ -10,7 +10,8 @@ class DeliveriesController < ApplicationController
     :warehousing_form, :start_warehousing, :end_warehousing, :unconfirm, :reopen,
     :split_form, :split,
     :new_repair_service_for_existing, :create_repair_service_for_existing,
-    :repair_service_form, :create_repair_service_from_workspace
+    :repair_service_form, :create_repair_service_from_workspace,
+    :propagate_to_associated
   ]
   before_action :set_addresses, only: [:new, :edit, :create, :update]
 
@@ -405,6 +406,28 @@ class DeliveriesController < ApplicationController
     redirect_to delivery_path(@delivery), notice: "Entrega dividida: #{count} movimiento(s) realizados exitosamente."
   rescue => e
     redirect_to split_form_delivery_path(@delivery), alert: e.message
+  end
+
+  def propagate_to_associated
+    authorize @delivery, :update?
+
+    fields     = Array(params[:fields]).select { |f| DeliveryGroup::PROPAGATABLE_FIELDS.key?(f) }
+    target_ids = Array(params[:delivery_ids]).map(&:to_i)
+    valid_ids  = @delivery.associated_deliveries.pluck(:id)
+    target_ids &= valid_ids
+
+    if fields.empty?
+      return render json: { error: "Seleccioná al menos un campo para propagar." }, status: :unprocessable_entity
+    end
+
+    if target_ids.empty?
+      return render json: { error: "Seleccioná al menos una entrega destino." }, status: :unprocessable_entity
+    end
+
+    values = @delivery.attributes.slice(*fields)
+    Delivery.where(id: target_ids).each { |d| d.update!(values) }
+
+    render json: { updated_count: target_ids.size }
   end
 
   def reassign_seller

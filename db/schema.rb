@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_12_173249) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_12_191827) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -143,6 +143,22 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_12_173249) do
     t.index ["actor_id"], name: "index_delivery_events_on_actor_id"
     t.index ["created_at"], name: "index_delivery_events_on_created_at"
     t.index ["delivery_id"], name: "index_delivery_events_on_delivery_id"
+  end
+
+  create_table "delivery_group_memberships", force: :cascade do |t|
+    t.integer "delivery_group_id", null: false
+    t.integer "delivery_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["delivery_group_id"], name: "index_delivery_group_memberships_on_delivery_group_id"
+    t.index ["delivery_id"], name: "idx_dgm_unique_delivery", unique: true
+    t.index ["delivery_id"], name: "index_delivery_group_memberships_on_delivery_id"
+  end
+
+  create_table "delivery_groups", force: :cascade do |t|
+    t.string "label"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "delivery_import_rows", force: :cascade do |t|
@@ -413,6 +429,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_12_173249) do
   add_foreign_key "delivery_addresses", "clients"
   add_foreign_key "delivery_events", "deliveries", on_delete: :cascade
   add_foreign_key "delivery_events", "users", column: "actor_id", on_delete: :nullify
+  add_foreign_key "delivery_group_memberships", "deliveries"
+  add_foreign_key "delivery_group_memberships", "delivery_groups"
   add_foreign_key "delivery_import_rows", "delivery_imports"
   add_foreign_key "delivery_imports", "users"
   add_foreign_key "delivery_items", "deliveries"

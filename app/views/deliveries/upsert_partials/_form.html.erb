@@ -65,6 +65,15 @@
         </h6>
         <%= render "deliveries/upsert_partials/delivery_data_fields", f: f, delivery: delivery %>
       </div>
+      <%# Sección: Pedidos relacionados (solo en edición) %>
+      <% if delivery.persisted? %>
+        <div class="mb-4">
+          <h6 class="text-uppercase text-muted fw-semibold small mb-3 d-flex align-items-center gap-2">
+            <i class="bi bi-link-45deg text-primary"></i> Pedidos relacionados
+          </h6>
+          <%= render "deliveries/associated_deliveries", delivery: delivery %>
+        </div>
+      <% end %>
       <%# Sección: Productos %>
       <div class="mb-4">
         <h6 class="text-uppercase text-muted fw-semibold small mb-3 d-flex align-items-center gap-2">

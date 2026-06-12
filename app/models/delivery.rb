@@ -11,6 +11,8 @@ class Delivery < ApplicationRecord
   has_one :delivery_plan_assignment, dependent: :destroy
   has_one :delivery_plan, through: :delivery_plan_assignment
   has_many :delivery_events, dependent: :destroy
+  has_one :delivery_group_membership, dependent: :destroy
+  has_one :delivery_group, through: :delivery_group_membership
 
   accepts_nested_attributes_for :delivery_items, allow_destroy: true
 
@@ -518,6 +520,11 @@ class Delivery < ApplicationRecord
     where(confirmed_by_vendor: false)
   end
 
+  def associated_deliveries
+    return Delivery.none unless delivery_group
+    delivery_group.deliveries.where.not(id: id)
+  end
+
   private
 
   # IDs de todas las entregas (misma orden + dirección) que comparten al menos
@@ -529,8 +536,10 @@ class Delivery < ApplicationRecord
 
     DeliveryItem
       .joins(:delivery)
-      .where(order_item_id: oi_ids,
-             deliveries: { order_id: order_id, delivery_address_id: delivery_address_id })
+      .where(
+        order_item_id: oi_ids,
+        deliveries: {order_id: order_id, delivery_address_id: delivery_address_id}
+      )
       .distinct
       .pluck(:delivery_id)
   end

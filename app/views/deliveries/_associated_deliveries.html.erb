@@ -1,0 +1,147 @@
+<%
+  associated  = delivery.associated_deliveries.includes(order: :client).order("orders.number")
+  group       = delivery.delivery_group
+  link_error  = local_assigns.fetch(:link_error, nil)
+  can_manage  = local_assigns.fetch(:can_manage, true)
+%>
+<div id="associated_deliveries_<%= delivery.id %>"
+     data-controller="delivery-associations"
+     data-delivery-associations-propagate-url-value="<%= propagate_to_associated_delivery_path(delivery) %>">
+
+  <%# Lista de pedidos asociados %>
+  <% if associated.any? %>
+    <div class="d-flex flex-column gap-2 mb-3">
+      <% associated.each do |assoc| %>
+        <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded border">
+          <div class="d-flex align-items-center gap-2 small">
+            <i class="bi bi-link-45deg text-primary"></i>
+            <strong>Pedido #<%= assoc.order.number %></strong>
+            <span class="text-muted">— <%= assoc.order.client&.name %></span>
+            <% if assoc.delivery_date %>
+              <span class="text-muted">— <%= assoc.delivery_date.strftime("%d/%m/%Y") %></span>
+            <% end %>
+          </div>
+          <div class="d-flex gap-1">
+            <%= link_to delivery_path(assoc),
+                  class: "btn btn-sm btn-outline-secondary",
+                  title: "Ver entrega",
+                  target: "_blank" do %>
+              <i class="bi bi-eye"></i>
+            <% end %>
+            <% if can_manage && group %>
+              <%= link_to remove_member_delivery_group_path(
+                    group,
+                    delivery_id: assoc.id,
+                    current_delivery_id: delivery.id
+                  ),
+                  data: { turbo_method: :delete },
+                  class: "btn btn-sm btn-outline-danger",
+                  title: "Desvincular" do %>
+                <i class="bi bi-x-lg"></i>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-muted small fst-italic mb-2">
+      <i class="bi bi-link-45deg me-1"></i>Sin pedidos relacionados.
+    </p>
+  <% end %>
+
+  <%# Error de vinculación %>
+  <% if link_error.present? %>
+    <div class="alert alert-danger py-2 px-3 small mb-2" role="alert">
+      <i class="bi bi-exclamation-triangle me-1"></i><%= link_error %>
+    </div>
+  <% end %>
+
+  <%# Formulario para vincular otro pedido (solo con permiso) %>
+  <% if can_manage %>
+  <div>
+    <button type="button"
+            class="btn btn-sm btn-outline-primary"
+            data-action="click->delivery-associations#toggleAddForm">
+      <i class="bi bi-link-45deg me-1"></i><small>Vincular pedido</small>
+    </button>
+
+    <div data-delivery-associations-target="addForm" class="d-none mt-2">
+      <%= form_with url: delivery_groups_path do |f| %>
+        <%= hidden_field_tag :source_delivery_id, delivery.id %>
+        <div class="input-group input-group-sm">
+          <%= text_field_tag :target_order_number, "",
+                class: "form-control form-control-sm",
+                placeholder: "N° de pedido",
+                autofocus: true,
+                data: { "delivery-associations-target": "orderNumberInput" } %>
+          <%= submit_tag "Vincular", class: "btn btn-sm btn-primary" %>
+        </div>
+        <div class="form-text">Ingresá el número del pedido a asociar.</div>
+      <% end %>
+    </div>
+  </div>
+  <% end %>
+
+  <%# Propagación (solo con permiso y si hay asociados) %>
+  <% if can_manage && associated.any? %>
+    <div class="border-top mt-3 pt-2">
+      <button type="button"
+              class="btn btn-sm btn-link text-decoration-none p-0 text-secondary"
+              data-action="click->delivery-associations#togglePropagatePanel">
+        <i class="bi bi-arrow-repeat me-1"></i>
+        <small>Propagar cambios a pedidos relacionados</small>
+        <i class="bi bi-chevron-down ms-1 small"
+           data-delivery-associations-target="propagateChevron"
+           style="transition: transform .2s;"></i>
+      </button>
+
+      <div data-delivery-associations-target="propagatePanel" class="d-none mt-2">
+        <div class="p-3 bg-light rounded border small">
+          <p class="fw-semibold mb-2">¿Qué campos propagar?</p>
+          <div class="d-flex flex-wrap gap-x-3 gap-2 mb-3">
+            <% DeliveryGroup::PROPAGATABLE_FIELDS.each do |field, label| %>
+              <div class="form-check form-check-inline me-0">
+                <input class="form-check-input"
+                       type="checkbox"
+                       id="pf_<%= delivery.id %>_<%= field %>"
+                       value="<%= field %>"
+                       checked
+                       data-delivery-associations-target="fieldCheckbox">
+                <label class="form-check-label" for="pf_<%= delivery.id %>_<%= field %>">
+                  <%= label %>
+                </label>
+              </div>
+            <% end %>
+          </div>
+
+          <p class="fw-semibold mb-2">¿A cuáles entregas?</p>
+          <div class="d-flex flex-column gap-1 mb-3">
+            <% associated.each do |assoc| %>
+              <div class="form-check">
+                <input class="form-check-input"
+                       type="checkbox"
+                       id="pd_<%= delivery.id %>_<%= assoc.id %>"
+                       value="<%= assoc.id %>"
+                       checked
+                       data-delivery-associations-target="deliveryCheckbox">
+                <label class="form-check-label" for="pd_<%= delivery.id %>_<%= assoc.id %>">
+                  Pedido #<%= assoc.order.number %> — <%= assoc.order.client&.name %>
+                </label>
+              </div>
+            <% end %>
+          </div>
+
+          <div data-delivery-associations-target="propagateResult" class="d-none mb-2"></div>
+
+          <button type="button"
+                  class="btn btn-sm btn-warning fw-semibold"
+                  data-action="click->delivery-associations#propagate"
+                  data-delivery-associations-target="propagateBtn">
+            <i class="bi bi-arrow-repeat me-1"></i>Aplicar propagación
+          </button>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
