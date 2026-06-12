@@ -255,7 +255,7 @@ class DeliveryPlansController < ApplicationController
       .includes(
         delivery: [
           :delivery_items,
-          {order: [:client, :seller]},
+          {order: [:client, :seller, :order_contacts]},
           {delivery_address: :client}
         ]
       )

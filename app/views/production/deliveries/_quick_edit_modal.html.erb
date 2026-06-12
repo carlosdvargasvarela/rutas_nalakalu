@@ -17,13 +17,9 @@
               <label class="form-label fw-semibold small text-uppercase text-muted">Fecha de Entrega</label>
               <%= f.date_field :delivery_date, class: "form-control" %>
             </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold small text-uppercase text-muted">Nombre Contacto</label>
-              <%= f.text_field :contact_name, class: "form-control", placeholder: "Nombre" %>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-semibold small text-uppercase text-muted">Teléfono</label>
-              <%= f.text_field :contact_phone, class: "form-control", placeholder: "Teléfono" %>
+            <div class="col-12">
+              <label class="form-label fw-semibold small text-uppercase text-muted">Contacto</label>
+              <%= render "deliveries/contact_selector", f: f, delivery: delivery %>
             </div>
             <div class="col-12">
               <label class="form-label fw-semibold small text-uppercase text-muted">Preferencia de Horario</label>

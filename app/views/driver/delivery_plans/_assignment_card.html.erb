@@ -88,22 +88,8 @@
       </div>
     <% end %>
 
-    <%# ── Teléfono ── %>
-    <% if delivery.contact_phone.present? %>
-      <a href="tel:<%= delivery.contact_phone %>" class="dk-link-btn dk-link-phone">
-        <div class="dk-link-icon"><i class="bi bi-telephone-fill"></i></div>
-        <div style="flex:1;">
-          <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;
-                      letter-spacing:.05em;margin-bottom:2px;opacity:.7;">
-            Llamar
-          </div>
-          <div style="font-size:.88rem;">
-            <%= delivery.contact_name.presence || "Contacto" %> &nbsp;·&nbsp; <%= delivery.contact_phone %>
-          </div>
-        </div>
-        <i class="bi bi-chevron-right" style="opacity:.4;flex-shrink:0;"></i>
-      </a>
-    <% end %>
+    <%# ── Contactos ── %>
+    <%= render "deliveries/order_contacts_display", delivery: delivery, style: :driver %>
 
     <%# ── Fecha / hora ── %>
     <% if delivery.delivery_date.present? || delivery.delivery_time_preference.present? %>

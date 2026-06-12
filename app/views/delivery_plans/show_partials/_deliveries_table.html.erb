@@ -85,12 +85,7 @@
                 </td>
 
                 <td>
-                  <i class="bi bi-person-lines-fill me-1"></i><%= delivery.contact_name %>
-                  <% if delivery.contact_phone.present? %>
-                    <br>
-                    <i class="bi bi-telephone me-1"></i>
-                    <%= link_to delivery.contact_phone, "tel:#{delivery.contact_phone}", class: "text-decoration-none small" %>
-                  <% end %>
+                  <%= render "deliveries/order_contacts_display", delivery: delivery, style: :full %>
                 </td>
 
                 <td>

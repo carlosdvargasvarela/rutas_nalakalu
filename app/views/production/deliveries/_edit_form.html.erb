@@ -63,26 +63,8 @@
       <h6 class="mb-0 fw-bold text-success">Información de Contacto</h6>
     </div>
     <div class="card-body">
-      <div class="row g-3">
-        <div class="col-md-6">
-          <%= f.label :contact_name, class: "form-label fw-semibold" do %>
-            <i class="bi bi-person me-1 text-success"></i> Nombre de Contacto
-          <% end %>
-          <%= f.text_field :contact_name,
-                class: "form-control #{"is-invalid" if delivery.errors[:contact_name].any?}",
-                placeholder: "Nombre de quien recibe" %>
-          <% if delivery.errors[:contact_name].any? %>
-            <div class="invalid-feedback"><%= delivery.errors[:contact_name].first %></div>
-          <% end %>
-        </div>
-        <div class="col-md-6">
-          <%= f.label :contact_phone, class: "form-label fw-semibold" do %>
-            <i class="bi bi-telephone me-1 text-success"></i> Teléfono de Contacto
-          <% end %>
-          <%= f.telephone_field :contact_phone,
-                class: "form-control",
-                placeholder: "Ej: 8888-8888" %>
-        </div>
+      <%= render "deliveries/contact_selector", f: f, delivery: delivery %>
+      <div class="row g-3 mt-1">
         <div class="col-md-6">
           <%= f.label :condominio_number, class: "form-label fw-semibold" do %>
             <i class="bi bi-buildings me-1 text-success"></i> N° de Condominio

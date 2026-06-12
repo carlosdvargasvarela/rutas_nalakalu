@@ -10,6 +10,7 @@ class Order < ApplicationRecord
   has_many :order_items, dependent: :destroy
   has_many :deliveries, dependent: :destroy
   has_many :order_item_notes, through: :order_items
+  has_many :order_contacts, dependent: :destroy
 
   # ============================================================================
   # VALIDACIONES

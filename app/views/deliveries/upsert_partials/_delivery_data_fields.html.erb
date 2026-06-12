@@ -20,20 +20,96 @@
       <% end %>
     </div>
   <% end %>
-  <div class="col-md-4">
-    <%= f.label :contact_name, "Contacto", class: "form-label small fw-semibold" %>
-    <%= f.text_field :contact_name,
-          class: "form-control",
-          placeholder: "Nombre del contacto",
-          data: { action: "input->delivery-form#validateDeliveryData" } %>
-  </div>
-  <div class="col-md-4">
-    <%= f.label :contact_phone, "Teléfono", class: "form-label small fw-semibold" %>
-    <%= f.text_field :contact_phone,
-          class: "form-control",
-          placeholder: "8888-8888",
-          data: { action: "input->delivery-form#validateDeliveryData" } %>
-  </div>
+  <% if delivery.persisted? %>
+    <%# EDIT: contacto via selector (no editable manualmente) %>
+    <div class="col-12">
+      <label class="form-label small fw-semibold">
+        <i class="bi bi-person-lines-fill me-1 text-primary"></i>Contacto
+      </label>
+      <%= render "deliveries/contact_selector", f: f, delivery: delivery %>
+    </div>
+  <% else %>
+    <%# NEW: campos de texto + picker dinámico por pedido %>
+    <div class="col-md-4">
+      <%= f.label :contact_name, "Contacto", class: "form-label small fw-semibold" %>
+      <div class="input-group">
+        <%= f.text_field :contact_name,
+              class: "form-control",
+              placeholder: "Nombre del contacto",
+              data: {
+                action: "input->delivery-form#validateDeliveryData",
+                "delivery-form-target": "contactName"
+              } %>
+        <button type="button"
+                class="btn btn-outline-secondary"
+                title="Seleccionar contacto del pedido"
+                data-bs-toggle="collapse"
+                data-bs-target="#order_contacts_picker"
+                data-delivery-form-target="contactPickerToggle">
+          <i class="bi bi-person-lines-fill"></i>
+        </button>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :contact_phone, "Teléfono", class: "form-label small fw-semibold" %>
+      <%= f.text_field :contact_phone,
+            class: "form-control",
+            placeholder: "8888-8888",
+            data: {
+              action: "input->delivery-form#validateDeliveryData",
+              "delivery-form-target": "contactPhone"
+            } %>
+    </div>
+    <div class="col-12">
+      <div class="collapse" id="order_contacts_picker" data-delivery-form-target="contactPicker">
+        <div class="bg-light rounded p-2 border">
+          <p class="small text-muted mb-2">
+            <i class="bi bi-info-circle me-1"></i>
+            Seleccioná un contacto del pedido para autocompletar:
+          </p>
+          <div data-delivery-form-target="contactsList" class="d-flex flex-wrap gap-1 mb-2">
+            <span class="text-muted small fst-italic">Seleccioná un pedido para ver sus contactos.</span>
+          </div>
+          <div class="border-top pt-2 mt-1">
+            <button type="button"
+                    class="btn btn-sm btn-link text-decoration-none p-0 text-success"
+                    data-action="click->delivery-form#toggleNewContactForm"
+                    data-delivery-form-target="addContactBtn">
+              <i class="bi bi-plus-circle me-1"></i><small>Agregar contacto al pedido</small>
+            </button>
+            <div data-delivery-form-target="newContactForm" class="d-none mt-2">
+              <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                  <input type="text" class="form-control form-control-sm" placeholder="Nombre *"
+                         data-delivery-form-target="newContactName">
+                </div>
+                <div class="col-md-3">
+                  <input type="text" class="form-control form-control-sm" placeholder="Teléfono"
+                         data-delivery-form-target="newContactPhone">
+                </div>
+                <div class="col-auto d-flex align-items-center gap-1">
+                  <input type="checkbox" class="form-check-input" id="new_contact_primary"
+                         data-delivery-form-target="newContactPrimary">
+                  <label for="new_contact_primary" class="form-check-label small">Principal</label>
+                </div>
+                <div class="col-auto d-flex gap-1">
+                  <button type="button" class="btn btn-sm btn-success"
+                          data-action="click->delivery-form#saveNewContact" title="Guardar contacto">
+                    <i class="bi bi-check-lg"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary"
+                          data-action="click->delivery-form#cancelNewContact" title="Cancelar">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+              </div>
+              <div data-delivery-form-target="newContactError" class="text-danger small mt-1 d-none"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
   <div class="col-md-4">
     <%= f.label :condominio_number, "N° de Condominio", class: "form-label small fw-semibold" %>
     <%= f.text_field :condominio_number,

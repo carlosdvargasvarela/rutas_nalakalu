@@ -287,7 +287,7 @@ class Production::DeliveriesController < ApplicationController
 
   def set_delivery
     @delivery = Delivery.includes(
-      order: [:client, :seller, :order_items],
+      order: [:client, :seller, :order_items, :order_contacts],
       delivery_address: :client,
       delivery_items: :order_item
     ).find(params[:id])

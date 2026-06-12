@@ -217,6 +217,7 @@ Rails.application.routes.draw do
     member do
       patch :confirm_all_items_ready
     end
+    resources :order_contacts, only: [:index, :create, :update, :destroy]
   end
 
   # =============================================================================

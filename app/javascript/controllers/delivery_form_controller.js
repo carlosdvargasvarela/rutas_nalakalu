@@ -8,6 +8,17 @@ export default class extends Controller {
     "addClientButton",
     "newClientFields",
     "orderSelect",
+    "contactName",
+    "contactPhone",
+    "contactPicker",
+    "contactPickerToggle",
+    "contactsList",
+    "addContactBtn",
+    "newContactForm",
+    "newContactName",
+    "newContactPhone",
+    "newContactPrimary",
+    "newContactError",
     "orderBadge",
     "addOrderButton",
     "newOrderFields",
@@ -241,6 +252,170 @@ export default class extends Controller {
 
   orderChanged(event) {
     this.validateOrder();
+    this._loadOrderContacts(event.target.value);
+  }
+
+  _loadOrderContacts(orderId) {
+    if (!this.hasContactsListTarget) return;
+
+    if (!orderId) {
+      this._renderContactChips([]);
+      return;
+    }
+
+    fetch(`/orders/${orderId}/order_contacts`, {
+      headers: { Accept: "application/json" },
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((contacts) => this._renderContactChips(contacts))
+      .catch(() => this._renderContactChips([]));
+  }
+
+  _renderContactChips(contacts) {
+    if (!this.hasContactsListTarget) return;
+
+    const container = this.contactsListTarget;
+
+    if (!contacts.length) {
+      container.innerHTML =
+        '<span class="text-muted small fst-italic">Este pedido no tiene contactos guardados.</span>';
+      return;
+    }
+
+    container.innerHTML = contacts
+      .map(
+        (c) =>
+          `<button type="button"
+             class="btn btn-sm ${c.is_primary ? "btn-primary" : "btn-outline-secondary"}"
+             data-action="click->delivery-form#pickContact"
+             data-name="${this._esc(c.name)}"
+             data-phone="${this._esc(c.phone || "")}">
+            <i class="bi bi-person me-1"></i>${this._esc(c.name)}
+            ${c.phone ? `<span class="ms-1 opacity-75">· ${this._esc(c.phone)}</span>` : ""}
+            ${c.is_primary ? '<span class="badge bg-light text-primary ms-1">Principal</span>' : ""}
+          </button>`,
+      )
+      .join("");
+  }
+
+  pickContact(event) {
+    const btn = event.currentTarget;
+    const name = btn.dataset.name;
+    const phone = btn.dataset.phone;
+
+    if (this.hasContactNameTarget) this.contactNameTarget.value = name;
+    if (this.hasContactPhoneTarget) this.contactPhoneTarget.value = phone;
+
+    // Cerrar el picker
+    const picker = this.hasContactPickerTarget ? this.contactPickerTarget : null;
+    if (picker) {
+      const bsCollapse = bootstrap.Collapse.getInstance(picker);
+      if (bsCollapse) bsCollapse.hide();
+    }
+
+    this.validateDeliveryData();
+  }
+
+  toggleNewContactForm() {
+    if (!this.hasNewContactFormTarget) return;
+    const form = this.newContactFormTarget;
+    const hidden = form.classList.contains("d-none");
+    form.classList.toggle("d-none", !hidden);
+    if (!hidden) this._clearNewContactForm();
+  }
+
+  cancelNewContact() {
+    if (this.hasNewContactFormTarget)
+      this.newContactFormTarget.classList.add("d-none");
+    this._clearNewContactForm();
+  }
+
+  async saveNewContact() {
+    if (!this.hasNewContactNameTarget) return;
+
+    const name = this.newContactNameTarget.value.trim();
+    if (!name) {
+      this._showNewContactError("El nombre es obligatorio.");
+      return;
+    }
+
+    const orderId = this.hasOrderSelectTarget
+      ? this.orderSelectTarget.value
+      : null;
+    if (!orderId) {
+      this._showNewContactError("Seleccioná un pedido primero.");
+      return;
+    }
+
+    const phone = this.hasNewContactPhoneTarget
+      ? this.newContactPhoneTarget.value.trim()
+      : "";
+    const isPrimary = this.hasNewContactPrimaryTarget
+      ? this.newContactPrimaryTarget.checked
+      : false;
+
+    const csrf = document
+      .querySelector('meta[name="csrf-token"]')
+      ?.getAttribute("content");
+
+    try {
+      const resp = await fetch(`/orders/${orderId}/order_contacts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "X-CSRF-Token": csrf,
+        },
+        body: JSON.stringify({
+          order_contact: { name, phone, is_primary: isPrimary },
+        }),
+      });
+
+      if (!resp.ok) throw new Error("Error al guardar");
+
+      const saved = await resp.json();
+
+      // Recargar chips y pre-seleccionar el nuevo contacto
+      const contacts = await fetch(`/orders/${orderId}/order_contacts`, {
+        headers: { Accept: "application/json" },
+      }).then((r) => r.json());
+
+      this._renderContactChips(contacts);
+      this.cancelNewContact();
+
+      // Auto-seleccionar el recién creado
+      if (this.hasContactNameTarget) this.contactNameTarget.value = saved.name;
+      if (this.hasContactPhoneTarget)
+        this.contactPhoneTarget.value = saved.phone || "";
+      this.validateDeliveryData();
+    } catch {
+      this._showNewContactError("No se pudo guardar el contacto. Intentá de nuevo.");
+    }
+  }
+
+  _showNewContactError(msg) {
+    if (!this.hasNewContactErrorTarget) return;
+    const el = this.newContactErrorTarget;
+    el.textContent = msg;
+    el.classList.remove("d-none");
+    setTimeout(() => el.classList.add("d-none"), 4000);
+  }
+
+  _clearNewContactForm() {
+    if (this.hasNewContactNameTarget) this.newContactNameTarget.value = "";
+    if (this.hasNewContactPhoneTarget) this.newContactPhoneTarget.value = "";
+    if (this.hasNewContactPrimaryTarget)
+      this.newContactPrimaryTarget.checked = false;
+    if (this.hasNewContactErrorTarget)
+      this.newContactErrorTarget.classList.add("d-none");
+  }
+
+  _esc(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
   toggleNewOrderFields(event) {

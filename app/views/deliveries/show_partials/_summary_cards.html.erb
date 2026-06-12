@@ -11,22 +11,10 @@
         </span>
       </div>
       <div class="p-3">
-        <p class="fw-bold fs-6 mb-0"><%= delivery.client_name %></p>
-        <% if delivery.contact_name.present? %>
-          <p class="text-muted small mb-1">
-            <i class="bi bi-person-lines-fill me-1"></i><%= delivery.contact_name %>
-          </p>
-        <% else %>
-          <p class="text-muted small mb-1 fst-italic">Sin nombre de contacto</p>
-        <% end %>
-        <% if delivery.contact_phone.present? %>
-          <a href="tel:<%= delivery.contact_phone %>"
-             class="text-muted small text-decoration-none d-block mb-3">
-            <i class="bi bi-telephone me-1 text-success"></i><%= delivery.contact_phone %>
-          </a>
-        <% else %>
-          <p class="text-muted small mb-3 fst-italic">Sin teléfono</p>
-        <% end %>
+        <p class="fw-bold fs-6 mb-2"><%= delivery.client_name %></p>
+        <div class="mb-3">
+          <%= render "deliveries/order_contacts_display", delivery: delivery, style: :full %>
+        </div>
         <% if delivery.condominio_number.present? || delivery.casa_number.present? %>
           <div class="d-flex flex-wrap gap-2 mb-3">
             <% if delivery.condominio_number.present? %>

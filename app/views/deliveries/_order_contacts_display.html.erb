@@ -1,0 +1,109 @@
+<%# Partial compartido para mostrar contactos del pedido en vistas de entrega.
+    Locals:
+      delivery   - el objeto Delivery (requerido)
+      style      - :full | :compact | :driver  (default: :full)
+%>
+<% style ||= :full %>
+<% order_contacts = delivery.order.order_contacts.loaded? \
+     ? delivery.order.order_contacts.sort_by { |c| c.is_primary? ? 0 : 1 } \
+     : delivery.order.order_contacts.primary_first.to_a %>
+
+<% if order_contacts.any? %>
+  <% if style == :driver %>
+    <%# Vista chofer: cada contacto como botón de llamada %>
+    <% order_contacts.each do |contact| %>
+      <% if contact.phone.present? %>
+        <a href="tel:<%= contact.phone %>" class="dk-link-btn dk-link-phone">
+          <div class="dk-link-icon"><i class="bi bi-telephone-fill"></i></div>
+          <div style="flex:1;">
+            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;
+                        letter-spacing:.05em;margin-bottom:2px;opacity:.7;">
+              Llamar<% if contact.is_primary? %> · <span style="font-weight:800;">Principal</span><% end %>
+            </div>
+            <div style="font-size:.88rem;">
+              <%= contact.name %> &nbsp;·&nbsp; <%= contact.phone %>
+            </div>
+          </div>
+          <i class="bi bi-chevron-right" style="opacity:.4;flex-shrink:0;"></i>
+        </a>
+      <% else %>
+        <div style="font-size:.82rem;color:var(--dk-muted);padding:4px 0;">
+          <i class="bi bi-person me-1"></i><%= contact.name %>
+          <% if contact.is_primary? %><span style="opacity:.6;font-size:.75rem;"> · Principal</span><% end %>
+        </div>
+      <% end %>
+    <% end %>
+
+  <% elsif style == :compact %>
+    <%# Vista compacta: solo nombre del primer contacto (index cards) %>
+    <% primary = order_contacts.first %>
+    <div class="small text-secondary d-flex align-items-center gap-1">
+      <i class="bi bi-person-lines-fill text-secondary card-row-icon"></i>
+      <span class="text-truncate card-truncate-col"><%= primary.name.truncate(35) %></span>
+      <% if order_contacts.size > 1 %>
+        <span class="badge bg-secondary-subtle text-secondary rounded-pill ms-1" style="font-size:.65rem;">+<%= order_contacts.size - 1 %></span>
+      <% end %>
+    </div>
+
+  <% else %>
+    <%# Vista full: nombre + teléfono con badge principal %>
+    <% order_contacts.each do |contact| %>
+      <div class="d-flex align-items-center gap-1 mb-1">
+        <i class="bi bi-person-lines-fill text-secondary" style="font-size:.8rem;"></i>
+        <span class="small fw-semibold"><%= contact.name %></span>
+        <% if contact.is_primary? %>
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill" style="font-size:.6rem;padding:1px 5px;">Principal</span>
+        <% end %>
+      </div>
+      <% if contact.phone.present? %>
+        <a href="tel:<%= contact.phone %>"
+           class="text-muted small text-decoration-none d-block mb-2 ms-3">
+          <i class="bi bi-telephone me-1 text-success"></i><%= contact.phone %>
+        </a>
+      <% end %>
+    <% end %>
+  <% end %>
+
+<% else %>
+  <%# Fallback: campos legacy de la entrega %>
+  <% if style == :driver %>
+    <% if delivery.contact_phone.present? %>
+      <a href="tel:<%= delivery.contact_phone %>" class="dk-link-btn dk-link-phone">
+        <div class="dk-link-icon"><i class="bi bi-telephone-fill"></i></div>
+        <div style="flex:1;">
+          <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;
+                      letter-spacing:.05em;margin-bottom:2px;opacity:.7;">Llamar</div>
+          <div style="font-size:.88rem;">
+            <%= delivery.contact_name.presence || "Contacto" %> &nbsp;·&nbsp; <%= delivery.contact_phone %>
+          </div>
+        </div>
+        <i class="bi bi-chevron-right" style="opacity:.4;flex-shrink:0;"></i>
+      </a>
+    <% end %>
+
+  <% elsif style == :compact %>
+    <% if delivery.contact_name.present? %>
+      <div class="small text-secondary d-flex align-items-center gap-1">
+        <i class="bi bi-person-lines-fill text-secondary card-row-icon"></i>
+        <span class="text-truncate card-truncate-col"><%= delivery.contact_name.truncate(35) %></span>
+      </div>
+    <% end %>
+
+  <% else %>
+    <% if delivery.contact_name.present? %>
+      <p class="text-muted small mb-1">
+        <i class="bi bi-person-lines-fill me-1"></i><%= delivery.contact_name %>
+      </p>
+    <% else %>
+      <p class="text-muted small mb-1 fst-italic">Sin nombre de contacto</p>
+    <% end %>
+    <% if delivery.contact_phone.present? %>
+      <a href="tel:<%= delivery.contact_phone %>"
+         class="text-muted small text-decoration-none d-block mb-2">
+        <i class="bi bi-telephone me-1 text-success"></i><%= delivery.contact_phone %>
+      </a>
+    <% else %>
+      <p class="text-muted small mb-2 fst-italic">Sin teléfono</p>
+    <% end %>
+  <% end %>
+<% end %>

@@ -75,7 +75,7 @@ module Driver
       authorize [:driver, @delivery_plan]
 
       @assignments = @delivery_plan.delivery_plan_assignments
-        .includes(delivery: [:order, :delivery_address, {order: :client}])
+        .includes(delivery: [:order, :delivery_address, {order: [:client, :order_contacts]}])
         .order(:stop_order)
 
       respond_to do |format|

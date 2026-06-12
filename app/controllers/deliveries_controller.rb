@@ -46,7 +46,7 @@ class DeliveriesController < ApplicationController
     end
 
     @q = base_scope.ransack(params[:q])
-    deliveries_scope = @q.result.includes(order: [:client, :seller], delivery_address: :client)
+    deliveries_scope = @q.result.includes(order: [:client, :seller, :order_contacts], delivery_address: :client)
 
     @deliveries = deliveries_scope.order(delivery_date: :asc).page(params[:page]).per(5)
 
@@ -1116,7 +1116,7 @@ class DeliveriesController < ApplicationController
 
   def set_delivery
     @delivery = Delivery.includes(
-      order: [:client, :seller],
+      order: [:client, :seller, :order_contacts],
       delivery_address: :client,
       delivery_items: {order_item: :order}
     ).find(params[:id])
@@ -1127,7 +1127,7 @@ class DeliveriesController < ApplicationController
       :order,
       :delivery_address,
       delivery_items: {order_item: [:order, :order_item_notes]},
-      order: [:client, :seller],
+      order: [:client, :seller, :order_contacts],
       delivery_address: :client,
       delivery_plan_assignment: {delivery_plan: :driver}
     ).find(@delivery.id)

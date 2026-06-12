@@ -1,0 +1,170 @@
+<%# Partial para seleccionar / agregar / editar contactos en formularios de edición.
+    Locals:
+      f        - form builder (requerido)
+      delivery - objeto Delivery (requerido)
+%>
+<% order = delivery.order %>
+<% order_contacts = order.order_contacts.loaded? \
+     ? order.order_contacts.sort_by { |c| c.is_primary? ? 0 : 1 } \
+     : order.order_contacts.primary_first.to_a %>
+<% contacts_url = order_order_contacts_path(order) %>
+
+<div data-controller="contact-selector"
+     data-contact-selector-contacts-url-value="<%= contacts_url %>">
+
+  <%# Campos ocultos que se envían con el form %>
+  <%= f.hidden_field :contact_name, data: { "contact-selector-target": "nameField" } %>
+  <%= f.hidden_field :contact_phone, data: { "contact-selector-target": "phoneField" } %>
+
+  <%# Contacto actualmente seleccionado para esta entrega %>
+  <div class="mb-3 p-2 bg-light rounded border d-flex align-items-center gap-2">
+    <span data-contact-selector-target="display">
+      <% if delivery.contact_name.present? %>
+        <i class="bi bi-person-check-fill text-success me-1"></i>
+        <strong><%= delivery.contact_name %></strong>
+        <% if delivery.contact_phone.present? %>
+          <span class="text-muted ms-1"><i class="bi bi-telephone me-1"></i><%= delivery.contact_phone %></span>
+        <% end %>
+      <% else %>
+        <span class="text-muted fst-italic">Sin contacto seleccionado</span>
+      <% end %>
+    </span>
+  </div>
+
+  <%# Chips de contactos del pedido %>
+  <% if order_contacts.any? %>
+    <p class="small text-muted mb-2">
+      <i class="bi bi-info-circle me-1"></i>Seleccioná un contacto para esta entrega:
+    </p>
+  <% else %>
+    <p class="text-muted small fst-italic mb-2">
+      <i class="bi bi-person-x me-1"></i>Este pedido no tiene contactos guardados aún.
+    </p>
+  <% end %>
+
+  <div class="d-flex flex-wrap gap-2 mb-3" data-contact-chips>
+    <% order_contacts.each do |contact| %>
+      <div class="btn-group btn-group-sm" role="group">
+        <button type="button"
+                class="btn btn-sm <%= delivery.contact_name == contact.name ? 'btn-primary active' : 'btn-outline-secondary' %>"
+                data-name="<%= contact.name %>"
+                data-phone="<%= contact.phone.to_s %>"
+                data-action="click->contact-selector#select">
+          <i class="bi bi-person me-1"></i><%= contact.name %>
+          <% if contact.phone.present? %>
+            <span class="opacity-75 ms-1">· <%= contact.phone %></span>
+          <% end %>
+          <% if contact.is_primary? %>
+            <span class="badge bg-primary ms-1" style="font-size:.6rem;">Principal</span>
+          <% end %>
+        </button>
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary"
+                title="Editar contacto"
+                data-action="click->contact-selector#editContact"
+                data-id="<%= contact.id %>"
+                data-name="<%= contact.name %>"
+                data-phone="<%= contact.phone.to_s %>"
+                data-primary="<%= contact.is_primary %>">
+          <i class="bi bi-pencil"></i>
+        </button>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Panel de edición de contacto existente %>
+  <div data-contact-selector-target="editForm" class="d-none mb-2 p-3 bg-light rounded border border-warning">
+    <p class="small fw-semibold text-warning-emphasis mb-2">
+      <i class="bi bi-pencil-square me-1"></i>Editando contacto
+    </p>
+    <input type="hidden" data-contact-selector-target="editContactId">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold mb-1">Nombre *</label>
+        <input type="text"
+               class="form-control form-control-sm"
+               placeholder="Ej: María González"
+               data-contact-selector-target="editNameInput">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold mb-1">Teléfono</label>
+        <input type="text"
+               class="form-control form-control-sm"
+               placeholder="8888-8888"
+               data-contact-selector-target="editPhoneInput">
+      </div>
+      <div class="col-auto d-flex align-items-center gap-1 mt-3">
+        <input type="checkbox"
+               class="form-check-input"
+               id="cs_edit_primary_<%= delivery.id %>"
+               data-contact-selector-target="editPrimaryInput">
+        <label for="cs_edit_primary_<%= delivery.id %>" class="form-check-label small">Principal</label>
+      </div>
+      <div class="col-auto d-flex gap-1 mt-3">
+        <button type="button"
+                class="btn btn-sm btn-warning"
+                data-action="click->contact-selector#updateContact"
+                data-contact-selector-target="editSaveBtn"
+                title="Guardar cambios">
+          <i class="bi bi-check-lg"></i>
+        </button>
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary"
+                data-action="click->contact-selector#cancelEdit"
+                title="Cancelar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    </div>
+    <div data-contact-selector-target="editError" class="text-danger small mt-1 d-none"></div>
+  </div>
+
+  <%# Formulario para agregar nuevo contacto al pedido %>
+  <button type="button"
+          class="btn btn-sm btn-outline-success"
+          data-action="click->contact-selector#toggleForm">
+    <i class="bi bi-person-plus me-1"></i><small>Agregar contacto al pedido</small>
+  </button>
+
+  <div data-contact-selector-target="addForm" class="d-none mt-2 p-3 bg-light rounded border">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold mb-1">Nombre *</label>
+        <input type="text"
+               class="form-control form-control-sm"
+               placeholder="Ej: María González"
+               data-contact-selector-target="nameInput">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold mb-1">Teléfono</label>
+        <input type="text"
+               class="form-control form-control-sm"
+               placeholder="8888-8888"
+               data-contact-selector-target="phoneInput">
+      </div>
+      <div class="col-auto d-flex align-items-center gap-1 mt-3">
+        <input type="checkbox"
+               class="form-check-input"
+               id="cs_primary_<%= delivery.id %>"
+               data-contact-selector-target="primaryInput">
+        <label for="cs_primary_<%= delivery.id %>" class="form-check-label small">Principal</label>
+      </div>
+      <div class="col-auto d-flex gap-1 mt-3">
+        <button type="button"
+                class="btn btn-sm btn-success"
+                data-action="click->contact-selector#saveContact"
+                data-contact-selector-target="saveBtn"
+                title="Guardar y seleccionar">
+          <i class="bi bi-check-lg"></i>
+        </button>
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary"
+                data-action="click->contact-selector#toggleForm"
+                title="Cancelar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    </div>
+    <div data-contact-selector-target="error" class="text-danger small mt-1 d-none"></div>
+  </div>
+</div>

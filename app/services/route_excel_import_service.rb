@@ -104,6 +104,18 @@ class RouteExcelImportService
         status: :scheduled
       )
       delivery.save!
+
+      if contact_name.present?
+        already_exists = order.order_contacts.exists?(name: contact_name)
+        unless already_exists
+          is_first = order.order_contacts.none?
+          order.order_contacts.create!(
+            name: contact_name,
+            phone: contact_phone,
+            is_primary: is_first
+          )
+        end
+      end
     end
 
     # ── DeliveryItem ──
