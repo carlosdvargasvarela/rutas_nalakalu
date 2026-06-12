@@ -95,6 +95,22 @@
                   <%= f.date_field :delivery_date_lteq, class: "form-control form-control-sm bg-light", placeholder: "Hasta" %>
                 </div>
               </div>
+              <div class="d-flex gap-3 flex-wrap">
+                <div class="form-check form-check-inline">
+                  <input type="checkbox" class="form-check-input" name="show_rescheduled" value="1"
+                         id="filter_rescheduled" <%= 'checked' if params[:show_rescheduled] == '1' %>>
+                  <label class="form-check-label small" for="filter_rescheduled">
+                    <i class="bi bi-arrow-repeat text-warning me-1"></i>Reagendadas
+                  </label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input type="checkbox" class="form-check-input" name="only_service_cases" value="1"
+                         id="filter_service" <%= 'checked' if params[:only_service_cases].present? %>>
+                  <label class="form-check-label small" for="filter_service">
+                    <i class="bi bi-tools text-info me-1"></i>Servicio
+                  </label>
+                </div>
+              </div>
               <div class="d-flex gap-2 mt-1">
                 <%= f.submit "Filtrar Resultados", class: "btn btn-sm btn-primary flex-fill fw-bold" %>
                 <%= link_to "Limpiar", deliveries_path, class: "btn btn-sm btn-outline-secondary flex-fill" %>
@@ -106,11 +122,11 @@
             <%= link_to deliveries_path(no_plan: 1), class: "btn btn-xs btn-outline-secondary #{params[:no_plan].present? ? 'active' : ''}" do %>
               <i class="bi bi-calendar-x me-1"></i>Sin plan
             <% end %>
-            <%= link_to deliveries_path(show_rescheduled: 1), class: "btn btn-xs btn-outline-warning #{params[:show_rescheduled] == '1' ? 'active' : ''}" do %>
-              <i class="bi bi-arrow-repeat me-1"></i>Reagendadas
-            <% end %>
-            <%= link_to deliveries_path(only_service_cases: 1), class: "btn btn-xs btn-outline-info #{params[:only_service_cases].present? ? 'active' : ''}" do %>
-              <i class="bi bi-tools me-1"></i>Servicio
+            <% if current_user.seller? %>
+              <%= link_to deliveries_path(q: { order_seller_id_in: [current_user.seller.id] }),
+                  class: "btn btn-xs btn-outline-primary #{params.dig(:q, :order_seller_id_in)&.map(&:to_s)&.include?(current_user.seller.id.to_s) ? 'active' : ''}" do %>
+                <i class="bi bi-person-check me-1"></i>Mis pedidos
+              <% end %>
             <% end %>
           </div>
         </div>
