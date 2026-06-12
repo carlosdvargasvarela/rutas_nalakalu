@@ -1,0 +1,114 @@
+<%# app/views/delivery_items/bulk_cancel_form.html.erb %>
+<%= turbo_frame_tag "modal" do %>
+  <div class="modal-header bg-danger-subtle">
+    <h5 class="modal-title fw-semibold">
+      <i class="bi bi-x-circle me-2"></i>Cancelar productos seleccionados
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body" data-controller="cancel-form">
+    <div class="mb-3 p-3 bg-light rounded-3 border">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-boxes text-danger fs-5"></i>
+        <div>
+          <div class="fw-semibold small"><%= @items.count %> producto(s) seleccionado(s)</div>
+          <div class="text-muted" style="font-size: 0.75rem;">
+            <% @items.each do |item| %>
+              <span class="d-block">• <%= item.product %> (<%= item.quantity_delivered %> u.)</span>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="fw-semibold small mb-2">¿Los productos están en producción?</p>
+
+    <div class="form-check mb-2">
+      <%= radio_button_tag :cancel_mode, "simple", true,
+            class: "form-check-input",
+            id: "bulk_opt_simple",
+            data: { action: "change->cancel-form#toggleMode" } %>
+      <label class="form-check-label small" for="bulk_opt_simple">
+        <span class="fw-semibold">No, aún no están en producción</span>
+        <span class="text-muted d-block" style="font-size: 0.8rem;">Se cancelarán sin más acción.</span>
+      </label>
+    </div>
+
+    <div class="form-check mb-3">
+      <%= radio_button_tag :cancel_mode, "showroom", false,
+            class: "form-check-input",
+            id: "bulk_opt_showroom",
+            data: { action: "change->cancel-form#toggleMode" } %>
+      <label class="form-check-label small" for="bulk_opt_showroom">
+        <span class="fw-semibold">Sí, ya están en producción (o producidos)</span>
+        <span class="text-muted d-block" style="font-size: 0.8rem;">
+          Se cancelarán y se creará una entrega a la sala seleccionada para ponerlos en venta.
+        </span>
+      </label>
+    </div>
+
+    <%# --- Opción A: cancelar simple --- %>
+    <div data-cancel-form-target="simpleSection">
+      <%= form_with url: bulk_cancel_delivery_items_path, method: :patch, data: { turbo_stream: true } do |f| %>
+        <%= hidden_field_tag :delivery_id, @delivery.id %>
+        <%= hidden_field_tag :item_ids, @item_ids.join(",") %>
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <%= f.submit "Confirmar cancelación",
+                class: "btn btn-sm btn-danger fw-semibold",
+                data: { disable_with: "Cancelando..." } %>
+        </div>
+      <% end %>
+    </div>
+
+    <%# --- Opción B: cancelar + asignar a sala --- %>
+    <div data-cancel-form-target="showroomSection" class="d-none">
+      <%= form_with url: bulk_cancel_to_showroom_delivery_items_path, method: :patch, data: { turbo_stream: true } do |f| %>
+        <%= hidden_field_tag :delivery_id, @delivery.id %>
+        <%= hidden_field_tag :item_ids, @item_ids.join(",") %>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Sala destino</label>
+          <% if @showrooms.any? %>
+            <%= select_tag :showroom_id,
+                  options_from_collection_for_select(@showrooms, :id, :name),
+                  class: "form-select form-select-sm",
+                  include_blank: "Seleccionar sala...",
+                  required: true %>
+          <% else %>
+            <div class="alert alert-warning py-2 small mb-0">
+              <i class="bi bi-exclamation-triangle me-1"></i>
+              No hay salas con dirección configurada disponibles.
+            </div>
+          <% end %>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Fecha de entrega a sala</label>
+          <%= date_field_tag :delivery_date,
+                Date.current + 7.days,
+                class: "form-control form-control-sm",
+                required: true %>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">
+            Notas <span class="text-muted fw-normal">(opcional)</span>
+          </label>
+          <%= text_area_tag :notes,
+                nil,
+                rows: 2,
+                class: "form-control form-control-sm",
+                placeholder: "Ej: Productos listos para exhibición en sala..." %>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <%= f.submit "Cancelar y asignar a sala",
+                class: "btn btn-sm btn-danger fw-semibold",
+                data: { disable_with: "Procesando..." } %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

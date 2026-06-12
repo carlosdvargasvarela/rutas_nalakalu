@@ -68,9 +68,8 @@
       <% if can_confirm %>
         <button class="btn btn-sm btn-outline-danger shadow-sm px-3"
                 data-delivery-items-selection-target="bulkButton"
-                data-action="click->delivery-items-selection#bulkCancel"
-                data-url="<%= bulk_cancel_delivery_items_path %>"
-                data-delivery-id="<%= delivery.id %>"
+                data-action="click->delivery-items-selection#prepareBulkCancel"
+                data-url="<%= bulk_cancel_form_delivery_items_path(delivery_id: delivery.id) %>"
                 disabled>
           <i class="bi bi-x-circle me-1"></i>
           Cancelar

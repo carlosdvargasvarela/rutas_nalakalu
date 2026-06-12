@@ -104,12 +104,11 @@ export default class extends Controller {
     this._submitBulkAction(btn.dataset.url, btn.dataset.deliveryId, ids);
   }
 
-  async bulkCancel(event) {
+  prepareBulkCancel(event) {
     const btn = event.currentTarget;
     const ids = this._selectedIds();
     if (ids.length === 0) return;
-    if (!await confirmDialog(`¿Cancelar ${ids.length} producto(s) seleccionado(s)?`, { danger: true })) return;
-    this._submitBulkAction(btn.dataset.url, btn.dataset.deliveryId, ids);
+    this._openModal(btn.dataset.url, ids);
   }
 
   // ─── Privados ────────────────────────────────────────────────────────────────

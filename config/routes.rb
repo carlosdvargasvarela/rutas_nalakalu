@@ -147,10 +147,12 @@ Rails.application.routes.draw do
     member do
       get :reschedule_form
       get :note_form
+      get :cancel_form
       patch :confirm
       patch :mark_delivered
       patch :reschedule
       patch :cancel
+      patch :cancel_to_showroom
       patch :update_notes
     end
     collection do
@@ -158,9 +160,11 @@ Rails.application.routes.draw do
       patch :bulk_deliver
       patch :bulk_deconfirm
       patch :bulk_cancel
+      patch :bulk_cancel_to_showroom
       patch :bulk_reschedule
       patch :bulk_add_notes
       get :bulk_reschedule_form
+      get :bulk_cancel_form
     end
   end
 

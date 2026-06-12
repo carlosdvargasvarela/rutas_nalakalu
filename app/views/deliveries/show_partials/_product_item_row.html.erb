@@ -98,13 +98,9 @@
             </li>
             <li><hr class="dropdown-divider my-1"></li>
             <li>
-              <%= button_to cancel_delivery_item_path(item),
-                    method: :patch,
+              <%= link_to cancel_form_delivery_item_path(item),
                     class: "dropdown-item py-2 text-danger",
-                    data: {
-                      turbo_stream: true,
-                      turbo_confirm: "¿Cancelar este producto?"
-                    } do %>
+                    data: { turbo_frame: "modal" } do %>
                 <i class="bi bi-x-circle me-2"></i>Cancelar
               <% end %>
             </li>

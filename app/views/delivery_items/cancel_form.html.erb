@@ -1,0 +1,116 @@
+<%# app/views/delivery_items/cancel_form.html.erb %>
+<%= turbo_frame_tag "modal" do %>
+  <div class="modal-header bg-danger-subtle">
+    <h5 class="modal-title fw-semibold">
+      <i class="bi bi-x-circle me-2"></i>Cancelar producto
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body" data-controller="cancel-form">
+    <div class="mb-3 p-3 bg-light rounded-3 border">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-box-seam text-danger fs-5"></i>
+        <div>
+          <div class="fw-semibold small">
+            <%= @delivery_item.order_item.product_name || @delivery_item.order_item.product %>
+          </div>
+          <div class="text-muted" style="font-size: 0.75rem;">
+            Cantidad: <strong><%= @delivery_item.quantity_delivered %></strong> unidades
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="fw-semibold small mb-2">¿El producto está en producción?</p>
+
+    <div class="form-check mb-2">
+      <%= radio_button_tag :cancel_mode, "simple", true,
+            class: "form-check-input",
+            id: "opt_simple_#{@delivery_item.id}",
+            data: { action: "change->cancel-form#toggleMode" } %>
+      <label class="form-check-label small" for="opt_simple_<%= @delivery_item.id %>">
+        <span class="fw-semibold">No, aún no está en producción</span>
+        <span class="text-muted d-block" style="font-size: 0.8rem;">Se cancelará sin más acción.</span>
+      </label>
+    </div>
+
+    <div class="form-check mb-3">
+      <%= radio_button_tag :cancel_mode, "showroom", false,
+            class: "form-check-input",
+            id: "opt_showroom_#{@delivery_item.id}",
+            data: { action: "change->cancel-form#toggleMode" } %>
+      <label class="form-check-label small" for="opt_showroom_<%= @delivery_item.id %>">
+        <span class="fw-semibold">Sí, ya está en producción (o producido)</span>
+        <span class="text-muted d-block" style="font-size: 0.8rem;">
+          Se cancelará y se creará una entrega a la sala seleccionada para ponerlo en venta.
+        </span>
+      </label>
+    </div>
+
+    <%# --- Opción A: cancelar simple --- %>
+    <div data-cancel-form-target="simpleSection">
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+        <%= button_to cancel_delivery_item_path(@delivery_item),
+              method: :patch,
+              class: "btn btn-sm btn-danger fw-semibold",
+              data: { turbo_stream: true } do %>
+          <i class="bi bi-x-circle me-1"></i>Confirmar cancelación
+        <% end %>
+      </div>
+    </div>
+
+    <%# --- Opción B: cancelar + asignar a sala --- %>
+    <div data-cancel-form-target="showroomSection" class="d-none">
+      <%= form_with url: cancel_to_showroom_delivery_item_path(@delivery_item),
+            method: :patch,
+            data: { turbo_stream: true } do |f| %>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Sala destino</label>
+          <% if @showrooms.any? %>
+            <%= select_tag :showroom_id,
+                  options_from_collection_for_select(@showrooms, :id, :name),
+                  class: "form-select form-select-sm",
+                  include_blank: "Seleccionar sala...",
+                  required: true %>
+          <% else %>
+            <div class="alert alert-warning py-2 small mb-0">
+              <i class="bi bi-exclamation-triangle me-1"></i>
+              No hay salas con dirección configurada disponibles.
+            </div>
+          <% end %>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Fecha de entrega a sala</label>
+          <%= date_field_tag :delivery_date,
+                Date.current + 7.days,
+                class: "form-control form-control-sm",
+                required: true %>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">
+            Notas <span class="text-muted fw-normal">(opcional)</span>
+          </label>
+          <%= text_area_tag :notes,
+                nil,
+                rows: 2,
+                class: "form-control form-control-sm",
+                placeholder: "Ej: Producto listo para exhibición en sala..." %>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+            Cerrar
+          </button>
+          <%= f.submit "Cancelar y asignar a sala",
+                class: "btn btn-sm btn-danger fw-semibold",
+                data: { disable_with: "Procesando..." } %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

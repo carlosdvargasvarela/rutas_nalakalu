@@ -3,7 +3,7 @@ class DeliveryItemsController < ApplicationController
 
   before_action :set_delivery_item, only: [
     :show, :confirm, :mark_delivered, :reschedule,
-    :cancel, :update_notes, :reschedule_form, :note_form
+    :cancel, :cancel_form, :cancel_to_showroom, :update_notes, :reschedule_form, :note_form
   ]
 
   def show
@@ -90,6 +90,12 @@ class DeliveryItemsController < ApplicationController
     handle_item_error(e, fallback: delivery_path(@delivery_item.delivery), prefix: "Error al reagendar")
   end
 
+  def cancel_form
+    authorize @delivery_item, :confirm?
+    @showrooms = Showroom.where.not(delivery_address_id: nil).order(:name)
+    render layout: false
+  end
+
   def cancel
     authorize @delivery_item, :confirm?
 
@@ -101,6 +107,24 @@ class DeliveryItemsController < ApplicationController
 
     delivery = @delivery_item.delivery.reload
     respond_with_delivery_update(delivery, notice: "Producto cancelado.")
+  rescue => e
+    handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
+  end
+
+  def cancel_to_showroom
+    authorize @delivery_item, :confirm?
+
+    showroom = Showroom.find(params[:showroom_id])
+    DeliveryItems::CancelToShowroomCreator.new(
+      delivery_item: @delivery_item,
+      showroom: showroom,
+      delivery_date: params[:delivery_date],
+      current_user: current_user,
+      notes: params[:notes].presence
+    ).call
+
+    delivery = @delivery_item.delivery.reload
+    respond_with_delivery_update(delivery, notice: "Producto cancelado y asignado a sala #{showroom.name}.")
   rescue => e
     handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
   end
@@ -209,6 +233,15 @@ class DeliveryItemsController < ApplicationController
     respond_with_delivery_update(delivery.reload, notice: "#{count} producto(s) desconfirmado(s).")
   end
 
+  def bulk_cancel_form
+    authorize DeliveryItem, :confirm?
+    @delivery  = Delivery.find(params[:delivery_id])
+    @item_ids  = params[:item_ids].to_s.split(",").map(&:strip)
+    @items     = @delivery.delivery_items.bulk_cancellable.where(id: @item_ids).includes(:order_item)
+    @showrooms = Showroom.where.not(delivery_address_id: nil).order(:name)
+    render layout: false
+  end
+
   def bulk_cancel
     authorize DeliveryItem, :confirm?
     delivery = Delivery.find(params[:delivery_id])
@@ -227,6 +260,33 @@ class DeliveryItemsController < ApplicationController
     end
 
     respond_with_delivery_update(delivery.reload, notice: "#{count} producto(s) cancelado(s).")
+  end
+
+  def bulk_cancel_to_showroom
+    authorize DeliveryItem, :confirm?
+    delivery = Delivery.find(params[:delivery_id])
+
+    return render_bulk_locked(delivery) if delivery.bulk_locked?
+
+    item_ids = params[:item_ids].to_s.split(",").map(&:strip)
+    items    = delivery.delivery_items.bulk_cancellable.where(id: item_ids).includes(:order_item).to_a
+    showroom = Showroom.find(params[:showroom_id])
+
+    DeliveryItems::BulkCancelToShowroomCreator.new(
+      delivery:      delivery,
+      items:         items,
+      showroom:      showroom,
+      delivery_date: params[:delivery_date],
+      current_user:  current_user,
+      notes:         params[:notes].presence
+    ).call
+
+    respond_with_delivery_update(
+      delivery.reload,
+      notice: "#{items.count} producto(s) cancelado(s) y asignados a sala #{showroom.name}."
+    )
+  rescue => e
+    handle_item_error(e, fallback: delivery_path(delivery))
   end
 
   def bulk_reschedule
