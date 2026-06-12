@@ -123,7 +123,12 @@
               <i class="bi bi-calendar-x me-1"></i>Sin plan
             <% end %>
             <% if current_user.seller? %>
-              <%= link_to deliveries_path(q: { order_seller_id_in: [current_user.seller.id] }),
+              <%= link_to deliveries_path(
+                    no_plan: params[:no_plan],
+                    show_rescheduled: params[:show_rescheduled],
+                    only_service_cases: params[:only_service_cases],
+                    q: (params[:q]&.to_unsafe_h || {}).merge("order_seller_id_in" => [current_user.seller.id])
+                  ),
                   class: "btn btn-xs btn-outline-primary #{params.dig(:q, :order_seller_id_in)&.map(&:to_s)&.include?(current_user.seller.id.to_s) ? 'active' : ''}" do %>
                 <i class="bi bi-person-check me-1"></i>Mis pedidos
               <% end %>
