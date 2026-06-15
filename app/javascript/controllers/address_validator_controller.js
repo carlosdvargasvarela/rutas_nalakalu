@@ -5,6 +5,15 @@ export default class extends Controller {
   static targets = ["submit", "addressInput", "errorMessage"];
 
   validateBeforeSubmit(event) {
+    // Si ya hay una dirección existente seleccionada, no bloquear
+    const existingAddressId = document.querySelector(
+      "[data-delivery-form-target='addressSelect']",
+    )?.value;
+    if (existingAddressId && existingAddressId !== "" && existingAddressId !== "__new__") {
+      this._clearError();
+      return;
+    }
+
     const lat = document.querySelector(
       "[data-address-autocomplete-target='lat']",
     )?.value;

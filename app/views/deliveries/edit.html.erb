@@ -10,6 +10,7 @@
       delivery: @delivery,
       clients: [@client],
       addresses: @addresses,
-      cancel_url: session[:deliveries_return_to] || deliveries_path %>
+      cancel_url: session[:deliveries_return_to] || deliveries_path,
+      disable_turbo: true %>
   </div>
 </div>

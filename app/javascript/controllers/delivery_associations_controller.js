@@ -13,7 +13,7 @@ export default class extends Controller {
     "propagateBtn",
   ];
 
-  static values = { propagateUrl: String };
+  static values = { propagateUrl: String, groupsUrl: String, sourceId: Number };
 
   toggleAddForm(event) {
     event.preventDefault();
@@ -32,6 +32,40 @@ export default class extends Controller {
     this.propagatePanelTarget.classList.toggle("d-none", !willShow);
     if (this.hasPropagateChevronTarget) {
       this.propagateChevronTarget.style.transform = willShow ? "rotate(180deg)" : "";
+    }
+  }
+
+  async linkDelivery(event) {
+    event.preventDefault();
+    if (!this.hasOrderNumberInputTarget) return;
+
+    const orderNumber = this.orderNumberInputTarget.value.trim();
+    if (!orderNumber) return;
+
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    try {
+      const resp = await fetch(this.groupsUrlValue, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "X-CSRF-Token": csrf,
+        },
+        body: JSON.stringify({
+          source_delivery_id: this.sourceIdValue,
+          target_order_number: orderNumber,
+        }),
+      });
+
+      if (resp.ok) {
+        window.location.reload();
+      } else {
+        const data = await resp.json().catch(() => ({}));
+        this._showResult("error", data.error || "No se pudo vincular el pedido.");
+      }
+    } catch (_e) {
+      this._showResult("error", "Error de conexión. Intentá de nuevo.");
     }
   }
 

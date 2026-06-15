@@ -5,7 +5,7 @@
           "delivery-form-addresses-url-value": addresses_for_client_deliveries_path,
           "delivery-form-orders-url-value": orders_for_client_deliveries_path,
           action: "submit->address-validator#validateBeforeSubmit",
-          turbo: true
+          turbo: local_assigns.fetch(:disable_turbo, false) ? "false" : true
         }
       } do |f| %>
   <%# ── HEADER DE PROGRESO ── %>
@@ -102,6 +102,6 @@
     <% end %>
     <%= f.submit delivery.new_record? ? "Crear entrega" : "Guardar cambios",
         class: "btn btn-primary px-5",
-        data: { "address-validator-target": "submitButton" } %>
+        data: { "address-validator-target": "submit" } %>
   </div>
 <% end %>

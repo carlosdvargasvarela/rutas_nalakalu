@@ -6,7 +6,9 @@
 %>
 <div id="associated_deliveries_<%= delivery.id %>"
      data-controller="delivery-associations"
-     data-delivery-associations-propagate-url-value="<%= propagate_to_associated_delivery_path(delivery) %>">
+     data-delivery-associations-propagate-url-value="<%= propagate_to_associated_delivery_path(delivery) %>"
+     data-delivery-associations-groups-url-value="<%= delivery_groups_path %>"
+     data-delivery-associations-source-id-value="<%= delivery.id %>">
 
   <%# Lista de pedidos asociados %>
   <% if associated.any? %>
@@ -67,18 +69,22 @@
     </button>
 
     <div data-delivery-associations-target="addForm" class="d-none mt-2">
-      <%= form_with url: delivery_groups_path do |f| %>
-        <%= hidden_field_tag :source_delivery_id, delivery.id %>
-        <div class="input-group input-group-sm">
-          <%= text_field_tag :target_order_number, "",
-                class: "form-control form-control-sm",
-                placeholder: "N° de pedido",
-                autofocus: true,
-                data: { "delivery-associations-target": "orderNumberInput" } %>
-          <%= submit_tag "Vincular", class: "btn btn-sm btn-primary" %>
-        </div>
-        <div class="form-text">Ingresá el número del pedido a asociar.</div>
-      <% end %>
+      <div class="input-group input-group-sm">
+        <%= text_field_tag :target_order_number, "",
+              class: "form-control form-control-sm",
+              placeholder: "N° de pedido",
+              autofocus: true,
+              data: {
+                "delivery-associations-target": "orderNumberInput",
+                action: "keydown.enter->delivery-associations#linkDelivery"
+              } %>
+        <button type="button"
+                class="btn btn-sm btn-primary"
+                data-action="click->delivery-associations#linkDelivery">
+          Vincular
+        </button>
+      </div>
+      <div class="form-text">Ingresá el número del pedido a asociar.</div>
     </div>
   </div>
   <% end %>
