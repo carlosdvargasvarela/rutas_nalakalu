@@ -9,7 +9,8 @@ module Deliveries
       "recoger de sala",
       "pendiente sp",
       "pendiente se",
-      "pendiente sg"
+      "pendiente sg",
+      "tienda"
     ].freeze
 
     EXCLUSIONS = [
@@ -19,7 +20,9 @@ module Deliveries
       "entregado en sg",
       "entregado sp",
       "entregado se",
-      "entregado sg"
+      "entregado sg",
+      "entregado en tienda",
+      "entregado tienda"
     ].freeze
 
     SALA_MAP = {
