@@ -1049,6 +1049,7 @@ git commit -m "feat: registrar PlanEvent al agregar/quitar paradas de un plan"
   test "start! moves the delivery to in_route via update! (PaperTrail visible) and records a route_started DeliveryEvent" do
     assignment = delivery_plan_assignments(:one)
     assignment.delivery.update!(status: :ready_to_deliver)
+    assignment.delivery.delivery_items.each { |i| i.update!(status: :in_plan) }
     versions_before = PaperTrail::Version.where(item_type: "Delivery", item_id: assignment.delivery.id).count
 
     assert_difference -> { DeliveryEvent.where(action: "route_started").count }, 1 do
@@ -1074,6 +1075,8 @@ git commit -m "feat: registrar PlanEvent al agregar/quitar paradas de un plan"
 ```
 
 (agregar estos dos tests dentro de la clase `DeliveryPlanAssignmentTest` creada en Task 7)
+
+**Nota sobre la precondición de items:** el primer test debe poner los items en `:in_plan` antes de llamar a `start!`. Si los items quedan en su estado de fixture original (`confirmed`), el `find_each` de `start!` no los toca (busca `status: in_plan`), y `delivery.update_status_based_on_items` —que se llama al final de `start!`— recalcula el status de la entrega a partir de sus items y lo regresa a `in_plan` en vez de dejarlo en `in_route`, haciendo fallar la aserción final. Por eso ambos tests fuerzan `:in_plan` en los items antes de invocar `start!`.
 
 - [ ] **Step 2: Correr los tests para confirmar que fallan**
 
