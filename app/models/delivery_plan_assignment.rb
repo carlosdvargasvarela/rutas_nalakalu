@@ -91,7 +91,7 @@ class DeliveryPlanAssignment < ApplicationRecord
 
     transaction do
       # El servicio maneja el cambio de estados de delivery e items
-      DeliveryFailureService.new(delivery, reason: reason).call
+      DeliveryFailureService.new(delivery, reason: reason, failed_by: failed_by).call
 
       # Marcamos el assignment como cancelado porque la parada fracasó
       update!(status: :cancelled, completed_at: Time.current)

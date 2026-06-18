@@ -1,8 +1,9 @@
 class DeliveryFailureService
-  def initialize(delivery, reason: nil, reschedule_days: 7)
+  def initialize(delivery, reason: nil, reschedule_days: 7, failed_by: nil)
     @delivery = delivery
     @reason = reason || "Entrega fracasada - reagendada automáticamente"
     @reschedule_days = reschedule_days
+    @failed_by = failed_by
   end
 
   def call
@@ -13,7 +14,10 @@ class DeliveryFailureService
       # 2. Clonar la entrega para una semana después
       new_delivery = clone_delivery!
 
-      # 3. Notificar a los involucrados
+      # 3. Registrar el evento de negocio con el id de la nueva entrega
+      record_failure_event(new_delivery)
+
+      # 4. Notificar a los involucrados
       notify_failure(new_delivery)
 
       new_delivery
@@ -32,8 +36,18 @@ class DeliveryFailureService
     )
 
     # Marcar todos los delivery_items como failed
-    @delivery.delivery_items.where.not(status: [:delivered, :cancelled])
-      .update_all(status: DeliveryItem.statuses[:failed], updated_at: Time.current)
+    @delivery.delivery_items.where.not(status: [:delivered, :cancelled]).find_each do |item|
+      item.update!(status: :failed)
+    end
+  end
+
+  def record_failure_event(new_delivery)
+    DeliveryEvent.record(
+      delivery: @delivery,
+      action: "failed",
+      actor: @failed_by || AuditActor.current,
+      payload: {reason: @reason, new_delivery_id: new_delivery.id}
+    )
   end
 
   def clone_delivery!
