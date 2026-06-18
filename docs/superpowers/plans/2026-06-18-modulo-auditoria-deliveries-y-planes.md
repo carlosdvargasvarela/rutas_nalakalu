@@ -2222,6 +2222,8 @@ git commit -m "feat: renderizar plan_event en el timeline (icon/color/title/desc
 require "test_helper"
 
 class AuditLogsControllerTest < ActionDispatch::IntegrationTest
+  include Devise::Test::IntegrationHelpers
+
   setup do
     @admin = users(:one)
     @admin.update!(role: :admin)
@@ -2251,12 +2253,6 @@ class AuditLogsControllerTest < ActionDispatch::IntegrationTest
   end
 end
 ```
-
-Nota: si el proyecto no tiene un helper `sign_in` de Devise Test Helpers disponible en `ActionDispatch::IntegrationTest`, usar en su lugar:
-```ruby
-post user_session_path, params: {user: {email: @admin.email, password: "password"}}
-```
-verificando antes con `bin/rails test test/controllers/audit_logs_controller_test.rb` cuál mecanismo de login usan otros controller tests del proyecto (revisar `test/controllers/users/` si existe) y ajustar el `setup` en consecuencia — esto es una decisión de implementación local, no cambia ninguna otra parte del plan.
 
 - [ ] **Step 2: Correr los tests para confirmar que fallan**
 
