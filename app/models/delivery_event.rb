@@ -28,6 +28,8 @@ class DeliveryEvent < ApplicationRecord
     warehousing_started
     warehousing_ended
     seller_reassigned
+    route_started
+    failed
     created
     updated
     cancelled
@@ -70,6 +72,8 @@ class DeliveryEvent < ApplicationRecord
     "warehousing_started" => "Bodegaje iniciado",
     "warehousing_ended" => "Bodegaje finalizado",
     "seller_reassigned" => "Vendedor reasignado",
+    "route_started" => "En ruta (parada de plan iniciada)",
+    "failed" => "Entrega fracasada",
     "created" => "Creada",
     "updated" => "Actualizada",
     "cancelled" => "Cancelada",
@@ -88,6 +92,8 @@ class DeliveryEvent < ApplicationRecord
     "warehousing_started" => "secondary",
     "warehousing_ended" => "secondary",
     "seller_reassigned" => "primary",
+    "route_started" => "info",
+    "failed" => "danger",
     "created" => "success",
     "updated" => "primary",
     "cancelled" => "danger",
@@ -106,6 +112,8 @@ class DeliveryEvent < ApplicationRecord
     "warehousing_started" => "bi-box-seam",
     "warehousing_ended" => "bi-box-arrow-up",
     "seller_reassigned" => "bi-person-badge",
+    "route_started" => "bi-truck",
+    "failed" => "bi-exclamation-triangle",
     "created" => "bi-plus-circle",
     "updated" => "bi-pencil",
     "cancelled" => "bi-x-circle",

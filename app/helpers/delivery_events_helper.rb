@@ -72,6 +72,17 @@ module DeliveryEventsHelper
         "Vendedor reasignado"
       end
 
+    when "route_started"
+      "Entrega en ruta (parada del plan iniciada)"
+
+    when "failed"
+      reason = data["reason"].presence
+      new_id = data["new_delivery_id"]
+      parts = ["Entrega fracasada"]
+      parts << "— #{reason}" if reason
+      parts << "(Reagendada: Entrega ##{new_id})" if new_id
+      parts.join(" ")
+
     when "created"
       date = format_date_safe(data["delivery_date"])
       type = data["delivery_type"].presence
