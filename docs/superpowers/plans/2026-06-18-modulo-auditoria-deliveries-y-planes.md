@@ -781,6 +781,15 @@ class DeliveryPlanTest < ActiveSupport::TestCase
       plan.update!(driver: users(:one))
     end
   end
+
+  test "removing a driver from a sent_to_logistics plan does not record a PlanEvent (draft is unmapped, and the nested-save guard would also prevent a double record if it were mapped)" do
+    plan = delivery_plans(:one)
+    plan.update_columns(status: DeliveryPlan.statuses[:sent_to_logistics], driver_id: users(:one).id)
+
+    assert_no_difference -> { plan.plan_events.count } do
+      plan.update!(driver_id: nil)
+    end
+  end
 end
 ```
 
@@ -901,7 +910,7 @@ Sin embargo, **el guardado anidado SÍ contamina el chequeo `saved_change_to_sta
 - [ ] **Step 5: Correr los tests para confirmar que pasan**
 
 Run: `bin/rails test test/models/delivery_plan_test.rb`
-Expected: 7 runs, 0 failures, 0 errors.
+Expected: 8 runs, 0 failures, 0 errors.
 
 **Nota sobre fixtures:** si `test/fixtures/delivery_plans.yml` todavía tiene los valores placeholder del scaffold (`week: MyString`, `year: 1`), estos tests van a fallar por validaciones (`year`/`week` numericality) antes de llegar a probar nada de `PlanEvent` — ningún test anterior en la suite había hecho `.update!`/`.save!` directo sobre ese fixture. Corregir el fixture a valores válidos (ej. `week: "1"`, `year: 2026` para `one` y `two`) es necesario y está dentro del alcance de este task.
 
