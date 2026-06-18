@@ -37,7 +37,7 @@ module EventLog
     def record_event(attrs)
       create!(attrs.merge(created_at: Time.current))
     rescue => e
-      Rails.logger.error("❌ #{name}.record falló [#{attrs[:action]}]: #{e.message}")
+      Rails.logger.error("❌ #{name}.record_event falló [#{attrs[:action]}]: #{e.message}")
       nil
     end
   end
