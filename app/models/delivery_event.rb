@@ -1,5 +1,6 @@
-# app/models/delivery_event.rb
 class DeliveryEvent < ApplicationRecord
+  include EventLog
+
   self.table_name = "delivery_events"
 
   # =========================================================================
@@ -11,7 +12,6 @@ class DeliveryEvent < ApplicationRecord
   # =========================================================================
   # Validaciones
   # =========================================================================
-  validates :action, presence: true
   validates :delivery_id, presence: true
 
   # =========================================================================
@@ -36,26 +36,6 @@ class DeliveryEvent < ApplicationRecord
   ].freeze
 
   # =========================================================================
-  # Scopes
-  # =========================================================================
-  scope :recent, -> { order(created_at: :desc) }
-  scope :for_action, ->(action) { where(action: action) }
-  scope :by_actor, ->(user_id) { where(actor_id: user_id) }
-
-  # =========================================================================
-  # Payload helpers
-  # =========================================================================
-
-  # Deserializa el payload JSON de forma segura
-  def payload_data
-    return {} if payload.blank?
-    JSON.parse(payload)
-  rescue JSON::ParserError => e
-    Rails.logger.error("DeliveryEvent#payload_data error: #{e.message}")
-    {}
-  end
-
-  # =========================================================================
   # Factory method — punto único de creación
   # =========================================================================
 
@@ -67,16 +47,12 @@ class DeliveryEvent < ApplicationRecord
   #     payload: { reason: "...", new_date: "..." }
   #   )
   def self.record(delivery:, action:, actor: nil, payload: {})
-    create!(
+    record_event(
       delivery: delivery,
       action: action,
       actor: actor,
-      payload: payload.to_json,
-      created_at: Time.current
+      payload: payload.to_json
     )
-  rescue => e
-    Rails.logger.error("❌ DeliveryEvent.record falló [#{action}] delivery=#{delivery&.id}: #{e.message}")
-    nil
   end
 
   # =========================================================================
@@ -136,20 +112,4 @@ class DeliveryEvent < ApplicationRecord
     "archived" => "bi-archive",
     "reopened" => "bi-arrow-counterclockwise"
   }.freeze
-
-  def label
-    ACTION_LABELS[action] || action.humanize
-  end
-
-  def color
-    ACTION_COLORS[action] || "secondary"
-  end
-
-  def icon
-    ACTION_ICONS[action] || "bi-circle"
-  end
-
-  def actor_name
-    actor&.name || "Sistema"
-  end
 end
