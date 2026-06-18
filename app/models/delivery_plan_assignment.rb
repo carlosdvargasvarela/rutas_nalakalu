@@ -72,6 +72,13 @@ class DeliveryPlanAssignment < ApplicationRecord
     transaction do
       delivery.mark_as_delivered!
       update!(status: :completed, completed_at: Time.current)
+
+      DeliveryEvent.record(
+        delivery: delivery,
+        action: "delivered",
+        actor: AuditActor.current,
+        payload: {via: "plan_assignment"}
+      )
     end
 
     true

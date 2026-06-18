@@ -49,4 +49,16 @@ class DeliveryPlanAssignmentTest < ActiveSupport::TestCase
 
     assert_equal "in_route", item.reload.status
   end
+
+  test "complete! marks the delivery as delivered and records a delivered DeliveryEvent" do
+    assignment = delivery_plan_assignments(:one)
+
+    assert_difference -> { DeliveryEvent.where(action: "delivered", delivery_id: assignment.delivery_id).count }, 1 do
+      assignment.complete!
+    end
+
+    assert_equal "completed", assignment.reload.status
+    event = DeliveryEvent.where(action: "delivered", delivery_id: assignment.delivery_id).last
+    assert_equal "plan_assignment", event.payload_data["via"]
+  end
 end
