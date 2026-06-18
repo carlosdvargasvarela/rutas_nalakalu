@@ -771,6 +771,16 @@ class DeliveryPlanTest < ActiveSupport::TestCase
       assert_equal users(:one), plan.plan_events.last.actor
     end
   end
+
+  test "assigning a driver to a confirmed draft plan records routes_created exactly once (nested-save de-dup guard)" do
+    plan = delivery_plans(:one)
+    plan.update!(status: :draft)
+    plan.deliveries.each { |d| d.update_columns(status: Delivery.statuses[:in_plan]) }
+
+    assert_difference -> { plan.plan_events.where(action: "routes_created").count }, 1 do
+      plan.update!(driver: users(:one))
+    end
+  end
 end
 ```
 
@@ -854,7 +864,9 @@ por:
   def record_status_change_event
     action = STATUS_TO_PLAN_EVENT_ACTION[status]
     return unless action
+    return if action == @recorded_plan_event_action
 
+    @recorded_plan_event_action = action
     PlanEvent.record(delivery_plan: self, action: action, actor: AuditActor.current)
   end
 
@@ -882,17 +894,21 @@ por:
 end
 ```
 
-**Nota de seguridad sobre recursión:** `update_status_on_driver_change` corre dentro de un `after_update` (`if: :saved_change_to_driver_id?`). Al cambiar de `update_column` a `update!`, ese método dispara un *nuevo* ciclo de guardado anidado. Como ese guardado anidado no cambia `driver_id`, `saved_change_to_driver_id?` es `false` en él y `update_status_on_driver_change` no se vuelve a disparar — no hay recursión infinita. Sí dispara `record_status_change_event` (porque ese guardado anidado cambia `status`), que es exactamente el efecto buscado: el `PlanEvent` de `routes_created`/`draft↔` queda registrado automáticamente.
+**Nota de seguridad sobre recursión (corregida durante implementación — ver Task 6 en el ledger):** `update_status_on_driver_change` corre dentro de un `after_update` (`if: :saved_change_to_driver_id?`). Al cambiar de `update_column` a `update!`, ese método dispara un *nuevo* ciclo de guardado anidado. Ese guardado anidado no cambia `driver_id`, así que `saved_change_to_driver_id?` es `false` en él y `update_status_on_driver_change` no se vuelve a disparar — no hay recursión infinita.
+
+Sin embargo, **el guardado anidado SÍ contamina el chequeo `saved_change_to_status?` de la cadena `after_update` externa**: Rails rastrea `saved_changes`/`mutations_before_last_save` en el mismo objeto en memoria, así que cuando la cadena externa llega a evaluar su propio callback `record_status_change_event, if: :saved_change_to_status?` (registrado después de `update_status_on_driver_change` en la lista), ese chequeo ya refleja los cambios del guardado anidado, no los del guardado externo — y el callback externo se dispara una segunda vez para el mismo cambio de status, duplicando el `PlanEvent`. Por eso `record_status_change_event` lleva un guard de idempotencia (`@recorded_plan_event_action`): es una variable de instancia que persiste durante la vida del objeto Ruby en memoria (sobrevive al guardado anidado, ya que es el mismo objeto), así que la segunda invocación para la misma acción se descarta. Si el objeto se recarga de la base de datos (`reload`/`find` nuevamente) y la misma transición vuelve a ocurrir legítimamente más tarde, el guard se reinicia solo porque es un objeto Ruby nuevo — no hay riesgo de bloquear eventos legítimos futuros.
 
 - [ ] **Step 5: Correr los tests para confirmar que pasan**
 
 Run: `bin/rails test test/models/delivery_plan_test.rb`
-Expected: 6 runs, 0 failures, 0 errors.
+Expected: 7 runs, 0 failures, 0 errors.
+
+**Nota sobre fixtures:** si `test/fixtures/delivery_plans.yml` todavía tiene los valores placeholder del scaffold (`week: MyString`, `year: 1`), estos tests van a fallar por validaciones (`year`/`week` numericality) antes de llegar a probar nada de `PlanEvent` — ningún test anterior en la suite había hecho `.update!`/`.save!` directo sobre ese fixture. Corregir el fixture a valores válidos (ej. `week: "1"`, `year: 2026` para `one` y `two`) es necesario y está dentro del alcance de este task.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add app/models/delivery_plan.rb test/models/delivery_plan_test.rb
+git add app/models/delivery_plan.rb test/models/delivery_plan_test.rb test/fixtures/delivery_plans.yml
 git commit -m "feat: registrar PlanEvent en creación y cambios de status de DeliveryPlan"
 ```
 
