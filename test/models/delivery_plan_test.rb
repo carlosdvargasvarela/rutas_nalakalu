@@ -67,4 +67,13 @@ class DeliveryPlanTest < ActiveSupport::TestCase
       plan.update!(driver: users(:one))
     end
   end
+
+  test "removing a driver from a sent_to_logistics plan does not record a PlanEvent (draft is unmapped, and the nested-save guard would also prevent a double record if it were mapped)" do
+    plan = delivery_plans(:one)
+    plan.update_columns(status: DeliveryPlan.statuses[:sent_to_logistics], driver_id: users(:one).id)
+
+    assert_no_difference -> { plan.plan_events.count } do
+      plan.update!(driver_id: nil)
+    end
+  end
 end
