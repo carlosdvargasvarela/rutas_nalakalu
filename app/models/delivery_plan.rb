@@ -318,7 +318,9 @@ class DeliveryPlan < ApplicationRecord
   def record_status_change_event
     action = STATUS_TO_PLAN_EVENT_ACTION[status]
     return unless action
+    return if action == @recorded_plan_event_action
 
+    @recorded_plan_event_action = action
     PlanEvent.record(delivery_plan: self, action: action, actor: AuditActor.current)
   end
 

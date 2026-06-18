@@ -57,4 +57,14 @@ class DeliveryPlanTest < ActiveSupport::TestCase
       assert_equal users(:one), plan.plan_events.last.actor
     end
   end
+
+  test "assigning a driver to a confirmed draft plan records routes_created exactly once (nested-save de-dup guard)" do
+    plan = delivery_plans(:one)
+    plan.update!(status: :draft)
+    plan.deliveries.each { |d| d.update_columns(status: Delivery.statuses[:in_plan]) }
+
+    assert_difference -> { plan.plan_events.where(action: "routes_created").count }, 1 do
+      plan.update!(driver: users(:one))
+    end
+  end
 end
