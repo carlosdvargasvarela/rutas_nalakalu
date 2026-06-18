@@ -43,17 +43,22 @@ class DeliveryPlanAssignment < ApplicationRecord
     transaction do
       update!(status: :in_route, started_at: Time.current)
 
-      # Cambiar delivery a in_route si está en plan o listo
       if delivery.in_plan? || delivery.ready_to_deliver?
-        delivery.update_column(:status, Delivery.statuses[:in_route])
+        delivery.update!(status: :in_route)
       end
 
-      # Cambiar items de in_plan a in_route
-      delivery.delivery_items.where(status: DeliveryItem.statuses[:in_plan])
-        .update_all(status: DeliveryItem.statuses[:in_route], updated_at: Time.current)
+      delivery.delivery_items.where(status: DeliveryItem.statuses[:in_plan]).find_each do |item|
+        item.update!(status: :in_route)
+      end
 
-      # Recalcular estado del delivery explícitamente
       delivery.update_status_based_on_items
+
+      DeliveryEvent.record(
+        delivery: delivery,
+        action: "route_started",
+        actor: AuditActor.current,
+        payload: {delivery_plan_id: delivery_plan_id, stop_order: stop_order}
+      )
     end
 
     true
