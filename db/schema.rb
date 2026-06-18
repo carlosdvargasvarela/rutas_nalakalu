@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_12_191827) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_18_200000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -328,6 +328,18 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_12_191827) do
     t.index ["seller_id"], name: "index_orders_on_seller_id"
   end
 
+  create_table "plan_events", force: :cascade do |t|
+    t.integer "delivery_plan_id", null: false
+    t.string "action", null: false
+    t.integer "actor_id"
+    t.text "payload"
+    t.datetime "created_at", null: false
+    t.index ["action"], name: "index_plan_events_on_action"
+    t.index ["actor_id"], name: "index_plan_events_on_actor_id"
+    t.index ["created_at"], name: "index_plan_events_on_created_at"
+    t.index ["delivery_plan_id"], name: "index_plan_events_on_delivery_plan_id"
+  end
+
   create_table "qbwc_jobs", force: :cascade do |t|
     t.string "name"
     t.string "company", limit: 1000
@@ -447,6 +459,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_12_191827) do
   add_foreign_key "order_items", "orders"
   add_foreign_key "orders", "clients"
   add_foreign_key "orders", "sellers"
+  add_foreign_key "plan_events", "delivery_plans", on_delete: :cascade
+  add_foreign_key "plan_events", "users", column: "actor_id", on_delete: :nullify
   add_foreign_key "sellers", "users"
   add_foreign_key "showrooms", "delivery_addresses"
 end
