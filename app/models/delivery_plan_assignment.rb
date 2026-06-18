@@ -11,7 +11,9 @@ class DeliveryPlanAssignment < ApplicationRecord
 
   # Callbacks
   after_create :change_deliveries_statuses
+  after_create :record_stop_added
   after_destroy :revert_statuses
+  after_destroy :record_stop_removed
 
   # Validaciones
   validates :stop_order, numericality: {only_integer: true, allow_nil: true}
@@ -150,5 +152,29 @@ class DeliveryPlanAssignment < ApplicationRecord
       # Recalcular estado del delivery explícitamente
       delivery.update_status_based_on_items
     end
+  end
+
+  def record_stop_added
+    PlanEvent.record(
+      delivery_plan: delivery_plan,
+      action: "stop_added",
+      actor: AuditActor.current,
+      payload: {delivery_id: delivery_id, delivery_label: delivery_label_for_event}
+    )
+  end
+
+  def record_stop_removed
+    PlanEvent.record(
+      delivery_plan: delivery_plan,
+      action: "stop_removed",
+      actor: AuditActor.current,
+      payload: {delivery_id: delivery_id, delivery_label: delivery_label_for_event}
+    )
+  end
+
+  def delivery_label_for_event
+    "Pedido #{delivery.order_number} — #{delivery.delivery_address&.address}"
+  rescue StandardError
+    "Entrega ##{delivery_id}"
   end
 end
