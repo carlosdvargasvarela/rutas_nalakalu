@@ -4,6 +4,7 @@ class DeliveryPlan < ApplicationRecord
   has_many :delivery_plan_assignments, -> { order(:stop_order) }, dependent: :destroy
   has_many :deliveries, through: :delivery_plan_assignments
   has_many :delivery_plan_locations, dependent: :destroy
+  has_many :plan_events, dependent: :destroy
   belongs_to :driver, class_name: "User", optional: true
   before_destroy :ensure_deletable
 
