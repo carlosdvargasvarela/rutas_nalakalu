@@ -8,8 +8,10 @@ class DeliveryPlan < ApplicationRecord
   belongs_to :driver, class_name: "User", optional: true
   before_destroy :ensure_deletable
 
+  after_create :record_created_event
   after_update :notify_driver_assignment, if: :saved_change_to_driver_id?
   after_update :update_status_on_driver_change, if: :saved_change_to_driver_id?
+  after_update :record_status_change_event, if: :saved_change_to_status?
   before_destroy :flush_assignments
 
   enum :status, {
@@ -301,6 +303,25 @@ class DeliveryPlan < ApplicationRecord
 
   private
 
+  STATUS_TO_PLAN_EVENT_ACTION = {
+    "sent_to_logistics" => "sent_to_logistics",
+    "routes_created" => "routes_created",
+    "in_progress" => "started",
+    "completed" => "finished",
+    "aborted" => "aborted"
+  }.freeze
+
+  def record_created_event
+    PlanEvent.record(delivery_plan: self, action: "created", actor: AuditActor.current)
+  end
+
+  def record_status_change_event
+    action = STATUS_TO_PLAN_EVENT_ACTION[status]
+    return unless action
+
+    PlanEvent.record(delivery_plan: self, action: action, actor: AuditActor.current)
+  end
+
   def notify_driver_assignment
     NotificationService.notify_route_assigned(self) if driver_id.present?
   end
@@ -308,14 +329,14 @@ class DeliveryPlan < ApplicationRecord
   def update_status_on_driver_change
     if driver_id.present?
       if all_deliveries_confirmed?
-        update_column(:status, DeliveryPlan.statuses[:routes_created]) if status_draft?
+        update!(status: :routes_created) if status_draft?
       else
         errors.add(:base, "No puedes asignar a logística mientras existan entregas sin confirmar")
       end
 
       self.status = :draft unless all_deliveries_confirmed?
     elsif status_sent_to_logistics?
-      update_column(:status, DeliveryPlan.statuses[:draft])
+      update!(status: :draft)
     end
   end
 
