@@ -99,4 +99,17 @@ class DeliveryPlanTest < ActiveSupport::TestCase
 
     assert_equal "loaded", item.reload.load_status
   end
+
+  test "assigning a driver while all deliveries are confirmed updates status via update! and is visible in PaperTrail" do
+    plan = delivery_plans(:one)
+    plan.update_columns(status: DeliveryPlan.statuses[:draft])
+    plan.deliveries.update_all(status: Delivery.statuses[:in_plan])
+    versions_before = PaperTrail::Version.where(item_type: "DeliveryPlan", item_id: plan.id).count
+
+    plan.update!(driver: users(:one))
+
+    assert plan.reload.status_routes_created?
+    assert_operator PaperTrail::Version.where(item_type: "DeliveryPlan", item_id: plan.id).count, :>, versions_before
+    assert_equal "routes_created", plan.plan_events.last.action
+  end
 end
