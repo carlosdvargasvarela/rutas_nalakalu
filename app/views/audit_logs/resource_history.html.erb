@@ -35,7 +35,8 @@
       </div>
       <%= render "shared/timeline",
           timeline_groups: @timeline_groups,
-          users_by_id: @users_by_id %>
+          users_by_id: @users_by_id,
+          viewing: @resource %>
     </div>
     <%# ── COLUMNA LATERAL ── %>
     <div class="col-12 col-lg-4">
@@ -124,25 +125,23 @@
         </div>
         <div class="card-body px-4 py-3">
           <%# Eventos de negocio (DeliveryEvent) %>
-          <% business_groups = @timeline_groups.select { |g| g[:primary].delivery_event? } %>
+          <% business_groups = @timeline_groups.select { |g| g[:primary].delivery_event? || g[:primary].plan_event? } %>
           <% if business_groups.any? %>
             <p class="text-muted small fw-semibold mb-2">Eventos de negocio</p>
-            <% actions_count = business_groups.group_by { |g| g[:primary].record.action }
-                                              .transform_values(&:size) %>
             <% total_ev = business_groups.size %>
-            <% DeliveryEvent::ACTION_LABELS.each do |action, label| %>
-              <% count = actions_count[action] || 0 %>
-              <% next if count.zero? %>
+            <% business_groups.group_by { |g| g[:primary].record.action }.each do |action, groups| %>
+              <% sample = groups.first[:primary].record %>
+              <% count = groups.size %>
               <div class="mb-2">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="small text-<%= DeliveryEvent::ACTION_COLORS[action] || 'secondary' %>">
-                    <i class="bi <%= DeliveryEvent::ACTION_ICONS[action] || 'bi-circle' %> me-1"></i>
-                    <%= label %>
+                  <span class="small text-<%= sample.color %>">
+                    <i class="bi <%= sample.icon %> me-1"></i>
+                    <%= sample.label %>
                   </span>
                   <strong class="small"><%= count %></strong>
                 </div>
                 <div class="progress rounded-pill" style="height:5px;">
-                  <div class="progress-bar bg-<%= DeliveryEvent::ACTION_COLORS[action] || 'secondary' %> rounded-pill"
+                  <div class="progress-bar bg-<%= sample.color %> rounded-pill"
                        style="width:<%= total_ev.zero? ? 0 : (count * 100.0 / total_ev).round %>%">
                   </div>
                 </div>

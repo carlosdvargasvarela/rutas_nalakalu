@@ -1,4 +1,4 @@
-<%# locals: timeline_groups, users_by_id %>
+<%# locals: timeline_groups, users_by_id, viewing %>
 <div class="modern-timeline">
   <% timeline_groups.each do |group| %>
     <% primary   = group[:primary] %>
@@ -25,6 +25,9 @@
               <%= timeline_title(primary) %>
             </span>
             <%= timeline_source_badge(primary) %>
+            <% if (context_label = timeline_context_label(primary, local_assigns[:viewing])) %>
+              <span class="badge bg-light text-muted border"><%= context_label %></span>
+            <% end %>
           </div>
           <div class="tc-actor">
             <i class="bi bi-person-circle me-1"></i>
@@ -36,7 +39,7 @@
           <%= timeline_description(primary, users_by_id: users_by_id) %>
         </p>
         <%# Diffs de campos — PaperTrail primario %>
-        <% if !primary.delivery_event? && primary.record.event == "update" %>
+        <% if primary.paper_trail? && primary.record.event == "update" %>
           <% all_changes = summarize_changes(primary.record, max_keys: 100) %>
           <% if all_changes.any? %>
             <div class="tc-diff mt-2 pt-2 border-top">

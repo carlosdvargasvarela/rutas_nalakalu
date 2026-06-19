@@ -2252,6 +2252,8 @@ git commit -m "feat: renderizar plan_event en el timeline (icon/color/title/desc
 - Consumes: `TimelineEntry#plan_event?` (Task 17), `timeline_context_label` (Task 18).
 - Nota sobre la spec: se usa `resource.delivery_plan_assignment` (singular, asociación real) en vez de `delivery_plan_assignments` (plural) — ver "Corrección sobre la spec" al inicio del plan.
 
+**Corrección encontrada en ejecución:** `ApplicationController#check_password_change` redirige a `/users/edit` cuando `force_password_change?` es true, y ese flag tiene `default: true` en el schema — los fixtures de `User` no lo setean. Sin `force_password_change: false` en el setup, todo `sign_in` queda redirigido antes de llegar al controller bajo prueba.
+
 - [ ] **Step 1: Escribir los tests (fallan con el código actual)**
 
 ```ruby
@@ -2263,7 +2265,7 @@ class AuditLogsControllerTest < ActionDispatch::IntegrationTest
 
   setup do
     @admin = users(:one)
-    @admin.update!(role: :admin)
+    @admin.update!(role: :admin, force_password_change: false)
     sign_in @admin
   end
 

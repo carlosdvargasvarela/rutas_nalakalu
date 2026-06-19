@@ -63,30 +63,22 @@ class AuditLogsController < ApplicationController
       .group(:event)
       .count
 
-    # DeliveryEvents
-    delivery_events_scope = if @resource.is_a?(Delivery)
-      @resource.delivery_events.includes(:actor).recent
-    else
-      DeliveryEvent.none
-    end
+    delivery_events_scope = delivery_events_for(@resource)
+    plan_events_scope = plan_events_for(@resource)
 
     # ── Construir timeline unificado ────────────────────────────────────────
     entries = []
 
     delivery_events_scope.each do |e|
-      entries << TimelineEntry.new(
-        timestamp: e.created_at,
-        source: :delivery_event,
-        record: e
-      )
+      entries << TimelineEntry.new(timestamp: e.created_at, source: :delivery_event, record: e)
+    end
+
+    plan_events_scope.each do |e|
+      entries << TimelineEntry.new(timestamp: e.created_at, source: :plan_event, record: e)
     end
 
     versions_scope.each do |v|
-      entries << TimelineEntry.new(
-        timestamp: v.created_at,
-        source: :paper_trail,
-        record: v
-      )
+      entries << TimelineEntry.new(timestamp: v.created_at, source: :paper_trail, record: v)
     end
 
     # El agrupador devuelve array de { primary:, secondary: }
@@ -108,6 +100,33 @@ class AuditLogsController < ApplicationController
   private
 
   # ── Helpers privados ───────────────────────────────────────────────────────
+
+  # DeliveryEvent propios del recurso, o (si es un DeliveryPlan) los de todas sus entregas.
+  def delivery_events_for(resource)
+    case resource
+    when Delivery
+      resource.delivery_events.includes(:actor).recent
+    when DeliveryPlan
+      DeliveryEvent.where(delivery_id: resource.deliveries.select(:id)).includes(:actor).recent
+    else
+      DeliveryEvent.none
+    end
+  end
+
+  # PlanEvent propios del recurso, o (si es una Delivery) los de su plan actual.
+  # Nota: Delivery usa has_one :delivery_plan_assignment, así que solo se ve el
+  # plan vigente, no el historial de planes pasados (esa relación no se conserva).
+  def plan_events_for(resource)
+    case resource
+    when DeliveryPlan
+      resource.plan_events.includes(:actor).recent
+    when Delivery
+      plan = resource.delivery_plan_assignment&.delivery_plan
+      plan ? plan.plan_events.includes(:actor).recent : PlanEvent.none
+    else
+      PlanEvent.none
+    end
+  end
 
   def preload_items(versions)
     versions.group_by(&:item_type).each_with_object({}) do |(type, type_versions), cache|
