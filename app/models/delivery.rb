@@ -272,11 +272,10 @@ class Delivery < ApplicationRecord
     transaction do
       delivery_items
         .where.not(load_status: DeliveryItem.load_statuses[:missing])
-        .update_all(
-          load_status: DeliveryItem.load_statuses[:loaded],
-          status: DeliveryItem.statuses[:loaded_on_truck],
-          updated_at: Time.current
-        )
+        .find_each do |item|
+          item.update!(load_status: :loaded, status: :loaded_on_truck)
+        end
+
       recalculate_load_status!
       update_status_based_on_items
     end
@@ -288,10 +287,10 @@ class Delivery < ApplicationRecord
 
   def reset_load_status!
     transaction do
-      delivery_items.update_all(
-        load_status: DeliveryItem.load_statuses[:unloaded],
-        updated_at: Time.current
-      )
+      delivery_items.find_each do |item|
+        item.update!(load_status: :unloaded)
+      end
+
       recalculate_load_status!
     end
   end
