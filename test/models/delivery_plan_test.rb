@@ -76,4 +76,27 @@ class DeliveryPlanTest < ActiveSupport::TestCase
       plan.update!(driver_id: nil)
     end
   end
+
+  test "recalculate_load_status! leaves a PaperTrail version on the plan" do
+    plan = delivery_plans(:one)
+    item = delivery_items(:one)
+    item.update!(load_status: :loaded)
+    versions_before = PaperTrail::Version.where(item_type: "DeliveryPlan", item_id: plan.id).count
+
+    plan.recalculate_load_status!
+
+    assert_operator PaperTrail::Version.where(item_type: "DeliveryPlan", item_id: plan.id).count, :>, versions_before
+  end
+
+  test "mark_all_loaded! leaves a PaperTrail version on each affected item" do
+    plan = delivery_plans(:one)
+    item = delivery_items(:one)
+    item.update!(load_status: :unloaded)
+
+    assert_difference -> { PaperTrail::Version.where(item_type: "DeliveryItem", item_id: item.id).count }, 1 do
+      plan.mark_all_loaded!
+    end
+
+    assert_equal "loaded", item.reload.load_status
+  end
 end

@@ -116,7 +116,7 @@ class DeliveryPlan < ApplicationRecord
       :empty
     end
 
-    update_column(:load_status, DeliveryPlan.load_statuses[new_status])
+    update!(load_status: new_status)
 
     if new_status == :all_loaded && !status_completed?
       status_completed!
@@ -124,27 +124,23 @@ class DeliveryPlan < ApplicationRecord
   end
 
   # Marcar todo el plan como cargado
-  # Usa update_all para eficiencia y solo recalcula el plan UNA vez al final
   def mark_all_loaded!
     transaction do
-      # 1. Actualizar todos los delivery_items de todas las deliveries del plan
       DeliveryItem
         .joins(:delivery)
         .where(deliveries: {id: delivery_ids})
         .where.not(load_status: DeliveryItem.load_statuses[:missing])
-        .update_all(
-          load_status: DeliveryItem.load_statuses[:loaded],
-          status: DeliveryItem.statuses[:loaded_on_truck],
-          updated_at: Time.current
-        )
+        .find_each do |item|
+          item.update!(load_status: :loaded, status: :loaded_on_truck)
+        end
 
-      # 2. Recalcular load_status y status de cada delivery (en memoria)
+      # Recalcular load_status y status de cada delivery (en memoria)
       deliveries.each do |delivery|
         delivery.recalculate_load_status!
         delivery.update_status_based_on_items
       end
 
-      # 3. Recalcular el estado de carga del plan una sola vez
+      # Recalcular el estado de carga del plan una sola vez
       recalculate_load_status!
     end
   end

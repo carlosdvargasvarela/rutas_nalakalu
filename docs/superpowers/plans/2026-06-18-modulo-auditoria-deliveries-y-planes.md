@@ -1486,11 +1486,17 @@ git commit -m "fix: hacer visibles en PaperTrail las cascadas de change_deliveri
     plan = delivery_plans(:one)
     item = delivery_items(:one)
     item.update!(load_status: :loaded)
+    versions_before = PaperTrail::Version.where(item_type: "DeliveryPlan", item_id: plan.id).count
 
-    assert_difference -> { PaperTrail::Version.where(item_type: "DeliveryPlan", item_id: plan.id).count }, 1 do
-      plan.recalculate_load_status!
-    end
+    plan.recalculate_load_status!
+
+    assert_operator PaperTrail::Version.where(item_type: "DeliveryPlan", item_id: plan.id).count, :>, versions_before
   end
+```
+
+**Corrección encontrada en ejecución:** con la fixture `delivery_plans(:one)` (un solo item, que queda `:all_loaded`), `recalculate_load_status!` también dispara `status_completed!` en cascada, generando una SEGUNDA versión de PaperTrail además de la del propio `update!(load_status: ...)`. `assert_difference ..., 1` es por tanto frágil — se cambió a un conteo antes/después con `assert_operator :>`, igual que en el test de Task 14.
+
+```ruby
 
   test "mark_all_loaded! leaves a PaperTrail version on each affected item" do
     plan = delivery_plans(:one)
