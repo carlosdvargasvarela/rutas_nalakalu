@@ -104,6 +104,26 @@ module AuditLogsHelper
       2 => "Entregado",
       3 => "Cancelado",
       4 => "Faltante"
+    },
+    "DeliveryPlan.status" => {
+      0 => "Borrador",
+      1 => "Enviado a logística",
+      2 => "Ruta creada",
+      3 => "En progreso",
+      4 => "Completado",
+      5 => "Abortado"
+    },
+    "DeliveryPlan.load_status" => {
+      0 => "Sin cargar",
+      1 => "Parcialmente cargado",
+      2 => "Completamente cargado",
+      3 => "Con faltantes"
+    },
+    "DeliveryPlanAssignment.status" => {
+      0 => "Pendiente",
+      1 => "En ruta",
+      2 => "Completado",
+      3 => "Cancelado"
     }
   }.freeze
 
