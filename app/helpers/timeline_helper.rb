@@ -28,6 +28,10 @@ module TimelineHelper
   def timeline_description(entry, users_by_id: {})
     if entry.delivery_event?
       delivery_event_description(entry.record)
+    elsif entry.record.event == "create"
+      describe_fields(create_summary(entry.record), entry.record.item_type, "Registro creado")
+    elsif entry.record.event == "destroy"
+      describe_fields(destroy_summary(entry.record), entry.record.item_type, "Registro eliminado")
     else
       changes = summarize_changes(entry.record, max_keys: 5)
       return "Sin cambios detectados" if changes.blank?
@@ -36,6 +40,12 @@ module TimelineHelper
         "#{attr.humanize}: #{format_value_detailed(before)} → #{format_value_detailed(after)}"
       end.join(" · ")
     end
+  end
+
+  def describe_fields(fields, item_type, fallback)
+    return fallback if fields.blank?
+
+    fields.map { |attr, value| "#{attribute_label(attr, item_type)}: #{format_change_value(value, attr, item_type)}" }.join(" · ")
   end
 
   def timeline_actor(entry, users_by_id = {})

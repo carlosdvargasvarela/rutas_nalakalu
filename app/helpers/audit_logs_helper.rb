@@ -184,6 +184,7 @@ module AuditLogsHelper
       enum_map = ENUM_VALUE_MAPS["#{item_type}.#{attr}"]
       if enum_map
         int_key = Integer(value) rescue nil
+        int_key ||= enum_key_to_int(item_type, attr, value)
         label = enum_map[int_key] || enum_map[value.to_s]
         return label if label
       end
@@ -192,6 +193,19 @@ module AuditLogsHelper
     return "ID: #{value}" if FK_ATTRS.include?(attr.to_s) && value.present?
 
     format_value_detailed(value)
+  end
+
+  # version.changeset expone los enums ya casteados (ej. "confirmed") en
+  # eventos create/update, en vez del entero crudo que usa ENUM_VALUE_MAPS.
+  # Esto resuelve el entero original para poder traducirlo igual.
+  def enum_key_to_int(item_type, attr, value)
+    return nil unless value.is_a?(String)
+
+    klass = item_type.constantize
+    accessor = attr.to_s.pluralize
+    klass.respond_to?(accessor) ? klass.public_send(accessor)[value] : nil
+  rescue NameError, ArgumentError
+    nil
   end
 
   def format_value_detailed(value)

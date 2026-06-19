@@ -1805,7 +1805,10 @@ git commit -m "fix: traducir enums de DeliveryPlan/DeliveryPlanAssignment en el 
 
 **Files:**
 - Modify: `app/helpers/timeline_helper.rb` (`timeline_description`)
+- Modify: `app/helpers/audit_logs_helper.rb` (`format_change_value` — ver corrección abajo)
 - Test: agregar al `test/helpers/timeline_helper_test.rb` creado en este mismo task
+
+**Corrección encontrada en ejecución:** `version.changeset` expone los enums ya casteados como string (ej. `"confirmed"`) en eventos `create`/`update`, no el entero crudo que `ENUM_VALUE_MAPS` espera como clave (esto es distinto de `destroy`, donde `version.object` sí da el entero). `format_change_value` no traducía ese string a su etiqueta en español — se agregó `enum_key_to_int` como fallback que resuelve el entero original vía `Modelo.public_send(attr.pluralize)[value]` antes de buscar en `ENUM_VALUE_MAPS`. Esto también corrige, de forma colateral, la pestaña "Cambios técnicos" para eventos create/update con atributos enum (bug preexistente, no introducido por este plan).
 
 **Interfaces:**
 - Consumes: `create_summary`/`destroy_summary`/`attribute_label`/`format_change_value` (ya existen en `AuditLogsHelper`).
@@ -1835,7 +1838,7 @@ class TimelineHelperTest < ActionView::TestCase
 
   test "timeline_description shows the created record's fields for a create version" do
     delivery = deliveries(:one)
-    item = delivery.delivery_items.create!(order_item: order_items(:one), quantity_delivered: 2, status: :confirmed)
+    item = delivery.delivery_items.create!(order_item: order_items(:two), quantity_delivered: 2, status: :confirmed)
 
     version = PaperTrail::Version.where(item_type: "DeliveryItem", item_id: item.id, event: "create").last
     entry = TimelineEntry.new(timestamp: version.created_at, source: :paper_trail, record: version)
