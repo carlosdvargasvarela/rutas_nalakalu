@@ -30,4 +30,26 @@ class AuditLogsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_includes @response.body, "Plan iniciado"
   end
+
+  test "index events tab includes both DeliveryEvent and PlanEvent in one combined feed" do
+    delivery = delivery_plan_assignments(:one).delivery
+    DeliveryEvent.record(delivery: delivery, action: "delivered", actor: @admin)
+    delivery_plans(:one).abort!
+
+    get audit_logs_path(tab: "events")
+
+    assert_response :success
+    assert_includes @response.body, "Marcada como entregada"
+    assert_includes @response.body, "Abortado"
+  end
+
+  test "index events tab filters by delivery_plan_id" do
+    other_plan = DeliveryPlan.create!(week: "45", year: 2026, status: :draft)
+
+    get audit_logs_path(tab: "events", delivery_plan_id: other_plan.id)
+
+    assert_response :success
+    assert_includes @response.body, "Plan creado"
+    refute_includes @response.body, "Abortado"
+  end
 end

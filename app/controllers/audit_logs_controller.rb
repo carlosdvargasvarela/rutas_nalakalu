@@ -14,22 +14,55 @@ class AuditLogsController < ApplicationController
 
     @active_tab = params[:tab].presence_in(%w[events versions]) || "events"
 
-    # Eventos de negocio
+    # Eventos de negocio — DeliveryEvent + PlanEvent combinados en un solo feed
     events_scope = DeliveryEvent.includes(:actor, :delivery).recent
+    plan_events_scope = PlanEvent.includes(:actor, :delivery_plan).recent
 
-    events_scope = events_scope.where(delivery_id: params[:delivery_id]) if params[:delivery_id].present?
-    events_scope = events_scope.for_action(params[:event_action]) if params[:event_action].present?
-    events_scope = events_scope.by_actor(params[:event_actor_id]) if params[:event_actor_id].present?
-
+    if params[:delivery_id].present?
+      events_scope = events_scope.where(delivery_id: params[:delivery_id])
+      plan_events_scope = plan_events_scope.none
+    end
+    if params[:event_action].present?
+      events_scope = events_scope.for_action(params[:event_action])
+      plan_events_scope = plan_events_scope.for_action(params[:event_action])
+    end
+    if params[:event_actor_id].present?
+      events_scope = events_scope.by_actor(params[:event_actor_id])
+      plan_events_scope = plan_events_scope.by_actor(params[:event_actor_id])
+    end
     if params[:event_from].present?
-      events_scope = events_scope.where("created_at >= ?", params[:event_from].to_date.beginning_of_day)
+      from = params[:event_from].to_date.beginning_of_day
+      events_scope = events_scope.where("delivery_events.created_at >= ?", from)
+      plan_events_scope = plan_events_scope.where("plan_events.created_at >= ?", from)
     end
     if params[:event_to].present?
-      events_scope = events_scope.where("created_at <= ?", params[:event_to].to_date.end_of_day)
+      to = params[:event_to].to_date.end_of_day
+      events_scope = events_scope.where("delivery_events.created_at <= ?", to)
+      plan_events_scope = plan_events_scope.where("plan_events.created_at <= ?", to)
+    end
+    if params[:delivery_plan_id].present?
+      events_scope = events_scope.joins(delivery: {delivery_plan_assignment: :delivery_plan})
+        .where(delivery_plans: {id: params[:delivery_plan_id]})
+      plan_events_scope = plan_events_scope.where(delivery_plan_id: params[:delivery_plan_id])
+    end
+    if params[:plan_week].present? || params[:plan_year].present?
+      plan_conditions = {}
+      plan_conditions[:week] = params[:plan_week] if params[:plan_week].present?
+      plan_conditions[:year] = params[:plan_year] if params[:plan_year].present?
+
+      events_scope = events_scope.joins(delivery: {delivery_plan_assignment: :delivery_plan})
+        .where(delivery_plans: plan_conditions)
+      plan_events_scope = plan_events_scope.joins(:delivery_plan).where(delivery_plans: plan_conditions)
+    end
+    if params[:driver_id].present?
+      events_scope = events_scope.joins(delivery: {delivery_plan_assignment: :delivery_plan})
+        .where(delivery_plans: {driver_id: params[:driver_id]})
+      plan_events_scope = plan_events_scope.joins(:delivery_plan).where(delivery_plans: {driver_id: params[:driver_id]})
     end
 
-    @delivery_events = events_scope.page(params[:page]).per(50)
-    @total_events = DeliveryEvent.count
+    combined = (events_scope.to_a + plan_events_scope.to_a).sort_by(&:created_at).reverse
+    @delivery_events = Kaminari.paginate_array(combined).page(params[:page]).per(50)
+    @total_events = DeliveryEvent.count + PlanEvent.count
 
     # Cambios técnicos
     @q = PaperTrail::Version.ransack(params[:q])

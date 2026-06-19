@@ -79,6 +79,29 @@
               <%= f.label :event_to, "Hasta", class: "form-label small fw-semibold text-muted mb-1" %>
               <%= f.date_field :event_to, value: params[:event_to], class: "form-control form-control-sm" %>
             </div>
+            <div class="col-12 col-md-2">
+              <%= f.label :delivery_plan_id, class: "form-label small fw-semibold text-muted mb-1" do %>
+                <i class="bi bi-calendar3 me-1"></i>Plan #
+              <% end %>
+              <%= f.text_field :delivery_plan_id, value: params[:delivery_plan_id],
+                  class: "form-control form-control-sm", placeholder: "Ej: 42" %>
+            </div>
+            <div class="col-6 col-md-1">
+              <%= f.label :plan_week, "Semana", class: "form-label small fw-semibold text-muted mb-1" %>
+              <%= f.text_field :plan_week, value: params[:plan_week], class: "form-control form-control-sm" %>
+            </div>
+            <div class="col-6 col-md-1">
+              <%= f.label :plan_year, "Año", class: "form-label small fw-semibold text-muted mb-1" %>
+              <%= f.text_field :plan_year, value: params[:plan_year], class: "form-control form-control-sm" %>
+            </div>
+            <div class="col-12 col-md-2">
+              <%= f.label :driver_id, class: "form-label small fw-semibold text-muted mb-1" do %>
+                <i class="bi bi-person-badge me-1"></i>Chofer
+              <% end %>
+              <%= f.select :driver_id,
+                  options_for_select([["Todos", ""]] + User.order(:name).pluck(:name, :id), params[:driver_id]),
+                  {}, class: "form-select form-select-sm" %>
+            </div>
             <div class="col-12 d-flex gap-2">
               <button type="submit" class="btn btn-sm btn-primary px-3">
                 <i class="bi bi-search me-1"></i>Buscar
@@ -105,6 +128,7 @@
           <tbody>
             <% if @delivery_events.any? %>
               <% @delivery_events.each do |event| %>
+                <% link_data = audit_event_resource_link(event) %>
                 <tr>
                   <td class="ps-3 py-3">
                     <div class="small fw-semibold">
@@ -115,8 +139,8 @@
                     </div>
                   </td>
                   <td class="py-3">
-                    <%= link_to "##{event.delivery_id}",
-                        resource_history_audit_logs_path(item_type: "Delivery", item_id: event.delivery_id),
+                    <%= link_to link_data[:label],
+                        resource_history_audit_logs_path(item_type: link_data[:item_type], item_id: link_data[:item_id]),
                         class: "small fw-semibold text-decoration-none text-primary" %>
                   </td>
                   <td class="py-3">
@@ -125,7 +149,7 @@
                     </span>
                   </td>
                   <td class="py-3">
-                    <span class="small"><%= delivery_event_description(event) %></span>
+                    <span class="small"><%= audit_event_description(event) %></span>
                   </td>
                   <td class="py-3">
                     <div class="d-flex align-items-center gap-2">
@@ -136,7 +160,7 @@
                     </div>
                   </td>
                   <td class="py-3 text-center pe-3">
-                    <%= link_to resource_history_audit_logs_path(item_type: "Delivery", item_id: event.delivery_id),
+                    <%= link_to resource_history_audit_logs_path(item_type: link_data[:item_type], item_id: link_data[:item_id]),
                         class: "btn btn-sm btn-outline-secondary",
                         title: "Ver historial",
                         data: { bs_toggle: "tooltip" } do %>

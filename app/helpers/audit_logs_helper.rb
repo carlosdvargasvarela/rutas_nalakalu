@@ -332,4 +332,18 @@ module AuditLogsHelper
       end
     end
   end
+
+  # ── Eventos combinados (DeliveryEvent + PlanEvent) ──────────────────────────
+
+  def audit_event_description(event)
+    event.is_a?(PlanEvent) ? plan_event_description(event) : delivery_event_description(event)
+  end
+
+  def audit_event_resource_link(event)
+    if event.is_a?(PlanEvent)
+      {item_type: "DeliveryPlan", item_id: event.delivery_plan_id, label: "Plan ##{event.delivery_plan_id}"}
+    else
+      {item_type: "Delivery", item_id: event.delivery_id, label: "##{event.delivery_id}"}
+    end
+  end
 end
