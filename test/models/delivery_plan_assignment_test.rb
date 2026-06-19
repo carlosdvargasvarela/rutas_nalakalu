@@ -61,4 +61,30 @@ class DeliveryPlanAssignmentTest < ActiveSupport::TestCase
     event = DeliveryEvent.where(action: "delivered", delivery_id: assignment.delivery_id).last
     assert_equal "plan_assignment", event.payload_data["via"]
   end
+
+  test "change_deliveries_statuses leaves a PaperTrail version on each confirmed item it moves to in_plan" do
+    plan = DeliveryPlan.create!(week: "31", year: 2026, status: :sent_to_logistics)
+    delivery = deliveries(:one)
+    delivery.update!(status: :ready_to_deliver)
+    item = delivery_items(:one)
+    item.update!(status: :confirmed)
+
+    assert_difference -> { PaperTrail::Version.where(item_type: "DeliveryItem", item_id: item.id).count }, 1 do
+      plan.delivery_plan_assignments.create!(delivery: delivery)
+    end
+
+    assert_equal "in_plan", item.reload.status
+  end
+
+  test "revert_statuses leaves a PaperTrail version on each item it moves back to confirmed" do
+    assignment = delivery_plan_assignments(:one)
+    item = assignment.delivery.delivery_items.first
+    item.update!(status: :in_plan)
+
+    assert_difference -> { PaperTrail::Version.where(item_type: "DeliveryItem", item_id: item.id).count }, 1 do
+      assignment.destroy!
+    end
+
+    assert_equal "confirmed", item.reload.status
+  end
 end

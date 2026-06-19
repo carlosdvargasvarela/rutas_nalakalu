@@ -142,14 +142,12 @@ class DeliveryPlanAssignment < ApplicationRecord
     return if delivery_plan.draft? && delivery.scheduled?
 
     transaction do
-      # Cambiar items confirmados a in_plan
-      delivery.delivery_items.where(status: DeliveryItem.statuses[:confirmed])
-        .update_all(status: DeliveryItem.statuses[:in_plan], updated_at: Time.current)
+      delivery.delivery_items.where(status: DeliveryItem.statuses[:confirmed]).find_each do |item|
+        item.update!(status: :in_plan)
+      end
 
-      # Cambiar delivery a in_plan
-      delivery.update_column(:status, Delivery.statuses[:in_plan])
+      delivery.update!(status: :in_plan)
 
-      # Recalcular estado del delivery explícitamente
       delivery.update_status_based_on_items
     end
   end
@@ -157,11 +155,10 @@ class DeliveryPlanAssignment < ApplicationRecord
   # Callback al destruir el assignment: revierte los items de in_plan a confirmed
   def revert_statuses
     transaction do
-      # Revertir items de in_plan a confirmed
-      delivery.delivery_items.where(status: DeliveryItem.statuses[:in_plan])
-        .update_all(status: DeliveryItem.statuses[:confirmed], updated_at: Time.current)
+      delivery.delivery_items.where(status: DeliveryItem.statuses[:in_plan]).find_each do |item|
+        item.update!(status: :confirmed)
+      end
 
-      # Recalcular estado del delivery explícitamente
       delivery.update_status_based_on_items
     end
   end
