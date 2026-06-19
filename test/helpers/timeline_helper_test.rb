@@ -3,6 +3,7 @@ require "test_helper"
 class TimelineHelperTest < ActionView::TestCase
   include AuditLogsHelper
   include DeliveryEventsHelper
+  include PlanEventsHelper
   include TimelineHelper
 
   test "timeline_description shows the deleted record's fields for a destroy version, not 'Sin cambios detectados'" do
@@ -24,5 +25,17 @@ class TimelineHelperTest < ActionView::TestCase
     entry = TimelineEntry.new(timestamp: version.created_at, source: :paper_trail, record: version)
 
     assert_match(/Confirmado/, timeline_description(entry))
+  end
+
+  test "timeline_icon/color/title delegate to the record for plan_event entries" do
+    plan = DeliveryPlan.create!(week: "50", year: 2026, status: :draft)
+    event = plan.plan_events.last # "created", generado por el callback de Task 6
+
+    entry = TimelineEntry.new(timestamp: event.created_at, source: :plan_event, record: event)
+
+    assert_equal event.icon, timeline_icon(entry)
+    assert_equal event.color, timeline_color(entry)
+    assert_equal event.label, timeline_title(entry)
+    assert_equal "Sistema", timeline_actor(entry)
   end
 end

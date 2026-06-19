@@ -3,17 +3,25 @@ module TimelineHelper
   # ── Dot ────────────────────────────────────────────────────────────────────
 
   def timeline_icon(entry)
-    entry.delivery_event? ? entry.record.icon : event_icon(entry.record.event)
+    if entry.delivery_event? || entry.plan_event?
+      entry.record.icon
+    else
+      event_icon(entry.record.event)
+    end
   end
 
   def timeline_color(entry)
-    entry.delivery_event? ? entry.record.color : event_color(entry.record.event)
+    if entry.delivery_event? || entry.plan_event?
+      entry.record.color
+    else
+      event_color(entry.record.event)
+    end
   end
 
   # ── Texto ──────────────────────────────────────────────────────────────────
 
   def timeline_title(entry)
-    if entry.delivery_event?
+    if entry.delivery_event? || entry.plan_event?
       entry.record.label
     else
       case entry.record.event
@@ -28,6 +36,8 @@ module TimelineHelper
   def timeline_description(entry, users_by_id: {})
     if entry.delivery_event?
       delivery_event_description(entry.record)
+    elsif entry.plan_event?
+      plan_event_description(entry.record)
     elsif entry.record.event == "create"
       describe_fields(create_summary(entry.record), entry.record.item_type, "Registro creado")
     elsif entry.record.event == "destroy"
@@ -49,7 +59,7 @@ module TimelineHelper
   end
 
   def timeline_actor(entry, users_by_id = {})
-    if entry.delivery_event?
+    if entry.delivery_event? || entry.plan_event?
       entry.record.actor_name
     else
       user_name_for(entry.record, users_by_id)
@@ -59,7 +69,7 @@ module TimelineHelper
   # ── Badges ─────────────────────────────────────────────────────────────────
 
   def timeline_source_badge(entry)
-    if entry.delivery_event?
+    if entry.delivery_event? || entry.plan_event?
       content_tag(:span, safe_join([
         content_tag(:i, "", class: "bi bi-activity me-1"),
         "Negocio"
@@ -71,6 +81,15 @@ module TimelineHelper
         "Sistema"
       ]), class: "badge bg-secondary-subtle text-secondary-emphasis",
         style: "font-size:0.65rem;")
+    end
+  end
+
+  def timeline_context_label(entry, viewing)
+    if viewing.is_a?(Delivery) && entry.plan_event?
+      plan = entry.record.delivery_plan
+      "Plan semana #{plan.week}-#{plan.year}" if plan
+    elsif viewing.is_a?(DeliveryPlan) && entry.delivery_event?
+      "Entrega ##{entry.record.delivery_id}"
     end
   end
 
