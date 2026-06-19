@@ -52,4 +52,14 @@ class AuditLogsControllerTest < ActionDispatch::IntegrationTest
     assert_includes @response.body, "Plan creado"
     refute_includes @response.body, "Abortado"
   end
+
+  test "resource_history for a DeliveryItem links 'Ver registro' to its parent Delivery, not to the item's own (template-less) show action" do
+    item = delivery_items(:one)
+
+    get resource_history_audit_logs_path(item_type: "DeliveryItem", item_id: item.id)
+
+    assert_response :success
+    assert_includes @response.body, delivery_path(item.delivery, anchor: ActionView::RecordIdentifier.dom_id(item))
+    refute_includes @response.body, "/delivery_items/#{item.id}\""
+  end
 end
