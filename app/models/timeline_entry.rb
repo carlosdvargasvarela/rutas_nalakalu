@@ -9,6 +9,7 @@ class TimelineEntry
   end
 
   def delivery_event? = source == :delivery_event
+  def plan_event? = source == :plan_event
   def paper_trail? = source == :paper_trail
   def created_at = timestamp
 end

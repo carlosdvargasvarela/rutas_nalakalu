@@ -33,13 +33,13 @@ class TimelineGrouper
   # ── privado ────────────────────────────────────────────────────────────────
 
   def self.actor_id(entry)
-    entry.delivery_event? ? entry.record.actor_id.to_s : entry.record.whodunnit.to_s
+    entry.paper_trail? ? entry.record.whodunnit.to_s : entry.record.actor_id.to_s
   end
   private_class_method :actor_id
 
-  # Dentro de cada grupo, el DeliveryEvent va primero (es el "primario")
+  # Dentro de cada grupo, el evento de negocio (delivery o plan) va primero
   def self.finalize(entries)
-    primary = entries.find(&:delivery_event?) || entries.first
+    primary = entries.find { |e| e.delivery_event? || e.plan_event? } || entries.first
     rest = entries - [primary]
     {primary: primary, secondary: rest}
   end
