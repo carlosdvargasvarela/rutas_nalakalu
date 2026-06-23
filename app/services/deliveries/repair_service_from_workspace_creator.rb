@@ -75,14 +75,15 @@ module Deliveries
 
     def annotate_original(ret)
       products = selected_items.map { |i| i.order_item&.product }.compact.join(", ")
-      note     = "Entrega de reparación agendada: #{products} — #{ret.delivery_date&.strftime('%d/%m/%Y')} (Pedido ##{original_delivery.order_number})"
+      entrega  = Deliveries::Vocabulary.service_type_label("entrega")
+      note     = "#{entrega} de reparación agendada: #{products} — #{ret.delivery_date&.strftime('%d/%m/%Y')} (Pedido ##{original_delivery.order_number})"
       existing = original_delivery.delivery_notes.to_s.strip
       original_delivery.update!(delivery_notes: existing.present? ? "#{existing}\n#{note}" : note)
     end
 
     def auto_notes
       products = selected_items.map { |i| i.order_item&.product }.compact.join(", ")
-      "Entrega de producto reparado: #{products} — Pedido ##{original_delivery.order_number}"
+      "#{Deliveries::Vocabulary.service_type_label("entrega")} de producto reparado: #{products} — Pedido ##{original_delivery.order_number}"
     end
 
     def prefix_original_items(prefix_type)

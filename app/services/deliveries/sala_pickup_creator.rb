@@ -114,7 +114,7 @@ module Deliveries
           quantity_delivered: original_item.quantity_delivered,
           status: :pending,
           service_case: original_item.service_case,
-          notes: "Pendiente de retiro en sala antes de la entrega del #{original_delivery.delivery_date.strftime("%d/%m/%Y")}."
+          notes: "Pendiente de #{Deliveries::Vocabulary.service_type_label("retiro").downcase} en sala antes de la entrega del #{original_delivery.delivery_date.strftime("%d/%m/%Y")}."
         )
       end
 
@@ -126,7 +126,8 @@ module Deliveries
       product_names = @pickup_delivery.delivery_items.map(&:product).join(", ")
       pickup_date = @pickup_delivery.delivery_date.strftime("%d/%m/%Y")
 
-      new_note = "\n[SISTEMA #{Date.current.strftime("%d/%m/%Y")}]: Retiro en sala programado para el #{pickup_date}. Productos a retirar: #{product_names}."
+      retiro = Deliveries::Vocabulary.service_type_label("retiro")
+      new_note = "\n[SISTEMA #{Date.current.strftime("%d/%m/%Y")}]: #{retiro} en sala programado para el #{pickup_date}. Productos a retirar: #{product_names}."
 
       original_delivery.update_column(
         :delivery_notes,
@@ -135,7 +136,7 @@ module Deliveries
     end
 
     def build_pickup_notes
-      base = "Retiro en sala — Pedido ##{original_delivery.order_number} (entrega original: #{original_delivery.delivery_date.strftime("%d/%m/%Y")})."
+      base = "#{Deliveries::Vocabulary.service_type_label("retiro")} en sala — Pedido ##{original_delivery.order_number} (entrega original: #{original_delivery.delivery_date.strftime("%d/%m/%Y")})."
       extra = params[:delivery_notes].presence
       extra ? "#{base} #{extra}" : base
     end

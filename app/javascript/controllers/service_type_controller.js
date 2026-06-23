@@ -21,6 +21,25 @@ export default class extends Controller {
     "repairReturnSection",
   ];
 
+  // Fallback solo por si una vista olvida pasar data-service-type-labels-value;
+  // la fuente real es config/deliveries_vocabulary.yml vía Deliveries::Vocabulary.
+  static values = {
+    labels: {
+      type: Object,
+      default: {
+        recoleccion: { label: "Recolección" },
+        devolucion: { label: "Devolución" },
+        reparacion: { label: "Reparación en sitio" },
+        retiro: { label: "Retiro" },
+        entrega: { label: "Entrega" },
+      },
+    },
+  };
+
+  _label(key) {
+    return this.labelsValue[key]?.label ?? key;
+  }
+
   // ─── Legacy action (full forms: only updates the notice) ───────────────────
   updateNotice(event) {
     this._updateNotice(event.target.value);
@@ -198,11 +217,11 @@ export default class extends Controller {
     if (this.notesTarget.value.trim()) return; // don't overwrite user-typed content
     const hint = document.getElementById("sc_product_hint")?.value || "";
     if (mode === "devolucion") {
-      this.notesTarget.value = `Devolución al cliente ${hint}`.trim();
+      this.notesTarget.value = `${this._label("devolucion")} al cliente ${hint}`.trim();
     } else if (mode === "reparacion") {
-      this.notesTarget.value = `Reparación en sitio ${hint}`.trim();
+      this.notesTarget.value = `${this._label("reparacion")} ${hint}`.trim();
     } else {
-      this.notesTarget.value = `Recolección ${hint}`.trim();
+      this.notesTarget.value = `${this._label("recoleccion")} ${hint}`.trim();
     }
   }
 
@@ -217,8 +236,8 @@ export default class extends Controller {
     if (this.notesTarget.value.trim()) return;
     const hint = document.getElementById("rs_product_hint")?.value || "";
     this.notesTarget.value = (mode === "repair_entrega"
-      ? `Entrega de producto reparado ${hint}`
-      : `Retiro para reparación ${hint}`
+      ? `${this._label("entrega")} de producto reparado ${hint}`
+      : `${this._label("retiro")} para reparación ${hint}`
     ).trim();
   }
 

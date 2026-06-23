@@ -1,11 +1,6 @@
 # app/services/deliveries/service_case_detector.rb
 module Deliveries
   class ServiceCaseDetector
-    KEYWORDS = %w[
-      caso\ de\ servicio
-      caso\ servicio
-    ].freeze
-
     TERMINAL_STATUSES = %w[rescheduled cancelled archived delivered].freeze
 
     def initialize(delivery)
@@ -18,7 +13,7 @@ module Deliveries
 
         name = normalize(item.order_item.product)
 
-        item.service_case? || KEYWORDS.any? { |kw| name.include?(kw) }
+        item.service_case? || keywords.any? { |kw| name.include?(kw) }
       end
     end
 
@@ -29,6 +24,12 @@ module Deliveries
     private
 
     attr_reader :delivery
+
+    # Lookup is per-instance (not a class constant) so admin edits to
+    # /admin/deliveries_vocabulary take effect without restarting the app.
+    def keywords
+      @keywords ||= Deliveries::Vocabulary.detector_keywords("service_case").fetch("keywords")
+    end
 
     def normalize(text)
       text.to_s.downcase

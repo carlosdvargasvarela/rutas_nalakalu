@@ -20,7 +20,10 @@
   <%= simple_form_for @service_delivery,
         url: create_service_case_from_workspace_delivery_path(@delivery),
         method: :post,
-        html: { data: { controller: "service-type" } } do |f| %>
+        html: { data: {
+          controller: "service-type",
+          "service-type-labels-value": Deliveries::Vocabulary.service_types.to_json
+        } } do |f| %>
 
     <%# Siempre enviados al backend %>
     <input type="hidden" name="delivery[mode]" data-service-type-target="modeInput" value="">

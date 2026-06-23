@@ -1,15 +1,20 @@
 # app/services/deliveries/service_case_prefix.rb
 module Deliveries
   module ServiceCasePrefix
+    DELIVERY_TYPE_TO_SERVICE_TYPE = {
+      "pickup_with_return" => "retiro",
+      "only_pickup" => "retiro",
+      "return_delivery" => "devolucion",
+      "onsite_repair" => "reparacion",
+      "repair_pickup" => "recoleccion",
+      "workspace_recoleccion" => "recoleccion",
+      "repair_return" => "devolucion"
+    }.freeze
+
     def service_case_prefix_for(delivery_type)
-      case delivery_type.to_s
-      when "pickup_with_return", "only_pickup" then "Retiro - "
-      when "return_delivery" then "Devolución - "
-      when "onsite_repair" then "Reparación - "
-      when "repair_pickup", "workspace_recoleccion" then "Recolección - "
-      when "repair_return" then "Devolución - "
-      else ""
-      end
+      service_type = DELIVERY_TYPE_TO_SERVICE_TYPE[delivery_type.to_s]
+      return "" unless service_type
+      Deliveries::Vocabulary.service_type_prefix(service_type)
     end
 
     def duplicate_order_item_with_prefix(order_item, delivery_type)

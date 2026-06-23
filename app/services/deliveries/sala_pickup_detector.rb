@@ -3,33 +3,6 @@ module Deliveries
   class SalaPickupDetector
     # Códigos cortos: se verifican case-sensitive en texto original para evitar
     # confundir pronombres españoles ("se", "sp") con códigos de sala.
-    CODE_PATTERN = /\b(SP|SE|SG)\b/.freeze
-
-    PHRASE_KEYWORDS = [
-      "recoger de sala",
-      "pendiente sp",
-      "pendiente se",
-      "pendiente sg",
-      "tienda"
-    ].freeze
-
-    EXCLUSIONS = [
-      "entregado en sala",
-      "entregado en sp",
-      "entregado en se",
-      "entregado en sg",
-      "entregado sp",
-      "entregado se",
-      "entregado sg",
-      "entregado en tienda",
-      "entregado tienda"
-    ].freeze
-
-    SALA_MAP = {
-      "SP" => "Sala Palmares",
-      "SE" => "Sala Escazú",
-      "SG" => "Sala Guanacaste"
-    }.freeze
 
     def initialize(delivery)
       @delivery = delivery
@@ -53,6 +26,24 @@ module Deliveries
 
     private
 
+    # Lookups are per-instance (not class constants) so admin edits to
+    # /admin/deliveries_vocabulary take effect without restarting the app.
+    def keywords
+      @keywords ||= Deliveries::Vocabulary.detector_keywords("sala_pickup")
+    end
+
+    def code_pattern
+      @code_pattern ||= Regexp.new(keywords.fetch("code_pattern"))
+    end
+
+    def phrase_keywords
+      @phrase_keywords ||= keywords.fetch("phrase_keywords")
+    end
+
+    def exclusions
+      @exclusions ||= keywords.fetch("exclusions")
+    end
+
     def normalize(text)
       text.downcase
         .unicode_normalize(:nfd)
@@ -60,12 +51,12 @@ module Deliveries
     end
 
     def contains_keyword?(original_name)
-      original_name.match?(CODE_PATTERN) ||
-        PHRASE_KEYWORDS.any? { |kw| normalize(original_name).include?(kw) }
+      original_name.match?(code_pattern) ||
+        phrase_keywords.any? { |kw| normalize(original_name).include?(kw) }
     end
 
     def contains_exclusion?(normalized_name)
-      EXCLUSIONS.any? { |ex| normalized_name.include?(ex) }
+      exclusions.any? { |ex| normalized_name.include?(ex) }
     end
 
     def detect_sala(name)

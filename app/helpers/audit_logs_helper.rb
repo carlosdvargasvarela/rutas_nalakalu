@@ -47,7 +47,12 @@ module AuditLogsHelper
   # PaperTrail guarda el valor crudo de la DB (entero). Sin este mapa,
   # los cambios de estado se muestran como "0 → 4" en lugar de
   # "Pendiente de confirmar → Entregada".
-  ENUM_VALUE_MAPS = {
+  #
+  # Método (no constante) porque algunas etiquetas vienen de
+  # Deliveries::Vocabulary, que es editable en /admin/deliveries_vocabulary;
+  # una constante se congelaría con el valor de arranque del proceso.
+  def enum_value_maps
+    {
     "Delivery.status" => {
       0 => "Pendiente de confirmar",
       1 => "Confirmada para entregar",
@@ -64,8 +69,8 @@ module AuditLogsHelper
     "Delivery.delivery_type" => {
       0 => "Entrega normal",
       1 => "Retiro en sala + entrega al cliente",
-      2 => "Devolución de producto",
-      3 => "Reparación en sitio",
+      2 => "#{Deliveries::Vocabulary.service_type_label("devolucion")} de producto",
+      3 => Deliveries::Vocabulary.service_type_label("reparacion"),
       4 => "Mandado interno",
       5 => "Solo retiro (sin entrega posterior)"
     },
@@ -125,7 +130,9 @@ module AuditLogsHelper
       2 => "Completado",
       3 => "Cancelado"
     }
-  }.freeze
+  }
+  end
+  private :enum_value_maps
 
   CRITICAL_ATTRS = %w[status cancelled_at delivery_date].freeze
   MODERATE_ATTRS = %w[delivery_type load_status confirmed_by_vendor warehousing_until
@@ -181,7 +188,7 @@ module AuditLogsHelper
     return "vacío" if value.to_s.strip.empty?
 
     if item_type.present?
-      enum_map = ENUM_VALUE_MAPS["#{item_type}.#{attr}"]
+      enum_map = enum_value_maps["#{item_type}.#{attr}"]
       if enum_map
         int_key = Integer(value) rescue nil
         int_key ||= enum_key_to_int(item_type, attr, value)

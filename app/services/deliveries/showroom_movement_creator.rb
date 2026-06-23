@@ -77,7 +77,7 @@ module Deliveries
           delivery_address:     pickup_address,
           source_showroom:      source,
           destination_showroom: nil,
-          delivery_notes:       "recolección de productos"
+          delivery_notes:       "#{Deliveries::Vocabulary.service_type_label("recoleccion")} de productos"
         )
       )
       pickup.delivery_items = items
@@ -101,7 +101,7 @@ module Deliveries
           source_showroom:      source,
           destination_showroom: destination,
           delivery_date:        date_destination,
-          delivery_notes:       "entrega de productos"
+          delivery_notes:       "#{Deliveries::Vocabulary.service_type_label("entrega")} de productos"
         )
       )
       delivery.delivery_items = items_for_delivery

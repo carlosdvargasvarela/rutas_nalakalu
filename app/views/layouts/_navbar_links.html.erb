@@ -129,6 +129,11 @@
           <% end %>
         </li>
         <li>
+          <%= link_to admin_deliveries_vocabulary_path, class: "dropdown-item" do %>
+            <i class="bi bi-tags me-2"></i> Vocabulario de entregas
+          <% end %>
+        </li>
+        <li>
           <%= link_to admin_maintenance_window_path,
                       class: "dropdown-item #{'text-danger fw-semibold' if MaintenanceWindow.active?}" do %>
             <% if MaintenanceWindow.active? %>

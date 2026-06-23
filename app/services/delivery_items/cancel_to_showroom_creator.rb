@@ -97,7 +97,8 @@ module DeliveryItems
     end
 
     def build_notes(original)
-      base = "Cancelación de producción — #{@delivery_item.product} " \
+      cancelacion = Deliveries::Vocabulary.service_type_label("cancelacion")
+      base = "#{cancelacion} de producción — #{@delivery_item.product} " \
              "(pedido ##{original.order_number}, entrega: #{original.delivery_date.strftime("%d/%m/%Y")})."
       @notes.present? ? "#{base} #{@notes}" : base
     end

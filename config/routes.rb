@@ -263,6 +263,8 @@ Rails.application.routes.draw do
     end
 
     resource :quickbooks, only: [:show, :update]
+
+    resource :deliveries_vocabulary, only: [:show, :update]
   end
 
   # =============================================================================

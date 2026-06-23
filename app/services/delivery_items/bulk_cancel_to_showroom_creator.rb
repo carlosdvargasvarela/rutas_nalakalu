@@ -97,7 +97,8 @@ module DeliveryItems
     end
 
     def build_notes
-      base = "Restock por cancelación — Pedido ##{@delivery.order_number} " \
+      cancelacion = Deliveries::Vocabulary.service_type_label("cancelacion")
+      base = "Restock por #{cancelacion.downcase} — Pedido ##{@delivery.order_number} " \
              "(entrega: #{@delivery.delivery_date.strftime("%d/%m/%Y")}). #{@items.count} producto(s)."
       @notes.present? ? "#{base} #{@notes}" : base
     end

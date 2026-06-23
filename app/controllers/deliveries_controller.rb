@@ -1287,7 +1287,8 @@ class DeliveriesController < ApplicationController
   end
 
   def register_devolucion_note
-    note = params.dig(:delivery, :delivery_notes).presence || "Devolución al cliente"
+    note = params.dig(:delivery, :delivery_notes).presence ||
+      "#{Deliveries::Vocabulary.service_type_label("devolucion")} al cliente"
     existing = @delivery.delivery_notes.to_s.strip
     new_notes = existing.present? ? "#{existing}\n#{note}" : note
     @delivery.update!(delivery_notes: new_notes)
@@ -1300,7 +1301,8 @@ class DeliveriesController < ApplicationController
   end
 
   def register_reparacion_note
-    note = params.dig(:delivery, :delivery_notes).presence || "Reparación en sitio"
+    note = params.dig(:delivery, :delivery_notes).presence ||
+      Deliveries::Vocabulary.service_type_label("reparacion")
     existing = @delivery.delivery_notes.to_s.strip
     new_notes = existing.present? ? "#{existing}\n#{note}" : note
     @delivery.update!(delivery_notes: new_notes)

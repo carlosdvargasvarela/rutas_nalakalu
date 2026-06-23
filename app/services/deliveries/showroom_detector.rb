@@ -33,6 +33,13 @@ module Deliveries
 
     attr_reader :order_number, :address, :product_texts
 
+    # Lookup is per-instance (not a class constant) so admin edits to
+    # /admin/deliveries_vocabulary take effect without restarting the app.
+    def inter_sala_fallback_keywords
+      @inter_sala_fallback_keywords ||= Deliveries::Vocabulary.detector_keywords("showroom")
+        .fetch("inter_sala_fallback_keywords")
+    end
+
     def detect_inter_showroom(showrooms)
       matched = showrooms.find do |sr|
         keywords = sr.inter_sala_keywords.map(&:downcase)
@@ -43,7 +50,7 @@ module Deliveries
 
       # Fallback: universal "entre salas" keyword even if no showroom matches
       fallback = matched.nil? &&
-        order_number.downcase.include?("entre salas")
+        inter_sala_fallback_keywords.any? { |kw| order_number.downcase.include?(kw.downcase) }
 
       if matched || fallback
         destination = matched || address_matched_showroom(showrooms)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_18_200000) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_19_222548) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -252,6 +252,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_18_200000) do
     t.index ["load_status"], name: "index_delivery_plans_on_load_status"
   end
 
+  create_table "detector_keyword_lists", force: :cascade do |t|
+    t.string "detector", null: false
+    t.string "list_name", null: false
+    t.text "values_list", default: "[]", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["detector", "list_name"], name: "index_detector_keyword_lists_on_detector_and_list_name", unique: true
+  end
+
   create_table "maintenance_windows", force: :cascade do |t|
     t.boolean "active", default: false, null: false
     t.datetime "ends_at"
@@ -376,6 +385,15 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_18_200000) do
     t.datetime "updated_at", null: false
     t.index ["seller_code"], name: "index_sellers_on_seller_code", unique: true
     t.index ["user_id"], name: "index_sellers_on_user_id"
+  end
+
+  create_table "service_type_words", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "label", null: false
+    t.string "prefix", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_service_type_words_on_key", unique: true
   end
 
   create_table "showrooms", force: :cascade do |t|

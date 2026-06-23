@@ -76,7 +76,9 @@ module Deliveries
 
     def annotate_original_as_recoleccion(return_delivery)
       products = original_delivery.delivery_items.map { |i| i.order_item&.product }.compact.join(", ")
-      note = "Recolección de: #{products} — Devolución agendada para el #{return_delivery.delivery_date&.strftime('%d/%m/%Y')} (Pedido ##{original_delivery.order_number})"
+      recoleccion = Deliveries::Vocabulary.service_type_label("recoleccion")
+      devolucion = Deliveries::Vocabulary.service_type_label("devolucion")
+      note = "#{recoleccion} de: #{products} — #{devolucion} agendada para el #{return_delivery.delivery_date&.strftime('%d/%m/%Y')} (Pedido ##{original_delivery.order_number})"
       existing = original_delivery.delivery_notes.to_s.strip
       new_notes = existing.present? ? "#{existing}\n#{note}" : note
       original_delivery.update!(delivery_notes: new_notes)
@@ -87,11 +89,11 @@ module Deliveries
       ref = "Pedido ##{original_delivery.order_number}"
       case type
       when "only_pickup", "pickup_with_return"
-        "Recolección de: #{products} — #{ref}"
+        "#{Deliveries::Vocabulary.service_type_label("recoleccion")} de: #{products} — #{ref}"
       when "return_delivery"
-        "Devolución de: #{products} — #{ref}"
+        "#{Deliveries::Vocabulary.service_type_label("devolucion")} de: #{products} — #{ref}"
       when "onsite_repair"
-        "Reparación en sitio — #{ref}"
+        "#{Deliveries::Vocabulary.service_type_label("reparacion")} — #{ref}"
       end
     end
 
@@ -121,11 +123,7 @@ module Deliveries
     end
 
     def duplicate_item(item, type)
-      prefix = case type
-      when "only_pickup" then "Retiro - "
-      when "return_delivery" then "Devolución - "
-      else ""
-      end
+      prefix = type.in?(%w[only_pickup return_delivery]) ? service_case_prefix_for(type) : ""
 
       product_name = "#{prefix}#{item.order_item.product}"
       original_delivery.order.order_items.find_or_create_by!(product: product_name) do |oi|

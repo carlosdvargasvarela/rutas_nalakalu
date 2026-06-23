@@ -124,8 +124,8 @@ module DeliveryEventsHelper
   def service_case_type_label(type)
     {
       "pickup_with_return" => "Retiro con devolución posterior",
-      "return_delivery" => "Devolución",
-      "onsite_repair" => "Reparación en sitio",
+      "return_delivery" => Deliveries::Vocabulary.service_type_label("devolucion"),
+      "onsite_repair" => Deliveries::Vocabulary.service_type_label("reparacion"),
       "only_pickup" => "Solo retiro del producto"
     }[type.to_s] || type.to_s.humanize
   end
@@ -134,12 +134,12 @@ module DeliveryEventsHelper
     {
       "normal" => "Entrega normal",
       "pickup_with_return" => "Retiro con devolución posterior",
-      "return_delivery" => "Devolución",
-      "onsite_repair" => "Reparación en sitio",
+      "return_delivery" => Deliveries::Vocabulary.service_type_label("devolucion"),
+      "onsite_repair" => Deliveries::Vocabulary.service_type_label("reparacion"),
       "only_pickup" => "Solo retiro del producto",
       "internal_delivery" => "Mandado interno",
-      "repair_pickup" => "Servicio de Reparación — Recolección",
-      "repair_return" => "Servicio de Reparación — Devolución"
+      "repair_pickup" => "Servicio de Reparación — #{Deliveries::Vocabulary.service_type_label("recoleccion")}",
+      "repair_return" => "Servicio de Reparación — #{Deliveries::Vocabulary.service_type_label("devolucion")}"
     }[type.to_s] || type.to_s.humanize
   end
 

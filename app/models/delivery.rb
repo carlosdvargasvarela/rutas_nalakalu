@@ -232,13 +232,13 @@ class Delivery < ApplicationRecord
     case delivery_type
     when "normal" then "Entrega normal"
     when "pickup_with_return" then "Retiro del producto en sala y entrega posterior al cliente"
-    when "return_delivery" then "Devolución de producto"
-    when "onsite_repair" then "Reparación en sitio"
+    when "return_delivery" then "#{Deliveries::Vocabulary.service_type_label("devolucion")} de producto"
+    when "onsite_repair" then Deliveries::Vocabulary.service_type_label("reparacion")
     when "only_pickup" then "Solo retiro del producto (sin entrega posterior)"
     when "internal_delivery" then "Mandado Interno"
     when "showroom" then "Movimiento de Showroom"
-    when "repair_pickup" then "Servicio de Reparación — Recolección"
-    when "repair_return" then "Servicio de Reparación — Devolución"
+    when "repair_pickup" then "Servicio de Reparación — #{Deliveries::Vocabulary.service_type_label("recoleccion")}"
+    when "repair_return" then "Servicio de Reparación — #{Deliveries::Vocabulary.service_type_label("devolucion")}"
     else delivery_type.to_s.humanize
     end
   end
