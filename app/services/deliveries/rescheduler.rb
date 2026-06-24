@@ -17,7 +17,6 @@ module Deliveries
       ActiveRecord::Base.transaction do
         @target_delivery = find_or_create_target_delivery
         migrate_items_to_target
-        finalize_original_delivery_status
         delivery.reload.update_status_based_on_items
         target_delivery.reload.update_status_based_on_items
 
@@ -121,7 +120,7 @@ module Deliveries
             )
           elsif existing.rescheduled?
             existing.update!(
-              status: :pending,
+              status: target_delivery.default_item_status,
               quantity_delivered: item.quantity_delivered.to_i,
               notes: [existing.notes, item.notes].compact_blank.join(" | ")
             )
@@ -141,20 +140,10 @@ module Deliveries
         delivery: target_delivery,
         order_item: item.order_item,
         quantity_delivered: item.quantity_delivered.to_i,
-        status: :pending,
+        status: target_delivery.default_item_status,
         service_case: item.service_case,
         notes: item.notes
       )
-    end
-
-    def finalize_original_delivery_status
-      all_terminal = delivery.delivery_items.reload.all? do |di|
-        di.status.in?(%w[rescheduled cancelled delivered failed])
-      end
-
-      if all_terminal
-        delivery.update_column(:status, Delivery.statuses[:rescheduled])
-      end
     end
 
     def notify_users(old_date, old_status)

@@ -111,31 +111,18 @@ class Production::DeliveriesController < ApplicationController
 
   def reschedule_delivery
     authorize @delivery, :quick_update?
-    new_date = params[:new_date]
-    if new_date.blank?
-      redirect_back fallback_location: production_delivery_path(@delivery), alert: "❌ Debes indicar una nueva fecha"
-      return
-    end
-    if @delivery.update(delivery_date: new_date, status: :rescheduled)
-      new_delivery = @delivery.dup
-      new_delivery.delivery_date = new_date
-      new_delivery.status = :scheduled
-      new_delivery.approved = false
-      new_delivery.save!
-      @delivery.delivery_items.each do |item|
-        new_delivery.delivery_items.create!(
-          order_item: item.order_item,
-          quantity_delivered: item.quantity_delivered,
-          status: :pending,
-          notes: item.notes
-        )
-      end
-      redirect_back fallback_location: production_delivery_path(@delivery),
-        notice: "🔄 Entrega reagendada para #{l(new_delivery.delivery_date, format: :long)}"
-    else
-      redirect_back fallback_location: production_delivery_path(@delivery),
-        alert: "❌ Error al reagendar: #{@delivery.errors.full_messages.join(", ")}"
-    end
+
+    target_delivery = Deliveries::Rescheduler.new(
+      delivery: @delivery,
+      new_date: safe_date(params[:new_date]),
+      current_user: current_user
+    ).call
+
+    redirect_back fallback_location: production_delivery_path(@delivery),
+      notice: "🔄 Entrega reagendada para #{l(target_delivery.delivery_date, format: :long)}"
+  rescue => e
+    redirect_back fallback_location: production_delivery_path(@delivery),
+      alert: "❌ Error al reagendar: #{e.message}"
   end
 
   def reschedule_item
@@ -240,7 +227,7 @@ class Production::DeliveriesController < ApplicationController
       @delivery.delivery_items.create!(
         order_item: order_item,
         quantity_delivered: params[:quantity_delivered]&.to_i || params[:quantity].to_i,
-        status: :pending
+        status: @delivery.default_item_status
       )
     end
     respond_to do |format|
@@ -312,6 +299,10 @@ class Production::DeliveriesController < ApplicationController
     end
 
     base.order("deliveries.delivery_date ASC, deliveries.id ASC")
+  end
+
+  def safe_date(str)
+    str.present? ? Date.parse(str) : nil
   end
 
   def quick_update_params

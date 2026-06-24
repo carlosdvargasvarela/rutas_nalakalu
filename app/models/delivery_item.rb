@@ -20,7 +20,8 @@ class DeliveryItem < ApplicationRecord
     rescheduled: 5,
     cancelled: 6,
     failed: 7,
-    loaded_on_truck: 8
+    loaded_on_truck: 8,
+    warehousing: 9
   }
 
   enum load_status: {
@@ -34,12 +35,12 @@ class DeliveryItem < ApplicationRecord
   # ============================================================================
 
   scope :service_cases, -> { where(service_case: true) }
-  scope :eligible_for_plan, -> { where.not(status: [:delivered, :cancelled, :rescheduled, :loaded_on_truck, :failed]) }
+  scope :eligible_for_plan, -> { where.not(status: [:delivered, :cancelled, :rescheduled, :loaded_on_truck, :warehousing, :failed]) }
   scope :eligible_for_plan_for_others, -> { where.not(status: [:rescheduled]) }
   scope :loaded_items, -> { where(load_status: :loaded) }
   scope :unloaded_items, -> { where(load_status: :unloaded) }
   scope :missing_items, -> { where(load_status: :missing) }
-  scope :bulk_actionable, -> { where.not(status: %i[delivered rescheduled cancelled failed]) }
+  scope :bulk_actionable, -> { where.not(status: %i[delivered rescheduled cancelled failed warehousing]) }
   scope :bulk_confirmable, -> { where(status: :pending) }
   scope :bulk_deconfirmable, -> { where(status: :confirmed) }
   scope :bulk_deliverable, -> { where(status: %i[pending confirmed in_plan in_route loaded_on_truck]) }
@@ -78,6 +79,7 @@ class DeliveryItem < ApplicationRecord
     when "cancelled" then "Cancelado"
     when "failed" then "Entrega fracasada"
     when "loaded_on_truck" then "Cargado en camión"
+    when "warehousing" then "En bodegaje"
     else status.to_s.humanize
     end
   end
@@ -132,7 +134,7 @@ class DeliveryItem < ApplicationRecord
   end
 
   def bulk_actionable?
-    !status.in?(%w[delivered rescheduled cancelled failed])
+    !status.in?(%w[delivered rescheduled cancelled failed warehousing])
   end
 
   def logistics_info

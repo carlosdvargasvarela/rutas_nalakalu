@@ -49,7 +49,8 @@ module ApplicationHelper
     "rescheduled" => "info",
     "cancelled" => "danger",
     "failed" => "danger",
-    "loaded_on_truck" => "dark"       # 👈 CAMBIO: Ahora es 'dark'
+    "loaded_on_truck" => "dark",      # 👈 CAMBIO: Ahora es 'dark'
+    "warehousing" => "dark"
   }.freeze
 
   ORDER_STATUS_COLORS = {

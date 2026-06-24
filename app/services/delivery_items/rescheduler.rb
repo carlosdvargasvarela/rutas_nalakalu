@@ -26,7 +26,6 @@ module DeliveryItems
           apply_origin_changes
           original_delivery.reload.update_status_based_on_items
           target_delivery.reload.update_status_based_on_items
-          finalize_original_if_all_terminal
 
           # 🔹 Registrar evento
           record_event
@@ -100,7 +99,7 @@ module DeliveryItems
           )
         elsif existing.status.in?(%w[rescheduled cancelled failed])
           existing.update!(
-            status: :pending,
+            status: target_delivery.default_item_status,
             quantity_delivered: quantity_to_reschedule,
             notes: delivery_item.notes
           )
@@ -117,7 +116,7 @@ module DeliveryItems
         delivery: target_delivery,
         order_item: delivery_item.order_item,
         quantity_delivered: quantity_to_reschedule,
-        status: :pending,
+        status: target_delivery.default_item_status,
         service_case: delivery_item.service_case,
         notes: delivery_item.notes
       )
@@ -168,16 +167,6 @@ module DeliveryItems
       unless target_delivery.order_id == original_delivery.order_id &&
           target_delivery.delivery_address_id == original_delivery.delivery_address_id
         raise StandardError, "La entrega destino debe pertenecer al mismo pedido y dirección."
-      end
-    end
-
-    def finalize_original_if_all_terminal
-      all_terminal = original_delivery.delivery_items.reload.all? do |di|
-        di.status.in?(%w[rescheduled cancelled delivered failed])
-      end
-
-      if all_terminal
-        original_delivery.update_column(:status, Delivery.statuses[:rescheduled])
       end
     end
 

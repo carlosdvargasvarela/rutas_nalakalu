@@ -80,7 +80,19 @@ class Delivery < ApplicationRecord
   # Estados terminales de items — no participan en el flujo activo
   ITEM_TERMINAL_STATUSES = %w[delivered cancelled rescheduled failed].freeze
   # Estados activos de items — determinan el estado de la entrega
-  ITEM_ACTIVE_STATUSES = %w[pending confirmed in_plan in_route loaded_on_truck].freeze
+  ITEM_ACTIVE_STATUSES = %w[pending confirmed in_plan in_route loaded_on_truck warehousing].freeze
+
+  # Status que debe tomar un DeliveryItem nuevo (o reactivado) según el nivel
+  # actual de la entrega, para no "atrasar" una entrega que ya avanzó (ver
+  # calculate_delivery_status: el estado activo menos avanzado manda).
+  DELIVERY_STATUS_TO_ITEM_STATUS = {
+    "scheduled" => "pending",
+    "ready_to_deliver" => "confirmed",
+    "in_plan" => "in_plan",
+    "loaded_on_truck" => "loaded_on_truck",
+    "warehousing" => "warehousing",
+    "in_route" => "in_route"
+  }.freeze
 
   # ============================================================================
   # VALIDACIONES
@@ -344,6 +356,14 @@ class Delivery < ApplicationRecord
   # RECÁLCULO DE ESTADO BASADO EN ITEMS
   # ============================================================================
 
+  # Status que debe recibir un DeliveryItem nuevo (o reactivado) sobre esta
+  # entrega: el nivel al que ya llegó la entrega, no siempre "pending".
+  # Evita que agregar un producto a una entrega en in_plan/ready_to_deliver/
+  # in_route/etc. la retroceda a "Pendiente de confirmar".
+  def default_item_status
+    DELIVERY_STATUS_TO_ITEM_STATUS.fetch(status, "pending")
+  end
+
   # Punto de entrada principal. Siempre refleja el estado real de los items.
   # No bloquea por estado actual de la entrega (excepto archived/warehousing).
   def update_status_based_on_items
@@ -549,10 +569,24 @@ class Delivery < ApplicationRecord
   #
   # Jerarquía de decisión:
   #   1. Todos los items en el mismo estado terminal → ese estado
-  #   2. Todos terminales pero mezclados → rescheduled > delivered > cancelled > failed
-  #   3. Hay items activos → flujo operativo (in_route > loaded_on_truck > confirmed/in_plan > pending)
+  #   2. Todos terminales pero mezclados → (delivered = failed) > cancelled > rescheduled
+  #   3. Hay items activos → flujo operativo: manda el MENOS avanzado presente
+  #      (pending > confirmed/in_plan > loaded_on_truck/warehousing > in_route),
+  #      hasta que TODOS los items activos superen ese escalón.
   #   4. Mezcla activos + terminales → se decide por los activos (los terminales son histórico)
   #
+  # Nota sobre el punto 2: si algo se entregó, la entrega cumplió su propósito
+  # aunque otro item se haya reagendado/cancelado/fallado por separado — por
+  # eso "delivered"/"failed" tienen la prioridad más alta entre los terminales
+  # mezclados, y "rescheduled" la más baja (solo se ve cuando el 100% de los
+  # items están reagendados — eso ya lo resuelve el punto 1).
+  #
+  # Nota sobre el punto 3: es lo opuesto al punto 2 a propósito — en el flujo
+  # operativo no queremos "esconder" un item que todavía no avanzó (ej. un
+  # producto agregado tarde que sigue pending) detrás de otros que ya están
+  # en_ruta. "warehousing" no se devuelve nunca como resultado (solo se entra
+  # ahí vía start_warehousing!, que congela el recálculo) — se trata como
+  # equivalente a loaded_on_truck para este cálculo.
   def calculate_delivery_status(raw_statuses)
     statuses = raw_statuses.map(&:to_s)
 
@@ -564,31 +598,30 @@ class Delivery < ApplicationRecord
 
     # ── 2. Todos terminales pero mezclados ────────────────────────────────────
     if statuses.all? { |s| ITEM_TERMINAL_STATUSES.include?(s) }
-      return :rescheduled if statuses.any? { |s| s == "rescheduled" }
       return :delivered if statuses.any? { |s| s == "delivered" }
+      return :failed if statuses.any? { |s| s == "failed" }
       return :cancelled if statuses.any? { |s| s == "cancelled" }
-      return :failed
+      return :rescheduled
     end
 
     # ── 3 & 4. Hay items activos — los terminales son solo histórico ──────────
     active = statuses.select { |s| ITEM_ACTIVE_STATUSES.include?(s) }
 
-    # in_route tiene máxima prioridad operativa
-    return :in_route if active.any? { |s| s == "in_route" }
-
-    # cargado en camión
-    return :loaded_on_truck if active.any? { |s| s == "loaded_on_truck" }
-
-    # todos los activos están confirmados o en plan
-    if active.all? { |s| %w[confirmed in_plan].include?(s) }
-      return delivery_plan.present? ? :in_plan : :ready_to_deliver
-    end
-
-    # mezcla pending + confirmed → volver a scheduled (hay items sin confirmar)
+    # pending es el escalón más bajo: si queda alguno, la entrega no avanza
     return :scheduled if active.any? { |s| s == "pending" }
 
-    # fallback seguro
-    :scheduled
+    # confirmado/en plan: si hay un delivery_plan real, ya está in_plan;
+    # si no, apenas está confirmada para entregar
+    if active.any? { |s| s == "confirmed" }
+      return delivery_plan.present? ? :in_plan : :ready_to_deliver
+    end
+    return :in_plan if active.any? { |s| s == "in_plan" }
+
+    # cargado en camión / en bodegaje (empatados, tratados como un solo escalón)
+    return :loaded_on_truck if active.any? { |s| %w[loaded_on_truck warehousing].include?(s) }
+
+    # solo queda in_route: el escalón más avanzado
+    :in_route
   end
 
   def generate_tracking_token

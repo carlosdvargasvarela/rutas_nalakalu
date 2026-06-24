@@ -11,7 +11,8 @@
       <%= form_with url: reschedule_delivery_production_delivery_path(delivery), method: :patch do |f| %>
         <div class="modal-body">
           <p class="text-muted small mb-3">
-            Se marcará esta entrega como <strong>reagendada</strong> y se creará una nueva entrega con todos los productos para la fecha seleccionada.
+            Los productos pendientes/confirmados se moverán a una nueva entrega en la fecha seleccionada.
+            Los productos ya entregados o cancelados se quedan en esta entrega tal como están.
           </p>
           <label class="form-label fw-bold small text-uppercase">Nueva Fecha de Entrega</label>
           <%= date_field_tag :new_date, Date.current + 1,
