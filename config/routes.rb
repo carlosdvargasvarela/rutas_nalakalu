@@ -369,6 +369,24 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :deliveries, only: [:index, :show]
+
+      namespace :driver do
+        resources :delivery_plans, only: [:index, :show] do
+          member do
+            patch :start
+            patch :finish
+            patch :abort
+            post  :update_position_batch
+          end
+        end
+        resources :assignments, only: [] do
+          member do
+            patch :complete
+            patch :fail
+            patch :add_note
+          end
+        end
+      end
     end
   end
 end
