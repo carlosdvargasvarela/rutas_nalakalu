@@ -68,6 +68,13 @@
                 data-primary="<%= contact.is_primary %>">
           <i class="bi bi-pencil"></i>
         </button>
+        <button type="button"
+                class="btn btn-sm btn-outline-danger"
+                title="Eliminar contacto"
+                data-action="click->contact-selector#deleteContact"
+                data-delete-id="<%= contact.id %>">
+          <i class="bi bi-trash"></i>
+        </button>
       </div>
     <% end %>
   </div>

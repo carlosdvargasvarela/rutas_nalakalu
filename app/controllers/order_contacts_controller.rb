@@ -75,6 +75,7 @@ class OrderContactsController < ApplicationController
     @contact.destroy
 
     respond_to do |format|
+      format.json { head :no_content }
       format.turbo_stream do
         render turbo_stream: turbo_stream.replace(
           "order_contacts_#{@order.id}",

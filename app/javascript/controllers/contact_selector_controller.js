@@ -107,6 +107,38 @@ export default class extends Controller {
     if (this.hasEditNameInputTarget) this.editNameInputTarget.focus();
   }
 
+  async deleteContact(event) {
+    event.preventDefault();
+    const btn = event.currentTarget;
+    const id = btn.dataset.deleteId;
+    const group = btn.closest(".btn-group");
+    const name = group?.querySelector("[data-action*='select']")?.dataset.name || "";
+
+    if (!confirm(`¿Eliminar el contacto "${name}"?`)) return;
+
+    btn.disabled = true;
+    try {
+      await this._request(`${this.contactsUrlValue}/${id}`, "DELETE", null);
+
+      // Si este contacto estaba seleccionado, limpiar selección
+      if (this.hasNameFieldTarget && this.nameFieldTarget.value === name) {
+        this.nameFieldTarget.value = "";
+        if (this.hasPhoneFieldTarget) this.phoneFieldTarget.value = "";
+        this._updateDisplay("", "");
+      }
+      // Cerrar panel de edición si estaba editando este contacto
+      if (this.hasEditContactIdTarget && this.editContactIdTarget.value === id) {
+        if (this.hasEditFormTarget) this.editFormTarget.classList.add("d-none");
+        this._clearEditForm();
+      }
+
+      group?.remove();
+    } catch (e) {
+      alert(e.message || "No se pudo eliminar el contacto.");
+      btn.disabled = false;
+    }
+  }
+
   cancelEdit(event) {
     event.preventDefault();
     if (this.hasEditFormTarget) this.editFormTarget.classList.add("d-none");
@@ -216,8 +248,17 @@ export default class extends Controller {
     editBtn.dataset.primary = contact.is_primary ? "true" : "false";
     editBtn.innerHTML = `<i class="bi bi-pencil"></i>`;
 
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "btn btn-sm btn-outline-danger";
+    deleteBtn.title = "Eliminar contacto";
+    deleteBtn.dataset.action = "click->contact-selector#deleteContact";
+    deleteBtn.dataset.deleteId = contact.id;
+    deleteBtn.innerHTML = `<i class="bi bi-trash"></i>`;
+
     group.appendChild(selectBtn);
     group.appendChild(editBtn);
+    group.appendChild(deleteBtn);
     list.appendChild(group);
   }
 
@@ -284,19 +325,21 @@ export default class extends Controller {
 
   async _request(url, method, body) {
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
-    const resp = await fetch(url, {
+    const opts = {
       method,
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
         "X-CSRF-Token": csrf,
       },
-      body: JSON.stringify(body),
-    });
+    };
+    if (body !== null) opts.body = JSON.stringify(body);
+    const resp = await fetch(url, opts);
     if (!resp.ok) {
       const data = await resp.json().catch(() => ({}));
       throw new Error(data.errors?.join(", ") || "Error en la solicitud");
     }
+    if (resp.status === 204) return {};
     return resp.json();
   }
 
