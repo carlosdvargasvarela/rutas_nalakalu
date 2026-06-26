@@ -8,8 +8,8 @@ module ApiTokenAuthenticatable
   private
 
   def authenticate_api_token!
-    token = request.headers["X-Driver-Token"]
-    @current_api_user = User.find_by(api_token: token)
+    token = request.headers["X-Driver-Token"].presence
+    @current_api_user = token && User.find_by(api_token: token)
     render json: { error: "No autorizado" }, status: :unauthorized unless @current_api_user
   end
 
