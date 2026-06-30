@@ -44,11 +44,10 @@ export default class extends Controller {
   async initMap() {
     await this.waitForGoogleMaps();
 
-    // ✅ Usar valores por defecto si no hay coordenadas
-    const defaultLat = this.hasCurrentLatValue ? this.currentLatValue : 9.9281;
-    const defaultLng = this.hasCurrentLngValue
-      ? this.currentLngValue
-      : -84.0907;
+    // ponytail: 0.0 = nil.to_f en Ruby, no es coordenada válida
+    const _validCoord = (v) => v !== 0 && Number.isFinite(v) && !Number.isNaN(v);
+    const defaultLat = _validCoord(this.currentLatValue) ? this.currentLatValue : 9.9281;
+    const defaultLng = _validCoord(this.currentLngValue) ? this.currentLngValue : -84.0907;
 
     console.log("🗺️ Inicializando mapa en:", defaultLat, defaultLng);
 
@@ -106,27 +105,20 @@ export default class extends Controller {
       return;
     }
 
+    const skipped = [];
+
     this.assignmentsValue.forEach((assignment) => {
       const delivery = assignment.delivery;
-
-      if (!delivery.latitude || !delivery.longitude) {
-        console.warn(`⚠️ Parada #${assignment.stop_order} sin coordenadas`);
-        return;
-      }
-
       const lat = parseFloat(delivery.latitude);
       const lng = parseFloat(delivery.longitude);
 
-      if (isNaN(lat) || isNaN(lng)) {
-        console.warn(
-          `⚠️ Parada #${assignment.stop_order} con coordenadas inválidas:`,
-          lat,
-          lng,
-        );
+      if (!delivery.latitude || !delivery.longitude || isNaN(lat) || isNaN(lng)) {
+        skipped.push(assignment);
         return;
       }
 
       const position = { lat, lng };
+      const customerName = delivery.customer?.name || "Sin nombre";
 
       const marker = new google.maps.Marker({
         position: position,
@@ -145,7 +137,7 @@ export default class extends Controller {
           strokeColor: "#ffffff",
           strokeWeight: 2,
         },
-        title: delivery.customer.name,
+        title: customerName,
         zIndex: 100 + assignment.stop_order,
       });
 
@@ -153,8 +145,8 @@ export default class extends Controller {
         content: `
           <div style="padding: 8px; min-width: 200px;">
             <strong>Parada #${assignment.stop_order}</strong><br>
-            <strong>${delivery.customer.name}</strong><br>
-            <small class="text-muted">${delivery.customer.address || "Sin dirección"}</small><br>
+            <strong>${customerName}</strong><br>
+            <small class="text-muted">${delivery.customer?.address || "Sin dirección"}</small><br>
             <span class="badge bg-${this.getStatusBadge(assignment.status)} mt-2">
               ${this.getStatusLabel(assignment.status)}
             </span>
@@ -167,13 +159,42 @@ export default class extends Controller {
       });
 
       this.deliveryMarkers.push({ marker, assignment });
+      this.bounds.extend(position);
     });
 
-    console.log(`✅ ${this.deliveryMarkers.length} marcadores creados`);
+    if (skipped.length > 0) this._showAddressErrors(skipped);
+    if (this.deliveryMarkers.length > 0) this.map.fitBounds(this.bounds);
+
+    console.log(`✅ ${this.deliveryMarkers.length} marcadores, ${skipped.length} sin coordenadas`);
+  }
+
+  _showAddressErrors(skipped) {
+    let note = document.getElementById("map-address-errors");
+    if (!note) {
+      note = document.createElement("div");
+      note.id = "map-address-errors";
+      note.className = "alert alert-warning m-2 small";
+      this.element.insertAdjacentElement("afterend", note);
+    }
+    const items = skipped.map((a) => {
+      const name = a.delivery.customer?.name || "sin nombre";
+      const addr = a.delivery.customer?.address || "";
+      const reason = (!a.delivery.latitude && !a.delivery.longitude)
+        ? "Sin coordenadas GPS"
+        : "Coordenadas inválidas";
+      return `<li><strong>Parada #${a.stop_order}</strong> &mdash; ${this._escapeHtml(name)}${addr ? ` (${this._escapeHtml(addr)})` : ""} &mdash; <span class="text-danger">${reason}</span></li>`;
+    }).join("");
+    note.innerHTML = `
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <strong>${skipped.length} parada${skipped.length > 1 ? "s" : ""} no se muestran en el mapa:</strong>
+      </div>
+      <ul class="mb-0 ps-3">${items}</ul>`;
   }
 
   drawRoute() {
-    if (!this.hasCurrentLatValue || !this.hasCurrentLngValue) {
+    const validCoord = (v) => v !== 0 && Number.isFinite(v) && !Number.isNaN(v);
+    if (!validCoord(this.currentLatValue) || !validCoord(this.currentLngValue)) {
       console.warn("⚠️ No hay posición válida del conductor");
       return;
     }
@@ -358,6 +379,12 @@ export default class extends Controller {
     if (statusChanged) {
       this.drawRoute();
     }
+  }
+
+  _escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+    );
   }
 
   async waitForGoogleMaps() {

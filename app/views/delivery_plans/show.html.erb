@@ -1,30 +1,69 @@
 <div class="container-fluid py-4">
+  <%= render "delivery_plans/show_partials/alerts", delivery_plan: @delivery_plan %>
   <%= render "delivery_plans/show_partials/header",
         delivery_plan: @delivery_plan,
         from_date: @from_date %>
-  <%= render "delivery_plans/show_partials/alerts",
+
+  <%# ── Stats strip (semana, estado, conductor, camión, paradas, tripulación) ── %>
+  <%= render "delivery_plans/show_partials/general_info",
         delivery_plan: @delivery_plan %>
-  <%# ── Fila superior: Info general + Tripulación ── %>
-  <div class="row g-4 mb-4">
-    <div class="col-lg-5">
-      <%= render "delivery_plans/show_partials/general_info",
-            delivery_plan: @delivery_plan %>
+
+  <%# ── Mapas en tabs ── %>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white p-0">
+      <ul class="nav nav-tabs border-bottom px-3 pt-2" id="planMapTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active fw-semibold" type="button" role="tab"
+                  data-bs-toggle="tab" data-bs-target="#tab-route">
+            <i class="bi bi-map me-1"></i>Mapa de ruta
+            <span class="badge bg-primary rounded-pill ms-1"><%= @assignments.size %></span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link fw-semibold" type="button" role="tab"
+                  data-bs-toggle="tab" data-bs-target="#tab-tracking">
+            <i class="bi bi-broadcast me-1 text-success"></i>Seguimiento en vivo
+          </button>
+        </li>
+      </ul>
     </div>
-    <div class="col-lg-7">
-      <%= render "delivery_plans/show_partials/crew",
-            delivery_plan: @delivery_plan %>
+    <div class="tab-content">
+      <div class="tab-pane fade show active p-0" id="tab-route" role="tabpanel">
+        <%= render "delivery_plans/show_partials/map", assignments: @assignments %>
+      </div>
+      <div class="tab-pane fade p-0" id="tab-tracking" role="tabpanel">
+        <%= render "delivery_plans/show_partials/driver", assignments: @assignments %>
+      </div>
     </div>
   </div>
-  <%# ── Mapa de seguimiento ── %>
-  <%= render "delivery_plans/show_partials/driver",
-        assignments: @assignments %>
+  <script>
+    document.getElementById("planMapTabs")?.addEventListener("shown.bs.tab", () => {
+      window.dispatchEvent(new Event("resize"))
+    })
+  </script>
+
+  <%# ── Progreso de entregas ── %>
+  <% total = @assignments.size %>
+  <% if total > 0 %>
+    <% completed = @assignments.count { |a| a.status.to_s == "completed" } %>
+    <% pct = (completed * 100.0 / total).round %>
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <span class="text-muted small fw-semibold text-uppercase">Progreso</span>
+      <div class="progress flex-grow-1" style="height:8px; border-radius:4px;">
+        <div class="progress-bar bg-success" style="width:<%= pct %>%" role="progressbar"
+             aria-valuenow="<%= pct %>" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
+      <span class="small fw-bold text-nowrap"><%= completed %>/<%= total %> entregadas</span>
+    </div>
+  <% end %>
+
   <%# ── Tabla de entregas (desktop) ── %>
   <%= render "delivery_plans/show_partials/deliveries_table",
         delivery_plan: @delivery_plan %>
   <%# ── Cards de entregas (móvil) ── %>
   <%= render "delivery_plans/show_partials/deliveries_cards",
         delivery_plan: @delivery_plan %>
-  <%# ── Botón volver ── %>
+
   <div class="mt-4">
     <%= render "delivery_plans/show_partials/back_button" %>
   </div>
