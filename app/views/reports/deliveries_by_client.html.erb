@@ -65,7 +65,7 @@
                           class: "text-decoration-none text-primary fw-semibold" %>
                   </td>
                   <td>
-                    <% truck = d.delivery_plan_assignments.map { |a| a.delivery_plan.truck }.compact.uniq.join(", ").presence %>
+                    <% truck = d.delivery_plan_assignment&.delivery_plan&.truck %>
                     <% if truck %>
                       <span class="badge bg-dark"><i class="bi bi-truck me-1"></i><%= truck %></span>
                     <% else %>

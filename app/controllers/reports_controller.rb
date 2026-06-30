@@ -7,7 +7,7 @@ class ReportsController < ApplicationController
 
     @deliveries = Delivery
       .joins(order: :client)
-      .includes(order: :client, delivery_plan_assignments: :delivery_plan)
+      .includes(order: :client, delivery_plan_assignment: :delivery_plan)
       .where(delivery_date: @from..@to)
       .where.not(status: %w[cancelled archived])
       .order("clients.name ASC, deliveries.delivery_date ASC")
@@ -65,9 +65,6 @@ class ReportsController < ApplicationController
   end
 
   def truck_for(delivery)
-    delivery.delivery_plan_assignments
-      .map { |a| a.delivery_plan.truck }
-      .compact.uniq.join(", ")
-      .presence || "Sin asignar"
+    delivery.delivery_plan_assignment&.delivery_plan&.truck || "Sin asignar"
   end
 end

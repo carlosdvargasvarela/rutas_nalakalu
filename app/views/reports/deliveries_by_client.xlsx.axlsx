@@ -26,7 +26,7 @@ wb.add_worksheet(name: "Entregas por cliente") do |sheet|
   sheet.add_row ["Cliente", "Fecha", "Pedido", "Camión"], style: header_style, height: 22
 
   @deliveries.each_with_index do |d, i|
-    truck = d.delivery_plan_assignments.map { |a| a.delivery_plan.truck }.compact.uniq.join(", ").presence || "Sin asignar"
+    truck = d.delivery_plan_assignment&.delivery_plan&.truck || "Sin asignar"
     style = i.even? ? row_even_style : row_odd_style
     sheet.add_row [
       d.order.client.name,

@@ -101,6 +101,20 @@
     </li>
 
     <li class="nav-item dropdown">
+      <a class="nav-link dropdown-toggle" href="#" id="informesDropdown" role="button"
+         data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-file-earmark-bar-graph me-1"></i> Informes
+      </a>
+      <ul class="dropdown-menu" aria-labelledby="informesDropdown">
+        <li>
+          <%= link_to report_deliveries_by_client_path, class: "dropdown-item" do %>
+            <i class="bi bi-people me-2"></i>Entregas por cliente
+          <% end %>
+        </li>
+      </ul>
+    </li>
+
+    <li class="nav-item dropdown">
       <a class="nav-link dropdown-toggle" href="#" id="configuracionDropdown" role="button"
          data-bs-toggle="dropdown" aria-expanded="false">
         <i class="bi bi-gear me-1"></i> Configuración
