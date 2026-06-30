@@ -159,6 +159,10 @@ module DeliveryItems
         contact_phone: original_delivery.contact_phone,
         contact_id: original_delivery.contact_id,
         delivery_type: original_delivery.delivery_type,
+        delivery_notes: original_delivery.delivery_notes,
+        delivery_time_preference: original_delivery.delivery_time_preference,
+        condominio_number: original_delivery.condominio_number,
+        casa_number: original_delivery.casa_number,
         status: :scheduled
       )
     end
