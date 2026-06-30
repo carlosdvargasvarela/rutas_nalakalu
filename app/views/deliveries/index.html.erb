@@ -42,6 +42,15 @@
                     <li><hr class="dropdown-divider"></li>
                   <% end %>
                   <li><%= link_to "Exportar Excel", deliveries_path(format: :xlsx, q: params[:q]&.to_unsafe_h), class: "dropdown-item" %></li>
+                  <li>
+                    <%= link_to report_deliveries_by_client_path(
+                          format: :xlsx,
+                          from: params.dig(:q, :delivery_date_gteq),
+                          to:   params.dig(:q, :delivery_date_lteq)
+                        ), class: "dropdown-item" do %>
+                      <i class="bi bi-file-earmark-excel me-1 text-success"></i>Entregas por cliente (Excel)
+                    <% end %>
+                  </li>
                 </ul>
               </div>
             </div>
