@@ -247,6 +247,13 @@ Rails.application.routes.draw do
     end
   end
 
+  # =============================================================================
+  # INFORMES
+  # =============================================================================
+  scope :reports, as: :report do
+    get :deliveries_by_client, to: "reports#deliveries_by_client"
+  end
+
   namespace :admin do
     resources :showrooms, only: [:index, :new, :create, :edit, :update, :destroy]
 

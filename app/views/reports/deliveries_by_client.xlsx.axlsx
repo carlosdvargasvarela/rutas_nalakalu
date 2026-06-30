@@ -1,0 +1,50 @@
+wb = xlsx_package.workbook
+
+header_style = wb.styles.add_style(
+  bg_color: "1B3A6B",
+  fg_color: "FFFFFF",
+  b: true,
+  sz: 13,
+  alignment: { horizontal: :center, wrap_text: true, vertical: :center }
+)
+
+row_even_style = wb.styles.add_style(
+  bg_color: "EEF4FB",
+  sz: 12,
+  border: { style: :thin, color: "BDD7EE" },
+  alignment: { wrap_text: true, vertical: :center }
+)
+
+row_odd_style = wb.styles.add_style(
+  bg_color: "FFFFFF",
+  sz: 12,
+  border: { style: :thin, color: "BDD7EE" },
+  alignment: { wrap_text: true, vertical: :center }
+)
+
+wb.add_worksheet(name: "Entregas por cliente") do |sheet|
+  sheet.add_row ["Cliente", "Fecha", "Pedido", "Camión"], style: header_style, height: 22
+
+  @deliveries.each_with_index do |d, i|
+    truck = d.delivery_plan_assignments.map { |a| a.delivery_plan.truck }.compact.uniq.join(", ").presence || "Sin asignar"
+    style = i.even? ? row_even_style : row_odd_style
+    sheet.add_row [
+      d.order.client.name,
+      I18n.l(d.delivery_date, format: :long),
+      d.order.number,
+      truck
+    ], style: style
+  end
+
+  sheet.column_widths 30, 22, 18, 20
+
+  if @deliveries.any?
+    sheet.auto_filter = "A1:D#{@deliveries.size + 1}"
+  end
+
+  sheet.sheet_view.pane do |pane|
+    pane.y_split = 1
+    pane.state   = :frozen
+    pane.top_left_cell = "A2"
+  end
+end
