@@ -102,6 +102,8 @@ module Deliveries
         delivery_type: delivery.delivery_type,
         delivery_notes: delivery.delivery_notes,
         delivery_time_preference: delivery.delivery_time_preference,
+        condominio_number: delivery.condominio_number,
+        casa_number: delivery.casa_number,
         status: :scheduled
       )
     end

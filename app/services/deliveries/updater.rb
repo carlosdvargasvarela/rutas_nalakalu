@@ -96,10 +96,16 @@ module Deliveries
     def find_or_create_address(client)
       new_addr_params = params[:delivery_address].present? ? address_params : nil
 
-      # Si vienen datos de dirección → siempre crear una nueva, sin excepción
       if new_addr_params.present? &&
           (new_addr_params[:address].present? ||
            (new_addr_params[:latitude].present? && new_addr_params[:longitude].present?))
+        # Reusar si ya existe una idéntica para este cliente (el form siempre envía los datos actuales)
+        existing = client.delivery_addresses.find_by(
+          address: new_addr_params[:address],
+          latitude: new_addr_params[:latitude],
+          longitude: new_addr_params[:longitude]
+        )
+        return existing if existing.present?
         return client.delivery_addresses.create!(new_addr_params)
       end
 
