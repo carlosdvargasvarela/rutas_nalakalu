@@ -105,7 +105,10 @@ module Deliveries
           latitude: new_addr_params[:latitude],
           longitude: new_addr_params[:longitude]
         )
-        return existing if existing.present?
+        if existing.present?
+          existing.update!(description: new_addr_params[:description]) if existing.description != new_addr_params[:description]
+          return existing
+        end
         return client.delivery_addresses.create!(new_addr_params)
       end
 
