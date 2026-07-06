@@ -12,7 +12,7 @@ class SalesOrderImportWorker < QBWC::Worker
       <?qbxml version="13.0"?>
       <QBXML>
         <QBXMLMsgsRq onError="stopOnError">
-          <SalesOrderQueryRq requestID="1">
+          <SalesOrderQueryRq requestID="1" iterator="Start">
             <MaxReturned>100</MaxReturned>
             <ModifiedDateRangeFilter>
               <FromModifiedDate>#{from_date}</FromModifiedDate>
@@ -36,7 +36,12 @@ class SalesOrderImportWorker < QBWC::Worker
       ProcessQuickbooksXmlJob.perform_async(plain_payload)
     end
 
-    {"done" => true}
+    remaining = response.dig("xml_attributes", "iteratorRemainingCount").to_i
+    # ponytail: 5 min overlap covers clock skew/in-flight edits; ProcessQuickbooksXmlJob
+    # dedupes via qb_updated_at so re-seeing a few orders is harmless.
+    AppSetting.set("qb_sync_from_date", 5.minutes.ago.strftime("%Y-%m-%dT%H:%M:%S")) if remaining.zero?
+
+    {"done" => remaining.zero?}
   end
 
   private
