@@ -1,4 +1,6 @@
 class Showroom < ApplicationRecord
+  has_paper_trail
+
   belongs_to :delivery_address, optional: true
 
   has_many :source_deliveries,      class_name: "Delivery", foreign_key: :source_showroom_id,      dependent: :nullify

@@ -1,4 +1,6 @@
 class DeliveryGroup < ApplicationRecord
+  has_paper_trail
+
   has_many :delivery_group_memberships, dependent: :destroy
   has_many :deliveries, through: :delivery_group_memberships
 

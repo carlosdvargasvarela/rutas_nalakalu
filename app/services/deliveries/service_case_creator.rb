@@ -22,17 +22,20 @@ module Deliveries
           pickup_delivery = build_service_delivery(order, address, base_date, "pickup_with_return")
           pickup_delivery.delivery_items = process_service_items(order, "pickup_with_return")
           pickup_delivery.save!
+          DeliveryEvent.record(delivery: pickup_delivery, action: "created", actor: current_user)
 
           return_date = base_date + 15.days
           return_delivery = build_service_delivery(order, address, return_date, "return_delivery")
           return_delivery.delivery_items = clone_items_with_type(pickup_delivery, "return_delivery")
           return_delivery.save!
+          DeliveryEvent.record(delivery: return_delivery, action: "created", actor: current_user)
 
           [pickup_delivery, return_delivery]
         else
           single_delivery = build_service_delivery(order, address, base_date, dtype)
           single_delivery.delivery_items = process_service_items(order, dtype)
           single_delivery.save!
+          DeliveryEvent.record(delivery: single_delivery, action: "created", actor: current_user)
           [single_delivery]
         end
       end

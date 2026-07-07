@@ -84,7 +84,7 @@ module DeliveryItems
         remaining = delivery_item.quantity_delivered.to_i - quantity_to_reschedule
         delivery_item.update!(quantity_delivered: remaining)
       else
-        delivery_item.update_column(:status, DeliveryItem.statuses[:rescheduled])
+        delivery_item.update!(status: :rescheduled)
       end
     end
 
@@ -147,7 +147,7 @@ module DeliveryItems
       )
 
       if rescheduled.present?
-        rescheduled.update_column(:status, Delivery.statuses[:scheduled])
+        rescheduled.update!(status: :scheduled)
         return rescheduled
       end
 

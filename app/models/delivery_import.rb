@@ -1,4 +1,6 @@
 class DeliveryImport < ApplicationRecord
+  has_paper_trail
+
   belongs_to :user
   has_one_attached :file
   has_many :delivery_import_rows, dependent: :destroy

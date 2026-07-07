@@ -1,4 +1,6 @@
 class DetectorKeywordList < ApplicationRecord
+  has_paper_trail
+
   serialize :values_list, coder: JSON
 
   validates :detector, presence: true

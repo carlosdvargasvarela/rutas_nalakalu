@@ -35,6 +35,7 @@ module Deliveries
           )
           delivery.delivery_items = items
           delivery.save!
+          DeliveryEvent.record(delivery: delivery, action: "created", actor: current_user)
           [delivery]
         end
       end
@@ -82,6 +83,7 @@ module Deliveries
       )
       pickup.delivery_items = items
       pickup.save!
+      DeliveryEvent.record(delivery: pickup, action: "created", actor: current_user)
 
       # Entrega 2: entrega a sala destino
       items_for_delivery = items.map do |di|
@@ -106,6 +108,7 @@ module Deliveries
       )
       delivery.delivery_items = items_for_delivery
       delivery.save!
+      DeliveryEvent.record(delivery: delivery, action: "created", actor: current_user)
 
       [pickup, delivery]
     end

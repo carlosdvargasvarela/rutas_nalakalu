@@ -19,7 +19,7 @@ class MaintenanceWindow < ApplicationRecord
     return false unless window
 
     if window.ends_at.present? && window.ends_at < Time.current
-      window.update_columns(active: false)
+      window.update!(active: false)
       return false
     end
 

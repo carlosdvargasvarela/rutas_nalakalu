@@ -40,7 +40,7 @@ module DeliveryItems
     end
 
     def update_all_items
-      delivery.delivery_items.update_all(notes: note_text.presence)
+      delivery.delivery_items.find_each { |item| item.update!(notes: note_text.presence) }
       delivery
     end
 

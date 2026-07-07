@@ -119,7 +119,7 @@ module Deliveries
       end
 
       # Marcar los items originales como ya procesados para sala pickup
-      items_to_copy.update_all(sala_pickup_requested: true)
+      items_to_copy.find_each { |item| item.update!(sala_pickup_requested: true) }
     end
 
     def update_original_delivery_notes!
@@ -129,9 +129,8 @@ module Deliveries
       retiro = Deliveries::Vocabulary.service_type_label("retiro")
       new_note = "\n[SISTEMA #{Date.current.strftime("%d/%m/%Y")}]: #{retiro} en sala programado para el #{pickup_date}. Productos a retirar: #{product_names}."
 
-      original_delivery.update_column(
-        :delivery_notes,
-        "#{original_delivery.delivery_notes}#{new_note}"
+      original_delivery.update!(
+        delivery_notes: "#{original_delivery.delivery_notes}#{new_note}"
       )
     end
 

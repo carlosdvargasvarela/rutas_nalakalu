@@ -35,6 +35,8 @@ module Deliveries
         @delivery.delivery_items = processed_items
         @delivery.save!
 
+        DeliveryEvent.record(delivery: @delivery, action: "created", actor: current_user)
+
         NotificationService.notify_current_week_delivery_created(@delivery, created_by: current_user.name)
 
         @delivery

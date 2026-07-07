@@ -22,17 +22,20 @@ module Deliveries
           pickup = build_repair_delivery(order, address, base_date, "repair_pickup")
           pickup.delivery_items = process_repair_items(order, "repair_pickup")
           pickup.save!
+          DeliveryEvent.record(delivery: pickup, action: "created", actor: current_user)
 
           return_date = base_date + 15.days
           ret = build_repair_delivery(order, address, return_date, "repair_return")
           ret.delivery_items = clone_items_with_type(pickup, "repair_return")
           ret.save!
+          DeliveryEvent.record(delivery: ret, action: "created", actor: current_user)
 
           [pickup, ret]
         else
           single = build_repair_delivery(order, address, base_date, dtype)
           single.delivery_items = process_repair_items(order, dtype)
           single.save!
+          DeliveryEvent.record(delivery: single, action: "created", actor: current_user)
           [single]
         end
       end

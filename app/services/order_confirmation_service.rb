@@ -30,16 +30,15 @@ class OrderConfirmationService
     )
 
     # Crear nota de reprogramación
-    @order.order_items.update_all(
-      notes: "Reprogramado para #{new_date}. Razón: #{reason}"
-    )
+    note = "Reprogramado para #{new_date}. Razón: #{reason}"
+    @order.order_items.find_each { |item| item.update!(notes: note) }
 
     {success: true, message: "Pedido reprogramado exitosamente"}
   end
 
   def mark_items_as_ready(item_ids)
     items = @order.order_items.where(id: item_ids)
-    items.update_all(status: :ready)
+    items.find_each { |item| item.update!(status: :ready) }
 
     # Verificar si el pedido completo está listo
     @order.check_and_update_status!

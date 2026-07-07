@@ -1,5 +1,7 @@
 # app/models/order_item_note.rb
 class OrderItemNote < ApplicationRecord
+  has_paper_trail
+
   belongs_to :order_item
   belongs_to :user
 

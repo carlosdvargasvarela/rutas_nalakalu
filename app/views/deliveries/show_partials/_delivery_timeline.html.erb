@@ -90,17 +90,15 @@
       </div>
     <% end %>
   </div>
-  <% if total_count > limit %>
-    <div class="text-center mt-3">
-      <%= link_to resource_history_audit_logs_path(item_type: "Delivery", item_id: delivery.id),
-          class: "btn btn-sm btn-outline-secondary",
-          target: "_blank",
-          rel: "noopener noreferrer" do %>
-        <i class="bi bi-clock-history me-1"></i>
-        Ver historial completo (<%= total_count %> eventos)
-      <% end %>
-    </div>
-  <% end %>
+  <div class="text-center mt-3">
+    <%= link_to resource_history_audit_logs_path(item_type: "Delivery", item_id: delivery.id),
+        class: "btn btn-sm btn-outline-secondary",
+        target: "_blank",
+        rel: "noopener noreferrer" do %>
+      <i class="bi bi-clock-history me-1"></i>
+      Ver historial completo (<%= total_count %> eventos)
+    <% end %>
+  </div>
 <% else %>
   <div class="text-center py-4">
     <i class="bi bi-clock text-muted opacity-50 d-block fs-3 mb-2"></i>

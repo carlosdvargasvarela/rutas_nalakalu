@@ -88,7 +88,7 @@ module Deliveries
       )
 
       if rescheduled.present?
-        rescheduled.update_column(:status, Delivery.statuses[:scheduled])
+        rescheduled.update!(status: :scheduled)
         return rescheduled
       end
 
@@ -133,7 +133,7 @@ module Deliveries
           create_item_in_target(item)
         end
 
-        item.update_column(:status, DeliveryItem.statuses[:rescheduled])
+        item.update!(status: :rescheduled)
       end
     end
 

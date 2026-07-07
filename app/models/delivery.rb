@@ -156,11 +156,9 @@ class Delivery < ApplicationRecord
 
   def reopen!
     transaction do
-      delivery_items.update_all(
-        status: DeliveryItem.statuses[:pending],
-        load_status: DeliveryItem.load_statuses[:unloaded],
-        updated_at: Time.current
-      )
+      delivery_items.find_each do |item|
+        item.update!(status: :pending, load_status: :unloaded)
+      end
       update!(
         status: :scheduled,
         load_status: :empty,

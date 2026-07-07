@@ -1,5 +1,7 @@
 # app/models/client_note.rb
 class ClientNote < ApplicationRecord
+  has_paper_trail
+
   belongs_to :client
   belongs_to :user
 

@@ -27,6 +27,8 @@ module Deliveries
         @delivery.delivery_items = processed_items
         @delivery.save!
 
+        DeliveryEvent.record(delivery: @delivery, action: "created", actor: current_user)
+
         @delivery
       end
     rescue ActiveRecord::RecordInvalid => e

@@ -7,6 +7,6 @@ class DeliveryRescheduleService
 
   def reschedule!
     @delivery.update!(delivery_date: @new_date, status: :rescheduled)
-    @delivery.delivery_items.update_all(status: :rescheduled)
+    @delivery.delivery_items.find_each { |item| item.update!(status: :rescheduled) }
   end
 end

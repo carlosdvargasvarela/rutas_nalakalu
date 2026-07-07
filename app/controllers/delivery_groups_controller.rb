@@ -64,7 +64,7 @@ class DeliveryGroupsController < ApplicationController
     if source_group && target_group
       return if source_group == target_group
       # Merge: move all of target_group's memberships into source_group
-      target_group.delivery_group_memberships.update_all(delivery_group_id: source_group.id)
+      target_group.delivery_group_memberships.find_each { |m| m.update!(delivery_group_id: source_group.id) }
       target_group.reload.destroy!
     elsif source_group
       source_group.deliveries << target

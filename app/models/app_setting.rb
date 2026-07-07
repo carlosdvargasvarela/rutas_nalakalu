@@ -1,4 +1,6 @@
 class AppSetting < ApplicationRecord
+  has_paper_trail
+
   validates :key, presence: true, uniqueness: true
 
   def self.get(key, default: nil)
