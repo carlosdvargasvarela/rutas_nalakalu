@@ -97,22 +97,28 @@ module Deliveries
     def process_internal_items(order)
       return [] unless params[:delivery].dig(:delivery_items_attributes)
 
-      params[:delivery][:delivery_items_attributes].values.map do |item_params|
-        next if item_params[:_destroy] == "1"
-        next if item_params[:order_item_attributes].blank? || item_params[:order_item_attributes][:product].blank?
+      params[:delivery][:delivery_items_attributes].values.flat_map do |item_params|
+        next [] if item_params[:_destroy] == "1"
+        next [] if item_params[:order_item_attributes].blank?
 
-        order_item = order.order_items.create!(
-          product: item_params[:order_item_attributes][:product],
-          quantity: 1,
-          status: :ready
-        )
+        # Un producto por línea, tal como indica el hint del formulario.
+        product_lines = item_params[:order_item_attributes][:product].to_s
+          .split("\n").map(&:strip).reject(&:blank?)
 
-        DeliveryItem.new(
-          order_item: order_item,
-          quantity_delivered: 1,
-          status: :confirmed
-        )
-      end.compact
+        product_lines.map do |product_line|
+          order_item = order.order_items.create!(
+            product: product_line,
+            quantity: 1,
+            status: :ready
+          )
+
+          DeliveryItem.new(
+            order_item: order_item,
+            quantity_delivered: 1,
+            status: :confirmed
+          )
+        end
+      end
     end
 
     def internal_delivery_params
