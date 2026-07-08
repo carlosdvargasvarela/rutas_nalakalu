@@ -142,7 +142,7 @@ export default class extends Controller {
       this.map = new Map(this.mapTarget, {
         center: { lat: initialLat, lng: initialLng },
         zoom: hasExisting ? 17 : 8,
-        mapId: "DELIVERY_ADDRESS_MAP_ID",
+        mapId: "DEMO_MAP_ID", // Placeholder oficial de Google para Advanced Markers, no un Map ID propio
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: true,
