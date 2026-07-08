@@ -40,7 +40,7 @@ class ProcessQuickbooksXmlJob
     end
 
     due_date = so["due_date"]&.strip
-    lines = Array.wrap(so["sales_order_line_ret"]).compact
+    lines = merge_duplicate_product_lines(Array.wrap(so["sales_order_line_ret"]).compact)
 
     if existing.present?
       lines_changed = update_order_lines(existing, lines, due_date)
@@ -150,6 +150,23 @@ class ProcessQuickbooksXmlJob
     end
 
     changed
+  end
+
+  # ponytail: OrderItem exige un producto único por pedido, así que dos líneas de QB
+  # con el mismo producto deben sumarse en una sola línea antes de tocar la BD
+  # (si no, la segunda sobrescribe la cantidad de la primera en vez de sumarla).
+  def merge_duplicate_product_lines(lines)
+    merged = {}
+    lines.each do |line|
+      key = build_product_name(line)
+      qty = line["quantity"].to_s.tr(",", ".").to_f
+      if merged[key]
+        merged[key] = merged[key].merge("quantity" => (merged[key]["quantity"].to_s.tr(",", ".").to_f + qty).to_s)
+      else
+        merged[key] = line.merge("quantity" => qty.to_s)
+      end
+    end
+    merged.values
   end
 
   def build_product_name(line)
