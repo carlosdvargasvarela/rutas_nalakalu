@@ -223,6 +223,7 @@ export default class extends Controller {
     if (!this.list) return;
 
     this.list.innerHTML = "";
+    this.noResultsElement = null;
 
     const options = Array.from(this.selectElement.options);
 
@@ -304,6 +305,7 @@ export default class extends Controller {
       if (option) option.selected = !option.selected;
       this.selectElement.dispatchEvent(new Event("change", { bubbles: true }));
       this.renderOptions();
+      this.filter();
       this.syncFromSelect();
     } else {
       this.selectElement.value = value;
@@ -319,6 +321,7 @@ export default class extends Controller {
       );
       this.selectElement.dispatchEvent(new Event("change", { bubbles: true }));
       this.renderOptions();
+      this.filter();
       this.syncFromSelect();
     } else {
       this.select("");

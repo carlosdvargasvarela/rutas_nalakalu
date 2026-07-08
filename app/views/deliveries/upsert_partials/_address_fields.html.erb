@@ -35,6 +35,7 @@
       <%= text_field_tag "delivery_address[search_input]", nil,
             placeholder: "Plus Code, coordenadas o lugar...",
             class: "form-control",
+            autocomplete: "off",
             data: {
               "address-autocomplete-target": "input",
               action: "input->address-autocomplete#handleSmartInput blur->address-autocomplete#handleSmartInput"

@@ -102,6 +102,9 @@
     <% end %>
     <%= f.submit delivery.new_record? ? "Crear entrega" : "Guardar cambios",
         class: "btn btn-primary px-5",
-        data: { "address-validator-target": "submit" } %>
+        data: {
+          "address-validator-target": "submit",
+          disable_with: delivery.new_record? ? "Creando..." : "Guardando..."
+        } %>
   </div>
 <% end %>
