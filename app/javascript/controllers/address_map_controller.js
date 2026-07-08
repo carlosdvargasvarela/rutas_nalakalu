@@ -41,6 +41,17 @@ export default class extends Controller {
   }
 
   async initializeMap() {
+    // El script se marca como "cargado" antes de que importLibrary quede
+    // realmente disponible (setup interno asíncrono de la API); reintentar
+    // evita perder la inicialización del mapa por esa carrera.
+    if (typeof google?.maps?.importLibrary !== "function") {
+      this._libAttempts = (this._libAttempts || 0) + 1;
+      if (this._libAttempts <= 25) {
+        setTimeout(() => this.initializeMap(), 200);
+      }
+      return;
+    }
+
     const lat = this.latitudeValue || 9.9281;
     const lng = this.longitudeValue || -84.0907;
 

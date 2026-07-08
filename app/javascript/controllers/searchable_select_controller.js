@@ -336,7 +336,7 @@ export default class extends Controller {
     options.forEach((option) => {
       const label = this.normalize(option.dataset.label || "");
       const visible = query === "" || label.includes(query);
-      option.style.display = visible ? "" : "none";
+      option.classList.toggle("ss-hidden", !visible);
       if (visible) visibleCount += 1;
     });
 
@@ -358,7 +358,7 @@ export default class extends Controller {
   handleKeydown(event) {
     const visibleOptions = Array.from(
       this.list.querySelectorAll(".ss-option"),
-    ).filter((element) => element.style.display !== "none");
+    ).filter((element) => !element.classList.contains("ss-hidden"));
 
     if (visibleOptions.length === 0) return;
 
@@ -405,7 +405,7 @@ export default class extends Controller {
 
     const firstVisible = Array.from(
       this.list.querySelectorAll(".ss-option"),
-    ).find((element) => element.style.display !== "none");
+    ).find((element) => !element.classList.contains("ss-hidden"));
 
     this.setActive(firstVisible || null);
     this.searchInput.focus();

@@ -119,6 +119,16 @@ export default class extends Controller {
       return;
     }
 
+    // El script se marca como "cargado" antes de que importLibrary quede
+    // realmente disponible (setup interno asíncrono de la API); reintentar
+    // evita perder la inicialización del mapa por esa carrera.
+    if (typeof google?.maps?.importLibrary !== "function") {
+      this._libAttempts = (this._libAttempts || 0) + 1;
+      if (this._libAttempts <= 25)
+        setTimeout(() => this.tryInitializeAutocomplete(), 200);
+      return;
+    }
+
     try {
       const { Map } = await google.maps.importLibrary("maps");
       const { AdvancedMarkerElement } =

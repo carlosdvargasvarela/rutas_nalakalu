@@ -22,6 +22,12 @@
   cursor: pointer;
   transition: background-color 0.1s;
 }
+// Bootstrap's .d-flex on the option (needed for the checkbox layout) is
+// display:flex !important, which beats a plain inline style.display; this
+// needs matching !important + later cascade position to actually hide it.
+.ss-option.ss-hidden {
+  display: none !important;
+}
 .ss-option:hover,
 .ss-option.ss-active  { background-color: var(--bs-primary-bg-subtle); }
 .ss-option.ss-selected { background-color: var(--bs-primary-bg-subtle); }
