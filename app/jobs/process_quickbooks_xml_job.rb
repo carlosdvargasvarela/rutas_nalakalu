@@ -6,15 +6,18 @@ class ProcessQuickbooksXmlJob
   def perform(orders)
     orders = Array.wrap(orders)
     results_by_seller = Hash.new { |h, k| h[k] = [] }
+    rejected = []
 
     orders.each do |so|
       result = process_sales_order(so)
       results_by_seller[result[:seller_code]] << result if result
     rescue => e
       Rails.logger.error "ProcessQuickbooksXmlJob: Error en SO #{so["ref_number"]}: #{e.message}"
+      rejected << {order_number: so["ref_number"].to_s.strip, reason: e.message}
     end
 
     send_import_notifications(results_by_seller) if results_by_seller.any?
+    send_rejection_notifications(rejected) if rejected.any?
   end
 
   private
@@ -85,6 +88,14 @@ class ProcessQuickbooksXmlJob
       next unless admin.send_notifications?
       QuickbooksImportMailer.with(admin: admin, results_by_seller: results_by_seller)
         .admin_orders_loaded.deliver_later
+    end
+  end
+
+  def send_rejection_notifications(rejected)
+    User.where(role: :admin).find_each do |admin|
+      next unless admin.send_notifications?
+      QuickbooksImportMailer.with(admin: admin, rejected: rejected)
+        .admin_orders_rejected.deliver_later
     end
   end
 
@@ -159,7 +170,7 @@ class ProcessQuickbooksXmlJob
     merged = {}
     lines.each do |line|
       key = build_product_name(line)
-      qty = line["quantity"].to_s.tr(",", ".").to_f
+      qty = parse_quantity(line["quantity"])
       if merged[key]
         merged[key] = merged[key].merge("quantity" => (merged[key]["quantity"].to_s.tr(",", ".").to_f + qty).to_s)
       else
@@ -167,6 +178,13 @@ class ProcessQuickbooksXmlJob
       end
     end
     merged.values
+  end
+
+  # ponytail: QB a veces manda la cantidad vacía; en vez de rebotar el pedido
+  # completo (falla la validación quantity > 0 de OrderItem), se carga con 1.
+  def parse_quantity(raw)
+    qty = raw.to_s.tr(",", ".").to_f
+    qty.positive? ? qty : 1.0
   end
 
   def build_product_name(line)

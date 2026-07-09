@@ -1,6 +1,9 @@
 require "test_helper"
+require "minitest/mock"
 
 class ProcessQuickbooksXmlJobTest < ActiveSupport::TestCase
+  include ActionMailer::TestHelper
+
   def so_with_duplicate_lines(ref_number)
     {
       "txn_id" => "txn-#{ref_number}",
@@ -35,5 +38,38 @@ class ProcessQuickbooksXmlJobTest < ActiveSupport::TestCase
     items = order.order_items.where(product: "Silla Roja")
     assert_equal 1, items.count, "duplicate product lines must merge into one order_item"
     assert_equal 10, items.first.quantity
+  end
+
+  test "a line with blank quantity loads with quantity 1 instead of bouncing the order" do
+    so = so_with_duplicate_lines("4001")
+    so["sales_order_line_ret"] = [{"txn_line_id" => "L1", "quantity" => "", "desc" => "Silla Azul"}]
+
+    ProcessQuickbooksXmlJob.new.perform([so])
+
+    order = Order.find_by(number: "PED-4001")
+    assert order.present?, "order with a blank-quantity line must still be created"
+    assert_equal 1, order.order_items.find_by(product: "Silla Azul").quantity
+  end
+
+  test "a rejected order emails admins with notifications enabled" do
+    admin = users(:one)
+    admin.update!(role: :admin, send_notifications: true)
+
+    so = so_with_duplicate_lines("5001")
+    so["sales_rep_ref"] = {"full_name" => "NO-SUCH-SELLER"}
+
+    mailer_stub = Object.new
+    def mailer_stub.admin_orders_rejected = self
+    def mailer_stub.deliver_later = true
+
+    captured_params = nil
+    QuickbooksImportMailer.stub :with, ->(params) { captured_params = params; mailer_stub } do
+      ProcessQuickbooksXmlJob.new.perform([so])
+    end
+
+    assert_equal admin, captured_params[:admin]
+    assert_equal "5001", captured_params[:rejected].first[:order_number]
+    assert_match "NO-SUCH-SELLER", captured_params[:rejected].first[:reason]
+    assert_nil Order.find_by(number: "PED-5001"), "order with an unknown seller must not be created"
   end
 end

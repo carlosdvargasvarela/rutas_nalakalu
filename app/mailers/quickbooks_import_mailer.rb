@@ -32,4 +32,14 @@ class QuickbooksImportMailer < ApplicationMailer
       subject: "📊 QuickBooks: #{@all_orders.size} pedido#{@all_orders.size == 1 ? "" : "s"} procesado#{@all_orders.size == 1 ? "" : "s"} – #{Date.today.strftime("%d/%m/%Y")}"
     )
   end
+
+  def admin_orders_rejected
+    @admin = params[:admin]
+    @rejected = Array.wrap(params[:rejected]).map(&:with_indifferent_access)
+
+    mail(
+      to: @admin.email,
+      subject: "⚠️ QuickBooks: #{@rejected.size} pedido#{@rejected.size == 1 ? "" : "s"} rechazado#{@rejected.size == 1 ? "" : "s"} – #{Date.today.strftime("%d/%m/%Y")}"
+    )
+  end
 end
