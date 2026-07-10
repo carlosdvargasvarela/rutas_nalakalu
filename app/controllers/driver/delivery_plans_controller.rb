@@ -74,9 +74,13 @@ module Driver
     def show
       authorize [:driver, @delivery_plan]
 
+      # Las entregas canceladas/reagendadas/archivadas ya no pertenecen a esta
+      # ruta (el DeliveryPlanAssignment no se destruye cuando cambia el status
+      # del delivery), así que no deben aparecer en el listado del conductor.
       @assignments = @delivery_plan.delivery_plan_assignments
         .includes(delivery: [:order, :delivery_address, {order: [:client, :order_contacts]}])
         .order(:stop_order)
+        .reject { |a| a.delivery.hidden_from_route_map? }
 
       respond_to do |format|
         format.html
