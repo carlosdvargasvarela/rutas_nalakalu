@@ -21,11 +21,10 @@ class DeliveriesController < ApplicationController
     @sellers = Seller.order(:name)
     session[:deliveries_return_to] = request.fullpath
 
-    base_scope = if params[:show_rescheduled] == "1"
-      Delivery.where.not(status: :archived)
-    else
-      Delivery.where.not(status: [:rescheduled, :archived])
-    end
+    excluded_from_index = []
+    excluded_from_index << :rescheduled unless params[:show_rescheduled] == "1"
+    excluded_from_index << :archived unless params[:show_archived] == "1"
+    base_scope = Delivery.where.not(status: excluded_from_index)
 
     if params[:no_plan].present?
       base_scope = base_scope.where.not(id: DeliveryPlanAssignment.select(:delivery_id))
