@@ -4,7 +4,7 @@
      data-admin-driver-map-delivery-plan-id-value="<%= @delivery_plan.id %>"
      data-admin-driver-map-current-lat-value="<%= @delivery_plan.current_lat.to_f %>"
      data-admin-driver-map-current-lng-value="<%= @delivery_plan.current_lng.to_f %>"
-     data-admin-driver-map-assignments-value="<%= assignments.map { |a|
+     data-admin-driver-map-assignments-value="<%= assignments.reject { |a| a.delivery.hidden_from_route_map? }.map { |a|
        delivery = a.delivery
        addr = delivery.delivery_address
        {

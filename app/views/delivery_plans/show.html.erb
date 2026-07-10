@@ -1,3 +1,4 @@
+<% visible_assignments = @assignments.reject { |a| a.delivery.hidden_from_route_map? } %>
 <div class="container-fluid py-4">
   <%= render "delivery_plans/show_partials/alerts", delivery_plan: @delivery_plan %>
   <%= render "delivery_plans/show_partials/header",
@@ -16,7 +17,7 @@
           <button class="nav-link active fw-semibold" type="button" role="tab"
                   data-bs-toggle="tab" data-bs-target="#tab-route">
             <i class="bi bi-map me-1"></i>Mapa de ruta
-            <span class="badge bg-primary rounded-pill ms-1"><%= @assignments.size %></span>
+            <span class="badge bg-primary rounded-pill ms-1"><%= visible_assignments.size %></span>
           </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -43,9 +44,9 @@
   </script>
 
   <%# ── Progreso de entregas ── %>
-  <% total = @assignments.size %>
+  <% total = visible_assignments.size %>
   <% if total > 0 %>
-    <% completed = @assignments.count { |a| a.status.to_s == "completed" } %>
+    <% completed = visible_assignments.count { |a| a.status.to_s == "completed" } %>
     <% pct = (completed * 100.0 / total).round %>
     <div class="d-flex align-items-center gap-3 mb-3">
       <span class="text-muted small fw-semibold text-uppercase">Progreso</span>
