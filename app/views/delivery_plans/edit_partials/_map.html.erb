@@ -3,7 +3,7 @@
   <div class="card-body p-0">
     <div data-controller="delivery-plan-map"
          data-delivery-plan-map-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
-         data-delivery-plan-map-points-value="<%= assignments.map { |a|
+         data-delivery-plan-map-points-value="<%= assignments.reject { |a| a.delivery.hidden_from_route_map? }.map { |a|
            { id: a.id, stop_order: a.stop_order || 0,
              lat: a.delivery.delivery_address.latitude,
              lng: a.delivery.delivery_address.longitude,

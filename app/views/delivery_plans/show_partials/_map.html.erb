@@ -3,6 +3,8 @@
   skipped = []
 
   assignments.each do |a|
+    next if a.delivery.hidden_from_route_map?
+
     addr = a.delivery.delivery_address
     reason = if addr.nil?
       "Sin dirección registrada"

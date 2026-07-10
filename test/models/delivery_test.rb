@@ -25,6 +25,20 @@ class DeliveryTest < ActiveSupport::TestCase
     assert_equal "unloaded", item.reload.load_status
   end
 
+  test "hidden_from_route_map? is true only for cancelled, rescheduled or archived deliveries" do
+    delivery = deliveries(:one)
+
+    %w[cancelled rescheduled archived].each do |status|
+      delivery.status = status
+      assert delivery.hidden_from_route_map?, "#{status} should be hidden from the route map"
+    end
+
+    %w[scheduled ready_to_deliver in_plan in_route delivered failed loaded_on_truck warehousing].each do |status|
+      delivery.status = status
+      refute delivery.hidden_from_route_map?, "#{status} should still show on the route map"
+    end
+  end
+
   test "calculate_delivery_status mixed terminal priority is (delivered = failed) > cancelled > rescheduled" do
     delivery = deliveries(:one)
 

@@ -1,4 +1,5 @@
 <%# app/views/driver/delivery_plans/_map.html.erb %>
+<% assignments = assignments.reject { |a| a.delivery.hidden_from_route_map? } %>
 <% return if assignments.empty? || ENV['GOOGLE_MAPS_API_KEY'].blank? %>
 
 <div class="dk-card" style="margin-bottom:14px;">

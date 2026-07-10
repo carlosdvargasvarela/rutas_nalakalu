@@ -76,6 +76,7 @@ class Delivery < ApplicationRecord
   REPAIR_SERVICE_TYPES = %w[repair_pickup repair_return].freeze
   BULK_LOCKED_STATUSES = %w[delivered rescheduled cancelled archived failed warehousing].freeze
   REOPENABLE_STATUSES = %w[delivered cancelled archived].freeze
+  HIDDEN_FROM_ROUTE_MAP_STATUSES = %w[cancelled rescheduled archived].freeze
 
   # Estados terminales de items — no participan en el flujo activo
   ITEM_TERMINAL_STATUSES = %w[delivered cancelled rescheduled failed].freeze
@@ -152,6 +153,13 @@ class Delivery < ApplicationRecord
 
   def reopenable?
     status.in?(REOPENABLE_STATUSES)
+  end
+
+  # Una entrega cancelada, reagendada o archivada ya no debe verse como
+  # parada en el mapa de la ruta (el DeliveryPlanAssignment no se destruye
+  # cuando cambia el status del delivery, así que hay que filtrarla aquí).
+  def hidden_from_route_map?
+    status.in?(HIDDEN_FROM_ROUTE_MAP_STATUSES)
   end
 
   def reopen!
