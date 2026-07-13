@@ -161,12 +161,14 @@ module Deliveries
       return unless oi_params.present? && oi_params[:id].present?
 
       order_item = OrderItem.find(oi_params[:id])
-      permitted_update = {
+      order_item.assign_attributes(
         product: oi_params[:product] || order_item.product,
         quantity: oi_params[:quantity] || order_item.quantity,
         notes: oi_params[:notes] || order_item.notes
-      }
-      order_item.update!(permitted_update)
+      )
+      # Evita un write y una corrida de validaciones/callbacks innecesaria
+      # cuando el form reenvía los mismos valores que ya tenía el registro.
+      order_item.save! if order_item.changed?
     end
 
     def build_new_delivery_item(order, item_params)
@@ -186,20 +188,22 @@ module Deliveries
     def find_or_create_order_item(order, oi_params)
       if oi_params[:id].present?
         order_item = OrderItem.find(oi_params[:id])
-        order_item.update!(
+        order_item.assign_attributes(
           product: oi_params[:product] || order_item.product,
           quantity: oi_params[:quantity] || order_item.quantity,
           notes: oi_params[:notes] || order_item.notes
         )
+        order_item.save! if order_item.changed?
         return order_item
       end
 
       existing_item = order.order_items.find_by(product: oi_params[:product])
       if existing_item
-        existing_item.update!(
+        existing_item.assign_attributes(
           quantity: oi_params[:quantity] || existing_item.quantity,
           notes: [existing_item.notes, oi_params[:notes]].compact.reject(&:blank?).join("; ")
         )
+        existing_item.save! if existing_item.changed?
         existing_item
       else
         order.order_items.create!(
