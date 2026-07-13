@@ -1246,7 +1246,7 @@ class DeliveriesController < ApplicationController
       )
       permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
       permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
-      @delivery.assign_attributes(permitted)
+      @delivery.assign_attributes(permitted.except(:_return_to_panel))
     end
 
     @client = find_or_initialize_client_from_params
@@ -1272,7 +1272,7 @@ class DeliveriesController < ApplicationController
       )
       permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
       permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
-      @delivery.assign_attributes(permitted)
+      @delivery.assign_attributes(permitted.except(:_return_to_panel))
     end
 
     @order = @delivery.order
