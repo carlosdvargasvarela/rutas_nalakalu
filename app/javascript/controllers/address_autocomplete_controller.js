@@ -43,11 +43,16 @@ export default class extends Controller {
         this.resizeMap();
         this._repositionPac?.();
       } else {
-        this.tryInitializeAutocomplete();
+        this.loadGoogleMapsAPI().then(() => this.tryInitializeAutocomplete());
       }
     };
     const modal = this.element.closest(".modal");
     if (modal) modal.addEventListener("shown.bs.modal", this._onModalShown);
+
+    // Si el mapa vive dentro de un modal todavía oculto, el contenedor mide
+    // 0x0 y el mapa queda roto (gris) aunque luego se redimensione: hay que
+    // esperar a shown.bs.modal para inicializarlo con el tamaño real.
+    if (modal && !modal.classList.contains("show")) return;
 
     this.loadGoogleMapsAPI().then(() => this.tryInitializeAutocomplete());
   }
