@@ -4,6 +4,7 @@ import { Controller } from "@hotwired/stimulus";
 export default class extends Controller {
   static targets = ["card"];
   static classes = ["active"];
+  static values = { detailFrame: { type: String, default: "delivery_detail" } };
 
   connect() {
     this.updateLinks();
@@ -18,12 +19,8 @@ export default class extends Controller {
   updateLinks() {
     const isDesktop = window.innerWidth >= 992;
     this.element.querySelectorAll("a[data-card-link]").forEach((link) => {
-      if (isDesktop) {
-        link.dataset.turboFrame = "delivery_detail";
-      } else {
-        // En móvil navegación completa (_top)
-        link.dataset.turboFrame = "_top";
-      }
+      // En móvil navegación completa (_top)
+      link.dataset.turboFrame = isDesktop ? this.detailFrameValue : "_top";
     });
   }
 

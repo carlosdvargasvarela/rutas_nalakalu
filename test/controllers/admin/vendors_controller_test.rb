@@ -2,6 +2,7 @@ require "test_helper"
 
 class Admin::VendorsControllerTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+  include ActionView::RecordIdentifier
 
   setup do
     @admin = users(:one)
@@ -9,9 +10,41 @@ class Admin::VendorsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "admin can list vendors" do
+    vendor = Vendor.new(name: "Ferretería EPA")
+    vendor.vendor_addresses.build(address: "San José", latitude: 9.93, longitude: -84.08)
+    vendor.save!
+
     sign_in @admin
     get admin_vendors_url
     assert_response :success
+    assert_select "##{dom_id(vendor, :card)}"
+  end
+
+  test "edit renders inside the vendor_detail turbo frame without layout" do
+    vendor = Vendor.new(name: "Ferretería EPA")
+    vendor.vendor_addresses.build(address: "San José", latitude: 9.93, longitude: -84.08)
+    vendor.save!
+
+    sign_in @admin
+    get edit_admin_vendor_url(vendor), headers: {"Turbo-Frame" => "vendor_detail"}
+    assert_response :success
+    assert_select "turbo-frame#vendor_detail"
+    assert_select "nav", false
+  end
+
+  test "update via turbo_stream replaces the detail panel and the list card" do
+    vendor = Vendor.new(name: "Ferretería EPA")
+    vendor.vendor_addresses.build(address: "San José", latitude: 9.93, longitude: -84.08)
+    vendor.save!
+
+    sign_in @admin
+    patch admin_vendor_url(vendor),
+      params: {vendor: {name: "Ferretería EPA Norte"}},
+      as: :turbo_stream
+    assert_response :success
+    assert_match "turbo-stream", response.media_type
+    assert_includes response.body, dom_id(vendor, :card)
+    assert_includes response.body, "Ferretería EPA Norte"
   end
 
   test "admin can create a vendor with a contact and address" do
