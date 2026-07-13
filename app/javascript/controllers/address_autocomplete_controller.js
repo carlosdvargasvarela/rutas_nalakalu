@@ -229,11 +229,12 @@ export default class extends Controller {
       pac.style.setProperty("width", `${inputRect.width}px`, "important");
     });
 
+    // Solo childList: el propio callback escribe `style` en el pac-container,
+    // así que observar attributes/style aquí se retriggerearía a sí mismo
+    // en un loop infinito apenas aparece el pac-container.
     this._pacObserver.observe(document.body, {
       childList: true,
       subtree: true,
-      attributes: true,
-      attributeFilter: ["style"],
     });
 
     this._repositionPac = () => {
