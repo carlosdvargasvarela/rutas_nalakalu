@@ -729,6 +729,7 @@ export default class extends Controller {
   updateFromCoords(lat, lng) {
     const pos = { lat, lng };
     if (this.map) {
+      google.maps.event.trigger(this.map, "resize");
       this.map.setCenter(pos);
       this.map.setZoom(17);
     }
