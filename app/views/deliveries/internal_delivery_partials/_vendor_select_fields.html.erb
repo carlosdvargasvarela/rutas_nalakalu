@@ -1,36 +1,23 @@
 <%# app/views/deliveries/internal_delivery_partials/_vendor_select_fields.html.erb %>
-<div class="card shadow-sm border-primary mb-4" data-controller="vendor-address-select">
-  <div class="card-header bg-primary text-white py-3">
+<div class="card shadow-sm border-primary mb-4"
+     data-controller="vendor-address-select"
+     data-vendor-address-select-url-template-value="<%= edit_admin_vendor_path(0).sub("0", "__ID__") %>">
+  <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
     <h5 class="mb-0"><i class="bi bi-truck me-2"></i>Dirección del proveedor</h5>
+    <%= link_to new_admin_vendor_path, data: {turbo_frame: "modal"}, class: "btn btn-sm btn-light" do %>
+      <i class="bi bi-plus-lg me-1"></i>Nuevo proveedor
+    <% end %>
   </div>
   <div class="card-body">
-    <label class="form-label fw-bold text-primary">
-      <i class="bi bi-bookmark-fill me-1"></i> Seleccionar proveedor y dirección
-    </label>
-    <%= select_tag "vendor_address_id",
-          grouped_options_for_select(
-            Vendor.includes(:vendor_addresses).order(:name).map { |vendor|
-              [vendor.name, vendor.vendor_addresses.map { |a|
-                [a.full_address, a.id, {
-                  "data-address" => a.address,
-                  "data-description" => a.description,
-                  "data-latitude" => a.latitude,
-                  "data-longitude" => a.longitude,
-                  "data-plus-code" => a.plus_code
-                }]
-              }]
-            }
-          ),
-          prompt: "--- Seleccionar proveedor y dirección ---",
-          class: "form-select form-select-lg border-primary",
-          data: {
-            "vendor-address-select-target": "select",
-            action: "change->vendor-address-select#fill change->internal-delivery-form#validateAddress"
-          } %>
-    <div class="form-text">
-      <i class="bi bi-info-circle me-1"></i>
-      Direcciones precargadas de proveedores. Para agregar una nueva, contacta a un administrador.
+    <div id="vendor_address_select_container">
+      <%= render "deliveries/internal_delivery_partials/vendor_address_select" %>
     </div>
+    <%= link_to "Editar este proveedor", "#",
+          class: "small d-none",
+          data: {
+            turbo_frame: "modal",
+            "vendor-address-select-target": "editVendorLink"
+          } %>
   </div>
 
   <%= hidden_field_tag "delivery_address[address]",

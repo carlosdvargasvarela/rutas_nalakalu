@@ -151,11 +151,15 @@
 
   <div class="d-flex justify-content-between mt-4">
     <div class="d-flex gap-2">
-      <%= link_to "Cancelar", admin_vendors_path, class: "btn btn-outline-secondary" %>
-      <% if vendor.persisted? && policy(vendor).destroy? %>
-        <%= button_to "Eliminar proveedor", admin_vendor_path(vendor), method: :delete,
-            class: "btn btn-outline-danger",
-            form: {data: {turbo_frame: "_top", turbo_confirm: "¿Eliminar el proveedor '#{vendor.name}'? Esto también borra sus contactos y direcciones."}} %>
+      <% if local_assigns[:modal] %>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+      <% else %>
+        <%= link_to "Cancelar", admin_vendors_path, class: "btn btn-outline-secondary" %>
+        <% if vendor.persisted? && policy(vendor).destroy? %>
+          <%= button_to "Eliminar proveedor", admin_vendor_path(vendor), method: :delete,
+              class: "btn btn-outline-danger",
+              form: {data: {turbo_frame: "_top", turbo_confirm: "¿Eliminar el proveedor '#{vendor.name}'? Esto también borra sus contactos y direcciones."}} %>
+        <% end %>
       <% end %>
     </div>
     <%= f.submit vendor.new_record? ? "Crear proveedor" : "Guardar cambios", class: "btn btn-primary px-4" %>

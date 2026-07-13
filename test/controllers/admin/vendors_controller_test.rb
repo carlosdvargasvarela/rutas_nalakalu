@@ -61,6 +61,62 @@ class Admin::VendorsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to admin_vendors_path
   end
 
+  test "new renders inside the global modal frame when requested from it" do
+    sign_in @admin
+    get new_admin_vendor_url, headers: {"Turbo-Frame" => "modal"}
+    assert_response :success
+    assert_select "turbo-frame#modal"
+    assert_select "[data-controller=vendor-address-list]"
+  end
+
+  test "create from the modal closes it and refreshes the vendor select" do
+    sign_in @admin
+    assert_difference -> { Vendor.count } => 1 do
+      post admin_vendors_url,
+        params: {
+          vendor: {
+            name: "Ferretería EPA",
+            vendor_addresses_attributes: {"0" => {address: "San José", latitude: "9.93", longitude: "-84.08"}}
+          }
+        },
+        headers: {"Turbo-Frame" => "modal"},
+        as: :turbo_stream
+    end
+    assert_response :success
+    assert_match "turbo-stream", response.media_type
+    assert_includes response.body, 'target="modal"'
+    assert_includes response.body, "vendor_address_select_container"
+    assert_includes response.body, "Ferretería EPA"
+  end
+
+  test "edit from the modal renders inside the modal frame, not the workspace panel" do
+    vendor = Vendor.new(name: "Ferretería EPA")
+    vendor.vendor_addresses.build(address: "San José", latitude: 9.93, longitude: -84.08)
+    vendor.save!
+
+    sign_in @admin
+    get edit_admin_vendor_url(vendor), headers: {"Turbo-Frame" => "modal"}
+    assert_response :success
+    assert_select "turbo-frame#modal"
+    assert_select "turbo-frame#vendor_detail", false
+  end
+
+  test "update from the modal closes it and refreshes the vendor select instead of the workspace panel" do
+    vendor = Vendor.new(name: "Ferretería EPA")
+    vendor.vendor_addresses.build(address: "San José", latitude: 9.93, longitude: -84.08)
+    vendor.save!
+
+    sign_in @admin
+    patch admin_vendor_url(vendor),
+      params: {vendor: {name: "Ferretería EPA Norte"}},
+      headers: {"Turbo-Frame" => "modal"},
+      as: :turbo_stream
+    assert_response :success
+    assert_includes response.body, 'target="modal"'
+    assert_includes response.body, "vendor_address_select_container"
+    assert_not_includes response.body, "vendor_detail"
+  end
+
   test "proveeduria can create a vendor but cannot edit or destroy one" do
     @admin.update!(role: :proveeduria)
     sign_in @admin

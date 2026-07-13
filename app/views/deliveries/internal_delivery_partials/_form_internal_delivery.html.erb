@@ -65,12 +65,23 @@
         </button>
       </h2>
       <div id="collapseAddress" class="accordion-collapse collapse" aria-labelledby="headingAddress" data-bs-parent="#internalDeliveryAccordion">
-        <div class="accordion-body">
-          <% if current_user.proveeduria? %>
-            <%= render "deliveries/internal_delivery_partials/vendor_select_fields", f: f, delivery: delivery %>
-          <% else %>
+        <div class="accordion-body" data-controller="address-mode-toggle">
+          <div class="btn-group mb-3" role="group">
+            <input type="radio" class="btn-check" name="address_mode" id="address_mode_map" value="map"
+                   data-action="change->address-mode-toggle#toggle" <%= "checked" unless current_user.proveeduria? %>>
+            <label class="btn btn-outline-primary" for="address_mode_map"><i class="bi bi-geo-alt-fill me-1"></i>Buscar en mapa</label>
+
+            <input type="radio" class="btn-check" name="address_mode" id="address_mode_vendor" value="vendor"
+                   data-action="change->address-mode-toggle#toggle" <%= "checked" if current_user.proveeduria? %>>
+            <label class="btn btn-outline-primary" for="address_mode_vendor"><i class="bi bi-truck me-1"></i>Usar proveedor</label>
+          </div>
+
+          <div data-address-mode-toggle-target="mapPane" class="<%= "d-none" if current_user.proveeduria? %>">
             <%= render "deliveries/internal_delivery_partials/address_fields", f: f, delivery: delivery %>
-          <% end %>
+          </div>
+          <div data-address-mode-toggle-target="vendorPane" class="<%= "d-none" unless current_user.proveeduria? %>">
+            <%= render "deliveries/internal_delivery_partials/vendor_select_fields", f: f, delivery: delivery %>
+          </div>
         </div>
       </div>
     </div>

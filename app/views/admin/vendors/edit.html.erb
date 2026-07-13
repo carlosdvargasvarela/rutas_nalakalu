@@ -1,1 +1,5 @@
-<%= render "detail", vendor: @vendor %>
+<% if turbo_frame_request_id == "modal" %>
+  <%= render "modal_form", vendor: @vendor %>
+<% else %>
+  <%= render "detail", vendor: @vendor %>
+<% end %>

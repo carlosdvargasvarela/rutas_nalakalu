@@ -18,7 +18,10 @@ class Admin::VendorsController < ApplicationController
     @vendor = Vendor.new(vendor_params)
     authorize @vendor
     if @vendor.save
-      redirect_to admin_vendors_path, notice: "Proveedor '#{@vendor.name}' creado correctamente."
+      respond_to do |format|
+        format.html { redirect_to admin_vendors_path, notice: "Proveedor '#{@vendor.name}' creado correctamente." }
+        format.turbo_stream { render turbo_stream: close_modal_and_refresh_vendor_select }
+      end
     else
       @vendor.vendor_contacts.build if @vendor.vendor_contacts.empty?
       render :new, status: :unprocessable_entity
@@ -38,12 +41,16 @@ class Admin::VendorsController < ApplicationController
       respond_to do |format|
         format.html { redirect_to admin_vendors_path, notice: "Proveedor '#{@vendor.name}' actualizado correctamente." }
         format.turbo_stream do
-          flash.now[:notice] = "Proveedor '#{@vendor.name}' actualizado correctamente."
-          render turbo_stream: [
-            turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-            turbo_stream.replace("vendor_detail", partial: "admin/vendors/detail", locals: {vendor: @vendor}),
-            turbo_stream.replace(dom_id(@vendor, :card), partial: "admin/vendors/vendor_card", locals: {vendor: @vendor})
-          ]
+          if from_modal?
+            render turbo_stream: close_modal_and_refresh_vendor_select
+          else
+            flash.now[:notice] = "Proveedor '#{@vendor.name}' actualizado correctamente."
+            render turbo_stream: [
+              turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+              turbo_stream.replace("vendor_detail", partial: "admin/vendors/detail", locals: {vendor: @vendor}),
+              turbo_stream.replace(dom_id(@vendor, :card), partial: "admin/vendors/vendor_card", locals: {vendor: @vendor})
+            ]
+          end
         end
       end
     else
@@ -51,8 +58,12 @@ class Admin::VendorsController < ApplicationController
       respond_to do |format|
         format.html { render :edit, status: :unprocessable_entity }
         format.turbo_stream do
-          render turbo_stream: turbo_stream.replace("vendor_detail", partial: "admin/vendors/detail", locals: {vendor: @vendor}),
-                 status: :unprocessable_entity
+          stream = if from_modal?
+            turbo_stream.replace("modal", partial: "admin/vendors/modal_form", locals: {vendor: @vendor})
+          else
+            turbo_stream.replace("vendor_detail", partial: "admin/vendors/detail", locals: {vendor: @vendor})
+          end
+          render turbo_stream: stream, status: :unprocessable_entity
         end
       end
     end
@@ -68,6 +79,18 @@ class Admin::VendorsController < ApplicationController
 
   def set_vendor
     @vendor = Vendor.find(params[:id])
+  end
+
+  def from_modal?
+    turbo_frame_request_id == "modal"
+  end
+
+  def close_modal_and_refresh_vendor_select
+    [
+      turbo_stream.update("modal", ""),
+      turbo_stream.update("vendor_address_select_container",
+        partial: "deliveries/internal_delivery_partials/vendor_address_select")
+    ]
   end
 
   def vendor_params
