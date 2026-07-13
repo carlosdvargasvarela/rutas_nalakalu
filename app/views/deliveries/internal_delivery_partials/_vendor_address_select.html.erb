@@ -2,27 +2,31 @@
 <label class="form-label fw-bold text-primary">
   <i class="bi bi-bookmark-fill me-1"></i> Seleccionar proveedor y dirección
 </label>
-<%= select_tag "vendor_address_id",
-      grouped_options_for_select(
-        Vendor.includes(:vendor_addresses).order(:name).map { |vendor|
-          [vendor.name, vendor.vendor_addresses.map { |a|
-            [a.full_address, a.id, {
-              "data-address" => a.address,
-              "data-description" => a.description,
-              "data-latitude" => a.latitude,
-              "data-longitude" => a.longitude,
-              "data-plus-code" => a.plus_code,
-              "data-vendor-id" => vendor.id
-            }]
-          }]
-        }
-      ),
-      prompt: "--- Seleccionar proveedor y dirección ---",
-      class: "form-select form-select-lg border-primary",
-      data: {
-        "vendor-address-select-target": "select",
-        action: "change->vendor-address-select#fill change->internal-delivery-form#validateAddress"
-      } %>
+<div data-controller="searchable-select"
+     data-searchable-select-placeholder-value="--- Seleccionar proveedor y dirección ---"
+     data-searchable-select-search-placeholder-value="Buscar proveedor o dirección...">
+  <%= select_tag "vendor_address_id",
+        options_for_select(
+          Vendor.includes(:vendor_addresses).order(:name).flat_map { |vendor|
+            vendor.vendor_addresses.map { |a|
+              ["#{vendor.name} — #{a.full_address}", a.id, {
+                "data-address" => a.address,
+                "data-description" => a.description,
+                "data-latitude" => a.latitude,
+                "data-longitude" => a.longitude,
+                "data-plus-code" => a.plus_code,
+                "data-vendor-id" => vendor.id
+              }]
+            }
+          }
+        ),
+        prompt: "--- Seleccionar proveedor y dirección ---",
+        class: "form-select form-select-lg border-primary",
+        data: {
+          "vendor-address-select-target": "select",
+          action: "change->vendor-address-select#fill change->internal-delivery-form#validateAddress"
+        } %>
+</div>
 <div class="form-text">
   <i class="bi bi-info-circle me-1"></i>
   Direcciones precargadas de proveedores.
