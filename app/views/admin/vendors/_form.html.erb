@@ -93,55 +93,54 @@
 
           <div data-vendor-address-list-target="list"></div>
 
-          <%# Modal único: un solo mapa reutilizado para agregar o editar cualquier dirección %>
-          <div class="modal fade" data-vendor-address-list-target="modal" tabindex="-1">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" data-vendor-address-list-target="modalTitle">Agregar dirección</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                  <div id="vendor_address_autocomplete" data-controller="address-autocomplete"
-                       data-address-autocomplete-api-key-value="<%= ENV.fetch('GOOGLE_MAPS_API_KEY', '') %>">
-                    <div class="mb-2">
-                      <div class="input-group">
-                        <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" placeholder="Plus Code, coordenadas o nombre del lugar..."
-                               class="form-control"
-                               data-address-autocomplete-target="input"
-                               data-action="input->address-autocomplete#handleSmartInput blur->address-autocomplete#handleSmartInput">
-                      </div>
-                    </div>
-                    <div class="mb-2 position-relative">
-                      <div data-address-autocomplete-target="map" class="rounded border" style="height: 300px; width: 100%; background: #e9ecef;"></div>
-                      <div class="position-absolute bottom-0 start-0 m-2 px-2 py-1 bg-white rounded border small d-flex gap-3" style="z-index: 1000;">
-                        <span><span class="text-muted">Lat:</span> <strong data-address-autocomplete-target="latDisplay" class="text-primary">--</strong></span>
-                        <span><span class="text-muted">Lng:</span> <strong data-address-autocomplete-target="lngDisplay" class="text-primary">--</strong></span>
-                        <span><span class="text-muted">Plus:</span> <strong data-address-autocomplete-target="plusDisplay" class="text-success font-monospace">--</strong></span>
-                      </div>
-                    </div>
-                    <div class="mb-2 p-2 bg-light rounded border small">
-                      <span class="text-muted">Dirección detectada:</span>
-                      <span data-address-autocomplete-target="addressDisplay"></span>
-                    </div>
-                    <label class="form-label small fw-semibold">Referencia (opcional)</label>
-                    <input type="text" class="form-control mb-2"
-                           data-address-autocomplete-target="description"
-                           data-vendor-address-list-target="description"
-                           placeholder="Ej: Bodega detrás del edificio principal">
-
-                    <input type="hidden" data-address-autocomplete-target="addressName" data-vendor-address-list-target="address">
-                    <input type="hidden" data-address-autocomplete-target="lat" data-vendor-address-list-target="latitude">
-                    <input type="hidden" data-address-autocomplete-target="lng" data-vendor-address-list-target="longitude">
-                    <input type="hidden" data-address-autocomplete-target="plus" data-vendor-address-list-target="plusCode">
+          <%# Panel inline (no modal): un solo mapa reutilizado para agregar o editar
+              cualquier dirección. No es un Bootstrap Modal a propósito — este componente
+              puede vivir dentro de OTRO modal (alta de proveedor desde el mandado), y
+              Bootstrap 5 no soporta bien modales anidados. %>
+          <div class="card border-primary mt-3 d-none" data-vendor-address-list-target="editor">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+              <strong data-vendor-address-list-target="editorTitle">Agregar dirección</strong>
+              <button type="button" class="btn-close" data-action="vendor-address-list#cancelEdit"></button>
+            </div>
+            <div class="card-body">
+              <div id="vendor_address_autocomplete" data-controller="address-autocomplete"
+                   data-address-autocomplete-api-key-value="<%= ENV.fetch('GOOGLE_MAPS_API_KEY', '') %>">
+                <div class="mb-2">
+                  <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" placeholder="Plus Code, coordenadas o nombre del lugar..."
+                           class="form-control"
+                           data-address-autocomplete-target="input"
+                           data-action="input->address-autocomplete#handleSmartInput blur->address-autocomplete#handleSmartInput">
                   </div>
                 </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="button" class="btn btn-primary" data-action="vendor-address-list#confirm">Guardar dirección</button>
+                <div class="mb-2 position-relative">
+                  <div data-address-autocomplete-target="map" class="rounded border" style="height: 300px; width: 100%; background: #e9ecef;"></div>
+                  <div class="position-absolute bottom-0 start-0 m-2 px-2 py-1 bg-white rounded border small d-flex gap-3" style="z-index: 1000;">
+                    <span><span class="text-muted">Lat:</span> <strong data-address-autocomplete-target="latDisplay" class="text-primary">--</strong></span>
+                    <span><span class="text-muted">Lng:</span> <strong data-address-autocomplete-target="lngDisplay" class="text-primary">--</strong></span>
+                    <span><span class="text-muted">Plus:</span> <strong data-address-autocomplete-target="plusDisplay" class="text-success font-monospace">--</strong></span>
+                  </div>
                 </div>
+                <div class="mb-2 p-2 bg-light rounded border small">
+                  <span class="text-muted">Dirección detectada:</span>
+                  <span data-address-autocomplete-target="addressDisplay"></span>
+                </div>
+                <label class="form-label small fw-semibold">Referencia (opcional)</label>
+                <input type="text" class="form-control mb-2"
+                       data-address-autocomplete-target="description"
+                       data-vendor-address-list-target="description"
+                       placeholder="Ej: Bodega detrás del edificio principal">
+
+                <input type="hidden" data-address-autocomplete-target="addressName" data-vendor-address-list-target="address">
+                <input type="hidden" data-address-autocomplete-target="lat" data-vendor-address-list-target="latitude">
+                <input type="hidden" data-address-autocomplete-target="lng" data-vendor-address-list-target="longitude">
+                <input type="hidden" data-address-autocomplete-target="plus" data-vendor-address-list-target="plusCode">
               </div>
+            </div>
+            <div class="card-footer bg-white d-flex justify-content-end gap-2">
+              <button type="button" class="btn btn-outline-secondary" data-action="vendor-address-list#cancelEdit">Cancelar</button>
+              <button type="button" class="btn btn-primary" data-action="vendor-address-list#confirm">Guardar dirección</button>
             </div>
           </div>
         </div>

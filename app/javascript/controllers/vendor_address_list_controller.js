@@ -1,14 +1,19 @@
 import { Controller } from "@hotwired/stimulus";
-import { Modal } from "bootstrap";
 
 // Mantiene una sola instancia de address-autocomplete (un solo mapa) que se
 // reutiliza para agregar o editar cualquier dirección de la lista, en vez de
 // tener un mapa por dirección.
+//
+// El editor es un panel inline (no un Bootstrap Modal): este componente ya
+// se usa dentro de otro modal (alta de proveedor desde el form de mandado),
+// y Bootstrap 5 no soporta bien modales anidados — al ocultar el modal
+// interno le quita `modal-open` al <body> sin fijarse si el externo seguía
+// abierto, rompiéndolo también.
 export default class extends Controller {
   static targets = [
     "list",
-    "modal",
-    "modalTitle",
+    "editor",
+    "editorTitle",
     "address",
     "description",
     "latitude",
@@ -27,17 +32,17 @@ export default class extends Controller {
 
   openAdd() {
     this.editingIndex = null;
-    this.modalTitleTarget.textContent = "Agregar dirección";
-    this.resetModalFields();
-    this.showModal();
+    this.editorTitleTarget.textContent = "Agregar dirección";
+    this.resetEditorFields();
+    this.showEditor();
   }
 
   openEdit(event) {
     const index = parseInt(event.currentTarget.dataset.index, 10);
     const entry = this.entries[index];
     this.editingIndex = index;
-    this.modalTitleTarget.textContent = "Editar dirección";
-    this.resetModalFields();
+    this.editorTitleTarget.textContent = "Editar dirección";
+    this.resetEditorFields();
 
     this.addressTarget.value = entry.address || "";
     this.descriptionTarget.value = entry.description || "";
@@ -50,7 +55,7 @@ export default class extends Controller {
     if (this.hasAddressAutocompleteOutlet && this.addressAutocompleteOutlet.hasAddressDisplayTarget) {
       this.addressAutocompleteOutlet.addressDisplayTarget.textContent = entry.address || "";
     }
-    this.showModal();
+    this.showEditor();
   }
 
   confirm() {
@@ -72,7 +77,11 @@ export default class extends Controller {
     }
 
     this.render();
-    Modal.getOrCreateInstance(this.modalTarget).hide();
+    this.hideEditor();
+  }
+
+  cancelEdit() {
+    this.hideEditor();
   }
 
   remove(event) {
@@ -87,11 +96,15 @@ export default class extends Controller {
     this.render();
   }
 
-  showModal() {
-    Modal.getOrCreateInstance(this.modalTarget).show();
+  showEditor() {
+    this.editorTarget.classList.remove("d-none");
   }
 
-  resetModalFields() {
+  hideEditor() {
+    this.editorTarget.classList.add("d-none");
+  }
+
+  resetEditorFields() {
     this.addressTarget.value = "";
     this.descriptionTarget.value = "";
     this.latitudeTarget.value = "";
