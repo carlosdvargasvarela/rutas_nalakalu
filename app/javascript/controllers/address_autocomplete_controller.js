@@ -36,25 +36,33 @@ export default class extends Controller {
       });
     }
 
-    // Cuando el modal Bootstrap termina de abrirse, el mapa necesita redimensionarse
-    // y el pac-container reposicionarse (getBoundingClientRect devuelve 0 si estaba oculto)
-    this._onModalShown = () => {
-      if (this._initialized) {
-        this.resizeMap();
-        this._repositionPac?.();
-      } else {
-        this.loadGoogleMapsAPI().then(() => this.tryInitializeAutocomplete());
-      }
-    };
+    // Cuando el modal Bootstrap termina de abrirse, reposicionar el pac-container
+    // (getBoundingClientRect del input devuelve 0 si estaba oculto)
+    this._onModalShown = () => this._repositionPac?.();
     const modal = this.element.closest(".modal");
     if (modal) modal.addEventListener("shown.bs.modal", this._onModalShown);
 
-    // Si el mapa vive dentro de un modal todavía oculto, el contenedor mide
-    // 0x0 y el mapa queda roto (gris) aunque luego se redimensione: hay que
-    // esperar a shown.bs.modal para inicializarlo con el tamaño real.
-    if (modal && !modal.classList.contains("show")) return;
+    // El contenedor puede empezar oculto (modal cerrado, acordeón colapsado)
+    // y medir 0x0: si el mapa se crea así queda roto para siempre, sin
+    // importar cuántas veces se le dispare "resize" después. Un
+    // ResizeObserver detecta el momento real en que pasa a tener tamaño,
+    // sin depender de adivinar qué evento de UI lo mostró (modal, acordeón,
+    // resize de ventana...).
+    if (this.hasMapTarget) {
+      this._mapResizeObserver = new ResizeObserver((entries) => {
+        const rect = entries[0]?.contentRect;
+        if (!rect || rect.width === 0 || rect.height === 0) return;
 
-    this.loadGoogleMapsAPI().then(() => this.tryInitializeAutocomplete());
+        if (!this._initialized) {
+          this.loadGoogleMapsAPI().then(() => this.tryInitializeAutocomplete());
+        } else {
+          this.resizeMap();
+        }
+      });
+      this._mapResizeObserver.observe(this.mapTarget);
+    } else {
+      this.loadGoogleMapsAPI().then(() => this.tryInitializeAutocomplete());
+    }
   }
 
   disconnect() {
@@ -62,6 +70,7 @@ export default class extends Controller {
     if (modal && this._onModalShown) {
       modal.removeEventListener("shown.bs.modal", this._onModalShown);
     }
+    this._mapResizeObserver?.disconnect();
     if (this._pacObserver) {
       this._pacObserver.disconnect();
       this._pacObserver = null;
