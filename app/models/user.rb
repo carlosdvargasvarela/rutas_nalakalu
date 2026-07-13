@@ -5,7 +5,7 @@ class User < ApplicationRecord
   devise :database_authenticatable, :recoverable, :rememberable, :validatable, :trackable, :lockable, :registerable
 
   # Definir los roles como un enum
-  enum role: {admin: 0, production_manager: 1, seller: 2, logistics: 3, driver: 4, manager: 5}
+  enum role: {admin: 0, production_manager: 1, seller: 2, logistics: 3, driver: 4, manager: 5, proveeduria: 6}
 
   attr_accessor :seller_code
 
@@ -46,6 +46,7 @@ class User < ApplicationRecord
     when "seller" then "Vendedor"
     when "logistics" then "Logística"
     when "driver" then "Conductor"
+    when "proveeduria" then "Proveeduría"
     else role.to_s.humanize
     end
   end
@@ -72,8 +73,10 @@ class User < ApplicationRecord
     role == "seller"
   end
 
+  # Proveeduría tiene los mismos permisos que producción; la única diferencia
+  # es la vista de creación de mandados (ver #proveeduria?, generado por el enum).
   def production_manager?
-    role == "production_manager"
+    role == "production_manager" || role == "proveeduria"
   end
 
   def admin?

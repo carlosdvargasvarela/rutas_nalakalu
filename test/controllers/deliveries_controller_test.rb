@@ -18,4 +18,18 @@ class DeliveriesControllerTest < ActionDispatch::IntegrationTest
     get delivery_url(deliveries(:one))
     assert_response :success
   end
+
+  test "production_manager gets the map/autocomplete address form for new_internal_delivery" do
+    @admin.update!(role: :production_manager)
+    get new_internal_delivery_deliveries_url
+    assert_response :success
+    assert_select "[data-controller=address-autocomplete]"
+  end
+
+  test "proveeduria gets the vendor select form for new_internal_delivery" do
+    @admin.update!(role: :proveeduria)
+    get new_internal_delivery_deliveries_url
+    assert_response :success
+    assert_select "[data-controller=vendor-address-select]"
+  end
 end

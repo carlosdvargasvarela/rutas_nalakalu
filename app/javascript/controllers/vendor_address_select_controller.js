@@ -1,0 +1,18 @@
+import { Controller } from "@hotwired/stimulus";
+
+// Fills the hidden delivery_address fields from the data-* attributes of the
+// chosen <option>, mirroring what address-autocomplete does after a map pick.
+export default class extends Controller {
+  static targets = ["select", "address", "description", "latitude", "longitude", "plusCode"];
+
+  fill() {
+    const option = this.selectTarget.selectedOptions[0];
+    if (!option || !option.dataset.address) return;
+
+    this.addressTarget.value = option.dataset.address || "";
+    this.descriptionTarget.value = option.dataset.description || "";
+    this.latitudeTarget.value = option.dataset.latitude || "";
+    this.longitudeTarget.value = option.dataset.longitude || "";
+    this.plusCodeTarget.value = option.dataset.plusCode || "";
+  }
+}

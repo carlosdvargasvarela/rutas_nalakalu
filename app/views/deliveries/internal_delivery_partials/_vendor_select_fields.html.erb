@@ -1,0 +1,51 @@
+<%# app/views/deliveries/internal_delivery_partials/_vendor_select_fields.html.erb %>
+<div class="card shadow-sm border-primary mb-4" data-controller="vendor-address-select">
+  <div class="card-header bg-primary text-white py-3">
+    <h5 class="mb-0"><i class="bi bi-truck me-2"></i>Dirección del proveedor</h5>
+  </div>
+  <div class="card-body">
+    <label class="form-label fw-bold text-primary">
+      <i class="bi bi-bookmark-fill me-1"></i> Seleccionar proveedor y dirección
+    </label>
+    <%= select_tag "vendor_address_id",
+          grouped_options_for_select(
+            Vendor.includes(:vendor_addresses).order(:name).map { |vendor|
+              [vendor.name, vendor.vendor_addresses.map { |a|
+                [a.full_address, a.id, {
+                  "data-address" => a.address,
+                  "data-description" => a.description,
+                  "data-latitude" => a.latitude,
+                  "data-longitude" => a.longitude,
+                  "data-plus-code" => a.plus_code
+                }]
+              }]
+            }
+          ),
+          prompt: "--- Seleccionar proveedor y dirección ---",
+          class: "form-select form-select-lg border-primary",
+          data: {
+            "vendor-address-select-target": "select",
+            action: "change->vendor-address-select#fill change->internal-delivery-form#validateAddress"
+          } %>
+    <div class="form-text">
+      <i class="bi bi-info-circle me-1"></i>
+      Direcciones precargadas de proveedores. Para agregar una nueva, contacta a un administrador.
+    </div>
+  </div>
+
+  <%= hidden_field_tag "delivery_address[address]",
+        f.object.delivery_address&.address,
+        data: {"vendor-address-select-target": "address"} %>
+  <%= hidden_field_tag "delivery_address[description]",
+        f.object.delivery_address&.description,
+        data: {"vendor-address-select-target": "description"} %>
+  <%= hidden_field_tag "delivery_address[latitude]",
+        f.object.delivery_address&.latitude,
+        data: {"vendor-address-select-target": "latitude"} %>
+  <%= hidden_field_tag "delivery_address[longitude]",
+        f.object.delivery_address&.longitude,
+        data: {"vendor-address-select-target": "longitude"} %>
+  <%= hidden_field_tag "delivery_address[plus_code]",
+        f.object.delivery_address&.plus_code,
+        data: {"vendor-address-select-target": "plusCode"} %>
+</div>
