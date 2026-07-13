@@ -154,13 +154,19 @@
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
       <% else %>
         <%= link_to "Cancelar", admin_vendors_path, class: "btn btn-outline-secondary" %>
-        <% if vendor.persisted? && policy(vendor).destroy? %>
-          <%= button_to "Eliminar proveedor", admin_vendor_path(vendor), method: :delete,
-              class: "btn btn-outline-danger",
-              form: {data: {turbo_frame: "_top", turbo_confirm: "¿Eliminar el proveedor '#{vendor.name}'? Esto también borra sus contactos y direcciones."}} %>
-        <% end %>
       <% end %>
     </div>
     <%= f.submit vendor.new_record? ? "Crear proveedor" : "Guardar cambios", class: "btn btn-primary px-4" %>
+  </div>
+<% end %>
+
+<%# button_to genera su propio <form>: debe vivir fuera del simple_form_for de
+    arriba, un <form> anidado dentro de otro es HTML inválido y el navegador
+    termina enviando el submit equivocado (el de "Guardar cambios"). %>
+<% if !local_assigns[:modal] && vendor.persisted? && policy(vendor).destroy? %>
+  <div class="mt-2">
+    <%= button_to "Eliminar proveedor", admin_vendor_path(vendor), method: :delete,
+        class: "btn btn-outline-danger",
+        form: {data: {turbo_frame: "_top", turbo_confirm: "¿Eliminar el proveedor '#{vendor.name}'? Esto también borra sus contactos y direcciones."}} %>
   </div>
 <% end %>

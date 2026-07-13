@@ -32,6 +32,31 @@ class Admin::VendorsControllerTest < ActionDispatch::IntegrationTest
     assert_select "nav", false
   end
 
+  test "edit does not nest the destroy form inside the main form" do
+    vendor = Vendor.new(name: "Ferretería EPA")
+    vendor.vendor_addresses.build(address: "San José", latitude: 9.93, longitude: -84.08)
+    vendor.save!
+
+    sign_in @admin
+    get edit_admin_vendor_url(vendor)
+    assert_response :success
+    # A <form> can't contain another <form>; the destroy button_to must be a
+    # sibling of the main simple_form_for, not nested inside it.
+    assert_select "form form", false
+  end
+
+  test "admin can destroy a vendor" do
+    vendor = Vendor.new(name: "Ferretería EPA")
+    vendor.vendor_addresses.build(address: "San José", latitude: 9.93, longitude: -84.08)
+    vendor.save!
+
+    sign_in @admin
+    assert_difference -> { Vendor.count } => -1 do
+      delete admin_vendor_url(vendor)
+    end
+    assert_redirected_to admin_vendors_path
+  end
+
   test "update via turbo_stream replaces the detail panel and the list card" do
     vendor = Vendor.new(name: "Ferretería EPA")
     vendor.vendor_addresses.build(address: "San José", latitude: 9.93, longitude: -84.08)
