@@ -1,0 +1,119 @@
+<%= simple_form_for [:admin, vendor] do |f| %>
+  <% if vendor.errors.any? %>
+    <div class="alert alert-danger">
+      <ul class="mb-0">
+        <% vendor.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="row g-3">
+    <div class="col-12">
+      <%= f.input :name, label: "Nombre del proveedor",
+          input_html: { class: "form-control", placeholder: "Ej: Ferretería EPA" },
+          label_html: { class: "form-label fw-bold" } %>
+    </div>
+
+    <div class="col-12"><hr class="my-1"></div>
+    <div class="col-12">
+      <h6 class="text-muted mb-3"><i class="bi bi-person-lines-fill me-1"></i>Contactos (opcional)</h6>
+    </div>
+
+    <% vendor.vendor_contacts.each_with_index do |contact, i| %>
+      <div class="col-md-5">
+        <input type="text" name="vendor[vendor_contacts_attributes][<%= i %>][name]"
+               class="form-control" value="<%= contact.name %>" placeholder="Nombre del contacto">
+      </div>
+      <div class="col-md-4">
+        <input type="text" name="vendor[vendor_contacts_attributes][<%= i %>][phone]"
+               class="form-control" value="<%= contact.phone %>" placeholder="Teléfono">
+      </div>
+      <div class="col-md-3 d-flex align-items-center gap-2">
+        <div class="form-check">
+          <input type="checkbox" name="vendor[vendor_contacts_attributes][<%= i %>][is_primary]"
+                 value="1" class="form-check-input" id="contact_primary_<%= i %>"
+                 <%= "checked" if contact.is_primary? %>>
+          <input type="hidden" name="vendor[vendor_contacts_attributes][<%= i %>][is_primary]" value="0">
+          <label class="form-check-label small" for="contact_primary_<%= i %>">Principal</label>
+        </div>
+        <% if contact.persisted? %>
+          <input type="hidden" name="vendor[vendor_contacts_attributes][<%= i %>][id]" value="<%= contact.id %>">
+          <div class="form-check">
+            <input type="checkbox" name="vendor[vendor_contacts_attributes][<%= i %>][_destroy]"
+                   value="1" class="form-check-input" id="contact_destroy_<%= i %>">
+            <label class="form-check-label small text-danger" for="contact_destroy_<%= i %>">Eliminar</label>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="col-12"><hr class="my-1"></div>
+    <div class="col-12">
+      <h6 class="text-muted mb-3"><i class="bi bi-geo-alt-fill me-1"></i>Direcciones (al menos una, con coordenadas)</h6>
+    </div>
+
+    <% vendor.vendor_addresses.each_with_index do |address, i| %>
+      <div class="col-12">
+        <div class="card border mb-2" data-controller="address-autocomplete"
+             data-address-autocomplete-api-key-value="<%= ENV.fetch('GOOGLE_MAPS_API_KEY', '') %>">
+          <div class="card-body">
+            <% if address.persisted? %>
+              <input type="hidden" name="vendor[vendor_addresses_attributes][<%= i %>][id]" value="<%= address.id %>">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="small text-muted"><%= address.full_address %></span>
+                <div class="form-check">
+                  <input type="checkbox" name="vendor[vendor_addresses_attributes][<%= i %>][_destroy]"
+                         value="1" class="form-check-input" id="address_destroy_<%= i %>">
+                  <label class="form-check-label small text-danger" for="address_destroy_<%= i %>">Eliminar</label>
+                </div>
+              </div>
+            <% end %>
+
+            <div class="mb-2">
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" placeholder="Plus Code, coordenadas o nombre del lugar..."
+                       class="form-control"
+                       data-address-autocomplete-target="input"
+                       data-action="input->address-autocomplete#handleSmartInput blur->address-autocomplete#handleSmartInput">
+              </div>
+            </div>
+
+            <div class="mb-2 position-relative">
+              <div data-address-autocomplete-target="map"
+                   class="rounded border" style="height: 250px; width: 100%; background: #e9ecef;"></div>
+              <div class="position-absolute bottom-0 start-0 m-2 px-2 py-1 bg-white rounded border small d-flex gap-3"
+                   style="z-index: 1000;">
+                <span><span class="text-muted">Lat:</span> <strong data-address-autocomplete-target="latDisplay" class="text-primary">--</strong></span>
+                <span><span class="text-muted">Lng:</span> <strong data-address-autocomplete-target="lngDisplay" class="text-primary">--</strong></span>
+                <span><span class="text-muted">Plus:</span> <strong data-address-autocomplete-target="plusDisplay" class="text-success font-monospace">--</strong></span>
+              </div>
+            </div>
+
+            <label class="form-label small fw-semibold">Referencia (opcional)</label>
+            <input type="text" name="vendor[vendor_addresses_attributes][<%= i %>][description]"
+                   class="form-control mb-2" value="<%= address.description %>"
+                   placeholder="Ej: Bodega detrás del edificio principal"
+                   data-address-autocomplete-target="description">
+
+            <input type="hidden" name="vendor[vendor_addresses_attributes][<%= i %>][address]"
+                   value="<%= address.address %>" data-address-autocomplete-target="addressName">
+            <input type="hidden" name="vendor[vendor_addresses_attributes][<%= i %>][latitude]"
+                   value="<%= address.latitude %>" data-address-autocomplete-target="lat">
+            <input type="hidden" name="vendor[vendor_addresses_attributes][<%= i %>][longitude]"
+                   value="<%= address.longitude %>" data-address-autocomplete-target="lng">
+            <input type="hidden" name="vendor[vendor_addresses_attributes][<%= i %>][plus_code]"
+                   value="<%= address.plus_code %>" data-address-autocomplete-target="plus">
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="d-flex justify-content-between mt-4">
+    <%= link_to "Cancelar", admin_vendors_path, class: "btn btn-outline-secondary" %>
+    <%= f.submit vendor.new_record? ? "Crear proveedor" : "Guardar cambios", class: "btn btn-primary px-4" %>
+  </div>
+<% end %>

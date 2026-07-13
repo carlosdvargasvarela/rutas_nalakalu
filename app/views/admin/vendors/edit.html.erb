@@ -1,0 +1,13 @@
+<div class="d-flex align-items-center mb-4">
+  <i class="bi bi-truck fs-2 text-primary me-3"></i>
+  <div>
+    <h1 class="h3 mb-0">Editar Proveedor</h1>
+    <p class="text-muted small mb-0"><%= @vendor.name %></p>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="card-body">
+    <%= render "form", vendor: @vendor %>
+  </div>
+</div>

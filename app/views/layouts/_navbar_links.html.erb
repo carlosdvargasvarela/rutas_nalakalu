@@ -36,7 +36,7 @@
   <% end %>
 
   <%# ── CREAR ENTREGA (si tiene permiso) ── %>
-  <% if policy(Delivery).new_internal_delivery? || policy(Delivery).new_showroom_movement? %>
+  <% if policy(Delivery).new_internal_delivery? || policy(Delivery).new_showroom_movement? || policy(Vendor).index? %>
     <li class="nav-item dropdown">
       <a class="nav-link dropdown-toggle" href="#" role="button"
          data-bs-toggle="dropdown" aria-expanded="false">
@@ -54,6 +54,13 @@
           <li>
             <%= link_to new_showroom_movement_deliveries_path, class: "dropdown-item" do %>
               <i class="bi bi-shop-window me-2 text-primary"></i>Movimiento de showroom
+            <% end %>
+          </li>
+        <% end %>
+        <% if policy(Vendor).index? %>
+          <li>
+            <%= link_to admin_vendors_path, class: "dropdown-item" do %>
+              <i class="bi bi-truck me-2 text-primary"></i>Proveedores
             <% end %>
           </li>
         <% end %>
