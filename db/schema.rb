@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_19_222548) do
+ActiveRecord::Schema[7.2].define(version: 2026_07_13_203010) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -431,9 +431,43 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_19_222548) do
     t.datetime "locked_at"
     t.boolean "force_password_change", default: true, null: false
     t.boolean "send_notifications", default: false, null: false
+    t.string "api_token"
+    t.index ["api_token"], name: "index_users_on_api_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["unlock_token"], name: "index_users_on_unlock_token", unique: true
+  end
+
+  create_table "vendor_addresses", force: :cascade do |t|
+    t.integer "vendor_id", null: false
+    t.text "address"
+    t.string "description"
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
+    t.string "plus_code"
+    t.string "place_id"
+    t.string "normalized_address"
+    t.string "geocode_quality"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["place_id"], name: "index_vendor_addresses_on_place_id"
+    t.index ["vendor_id"], name: "index_vendor_addresses_on_vendor_id"
+  end
+
+  create_table "vendor_contacts", force: :cascade do |t|
+    t.integer "vendor_id", null: false
+    t.string "name", null: false
+    t.string "phone"
+    t.boolean "is_primary", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["vendor_id"], name: "index_vendor_contacts_on_vendor_id"
+  end
+
+  create_table "vendors", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "versions", force: :cascade do |t|
@@ -481,4 +515,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_19_222548) do
   add_foreign_key "plan_events", "users", column: "actor_id", on_delete: :nullify
   add_foreign_key "sellers", "users"
   add_foreign_key "showrooms", "delivery_addresses"
+  add_foreign_key "vendor_addresses", "vendors"
+  add_foreign_key "vendor_contacts", "vendors"
 end
