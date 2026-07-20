@@ -5,7 +5,7 @@ class OrderItem < ApplicationRecord
   # Relaciones
   belongs_to :order
   has_many :delivery_items, dependent: :destroy
-  has_many :order_item_notes, dependent: :destroy
+  has_many :delivery_item_notes, through: :delivery_items
 
   validates :product, presence: true
   validates :product, uniqueness: {scope: :order_id, message: "ya existe en este pedido"}
@@ -36,10 +36,6 @@ class OrderItem < ApplicationRecord
     quantity - delivered_quantity
   end
 
-  def notes_open?
-    order_item_notes.open.exists?
-  end
-
   def display_status
     case status
     when "in_production" then "En producción"
@@ -65,7 +61,7 @@ class OrderItem < ApplicationRecord
   end
 
   def confirm!
-    order_item_notes.each do |note|
+    delivery_item_notes.each do |note|
       note.update(closed: true) unless note.closed?
     end
     update!(confirmed: true, status: :ready)
@@ -88,7 +84,7 @@ class OrderItem < ApplicationRecord
   end
 
   def self.ransackable_associations(auth_object = nil)
-    ["order", "delivery_items", "order_item_notes"]
+    ["order", "delivery_items", "delivery_item_notes"]
   end
 
   def self.ransackable_attributes(auth_object = nil)

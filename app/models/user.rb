@@ -29,7 +29,7 @@ class User < ApplicationRecord
   has_many :delivery_plan_assignments, through: :delivery_plans
   has_many :deliveries, through: :delivery_plan_assignments
   has_many :delivery_imports, dependent: :destroy
-  has_many :order_item_notes, dependent: :nullify
+  has_many :delivery_item_notes, dependent: :nullify
   has_many :crew_members, dependent: :destroy
 
   # Metodos

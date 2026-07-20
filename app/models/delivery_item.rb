@@ -4,6 +4,7 @@ class DeliveryItem < ApplicationRecord
   has_paper_trail
   belongs_to :delivery
   belongs_to :order_item
+  has_many :delivery_item_notes, dependent: :destroy
 
   accepts_nested_attributes_for :order_item
 
@@ -151,6 +152,10 @@ class DeliveryItem < ApplicationRecord
 
   def product
     order_item.product
+  end
+
+  def notes_open?
+    delivery_item_notes.open.exists?
   end
 
   # ============================================================================

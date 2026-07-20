@@ -44,7 +44,7 @@
         </div>
       <% end %>
       <%# Alerta producción pendiente %>
-      <% if item.order_item&.notes_open? %>
+      <% if item.notes_open? %>
         <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 align-self-start"
               style="font-size: 0.65rem;">
           <i class="bi bi-exclamation-triangle-fill me-1"></i>Pendiente de producción

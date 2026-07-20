@@ -63,7 +63,11 @@
             </span>
           </td>
           <td style="min-width: 300px;">
-            <%= render "order_item_notes/list", item: item %>
+            <% if (note_target = item.delivery_items.order(:created_at).last) %>
+              <%= render "delivery_item_notes/list", item: note_target %>
+            <% else %>
+              <span class="text-muted small">Sin entrega asociada</span>
+            <% end %>
           </td>
           <% if policy(order).edit? && !order.delivered? %>
             <td>

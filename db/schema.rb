@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_07_13_203010) do
+ActiveRecord::Schema[7.2].define(version: 2026_07_20_204124) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -180,6 +180,17 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_13_203010) do
     t.index ["user_id"], name: "index_delivery_imports_on_user_id"
   end
 
+  create_table "delivery_item_notes", force: :cascade do |t|
+    t.integer "delivery_item_id", null: false
+    t.integer "user_id", null: false
+    t.text "body", null: false
+    t.boolean "closed", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["delivery_item_id"], name: "index_delivery_item_notes_on_delivery_item_id"
+    t.index ["user_id"], name: "index_delivery_item_notes_on_user_id"
+  end
+
   create_table "delivery_items", force: :cascade do |t|
     t.integer "delivery_id", null: false
     t.integer "order_item_id", null: false
@@ -295,17 +306,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_13_203010) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["order_id"], name: "index_order_contacts_on_order_id"
-  end
-
-  create_table "order_item_notes", force: :cascade do |t|
-    t.integer "order_item_id", null: false
-    t.integer "user_id", null: false
-    t.text "body", null: false
-    t.boolean "closed", default: false, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["order_item_id"], name: "index_order_item_notes_on_order_item_id"
-    t.index ["user_id"], name: "index_order_item_notes_on_user_id"
   end
 
   create_table "order_items", force: :cascade do |t|
@@ -497,6 +497,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_13_203010) do
   add_foreign_key "delivery_group_memberships", "delivery_groups"
   add_foreign_key "delivery_import_rows", "delivery_imports"
   add_foreign_key "delivery_imports", "users"
+  add_foreign_key "delivery_item_notes", "delivery_items"
+  add_foreign_key "delivery_item_notes", "users"
   add_foreign_key "delivery_items", "deliveries"
   add_foreign_key "delivery_items", "order_items"
   add_foreign_key "delivery_plan_assignments", "deliveries", on_delete: :restrict
@@ -506,8 +508,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_13_203010) do
   add_foreign_key "maintenance_windows", "users", column: "activated_by_id"
   add_foreign_key "notifications", "users"
   add_foreign_key "order_contacts", "orders"
-  add_foreign_key "order_item_notes", "order_items"
-  add_foreign_key "order_item_notes", "users"
   add_foreign_key "order_items", "orders"
   add_foreign_key "orders", "clients"
   add_foreign_key "orders", "sellers"

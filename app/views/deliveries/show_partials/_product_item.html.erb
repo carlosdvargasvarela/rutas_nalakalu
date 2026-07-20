@@ -39,7 +39,7 @@
             <%= item.order_item.notes.truncate(60) %>
           </span>
         <% end %>
-        <% if item.order_item&.notes_open? %>
+        <% if item.notes_open? %>
           <span class="text-warning fw-medium">
             <i class="bi bi-exclamation-triangle-fill me-1"></i>Pendientes de producción
           </span>
@@ -47,9 +47,9 @@
       </div>
       <%# Notas de producción %>
       <% unless current_user.seller? %>
-        <% if item.order_item&.order_item_notes&.any? %>
+        <% if item.delivery_item_notes.any? %>
           <div class="mb-2">
-            <%= render "order_item_notes/list", item: item.order_item %>
+            <%= render "delivery_item_notes/list", item: item %>
           </div>
         <% end %>
       <% end %>

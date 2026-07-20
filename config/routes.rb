@@ -138,13 +138,6 @@ Rails.application.routes.draw do
       patch :confirm
       patch :unconfirm
     end
-
-    resources :order_item_notes, except: [:index, :show] do
-      member do
-        patch :close
-        patch :reopen
-      end
-    end
   end
 
   # =============================================================================
@@ -173,6 +166,13 @@ Rails.application.routes.draw do
       patch :bulk_add_notes
       get :bulk_reschedule_form
       get :bulk_cancel_form
+    end
+
+    resources :delivery_item_notes, except: [:index, :show] do
+      member do
+        patch :close
+        patch :reopen
+      end
     end
   end
 

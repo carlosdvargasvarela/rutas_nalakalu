@@ -1,4 +1,4 @@
-class OrderItemNotePolicy < ApplicationPolicy
+class DeliveryItemNotePolicy < ApplicationPolicy
   # Todos pueden VER notas (aunque no tenemos index/show, podemos usar scope)
   def new?
     create?

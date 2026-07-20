@@ -9,7 +9,7 @@ class Order < ApplicationRecord
   belongs_to :seller
   has_many :order_items, dependent: :destroy
   has_many :deliveries, dependent: :destroy
-  has_many :order_item_notes, through: :order_items
+  has_many :delivery_item_notes, through: :order_items
   has_many :order_contacts, dependent: :destroy
 
   # ============================================================================
@@ -64,8 +64,9 @@ class Order < ApplicationRecord
     where(
       "EXISTS (
         SELECT 1
-        FROM order_item_notes
-        JOIN order_items ON order_items.id = order_item_notes.order_item_id
+        FROM delivery_item_notes
+        JOIN delivery_items ON delivery_items.id = delivery_item_notes.delivery_item_id
+        JOIN order_items ON order_items.id = delivery_items.order_item_id
         WHERE order_items.order_id = orders.id
       )"
     )
@@ -75,10 +76,11 @@ class Order < ApplicationRecord
     where(
       "EXISTS (
         SELECT 1
-        FROM order_item_notes
-        JOIN order_items ON order_items.id = order_item_notes.order_item_id
+        FROM delivery_item_notes
+        JOIN delivery_items ON delivery_items.id = delivery_item_notes.delivery_item_id
+        JOIN order_items ON order_items.id = delivery_items.order_item_id
         WHERE order_items.order_id = orders.id
-        AND order_item_notes.closed = 0
+        AND delivery_item_notes.closed = 0
       )"
     )
   }
@@ -87,10 +89,11 @@ class Order < ApplicationRecord
     where(
       "EXISTS (
         SELECT 1
-        FROM order_item_notes
-        JOIN order_items ON order_items.id = order_item_notes.order_item_id
+        FROM delivery_item_notes
+        JOIN delivery_items ON delivery_items.id = delivery_item_notes.delivery_item_id
+        JOIN order_items ON order_items.id = delivery_items.order_item_id
         WHERE order_items.order_id = orders.id
-        AND order_item_notes.closed = 1
+        AND delivery_item_notes.closed = 1
       )"
     )
   }
@@ -268,8 +271,9 @@ class Order < ApplicationRecord
         Arel.sql <<-SQL
           EXISTS (
             SELECT 1
-            FROM order_item_notes
-            JOIN order_items ON order_items.id = order_item_notes.order_item_id
+            FROM delivery_item_notes
+            JOIN delivery_items ON delivery_items.id = delivery_item_notes.delivery_item_id
+            JOIN order_items ON order_items.id = delivery_items.order_item_id
             WHERE order_items.order_id = orders.id
           )
         SQL
@@ -277,20 +281,22 @@ class Order < ApplicationRecord
         Arel.sql <<-SQL
           EXISTS (
             SELECT 1
-            FROM order_item_notes
-            JOIN order_items ON order_items.id = order_item_notes.order_item_id
+            FROM delivery_item_notes
+            JOIN delivery_items ON delivery_items.id = delivery_item_notes.delivery_item_id
+            JOIN order_items ON order_items.id = delivery_items.order_item_id
             WHERE order_items.order_id = orders.id
-            AND order_item_notes.closed = 0
+            AND delivery_item_notes.closed = 0
           )
         SQL
       when "closed"
         Arel.sql <<-SQL
           EXISTS (
             SELECT 1
-            FROM order_item_notes
-            JOIN order_items ON order_items.id = order_item_notes.order_item_id
+            FROM delivery_item_notes
+            JOIN delivery_items ON delivery_items.id = delivery_item_notes.delivery_item_id
+            JOIN order_items ON order_items.id = delivery_items.order_item_id
             WHERE order_items.order_id = orders.id
-            AND order_item_notes.closed = 1
+            AND delivery_item_notes.closed = 1
           )
         SQL
       end
@@ -303,7 +309,7 @@ class Order < ApplicationRecord
   end
 
   def self.ransackable_associations(auth_object = nil)
-    ["client", "seller", "order_items", "deliveries", "order_item_notes"]
+    ["client", "seller", "order_items", "deliveries", "delivery_item_notes"]
   end
 
   def self.human_enum_name(enum_name, value)

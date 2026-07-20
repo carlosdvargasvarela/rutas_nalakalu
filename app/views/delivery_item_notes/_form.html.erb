@@ -1,4 +1,4 @@
-<%= simple_form_for([order_item, note], data: { turbo_frame: "note_modal" }) do |f| %>
+<%= simple_form_for([delivery_item, note], data: { turbo_frame: "note_modal" }) do |f| %>
   <div class="mb-3">
     <%= f.input :body, label: "Detalle de la nota", as: :text, input_html: { rows: 4 } %>
   </div>

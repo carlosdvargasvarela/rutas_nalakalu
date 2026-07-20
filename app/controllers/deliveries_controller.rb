@@ -1148,7 +1148,7 @@ class DeliveriesController < ApplicationController
     @delivery = Delivery.includes(
       :order,
       :delivery_address,
-      delivery_items: {order_item: [:order, :order_item_notes]},
+      delivery_items: [:delivery_item_notes, {order_item: :order}],
       order: [:client, :seller, :order_contacts],
       delivery_address: :client,
       delivery_plan_assignment: {delivery_plan: :driver}
@@ -1164,7 +1164,7 @@ class DeliveriesController < ApplicationController
 
     @delivery_history = @delivery.order.deliveries
       .includes(
-        delivery_items: {order_item: [:order, :order_item_notes]},
+        delivery_items: [:delivery_item_notes, {order_item: :order}],
         delivery_address: :client
       )
       .where(delivery_address_id: @delivery.delivery_address_id)
