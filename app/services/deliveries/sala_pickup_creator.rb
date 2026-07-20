@@ -14,7 +14,6 @@ module Deliveries
           @address = find_or_create_address
           @pickup_delivery = create_pickup_delivery!
           create_pickup_items!
-          update_original_delivery_notes!
 
           # 🔹 Registrar evento en la entrega original
           DeliveryEvent.record(
@@ -77,7 +76,7 @@ module Deliveries
         contact_phone: params.dig(:delivery, :contact_phone),
         delivery_type: :only_pickup,
         status: :scheduled,
-        delivery_notes: build_pickup_notes
+        delivery_notes: params[:delivery_notes]
       )
     end
 
@@ -113,31 +112,12 @@ module Deliveries
           order_item_id: original_item.order_item_id,
           quantity_delivered: original_item.quantity_delivered,
           status: :pending,
-          service_case: original_item.service_case,
-          notes: "Pendiente de #{Deliveries::Vocabulary.service_type_label("retiro").downcase} en sala antes de la entrega del #{original_delivery.delivery_date.strftime("%d/%m/%Y")}."
+          service_case: original_item.service_case
         )
       end
 
       # Marcar los items originales como ya procesados para sala pickup
       items_to_copy.find_each { |item| item.update!(sala_pickup_requested: true) }
-    end
-
-    def update_original_delivery_notes!
-      product_names = @pickup_delivery.delivery_items.map(&:product).join(", ")
-      pickup_date = @pickup_delivery.delivery_date.strftime("%d/%m/%Y")
-
-      retiro = Deliveries::Vocabulary.service_type_label("retiro")
-      new_note = "\n[SISTEMA #{Date.current.strftime("%d/%m/%Y")}]: #{retiro} en sala programado para el #{pickup_date}. Productos a retirar: #{product_names}."
-
-      original_delivery.update!(
-        delivery_notes: "#{original_delivery.delivery_notes}#{new_note}"
-      )
-    end
-
-    def build_pickup_notes
-      base = "#{Deliveries::Vocabulary.service_type_label("retiro")} en sala — Pedido ##{original_delivery.order_number} (entrega original: #{original_delivery.delivery_date.strftime("%d/%m/%Y")})."
-      extra = params[:delivery_notes].presence
-      extra ? "#{base} #{extra}" : base
     end
   end
 end

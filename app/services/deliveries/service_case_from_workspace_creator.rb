@@ -1,7 +1,5 @@
 module Deliveries
   class ServiceCaseFromWorkspaceCreator
-    include Deliveries::ServiceCasePrefix
-
     def initialize(original_delivery:, params:, current_user:)
       @original_delivery = original_delivery
       @params = params
@@ -13,19 +11,13 @@ module Deliveries
         type = params[:delivery][:delivery_type]
 
         base = build_delivery(type, parsed_date)
-        base.delivery_items = build_items(type)
+        base.delivery_items = build_items
         base.save!
 
         return_delivery = nil
         if type == "pickup_with_return"
           return_delivery = create_return_delivery(base)
         end
-
-        # Renombrar ítems originales con prefijo Recolección
-        prefix_original_items("workspace_recoleccion")
-
-        # Anotar en la entrega original que fue marcada como recolección
-        annotate_original_as_recoleccion(base)
 
         # Registrar evento en la entrega original
         created_ids = [base.id, return_delivery&.id].compact
@@ -67,40 +59,17 @@ module Deliveries
         delivery_address: original_delivery.delivery_address,
         contact_name: original_delivery.contact_name,
         contact_phone: original_delivery.contact_phone,
-        delivery_notes: params.dig(:delivery, :delivery_notes).presence || auto_notes(type),
+        delivery_notes: params.dig(:delivery, :delivery_notes),
         delivery_date: date,
         status: :scheduled,
         delivery_type: type
       )
     end
 
-    def annotate_original_as_recoleccion(return_delivery)
-      products = original_delivery.delivery_items.map { |i| i.order_item&.product }.compact.join(", ")
-      recoleccion = Deliveries::Vocabulary.service_type_label("recoleccion")
-      devolucion = Deliveries::Vocabulary.service_type_label("devolucion")
-      note = "#{recoleccion} de: #{products} — #{devolucion} agendada para el #{return_delivery.delivery_date&.strftime('%d/%m/%Y')} (Pedido ##{original_delivery.order_number})"
-      existing = original_delivery.delivery_notes.to_s.strip
-      new_notes = existing.present? ? "#{existing}\n#{note}" : note
-      original_delivery.update!(delivery_notes: new_notes)
-    end
-
-    def auto_notes(type)
-      products = original_delivery.delivery_items.map { |i| i.order_item&.product }.compact.join(", ")
-      ref = "Pedido ##{original_delivery.order_number}"
-      case type
-      when "only_pickup", "pickup_with_return"
-        "#{Deliveries::Vocabulary.service_type_label("recoleccion")} de: #{products} — #{ref}"
-      when "return_delivery"
-        "#{Deliveries::Vocabulary.service_type_label("devolucion")} de: #{products} — #{ref}"
-      when "onsite_repair"
-        "#{Deliveries::Vocabulary.service_type_label("reparacion")} — #{ref}"
-      end
-    end
-
-    def build_items(type)
+    def build_items
       selected_items.map do |item|
         DeliveryItem.new(
-          order_item: duplicate_item(item, type),
+          order_item: item.order_item,
           quantity_delivered: item.quantity_delivered,
           service_case: true,
           status: :pending
@@ -108,26 +77,10 @@ module Deliveries
       end
     end
 
-    def prefix_original_items(prefix_type)
-      selected_items.each do |item|
-        prefixed = duplicate_order_item_with_prefix(item.order_item, prefix_type)
-        item.update!(order_item: prefixed)
-      end
-    end
-
     def selected_items
       @selected_items ||= begin
         ids = Array(params[:item_ids]).flat_map { |id| id.to_s.split(",") }.map(&:to_i).reject(&:zero?)
         original_delivery.delivery_items.where(id: ids)
-      end
-    end
-
-    def duplicate_item(item, type)
-      prefix = type.in?(%w[only_pickup return_delivery]) ? service_case_prefix_for(type) : ""
-
-      product_name = "#{prefix}#{item.order_item.product}"
-      original_delivery.order.order_items.find_or_create_by!(product: product_name) do |oi|
-        oi.quantity = item.order_item.quantity
       end
     end
 

@@ -16,9 +16,6 @@ module Deliveries
         ret.delivery_items = build_items
         ret.save!
 
-        prefix_original_items("repair_pickup")
-        annotate_original(ret)
-
         DeliveryEvent.record(
           delivery: @original_delivery,
           action: "repair_service_created",
@@ -56,7 +53,7 @@ module Deliveries
         delivery_address: original_delivery.delivery_address,
         contact_name:     original_delivery.contact_name,
         contact_phone:    original_delivery.contact_phone,
-        delivery_notes:   params.dig(:delivery, :delivery_notes).presence || auto_notes,
+        delivery_notes:   params.dig(:delivery, :delivery_notes),
         delivery_date:    date,
         status:           :scheduled,
         delivery_type:    :repair_return
@@ -70,26 +67,6 @@ module Deliveries
           quantity_delivered: item.quantity_delivered,
           status:             :pending
         )
-      end
-    end
-
-    def annotate_original(ret)
-      products = selected_items.map { |i| i.order_item&.product }.compact.join(", ")
-      entrega  = Deliveries::Vocabulary.service_type_label("entrega")
-      note     = "#{entrega} de reparación agendada: #{products} — #{ret.delivery_date&.strftime('%d/%m/%Y')} (Pedido ##{original_delivery.order_number})"
-      existing = original_delivery.delivery_notes.to_s.strip
-      original_delivery.update!(delivery_notes: existing.present? ? "#{existing}\n#{note}" : note)
-    end
-
-    def auto_notes
-      products = selected_items.map { |i| i.order_item&.product }.compact.join(", ")
-      "#{Deliveries::Vocabulary.service_type_label("entrega")} de producto reparado: #{products} — Pedido ##{original_delivery.order_number}"
-    end
-
-    def prefix_original_items(prefix_type)
-      selected_items.each do |item|
-        prefixed = duplicate_order_item_with_prefix(item.order_item, prefix_type)
-        item.update!(order_item: prefixed)
       end
     end
 
