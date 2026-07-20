@@ -1,5 +1,6 @@
 <%# app/views/deliveries/show_partials/_product_item_row.html.erb %>
 <% can_confirm = local_assigns.fetch(:can_confirm, false) %>
+<% can_view_notes = local_assigns.fetch(:can_view_notes, false) %>
 <tr id="<%= dom_id(item) %>"
   class="<%= 'item-with-notes' if item.notes.present? %>">
   <%# Checkbox %>
@@ -49,6 +50,14 @@
               style="font-size: 0.65rem;">
           <i class="bi bi-exclamation-triangle-fill me-1"></i>Pendiente de producción
         </span>
+      <% end %>
+      <%# Notas de producción (propias de esta entrega, no compartidas con otras).
+          Gate con can_view_notes (no current_user): esta fila también se renderiza
+          sin sesión vía broadcast_item_row_update, donde ese local no llega. %>
+      <% if can_view_notes %>
+        <div class="mt-1">
+          <%= render "delivery_item_notes/list", item: item %>
+        </div>
       <% end %>
     </div>
   </td>

@@ -1,6 +1,7 @@
 <%# app/views/deliveries/show_partials/_product_table.html.erb %>
 <%= turbo_stream_from "delivery_#{delivery.id}_items" %>
 <% can_confirm = policy(delivery).edit? %>
+<% can_view_notes = !current_user.seller? %>
 <% sala_items = Deliveries::SalaPickupDetector.new(delivery).actionable_items %>
 <% service_case_items = Deliveries::ServiceCaseDetector.new(delivery).actionable_items %>
 <% repair_service_items = Deliveries::RepairServiceDetector.new(delivery).actionable_items %>
@@ -134,6 +135,7 @@
               item: item,
               delivery: delivery,
               can_confirm: can_confirm,
+              can_view_notes: can_view_notes,
               sala_items: sala_items,
               service_case_items: service_case_items %>
       <% end %>

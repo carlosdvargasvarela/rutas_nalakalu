@@ -1140,7 +1140,7 @@ class DeliveriesController < ApplicationController
     @delivery = Delivery.includes(
       order: [:client, :seller, :order_contacts],
       delivery_address: :client,
-      delivery_items: {order_item: :order}
+      delivery_items: [:delivery_item_notes, {order_item: :order}]
     ).find(params[:id])
   end
 
