@@ -15,7 +15,6 @@
         <th>Entregado</th>
         <th>Desglose de entregas</th>
         <th>Estado en planta</th>
-        <th>Notas de producción</th>
         <% if policy(order).edit? && !order.delivered? %>
           <th>Acción</th>
         <% end %>
@@ -61,13 +60,6 @@
             <span class="badge bg-<%= order_item_status_color(item.status) %>">
               <%= item.display_status %>
             </span>
-          </td>
-          <td style="min-width: 300px;">
-            <% if (note_target = item.delivery_items.order(:created_at).last) %>
-              <%= render "delivery_item_notes/list", item: note_target %>
-            <% else %>
-              <span class="text-muted small">Sin entrega asociada</span>
-            <% end %>
           </td>
           <% if policy(order).edit? && !order.delivered? %>
             <td>

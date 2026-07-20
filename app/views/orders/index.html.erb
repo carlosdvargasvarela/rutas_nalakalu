@@ -95,11 +95,6 @@
                 <div class="d-flex align-items-center mb-1">
                   <span class="badge bg-secondary me-2"><%= item.quantity %></span>
                   <strong><%= item.product %></strong>
-                  <% if item.delivery_item_notes.any? %>
-                    <span class="badge bg-warning text-dark ms-2" title="<%= pluralize(item.delivery_item_notes.count, 'nota') %>">
-                      <i class="bi bi-chat-left-text"></i> <%= item.delivery_item_notes.count %>
-                    </span>
-                  <% end %>
                 </div>
               <% end %>
             </td>
