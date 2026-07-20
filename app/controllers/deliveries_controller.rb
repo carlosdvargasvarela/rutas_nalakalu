@@ -1449,9 +1449,7 @@ class DeliveriesController < ApplicationController
   end
 
   def handle_repair_service_error(e)
-    @delivery ||= Delivery.new
-    @delivery.delivery_type ||= params.dig(:delivery, :delivery_type) || :repair_pickup
-    @delivery.status ||= :scheduled
+    @delivery ||= Delivery.new(delivery_type: :repair_pickup, status: :scheduled)
 
     if params[:delivery].present?
       permitted = params.require(:delivery).permit(
@@ -1464,6 +1462,8 @@ class DeliveriesController < ApplicationController
       )
       permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
       permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
+      # "repair_with_return" es un valor de despacho del formulario, no un delivery_type real.
+      permitted.delete(:delivery_type) unless Delivery.delivery_types.key?(permitted[:delivery_type].to_s)
       @delivery.assign_attributes(permitted)
     end
 

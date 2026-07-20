@@ -87,6 +87,14 @@ class DeliveryPolicy < ApplicationPolicy
     new_service_case?
   end
 
+  def new_repair_service?
+    user.admin? || user.logistics? || user.production_manager?
+  end
+
+  def create_repair_service?
+    new_repair_service?
+  end
+
   def new_service_case_for_existing?
     new_service_case?
   end
