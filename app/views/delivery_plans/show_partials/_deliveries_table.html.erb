@@ -102,7 +102,7 @@
                         <i class="bi bi-sticky"></i> Agregar nota
                       </button>
                     </div>
-                  <% elsif delivery.rescheduled? || delivery.delivery_items.any? %>
+                  <% elsif delivery.rescheduled? %>
                     <% next_del = delivery.next_rescheduled_delivery %>
                     <div class="rounded p-2 text-center border border-warning border-2" style="background:#fff3cd;min-width:165px">
                       <div class="fw-bold text-warning-emphasis" style="font-size:1.05rem">
@@ -123,6 +123,8 @@
                         </small>
                       <% end %>
                     </div>
+                  <% elsif delivery.delivery_items.any? %>
+                    <span class="text-muted">Sin acciones</span>
                   <% else %>
                     <span class="text-muted">Sin productos</span>
                   <% end %>
