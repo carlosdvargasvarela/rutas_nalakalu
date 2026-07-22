@@ -290,10 +290,14 @@ class DeliveryPlansController < ApplicationController
             active_items = delivery.active_items_for_plan_for(current_user)
 
             if active_items.empty?
-              next_del = delivery.next_rescheduled_delivery
-              rescheduled_text = next_del ?
-                "[!] REAGENDADO -> #{I18n.l(next_del.delivery_date, format: :long)}" :
-                "[!] REAGENDADO"
+              next_del = delivery.rescheduled? ? delivery.next_rescheduled_delivery : nil
+              product_text = if delivery.rescheduled?
+                next_del ?
+                  "[!] REAGENDADO -> #{I18n.l(next_del.delivery_date, format: :long)}" :
+                  "[!] REAGENDADO"
+              else
+                "Sin productos"
+              end
               notes = []
               notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
               notes << "Nueva entrega ID: #{next_del.id}" if next_del
@@ -301,7 +305,7 @@ class DeliveryPlansController < ApplicationController
                 I18n.l(delivery.delivery_date, format: :long),
                 delivery.delivery_time_preference.presence || "-",
                 delivery.order.number,
-                rescheduled_text,
+                product_text,
                 "-",
                 delivery.order.seller.seller_code,
                 "",
@@ -357,17 +361,21 @@ class DeliveryPlansController < ApplicationController
             active_items = delivery.active_items_for_plan_for(current_user)
 
             if active_items.empty?
-              next_del = delivery.next_rescheduled_delivery
-              rescheduled_text = next_del ?
-                "[!] REAGENDADO -> #{I18n.l(next_del.delivery_date, format: :long)}" :
-                "[!] REAGENDADO"
+              next_del = delivery.rescheduled? ? delivery.next_rescheduled_delivery : nil
+              product_text = if delivery.rescheduled?
+                next_del ?
+                  "[!] REAGENDADO -> #{I18n.l(next_del.delivery_date, format: :long)}" :
+                  "[!] REAGENDADO"
+              else
+                "Sin productos"
+              end
               notes = []
               notes << "VENDEDOR: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
               notes << "Nueva entrega ID: #{next_del.id}" if next_del
               [[
                 assignment.stop_order,
                 delivery.order.number,
-                rescheduled_text,
+                product_text,
                 "-",
                 delivery.order.client.name,
                 delivery.order.seller.seller_code,

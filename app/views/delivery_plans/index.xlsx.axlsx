@@ -68,7 +68,7 @@ if is_ops_user
         active_items = delivery.active_items_for_plan_for(current_user)
 
         if active_items.empty?
-          is_rescheduled = delivery.rescheduled? || delivery.delivery_items.any?
+          is_rescheduled = delivery.rescheduled?
           next_del = delivery.next_rescheduled_delivery if is_rescheduled
 
           product_text = if is_rescheduled
