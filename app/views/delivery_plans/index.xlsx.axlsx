@@ -65,7 +65,7 @@ if is_ops_user
 
       assignments.each do |assignment|
         delivery = assignment.delivery
-        active_items = delivery.active_items_for_plan_for(current_user)
+        active_items = delivery.items_visible_in_plan
 
         if active_items.empty?
           is_rescheduled = delivery.rescheduled?
@@ -128,7 +128,7 @@ if is_ops_user
 
     if @delivery_plans.any?
       total_rows = 1 + @delivery_plans.sum do |plan|
-        plan.delivery_plan_assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
+        plan.delivery_plan_assignments.sum { |a| [a.delivery.items_visible_in_plan.count, 1].max }
       end
       sheet.auto_filter = "A1:K#{total_rows}" if total_rows > 1
     end
@@ -229,7 +229,7 @@ else
                     else default_style
                     end
 
-        if delivery.active_items_for_plan_for(current_user).empty?
+        if delivery.items_visible_in_plan.empty?
           all_notes = []
           all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
 
@@ -255,7 +255,7 @@ else
           ], style: row_style
 
         else
-          delivery.active_items_for_plan_for(current_user).each do |delivery_item|
+          delivery.items_visible_in_plan.each do |delivery_item|
             all_notes = []
             all_notes << "ENTREGA: #{delivery.delivery_notes}" if delivery.delivery_notes.present?
             all_notes << "PRODUCCIÓN: #{delivery_item.order_item.notes}" if delivery_item.order_item&.notes.present?
@@ -290,7 +290,7 @@ else
 
     if @delivery_plans.any?
       total_rows = 1 + @delivery_plans.sum do |plan|
-        plan.delivery_plan_assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
+        plan.delivery_plan_assignments.sum { |a| [a.delivery.items_visible_in_plan.count, 1].max }
       end
       sheet.auto_filter = "A1:Q#{total_rows}" if total_rows > 1
     end

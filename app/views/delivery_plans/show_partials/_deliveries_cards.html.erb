@@ -7,7 +7,7 @@
       <div class="row g-2">
         <% delivery_plan.delivery_plan_assignments.order(:stop_order).each do |assignment| %>
           <% delivery = assignment.delivery %>
-          <% active_items = delivery.active_items_for_plan_for(current_user) %>
+          <% active_items = delivery.items_visible_in_plan %>
           <div class="col-12">
             <div class="card shadow-sm">
               <div class="card-body p-3">

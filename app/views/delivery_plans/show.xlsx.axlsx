@@ -55,7 +55,7 @@ if is_ops_user
 
     @assignments.each do |assignment|
       delivery = assignment.delivery
-      active_items = delivery.active_items_for_plan_for(current_user)
+      active_items = delivery.items_visible_in_plan
 
       if active_items.empty?
         is_rescheduled = delivery.rescheduled?
@@ -118,13 +118,13 @@ if is_ops_user
     if @assignments.any?
       first_date = @assignments.first.delivery.delivery_date.strftime("%d/%m/%Y")
       if @assignments.all? { |a| a.delivery.delivery_date.strftime("%d/%m/%Y") == first_date }
-        total_rows = @assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
+        total_rows = @assignments.sum { |a| [a.delivery.items_visible_in_plan.count, 1].max }
         sheet.merge_cells("A2:A#{total_rows + 1}") if total_rows > 1
       end
     end
 
     if @assignments.any?
-      total_rows = 1 + @assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
+      total_rows = 1 + @assignments.sum { |a| [a.delivery.items_visible_in_plan.count, 1].max }
       sheet.auto_filter = "A1:K#{total_rows}"
     end
 
@@ -221,7 +221,7 @@ else
                   else default_style
                   end
 
-      active_items = delivery.active_items_for_plan_for(current_user)
+      active_items = delivery.items_visible_in_plan
 
       if active_items.empty?
         is_rescheduled = delivery.rescheduled?
@@ -288,13 +288,13 @@ else
     if @assignments.any?
       first_date = @assignments.first.delivery.delivery_date.strftime("%d/%m/%Y")
       if @assignments.all? { |a| a.delivery.delivery_date.strftime("%d/%m/%Y") == first_date }
-        total_rows = @assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
+        total_rows = @assignments.sum { |a| [a.delivery.items_visible_in_plan.count, 1].max }
         sheet.merge_cells("A2:A#{total_rows + 1}") if total_rows > 1
       end
     end
 
     if @assignments.any?
-      total_rows = 1 + @assignments.sum { |a| [a.delivery.active_items_for_plan_for(current_user).count, 1].max }
+      total_rows = 1 + @assignments.sum { |a| [a.delivery.items_visible_in_plan.count, 1].max }
       sheet.auto_filter = "A1:N#{total_rows}"
     end
 

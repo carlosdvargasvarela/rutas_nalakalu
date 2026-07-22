@@ -23,7 +23,7 @@
           <tbody>
             <% delivery_plan.delivery_plan_assignments.order(:stop_order).each do |assignment| %>
               <% delivery = assignment.delivery %>
-              <% active_items = delivery.active_items_for_plan_for(current_user) %>
+              <% active_items = delivery.items_visible_in_plan %>
               <tr>
                 <td>
                   <span class="badge bg-primary"><%= assignment.stop_order %></span>

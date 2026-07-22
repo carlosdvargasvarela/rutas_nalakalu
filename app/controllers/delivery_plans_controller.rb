@@ -287,7 +287,7 @@ class DeliveryPlansController < ApplicationController
           ]
           rows = @assignments.flat_map do |assignment|
             delivery = assignment.delivery
-            active_items = delivery.active_items_for_plan_for(current_user)
+            active_items = delivery.items_visible_in_plan
 
             if active_items.empty?
               next_del = delivery.rescheduled? ? delivery.next_rescheduled_delivery : nil
@@ -358,7 +358,7 @@ class DeliveryPlansController < ApplicationController
           rows = @assignments.flat_map do |assignment|
             delivery = assignment.delivery
             address = delivery.delivery_address
-            active_items = delivery.active_items_for_plan_for(current_user)
+            active_items = delivery.items_visible_in_plan
 
             if active_items.empty?
               next_del = delivery.rescheduled? ? delivery.next_rescheduled_delivery : nil

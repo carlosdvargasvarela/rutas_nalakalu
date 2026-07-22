@@ -396,6 +396,13 @@ class Delivery < ApplicationRecord
     delivery_items.merge(DeliveryItem.eligible_for_plan_for(user))
   end
 
+  # Items to show when viewing an ALREADY-ASSIGNED plan (not when building a
+  # new one) — everyone should see everything on the delivery regardless of
+  # role, except items that got rescheduled off of it.
+  def items_visible_in_plan
+    delivery_items.merge(DeliveryItem.eligible_for_plan_for_others)
+  end
+
   def has_service_cases?
     delivery_items.any?(&:service_case?)
   end
