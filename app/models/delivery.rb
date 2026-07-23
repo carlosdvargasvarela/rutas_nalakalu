@@ -289,6 +289,7 @@ class Delivery < ApplicationRecord
   def mark_all_loaded!
     transaction do
       delivery_items
+        .bulk_actionable
         .where.not(load_status: DeliveryItem.load_statuses[:missing])
         .find_each do |item|
           item.update!(load_status: :loaded, status: :loaded_on_truck)

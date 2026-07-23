@@ -129,6 +129,7 @@ class DeliveryPlan < ApplicationRecord
       DeliveryItem
         .joins(:delivery)
         .where(deliveries: {id: delivery_ids})
+        .bulk_actionable
         .where.not(load_status: DeliveryItem.load_statuses[:missing])
         .find_each do |item|
           item.update!(load_status: :loaded, status: :loaded_on_truck)

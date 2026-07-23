@@ -13,6 +13,12 @@ class Production::DeliveryItemsController < ApplicationController
       format.turbo_stream { render_item_update_streams }
       format.json { render json: {success: true, item: @delivery_item} }
     end
+  rescue StandardError => e
+    respond_to do |format|
+      format.html { redirect_back fallback_location: root_path, alert: e.message }
+      format.turbo_stream { render turbo_stream: turbo_stream.replace("delivery_item_#{@delivery_item.id}", partial: "production/delivery_items/delivery_item_row", locals: {item: @delivery_item}) }
+      format.json { render json: {success: false, error: e.message}, status: :unprocessable_entity }
+    end
   end
 
   def mark_unloaded

@@ -86,6 +86,8 @@ class DeliveryItem < ApplicationRecord
   end
 
   def mark_loaded!
+    raise StandardError, "No se puede cargar un producto en estado #{status}." unless bulk_actionable?
+
     transaction do
       update!(load_status: :loaded, status: :loaded_on_truck)
       delivery.recalculate_load_status!
