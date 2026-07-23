@@ -88,6 +88,10 @@ module Driver
         .order(:stop_order)
         .reject { |a| a.delivery.hidden_from_route_map? }
 
+      # Renumerar en memoria (sin persistir) para que el conductor vea un
+      # consecutivo 1,2,3... en vez de huecos donde había paradas ocultas.
+      @assignments.each_with_index { |a, i| a.stop_order = i + 1 }
+
       respond_to do |format|
         format.html
         format.json do
