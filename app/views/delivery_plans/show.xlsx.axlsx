@@ -1,5 +1,6 @@
 wb = xlsx_package.workbook
 is_ops_user = current_user.logistics? || current_user.production_manager?
+@assignments = current_user.admin? ? @assignments : @assignments.reject { |a| a.delivery.rescheduled? }
 
 if is_ops_user
   # =====================

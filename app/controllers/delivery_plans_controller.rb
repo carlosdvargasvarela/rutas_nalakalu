@@ -274,6 +274,7 @@ class DeliveryPlansController < ApplicationController
       format.pdf do
         pdf_title = "Hoja_Ruta_#{@from_date&.strftime("%d_%m_%Y")}_#{@delivery_plan.truck.presence || "Sin_Camion"}"
         is_ops_user = current_user.logistics? || current_user.production_manager?
+        visible_assignments = current_user.admin? ? @assignments : @assignments.reject { |a| a.delivery.rescheduled? }
 
         pdf = Prawn::Document.new(page_size: "A2", page_layout: :landscape)
         pdf.font_size 12
@@ -285,7 +286,7 @@ class DeliveryPlansController < ApplicationController
             "Fecha de entrega", "Hora", "Pedido", "Producto", "Cantidad",
             "Vendedor", "Cargado en camion", "Cliente", "# Parada", "Camion", "Notas"
           ]
-          rows = @assignments.flat_map do |assignment|
+          rows = visible_assignments.flat_map do |assignment|
             delivery = assignment.delivery
             active_items = delivery.items_visible_in_plan
 
@@ -355,7 +356,7 @@ class DeliveryPlansController < ApplicationController
             "# Parada", "Pedido", "Producto", "Cantidad", "Cliente", "Vendedor",
             "Dirección", "Hora", "Fecha", "Contacto", "Teléfono", "Notas", "Estado"
           ]
-          rows = @assignments.flat_map do |assignment|
+          rows = visible_assignments.flat_map do |assignment|
             delivery = assignment.delivery
             address = delivery.delivery_address
             active_items = delivery.items_visible_in_plan
