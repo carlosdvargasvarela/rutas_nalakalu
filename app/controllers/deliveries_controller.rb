@@ -22,7 +22,7 @@ class DeliveriesController < ApplicationController
     session[:deliveries_return_to] = request.fullpath
 
     excluded_from_index = []
-    excluded_from_index << :rescheduled unless params[:show_rescheduled] == "1"
+    excluded_from_index << :rescheduled unless current_user.admin? && params[:show_rescheduled] == "1"
     excluded_from_index << :archived unless params[:show_archived] == "1"
     base_scope = Delivery.where.not(status: excluded_from_index)
 

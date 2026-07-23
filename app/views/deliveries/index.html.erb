@@ -105,13 +105,15 @@
                 </div>
               </div>
               <div class="d-flex gap-3 flex-wrap">
-                <div class="form-check form-check-inline">
-                  <input type="checkbox" class="form-check-input" name="show_rescheduled" value="1"
-                         id="filter_rescheduled" <%= 'checked' if params[:show_rescheduled] == '1' %>>
-                  <label class="form-check-label small" for="filter_rescheduled">
-                    <i class="bi bi-arrow-repeat text-warning me-1"></i>Reagendadas
-                  </label>
-                </div>
+                <% if current_user.admin? %>
+                  <div class="form-check form-check-inline">
+                    <input type="checkbox" class="form-check-input" name="show_rescheduled" value="1"
+                           id="filter_rescheduled" <%= 'checked' if params[:show_rescheduled] == '1' %>>
+                    <label class="form-check-label small" for="filter_rescheduled">
+                      <i class="bi bi-arrow-repeat text-warning me-1"></i>Reagendadas
+                    </label>
+                  </div>
+                <% end %>
                 <div class="form-check form-check-inline">
                   <input type="checkbox" class="form-check-input" name="only_service_cases" value="1"
                          id="filter_service" <%= 'checked' if params[:only_service_cases].present? %>>

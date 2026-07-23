@@ -20,15 +20,21 @@ module Driver
       @q = base_scope.ransack(q_params)
 
       delivered_status = Delivery.statuses[:delivered]
+      hidden_statuses = Delivery::HIDDEN_FROM_ROUTE_MAP_STATUSES.map { |s| Delivery.statuses[s] }.join(",")
 
       # Query con agregados SQL para performance y precisión
+      # deliveries_count excluye reagendadas/canceladas/archivadas: el
+      # DeliveryPlanAssignment no se destruye al reagendar, así que sin este
+      # filtro el conductor ve un total inflado con entregas que ya no van.
       scope = @q.result
         .left_joins(:deliveries)
         .select(<<~SQL)
           delivery_plans.*,
           MIN(deliveries.delivery_date) AS first_delivery_date,
           MAX(deliveries.delivery_date) AS last_delivery_date,
-          COUNT(deliveries.id)          AS deliveries_count,
+          COUNT(
+            CASE WHEN deliveries.status NOT IN (#{hidden_statuses}) THEN deliveries.id END
+          ) AS deliveries_count,
           COUNT(
             CASE WHEN deliveries.status = #{delivered_status} THEN 1 END
           ) AS delivered_count
