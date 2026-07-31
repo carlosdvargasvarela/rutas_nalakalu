@@ -90,7 +90,12 @@ module Driver
 
       # Renumerar en memoria (sin persistir) para que el conductor vea un
       # consecutivo 1,2,3... en vez de huecos donde había paradas ocultas.
-      @assignments.each_with_index { |a, i| a.stop_order = i + 1 }
+      # Se agrupa por stop_order original (mismo método que DeliveryPlanStopGrouper:
+      # varias entregas en el mismo lugar comparten número) en vez de un índice plano,
+      # para no separar paradas que están en la misma ubicación.
+      @assignments.chunk_while { |a, b| a.stop_order == b.stop_order }.each_with_index do |group, i|
+        group.each { |a| a.stop_order = i + 1 }
+      end
 
       respond_to do |format|
         format.html
