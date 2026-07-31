@@ -112,7 +112,7 @@
     <% end %>
 
     <%# ── Productos ── %>
-    <% items = delivery.delivery_items %>
+    <% items = delivery.items_visible_in_plan %>
     <% if items.any? %>
       <%# Verificar si algún item tiene notas para destacar la sección %>
       <% items_with_notes = items.select { |i| i.notes.present? || i.order_item.notes.present? } %>
