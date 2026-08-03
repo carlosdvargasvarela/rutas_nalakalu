@@ -2,20 +2,34 @@
   <% unless (current_user.seller? || current_user.production_manager?) && !delivery.new_record? %>
     <div class="col-md-4">
       <%= f.label :delivery_date, "Fecha de entrega", class: "form-label small fw-semibold" %>
-      <%= f.date_field :delivery_date,
-            class: "form-control",
-            required: true,
-            data: {
-              action: "change->delivery-form#validateDeliveryData change->delivery-form#checkDateReschedule",
-              original_date: delivery.new_record? ? nil : delivery.delivery_date&.to_s
-            } %>
-      <% unless delivery.new_record? %>
-        <div class="alert alert-warning d-none mt-2 py-2 px-3"
-             data-delivery-form-target="rescheduleAlert"
-             style="font-size:0.82rem;">
-          <i class="bi bi-calendar-check me-1"></i>
-          <strong>Estás reagendando esta entrega.</strong>
-          No es necesario crear una nueva — solo guardá los cambios.
+      <% if delivery.new_record? %>
+        <%= f.date_field :delivery_date,
+              class: "form-control",
+              required: true,
+              data: { action: "change->delivery-form#validateDeliveryData" } %>
+      <% else %>
+        <%= f.date_field :delivery_date, class: "form-control", disabled: true %>
+        <div class="form-text">
+          <i class="bi bi-info-circle me-1"></i>
+          <button type="button" class="btn btn-link btn-sm p-0 align-baseline"
+                  data-bs-toggle="collapse" data-bs-target="#reschedule_section_<%= delivery.id %>">
+            Reagendar entrega
+          </button>
+        </div>
+        <div class="collapse mt-2" id="reschedule_section_<%= delivery.id %>">
+          <div class="border rounded p-3 bg-light">
+            <label class="form-label small fw-semibold">Nueva fecha de entrega</label>
+            <%= date_field_tag "delivery[reschedule_new_date]", nil,
+                  class: "form-control form-control-sm",
+                  min: (current_user.admin_or_manager? ? nil : Date.current + 1.day) %>
+            <label class="form-label small fw-semibold mt-2">Motivo <span class="text-muted fw-normal">(opcional)</span></label>
+            <%= text_area_tag "delivery[reschedule_reason]", nil,
+                  class: "form-control form-control-sm", rows: 2,
+                  placeholder: "Ej: Cliente no disponible / Camión lleno / Falla logística..." %>
+            <div class="form-text mb-0">
+              Al guardar, primero se guardan los cambios de este formulario y luego se reagenda la entrega.
+            </div>
+          </div>
         </div>
       <% end %>
     </div>

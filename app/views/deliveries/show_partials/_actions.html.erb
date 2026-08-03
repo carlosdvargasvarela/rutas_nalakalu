@@ -60,6 +60,16 @@
         </button>
         <ul class="dropdown-menu dropdown-menu-end shadow border-0 m-0">
           <% if can_edit %>
+            <% if !delivery.delivered? && !delivery.cancelled? && !delivery.archived? && !delivery.rescheduled? %>
+              <li>
+                <%= button_to reschedule_form_delivery_path(delivery),
+                      method: :get,
+                      form: { data: { turbo_frame: "modal" }, class: "w-100" },
+                      class: "dropdown-item d-flex align-items-center gap-2 py-2 border-0 bg-transparent text-start" do %>
+                  <i class="bi bi-calendar-plus text-warning"></i> Reagendar Entrega
+                <% end %>
+              </li>
+            <% end %>
             <% if delivery.delivery_items.pending.any? %>
               <li>
                 <%= button_to confirm_all_items_delivery_path(delivery),

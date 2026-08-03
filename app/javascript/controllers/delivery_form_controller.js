@@ -35,7 +35,6 @@ export default class extends Controller {
     "itemsContainer",
     "itemTemplate",
     "noItemsRow",
-    "rescheduleAlert",
   ];
 
   static values = {
@@ -519,15 +518,6 @@ export default class extends Controller {
   }
 
   // ==================== DATOS DE ENTREGA ====================
-
-  checkDateReschedule(event) {
-    if (!this.hasRescheduleAlertTarget) return;
-    const field = event.target;
-    const originalDate = field.dataset.originalDate;
-    if (!originalDate) return;
-    const changed = field.value !== originalDate;
-    this.rescheduleAlertTarget.classList.toggle("d-none", !changed);
-  }
 
   validateDeliveryData() {
     const deliveryDateField = document.querySelector(

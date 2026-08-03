@@ -1,0 +1,37 @@
+<%# app/views/deliveries/reschedule_form.html.erb %>
+<%= turbo_frame_tag "modal" do %>
+  <div class="modal-header bg-warning-subtle">
+    <h5 class="modal-title fw-semibold">
+      <i class="bi bi-calendar2-plus me-2"></i>Reagendar entrega #<%= @delivery.order.number %>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body">
+    <%= form_with url: reschedule_all_delivery_path(@delivery), method: :patch, local: true do |f| %>
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Nueva fecha de entrega</label>
+        <%= f.date_field :new_date,
+              class: "form-control form-control-sm",
+              required: true,
+              min: (current_user.admin_or_manager? ? nil : Date.current + 1.day),
+              value: (@delivery.delivery_date + 1.day) %>
+        <div class="form-text">Fecha actual: <%= l @delivery.delivery_date, format: :long %></div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Motivo <span class="text-muted fw-normal">(opcional)</span></label>
+        <%= f.text_area :reason,
+              class: "form-control form-control-sm",
+              rows: 2,
+              placeholder: "Ej: Cliente no disponible / Camión lleno / Falla logística..." %>
+      </div>
+      <div class="modal-footer px-0 pb-0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <%= f.submit "Reagendar entrega",
+              class: "btn btn-sm btn-warning fw-semibold",
+              data: { disable_with: "Reagendando...", turbo_confirm: "¿Confirmar reagendamiento?" } %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

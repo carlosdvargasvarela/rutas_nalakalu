@@ -13,13 +13,18 @@ module Deliveries
         @client = @order.client
         @address = find_or_create_address(@client)
 
+        if date_change_attempted?
+          raise ActiveRecord::RecordInvalid.new(@delivery),
+            "No podés cambiar la fecha de entrega desde este formulario. Usá la opción \"Reagendar\" para mover la entrega correctamente."
+        end
+
         @delivery.delivery_address = @address
         update_delivery_items if delivery_params[:delivery_items_attributes].present?
 
-        new_date = delivery_params[:delivery_date].presence || @delivery.delivery_date
+        new_date = @delivery.delivery_date
 
         # Asignar todos los atributos en memoria para capturar el set completo de cambios
-        @delivery.assign_attributes(delivery_params.except(:delivery_items_attributes, :delivery_address_id, :order_id, :_return_to_panel))
+        @delivery.assign_attributes(delivery_params.except(:delivery_items_attributes, :delivery_address_id, :order_id, :_return_to_panel, :delivery_date))
 
         validate_no_duplicate_products!(
           order: @order,
@@ -79,6 +84,16 @@ module Deliveries
           {order_item_attributes: [:id, :product, :quantity, :notes]}
         ]
       )
+    end
+
+    # El cambio de fecha de una entrega ya creada debe pasar por Deliveries::Rescheduler
+    # (migra items, notifica, deja historial). Editarla acá directamente rompe ese flujo.
+    def date_change_attempted?
+      new_date_str = delivery_params[:delivery_date]
+      return false if new_date_str.blank?
+      Date.parse(new_date_str) != @delivery.delivery_date
+    rescue Date::Error, ArgumentError, TypeError
+      false
     end
 
     def normalize_id(raw)

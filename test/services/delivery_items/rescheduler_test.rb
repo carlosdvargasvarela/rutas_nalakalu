@@ -43,5 +43,51 @@ module DeliveryItems
       assert_equal "scheduled", target.status
       assert_equal "rescheduled", @pending_item.reload.status
     end
+
+    test "reschedules into an existing delivery for the same order/address/date instead of creating a duplicate" do
+      new_date = Date.current + 7
+      existing_target = Delivery.create!(
+        order: @delivery.order,
+        delivery_address: @delivery.delivery_address,
+        delivery_date: new_date,
+        status: :scheduled
+      )
+
+      rescheduler = Rescheduler.new(
+        delivery_item: @pending_item,
+        params: {new_delivery: "true", new_date: new_date.to_s},
+        current_user: @user,
+        notify: false
+      )
+      rescheduler.call
+
+      assert_equal existing_target.id, rescheduler.target_delivery.id
+      assert_equal 1, Delivery.where(order_id: @delivery.order_id, delivery_address_id: @delivery.delivery_address_id, delivery_date: new_date).count
+    end
+
+    test "merges the quantity when the existing target delivery already has an item for the same order_item" do
+      new_date = Date.current + 7
+      existing_target = Delivery.create!(
+        order: @delivery.order,
+        delivery_address: @delivery.delivery_address,
+        delivery_date: new_date,
+        status: :scheduled
+      )
+      existing_item = existing_target.delivery_items.create!(
+        order_item: @pending_item.order_item,
+        quantity_delivered: 3,
+        status: :pending
+      )
+
+      Rescheduler.new(
+        delivery_item: @pending_item,
+        params: {new_delivery: "true", new_date: new_date.to_s},
+        current_user: @user,
+        notify: false
+      ).call
+
+      assert_equal 4, existing_item.reload.quantity_delivered
+      assert_equal "rescheduled", @pending_item.reload.status
+    end
   end
 end

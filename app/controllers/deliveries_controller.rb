@@ -4,7 +4,7 @@ class DeliveriesController < ApplicationController
 
   before_action :set_delivery, only: [
     :show, :edit, :update, :mark_as_delivered, :confirm_all_items,
-    :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing,
+    :reschedule_form, :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing,
     :update_status, :reassign_seller, :take_order, :sala_pickup_form,
     :create_sala_pickup, :service_case_form, :create_service_case_from_workspace,
     :warehousing_form, :start_warehousing, :end_warehousing, :unconfirm, :reopen,
@@ -120,6 +120,18 @@ class DeliveriesController < ApplicationController
     sanitize_order_id_param!
     @delivery = Deliveries::Updater.new(delivery: @delivery, params: params, current_user: current_user).call
 
+    if (new_date_str = params.dig(:delivery, :reschedule_new_date)).present?
+      @delivery = Deliveries::Rescheduler.new(
+        delivery: @delivery,
+        new_date: safe_date(new_date_str),
+        current_user: current_user,
+        reason: params.dig(:delivery, :reschedule_reason)
+      ).call
+
+      return redirect_to edit_delivery_path(@delivery),
+        notice: "Entrega actualizada y reagendada para el #{@delivery.delivery_date.strftime("%d/%m/%Y")}."
+    end
+
     respond_to do |format|
       format.turbo_stream do
         load_delivery_for_panel
@@ -154,6 +166,11 @@ class DeliveriesController < ApplicationController
     end
   rescue => e
     handle_update_error(e)
+  end
+
+  def reschedule_form
+    authorize @delivery, :edit?
+    render layout: false
   end
 
   def reschedule_all
