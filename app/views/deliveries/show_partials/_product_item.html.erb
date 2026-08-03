@@ -60,6 +60,14 @@
             <span class="small text-success">
               <i class="bi bi-check2-circle me-1"></i>Entregado
             </span>
+            <% if policy(item).undo_delivered? %>
+              <%= button_to undo_delivered_delivery_item_path(item),
+                    method: :patch,
+                    class: "btn btn-xs btn-outline-secondary ms-2",
+                    data: { turbo_stream: true, turbo_confirm: "¿Deshacer la entrega de este producto?" } do %>
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Deshacer
+              <% end %>
+            <% end %>
           <% elsif item.rescheduled? %>
             <span class="small text-warning">
               <i class="bi bi-calendar-x me-1"></i>Reagendado

@@ -2,7 +2,7 @@ class DeliveryItemsController < ApplicationController
   include ActionView::RecordIdentifier
 
   before_action :set_delivery_item, only: [
-    :show, :confirm, :mark_delivered, :reschedule,
+    :show, :confirm, :mark_delivered, :undo_delivered, :reschedule,
     :cancel, :cancel_form, :cancel_to_showroom, :update_notes, :reschedule_form, :note_form
   ]
 
@@ -71,6 +71,22 @@ class DeliveryItemsController < ApplicationController
 
     delivery = @delivery_item.delivery.reload
     respond_with_delivery_update(delivery, notice: "Producto marcado como entregado.")
+  rescue => e
+    handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
+  end
+
+  def undo_delivered
+    authorize @delivery_item, :undo_delivered?
+    raise StandardError, "Este producto no está marcado como entregado." unless @delivery_item.delivered?
+
+    DeliveryItems::StatusUpdater.new(
+      delivery_item: @delivery_item,
+      new_status: :confirmed,
+      current_user: current_user
+    ).call
+
+    delivery = @delivery_item.delivery.reload
+    respond_with_delivery_update(delivery, notice: "Se deshizo la entrega del producto.")
   rescue => e
     handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
   end

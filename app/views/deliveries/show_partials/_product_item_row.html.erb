@@ -98,6 +98,16 @@
               <% end %>
             </li>
           <% end %>
+          <% if item.delivered? && policy(item).undo_delivered? %>
+            <li>
+              <%= button_to undo_delivered_delivery_item_path(item),
+                    method: :patch,
+                    class: "dropdown-item py-2 text-secondary",
+                    data: { turbo_stream: true, turbo_confirm: "¿Deshacer la entrega de este producto?" } do %>
+                <i class="bi bi-arrow-counterclockwise me-2"></i>Deshacer entrega
+              <% end %>
+            </li>
+          <% end %>
           <%# Notas %>
           <% is_terminal = item.delivered? || item.rescheduled? || item.cancelled? %>
           <% unless is_terminal %><li><hr class="dropdown-divider my-1"></li><% end %>

@@ -25,6 +25,10 @@ class DeliveryItemPolicy < ApplicationPolicy
     admin_or_vendor?
   end
 
+  def undo_delivered?
+    user.admin?
+  end
+
   def reschedule?
     admin_or_vendor?
   end

@@ -14,8 +14,9 @@ module DeliveryItems
         delivery_item.update!(status: :pending)
         record_event("item_deconfirmed")
       when :confirmed
+        was_delivered = delivery_item.delivered?
         delivery_item.update!(status: :confirmed)
-        record_event("item_confirmed")
+        record_event(was_delivered ? "item_delivery_undone" : "item_confirmed")
       when :delivered
         delivery_item.mark_as_delivered!
         record_event("item_delivered")

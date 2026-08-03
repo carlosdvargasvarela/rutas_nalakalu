@@ -33,4 +33,38 @@ class DeliveryItemsControllerTest < ActionDispatch::IntegrationTest
     assert_includes existing_target.delivery_items.reload.pluck(:order_item_id), item.order_item_id
     assert_equal 1, Delivery.where(order_id: delivery.order_id, delivery_address_id: delivery.delivery_address_id, delivery_date: new_date).count
   end
+
+  test "admin can undo a delivered item, returning it to confirmed" do
+    item = delivery_items(:one)
+    item.update!(status: :delivered)
+
+    patch undo_delivered_delivery_item_url(item), as: :turbo_stream
+
+    assert_response :success
+    assert_equal "confirmed", item.reload.status
+  end
+
+  test "undo_delivered is rejected for a non-admin user" do
+    seller = users(:two)
+    seller.update!(role: :seller, force_password_change: false)
+    sign_out @admin
+    sign_in seller
+
+    item = delivery_items(:one)
+    item.update!(status: :delivered)
+
+    patch undo_delivered_delivery_item_url(item), as: :turbo_stream
+
+    assert_equal "delivered", item.reload.status
+  end
+
+  test "undo_delivered is rejected when the item is not delivered" do
+    item = delivery_items(:one)
+    item.update!(status: :confirmed)
+
+    patch undo_delivered_delivery_item_url(item), as: :turbo_stream
+
+    assert_response :unprocessable_entity
+    assert_equal "confirmed", item.reload.status
+  end
 end

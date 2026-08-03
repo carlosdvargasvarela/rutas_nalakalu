@@ -152,6 +152,7 @@ Rails.application.routes.draw do
       get :cancel_form
       patch :confirm
       patch :mark_delivered
+      patch :undo_delivered
       patch :reschedule
       patch :cancel
       patch :cancel_to_showroom
