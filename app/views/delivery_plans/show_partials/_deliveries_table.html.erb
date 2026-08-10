@@ -31,6 +31,9 @@
 
                 <td>
                   <%= link_to delivery.order.number, delivery_path(delivery), class: "fw-bold text-decoration-none text-primary" %>
+                  <% if delivery.internal_delivery? && (vendor = delivery.delivery_address&.matching_vendor) %>
+                    <span class="fw-bold text-dark">- <%= vendor.name %></span>
+                  <% end %>
 
                   <%# Nota de la entrega (ej. delivery.delivery_notes) con tooltip como en la vista ejemplo %>
                   <% if delivery.respond_to?(:delivery_notes) && delivery.delivery_notes.present? %>

@@ -67,6 +67,12 @@ class DeliveryAddress < ApplicationRecord
     address_errors(recipient_email: recipient_email).any?
   end
 
+  # Proveedor cuya dirección coincide con esta (usado en mandados internos)
+  def matching_vendor
+    return nil if latitude.blank? || longitude.blank?
+    VendorAddress.find_by(latitude: latitude, longitude: longitude)&.vendor
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[
       address description client_id created_at updated_at latitude longitude

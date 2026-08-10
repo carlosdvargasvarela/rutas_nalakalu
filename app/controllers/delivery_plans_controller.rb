@@ -17,6 +17,9 @@ class DeliveryPlansController < ApplicationController
     @q.sorts = ["first_delivery_date desc"] if @q.sorts.empty?
 
     delivered_status = Delivery.statuses[:delivered]
+    # Igual que en la vista show (visible_assignments): las entregas
+    # canceladas/reagendadas/archivadas no cuentan como paradas del plan.
+    hidden_statuses = Delivery.statuses.values_at(*Delivery::HIDDEN_FROM_ROUTE_MAP_STATUSES).join(",")
 
     base_result = @q.result
       .left_joins(:deliveries)
@@ -24,7 +27,7 @@ class DeliveryPlansController < ApplicationController
         "delivery_plans.*",
         "MIN(deliveries.delivery_date) AS first_delivery_date",
         "MAX(deliveries.delivery_date) AS last_delivery_date",
-        "COUNT(deliveries.id) AS deliveries_count",
+        "COUNT(CASE WHEN deliveries.id IS NOT NULL AND deliveries.status NOT IN (#{hidden_statuses}) THEN 1 END) AS deliveries_count",
         "COUNT(CASE WHEN deliveries.status = #{delivered_status} THEN 1 END) AS delivered_count"
       )
       .group("delivery_plans.id")

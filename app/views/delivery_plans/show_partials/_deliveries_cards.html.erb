@@ -14,6 +14,9 @@
                 <h6 class="fw-bold mb-2">
                   <span class="badge bg-primary">#<%= assignment.stop_order %></span>
                   Pedido: <%= delivery.order.number %>
+                  <% if delivery.internal_delivery? && (vendor = delivery.delivery_address&.matching_vendor) %>
+                    - <%= vendor.name %>
+                  <% end %>
                 </h6>
                 <p><i class="bi bi-person me-1"></i><%= delivery.order.client.name %></p>
                 <p>
