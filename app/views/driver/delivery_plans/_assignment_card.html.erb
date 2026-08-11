@@ -27,6 +27,9 @@
         </div>
         <div style="font-size:.78rem;color:var(--dk-muted);">
           Pedido <strong><%= delivery.order.number %></strong>
+          <% if delivery.internal_delivery? && (vendor = addr&.matching_vendor) %>
+            <strong>- <%= vendor.name %></strong>
+          <% end %>
           · Agente: <%= delivery.order.seller.seller_code %>
         </div>
       </div>
