@@ -115,7 +115,7 @@
     <% end %>
 
     <%# ── Productos ── %>
-    <% items = delivery.items_visible_in_plan %>
+    <% items = delivery.items_visible_in_plan.reject(&:cancelled?) %>
     <% if items.any? %>
       <%# Verificar si algún item tiene notas para destacar la sección %>
       <% items_with_notes = items.select { |i| i.notes.present? || i.order_item.notes.present? } %>

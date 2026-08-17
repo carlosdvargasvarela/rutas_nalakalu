@@ -42,7 +42,10 @@ class DeliveriesController < ApplicationController
     base_scope = base_scope.where.not(status: excluded_statuses) if params[:no_plan].present?
 
     if params[:only_service_cases].present?
-      base_scope = base_scope.service_cases
+      matching_ids = base_scope.includes(delivery_items: :order_item)
+        .select { |delivery| delivery.requires_service_case_action? }
+        .map(&:id)
+      base_scope = base_scope.where(id: matching_ids)
     end
 
     @q = base_scope.ransack(params[:q])
