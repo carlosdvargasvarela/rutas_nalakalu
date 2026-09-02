@@ -18,6 +18,15 @@ class DeliveryPlanTest < ActiveSupport::TestCase
     assert_equal "started", plan.plan_events.last.action
   end
 
+  test "start! rechaza un plan sin paradas" do
+    plan = delivery_plans(:one)
+    plan.update!(status: :routes_created)
+    plan.delivery_plan_assignments.destroy_all
+
+    assert_equal false, plan.start!
+    assert_equal "routes_created", plan.reload.status
+  end
+
   test "finish! records a finished PlanEvent" do
     plan = delivery_plans(:one)
     plan.update!(status: :in_progress)

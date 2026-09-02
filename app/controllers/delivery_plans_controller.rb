@@ -532,7 +532,9 @@ class DeliveryPlansController < ApplicationController
   def send_to_logistics
     @delivery_plan = DeliveryPlan.find(params[:id])
     authorize @delivery_plan
-    if @delivery_plan.driver.present?
+    if @delivery_plan.delivery_plan_assignments.none?
+      redirect_to edit_delivery_plan_path(@delivery_plan), alert: "El plan debe tener al menos una parada antes de enviarlo a logística."
+    elsif @delivery_plan.driver.present?
       @delivery_plan.update!(status: :routes_created)
       redirect_to @delivery_plan, notice: "Plan enviado a logística."
     else

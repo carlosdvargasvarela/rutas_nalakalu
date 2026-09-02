@@ -260,6 +260,7 @@ class DeliveryPlan < ApplicationRecord
 
   def start!
     return if status_in_progress? || status_completed?
+    return false if delivery_plan_assignments.none?
     update!(status: :in_progress)
   end
 
