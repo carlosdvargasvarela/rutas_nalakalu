@@ -201,6 +201,7 @@ module Api
           # que eligible_for_plan_for_others (excluye rescheduled) + cancelled.
           items_json = d.delivery_items.reject { |i| i.rescheduled? || i.cancelled? }.map do |item|
             {
+              id: item.id,
               product: item.product,
               quantity: item.quantity,
               notes: item.notes,
