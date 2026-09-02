@@ -7,7 +7,6 @@ module Api
         def index
           delivered_status = Delivery.statuses[:delivered]
           plans = DeliveryPlan
-            .for_driver(current_user.id)
             .left_joins(:deliveries)
             .select(<<~SQL)
               delivery_plans.*,
@@ -97,7 +96,7 @@ module Api
         private
 
         def set_plan
-          @plan = DeliveryPlan.for_driver(current_user.id).find(params[:id])
+          @plan = DeliveryPlan.find(params[:id])
         rescue ActiveRecord::RecordNotFound
           render json: {error: "Plan no encontrado"}, status: :not_found
         end

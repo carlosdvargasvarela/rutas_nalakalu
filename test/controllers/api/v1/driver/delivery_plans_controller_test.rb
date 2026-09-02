@@ -24,10 +24,12 @@ module Api
           assert_response :unauthorized
         end
 
-        test "index solo devuelve planes del conductor autenticado" do
+        test "index devuelve planes de cualquier conductor, no solo del autenticado" do
+          other_plan = delivery_plans(:one) # sin driver asignado
           get api_v1_driver_delivery_plans_path, headers: auth
           ids = JSON.parse(response.body).map { |p| p["id"] }
           assert_includes ids, @plan.id
+          assert_includes ids, other_plan.id
         end
 
         test "show devuelve plan con assignments y progress" do
@@ -39,10 +41,16 @@ module Api
           assert json.key?("status")
         end
 
-        test "show devuelve 404 para plan de otro conductor" do
+        test "show funciona para un plan sin conductor asignado" do
           other = delivery_plans(:one)
           get api_v1_driver_delivery_plan_path(other), headers: auth
-          assert_response :not_found
+          assert_response :success
+        end
+
+        test "show funciona para un plan asignado a OTRO conductor" do
+          other_driver_auth = {"X-Driver-Token" => "test_driver_token_def456"}
+          get api_v1_driver_delivery_plan_path(@plan), headers: other_driver_auth
+          assert_response :success
         end
 
         test "start transiciona a in_progress" do
