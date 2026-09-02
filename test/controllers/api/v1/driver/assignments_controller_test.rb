@@ -13,6 +13,24 @@ module Api
           {"X-Driver-Token" => "test_driver_token_abc123"}
         end
 
+        test "start marca el assignment como in_route" do
+          @assignment.update!(status: :pending)
+          patch start_api_v1_driver_assignment_path(@assignment), headers: auth
+          assert_response :success
+          json = JSON.parse(response.body)
+          assert json["success"]
+          assert_equal "in_route", json["assignment"]["status"]
+          assert json["assignment"]["started_at"].present?
+          assert_equal "in_route", @assignment.reload.status
+        end
+
+        test "start es idempotente si ya está in_route" do
+          @assignment.update!(status: :in_route, started_at: 1.hour.ago)
+          patch start_api_v1_driver_assignment_path(@assignment), headers: auth
+          assert_response :success
+          assert JSON.parse(response.body)["success"]
+        end
+
         test "complete marca el assignment" do
           @assignment.update!(status: :in_route)
           patch complete_api_v1_driver_assignment_path(@assignment), headers: auth

@@ -382,6 +382,7 @@ Rails.application.routes.draw do
         end
         resources :assignments, only: [] do
           member do
+            patch :start
             patch :complete
             patch :fail
             patch :add_note

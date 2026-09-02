@@ -4,6 +4,11 @@ module Api
       class AssignmentsController < BaseController
         before_action :set_assignment
 
+        def start
+          handle_lock { @assignment.start! }
+          render_ok("Entrega iniciada")
+        end
+
         def complete
           handle_lock { @assignment.complete! }
           render_ok("Entrega completada")
@@ -50,6 +55,7 @@ module Api
             assignment: {
               id: @assignment.id,
               status: @assignment.status,
+              started_at: @assignment.started_at&.iso8601,
               completed_at: @assignment.completed_at&.iso8601,
               driver_notes: @assignment.driver_notes,
               lock_version: @assignment.lock_version
