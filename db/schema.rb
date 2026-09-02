@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_07_20_204124) do
+ActiveRecord::Schema[7.2].define(version: 2026_09_01_180100) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -237,9 +237,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_20_204124) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "recorded_at"
+    t.integer "recorded_by_id"
     t.index ["delivery_plan_id", "captured_at"], name: "index_locations_on_plan_and_captured_at"
     t.index ["delivery_plan_id"], name: "index_delivery_plan_locations_on_delivery_plan_id"
     t.index ["recorded_at"], name: "index_delivery_plan_locations_on_recorded_at"
+    t.index ["recorded_by_id"], name: "index_delivery_plan_locations_on_recorded_by_id"
   end
 
   create_table "delivery_plans", force: :cascade do |t|
@@ -258,7 +260,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_20_204124) do
     t.decimal "current_accuracy", precision: 6, scale: 2
     t.integer "lock_version", default: 0, null: false
     t.integer "load_status", default: 0, null: false
+    t.integer "last_recorded_by_id"
     t.index ["driver_id"], name: "index_delivery_plans_on_driver_id"
+    t.index ["last_recorded_by_id"], name: "index_delivery_plans_on_last_recorded_by_id"
     t.index ["last_seen_at"], name: "index_delivery_plans_on_last_seen_at"
     t.index ["load_status"], name: "index_delivery_plans_on_load_status"
   end
@@ -504,7 +508,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_20_204124) do
   add_foreign_key "delivery_plan_assignments", "deliveries", on_delete: :restrict
   add_foreign_key "delivery_plan_assignments", "delivery_plans", on_delete: :cascade
   add_foreign_key "delivery_plan_locations", "delivery_plans"
+  add_foreign_key "delivery_plan_locations", "users", column: "recorded_by_id"
   add_foreign_key "delivery_plans", "users", column: "driver_id"
+  add_foreign_key "delivery_plans", "users", column: "last_recorded_by_id"
   add_foreign_key "maintenance_windows", "users", column: "activated_by_id"
   add_foreign_key "notifications", "users"
   add_foreign_key "order_contacts", "orders"

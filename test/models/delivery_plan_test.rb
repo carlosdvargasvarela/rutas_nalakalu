@@ -112,4 +112,11 @@ class DeliveryPlanTest < ActiveSupport::TestCase
     assert_operator PaperTrail::Version.where(item_type: "DeliveryPlan", item_id: plan.id).count, :>, versions_before
     assert_equal "routes_created", plan.plan_events.last.action
   end
+
+  test "belongs to last_recorded_by, optional" do
+    plan = delivery_plans(:one)
+    plan.update!(last_recorded_by: users(:two))
+
+    assert_equal users(:two), plan.reload.last_recorded_by
+  end
 end

@@ -1,6 +1,7 @@
 # app/models/delivery_plan_location.rb
 class DeliveryPlanLocation < ApplicationRecord
   belongs_to :delivery_plan
+  belongs_to :recorded_by, class_name: "User", optional: true
 
   validates :latitude, :longitude, :captured_at, presence: true
   validates :latitude, numericality: {greater_than_or_equal_to: -90, less_than_or_equal_to: 90}
