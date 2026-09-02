@@ -146,6 +146,51 @@ module Api
           assert_nil json["active_tracker"]
         end
 
+        test "show incluye productos, contactos, condominio/casa, vendedor y tracking_url" do
+          seller = Seller.create!(name: "Vendedor Test", seller_code: "V-01", user: @driver)
+          client = Client.create!(name: "Cliente Test")
+          order = Order.create!(client: client, seller: seller, number: "ORD-TEST-1")
+          order.order_contacts.create!(name: "Ana Pérez", phone: "8888-0000", is_primary: true)
+          order_item = OrderItem.create!(order: order, product: "Sofá 3 plazas", quantity: 2, notes: "Nota del pedido")
+          address = DeliveryAddress.create!(client: client, address: "San José, Costa Rica", latitude: 9.93, longitude: -84.08)
+          delivery = Delivery.create!(
+            order: order,
+            delivery_address: address,
+            delivery_date: Date.current,
+            condominio_number: "B-12",
+            casa_number: "45"
+          )
+          DeliveryItem.create!(delivery: delivery, order_item: order_item, quantity_delivered: 2, notes: "Cuidado, frágil", status: :pending)
+          assignment = @plan.delivery_plan_assignments.create!(delivery: delivery, stop_order: 1)
+
+          get api_v1_driver_delivery_plan_path(@plan), headers: auth
+          assert_response :success
+
+          stop = JSON.parse(response.body)["assignments"].find { |x| x["id"] == assignment.id }["delivery"]
+          assert_equal "V-01", stop["seller_code"]
+          assert_equal "B-12", stop["condominio_number"]
+          assert_equal "45", stop["casa_number"]
+          assert stop["tracking_url"].present?
+          assert_equal [{"name" => "Ana Pérez", "phone" => "8888-0000", "is_primary" => true}], stop["contacts"]
+          assert_equal 1, stop["items"].size
+          item = stop["items"].first
+          assert_equal "Sofá 3 plazas", item["product"]
+          assert_equal 2, item["quantity"]
+          assert_equal "Cuidado, frágil", item["notes"]
+          assert_equal "Nota del pedido", item["order_item_notes"]
+        end
+
+        test "show incluye crew del conductor asignado al plan" do
+          @plan.driver.crew_members.destroy_all
+          @plan.driver.crew_members.create!(name: "Carlos Ayudante", id_number: "1-2222-3333")
+
+          get api_v1_driver_delivery_plan_path(@plan), headers: auth
+          assert_response :success
+
+          crew = JSON.parse(response.body)["crew"]
+          assert_equal [{"name" => "Carlos Ayudante", "id_number" => "1-2222-3333"}], crew
+        end
+
         test "claim_tracking toma el plan para el usuario actual" do
           @plan.update_columns(last_recorded_by_id: users(:two).id, last_seen_at: 1.minute.ago)
 

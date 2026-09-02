@@ -43,6 +43,11 @@ Rails.application.configure do
 
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
 
+  # Delivery#public_tracking_url builds a full URL via Rails.application.routes.url_helpers
+  # (no request context), same reason mailers need default_url_options above.
+  Rails.application.routes.default_url_options[:host] = "localhost"
+  Rails.application.routes.default_url_options[:port] = 3000
+
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 

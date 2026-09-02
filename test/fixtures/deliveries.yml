@@ -8,6 +8,7 @@ one:
   contact_phone: MyString
   contact_id: MyString
   status: 1
+  tracking_token: fixture_tracking_token_one
 
 two:
   order: two
@@ -17,3 +18,4 @@ two:
   contact_phone: MyString
   contact_id: MyString
   status: 1
+  tracking_token: fixture_tracking_token_two

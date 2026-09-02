@@ -24,7 +24,11 @@ module Api
 
         def show
           assignments = @plan.delivery_plan_assignments
-            .includes(delivery: [:delivery_address, {order: [:client]}])
+            .includes(delivery: [
+              :delivery_address,
+              {order: [:client, :seller, :order_contacts]},
+              {delivery_items: :order_item}
+            ])
             .order(:stop_order)
 
           render json: serialize_detail(@plan, assignments)
@@ -166,6 +170,7 @@ module Api
             last_seen_at: plan.last_seen_at&.iso8601,
             progress: plan.progress,
             active_tracker: active_tracker_for(plan),
+            crew: plan.driver&.crew_members.to_a.map { |cm| {name: cm.name, id_number: cm.id_number} } || [],
             assignments: assignments.map { |a| serialize_assignment(a) }
           }
         end
@@ -173,6 +178,23 @@ module Api
         def serialize_assignment(a)
           d = a.delivery
           addr = d.delivery_address
+          order = d.order
+          contacts = order&.order_contacts.to_a.sort_by { |c| c.is_primary? ? 0 : 1 }
+          contacts_json = if contacts.any?
+            contacts.map { |c| {name: c.name, phone: c.phone, is_primary: c.is_primary?} }
+          else
+            [{name: d.contact_name, phone: d.contact_phone, is_primary: true}].select { |c| c[:name].present? || c[:phone].present? }
+          end
+
+          items_json = d.items_visible_in_plan.reject(&:cancelled?).map do |item|
+            {
+              product: item.product,
+              quantity: item.quantity,
+              notes: item.notes,
+              order_item_notes: item.order_item.notes
+            }
+          end
+
           {
             id: a.id,
             stop_order: a.stop_order,
@@ -184,13 +206,20 @@ module Api
             lock_version: a.lock_version,
             delivery: {
               id: d.id,
-              order_number: d.order&.number,
-              client_name: d.order&.client&.name,
+              order_number: order&.number,
+              client_name: order&.client&.name,
+              seller_code: order&.seller&.seller_code,
+              vendor_name: (d.internal_delivery? ? addr&.matching_vendor&.name : nil),
               contact_name: d.contact_name,
               contact_phone: d.contact_phone,
+              contacts: contacts_json,
               delivery_notes: d.delivery_notes,
               delivery_date: d.delivery_date&.iso8601,
               delivery_time_preference: d.delivery_time_preference,
+              condominio_number: d.condominio_number,
+              casa_number: d.casa_number,
+              tracking_url: d.public_tracking_url,
+              items: items_json,
               address: addr ? {
                 text: addr.address,
                 description: addr.description,
