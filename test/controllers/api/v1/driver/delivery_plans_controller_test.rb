@@ -145,6 +145,18 @@ module Api
 
           assert_nil json["active_tracker"]
         end
+
+        test "claim_tracking toma el plan para el usuario actual" do
+          @plan.update_columns(last_recorded_by_id: users(:two).id, last_seen_at: 1.minute.ago)
+
+          patch claim_tracking_api_v1_driver_delivery_plan_path(@plan), headers: auth
+
+          assert_response :success
+          json = JSON.parse(response.body)
+          assert json["ok"]
+          assert_nil json["active_tracker"]
+          assert_equal @driver.id, @plan.reload.last_recorded_by_id
+        end
       end
     end
   end

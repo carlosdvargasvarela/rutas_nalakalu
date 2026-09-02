@@ -4,7 +4,7 @@ module Api
       class DeliveryPlansController < BaseController
         ACTIVE_TRACKER_WINDOW = 5.minutes
 
-        before_action :set_plan, only: [:show, :start, :finish, :abort, :update_position_batch]
+        before_action :set_plan, only: [:show, :start, :finish, :abort, :update_position_batch, :claim_tracking]
 
         def index
           delivered_status = Delivery.statuses[:delivered]
@@ -56,6 +56,13 @@ module Api
           else
             render json: {ok: false, error: "No se pudo abortar el plan"}, status: :unprocessable_entity
           end
+        rescue ActiveRecord::StaleObjectError
+          render json: {ok: false, error: "El plan fue modificado, recarga"}, status: :conflict
+        end
+
+        def claim_tracking
+          @plan.update!(last_recorded_by_id: current_user.id)
+          render json: {ok: true, active_tracker: nil}
         rescue ActiveRecord::StaleObjectError
           render json: {ok: false, error: "El plan fue modificado, recarga"}, status: :conflict
         end

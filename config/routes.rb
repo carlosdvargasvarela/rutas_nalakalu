@@ -377,6 +377,7 @@ Rails.application.routes.draw do
             patch :finish
             patch :abort
             post  :update_position_batch
+            patch :claim_tracking
           end
         end
         resources :assignments, only: [] do
