@@ -80,6 +80,71 @@ module Api
           @plan.reload
           assert_in_delta 9.9341, @plan.current_lat, 0.001
         end
+
+        test "update_position_batch rechaza con 409 si otro conductor está activo" do
+          @plan.update_columns(last_recorded_by_id: users(:two).id, last_seen_at: 1.minute.ago)
+
+          positions = [{latitude: 9.9341, longitude: -84.0875, accuracy: 5.0, timestamp: Time.current.iso8601}]
+          post update_position_batch_api_v1_driver_delivery_plan_path(@plan),
+               params: {positions: positions},
+               headers: auth
+
+          assert_response :conflict
+          json = JSON.parse(response.body)
+          assert_equal "otro_conductor_activo", json["error"]
+          assert_equal "User Two", json["active_driver_name"]
+        end
+
+        test "update_position_batch acepta si el conductor activo lleva más de 5 minutos sin reportar" do
+          @plan.update_columns(last_recorded_by_id: users(:two).id, last_seen_at: 6.minutes.ago)
+
+          positions = [{latitude: 9.9341, longitude: -84.0875, accuracy: 5.0, timestamp: Time.current.iso8601}]
+          post update_position_batch_api_v1_driver_delivery_plan_path(@plan),
+               params: {positions: positions},
+               headers: auth
+
+          assert_response :success
+          assert_equal @driver.id, @plan.reload.last_recorded_by_id
+        end
+
+        test "update_position_batch acepta si el que manda ya es la fuente activa" do
+          @plan.update_columns(last_recorded_by_id: @driver.id, last_seen_at: 1.minute.ago)
+
+          positions = [{latitude: 9.9341, longitude: -84.0875, accuracy: 5.0, timestamp: Time.current.iso8601}]
+          post update_position_batch_api_v1_driver_delivery_plan_path(@plan),
+               params: {positions: positions},
+               headers: auth
+
+          assert_response :success
+        end
+
+        test "update_position_batch marca recorded_by_id en la ubicación guardada" do
+          positions = [{latitude: 9.9341, longitude: -84.0875, accuracy: 5.0, timestamp: Time.current.iso8601}]
+          post update_position_batch_api_v1_driver_delivery_plan_path(@plan),
+               params: {positions: positions},
+               headers: auth
+
+          assert_response :success
+          assert_equal @driver.id, @plan.delivery_plan_locations.last.recorded_by_id
+        end
+
+        test "index expone active_tracker cuando otro conductor está activo" do
+          @plan.update_columns(last_recorded_by_id: users(:two).id, last_seen_at: 1.minute.ago)
+
+          get api_v1_driver_delivery_plans_path, headers: auth
+          json = JSON.parse(response.body).find { |p| p["id"] == @plan.id }
+
+          assert_equal({"name" => "User Two"}, json["active_tracker"])
+        end
+
+        test "index no expone active_tracker para el propio usuario activo" do
+          @plan.update_columns(last_recorded_by_id: @driver.id, last_seen_at: 1.minute.ago)
+
+          get api_v1_driver_delivery_plans_path, headers: auth
+          json = JSON.parse(response.body).find { |p| p["id"] == @plan.id }
+
+          assert_nil json["active_tracker"]
+        end
       end
     end
   end

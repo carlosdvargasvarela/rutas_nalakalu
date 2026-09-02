@@ -2,6 +2,8 @@ module Api
   module V1
     module Driver
       class DeliveryPlansController < BaseController
+        ACTIVE_TRACKER_WINDOW = 5.minutes
+
         before_action :set_plan, only: [:show, :start, :finish, :abort, :update_position_batch]
 
         def index
@@ -59,18 +61,26 @@ module Api
         end
 
         def update_position_batch
+          if active_tracker_blocking?
+            return render json: {
+              error: "otro_conductor_activo",
+              active_driver_name: @plan.last_recorded_by.name
+            }, status: :conflict
+          end
+
           positions = params[:positions] || []
           saved_count = 0
 
           positions.each do |pos|
             loc = @plan.delivery_plan_locations.create(
-              latitude:    pos[:latitude],
-              longitude:   pos[:longitude],
-              accuracy:    pos[:accuracy],
-              speed:       pos[:speed],
-              heading:     pos[:heading],
-              captured_at: pos[:timestamp] || Time.current,
-              source:      "batch"
+              latitude:       pos[:latitude],
+              longitude:      pos[:longitude],
+              accuracy:       pos[:accuracy],
+              speed:          pos[:speed],
+              heading:        pos[:heading],
+              captured_at:    pos[:timestamp] || Time.current,
+              source:         "batch",
+              recorded_by_id: current_user.id
             )
             saved_count += 1 if loc.persisted?
           end
@@ -78,15 +88,17 @@ module Api
           if positions.any?
             last = positions.last
             @plan.update_columns(
-              current_lat: last[:latitude]&.to_f,
-              current_lng: last[:longitude]&.to_f,
-              last_seen_at: Time.current
+              current_lat:         last[:latitude]&.to_f,
+              current_lng:         last[:longitude]&.to_f,
+              last_seen_at:        Time.current,
+              last_recorded_by_id: current_user.id
             )
             DeliveryPlanChannel.broadcast_to(@plan, {
               type: "position_update",
               current_lat: @plan.current_lat,
               current_lng: @plan.current_lng,
-              last_seen_at: @plan.last_seen_at
+              last_seen_at: @plan.last_seen_at,
+              recorded_by_name: current_user.name
             })
           end
 
@@ -101,6 +113,23 @@ module Api
           render json: {error: "Plan no encontrado"}, status: :not_found
         end
 
+        def active_tracker_blocking?
+          return false if @plan.last_recorded_by_id.blank?
+          return false if @plan.last_recorded_by_id == current_user.id
+          return false if @plan.last_seen_at.blank?
+
+          @plan.last_seen_at > ACTIVE_TRACKER_WINDOW.ago
+        end
+
+        def active_tracker_for(plan)
+          return nil if plan.last_recorded_by_id.blank?
+          return nil if plan.last_recorded_by_id == current_user.id
+          return nil if plan.last_seen_at.blank?
+          return nil unless plan.last_seen_at > ACTIVE_TRACKER_WINDOW.ago
+
+          {name: plan.last_recorded_by.name}
+        end
+
         def serialize_summary(plan)
           {
             id: plan.id,
@@ -112,7 +141,8 @@ module Api
             deliveries_count: plan.deliveries_count.to_i,
             delivered_count: plan.delivered_count.to_i,
             first_delivery_date: plan.attributes["first_delivery_date_val"]&.to_s,
-            updated_at: plan.updated_at.iso8601
+            updated_at: plan.updated_at.iso8601,
+            active_tracker: active_tracker_for(plan)
           }
         end
 
@@ -128,6 +158,7 @@ module Api
             current_lng: plan.current_lng,
             last_seen_at: plan.last_seen_at&.iso8601,
             progress: plan.progress,
+            active_tracker: active_tracker_for(plan),
             assignments: assignments.map { |a| serialize_assignment(a) }
           }
         end
