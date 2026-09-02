@@ -54,3 +54,6 @@
 
 # Knowledge graph generado por graphify
 graphify-out/
+
+# Git worktrees usados para trabajo aislado
+/.worktrees/
