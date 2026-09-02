@@ -105,10 +105,10 @@
                   </li>
                   <li><hr class="dropdown-divider my-1"></li>
                   <li>
-                    <%= link_to plan,
+                    <%= button_to plan,
                           method: :delete,
                           class: "dropdown-item text-danger",
-                          data: { confirm: "¿Eliminar este plan?", turbo_method: :delete } do %>
+                          form: { data: { turbo_confirm: "¿Eliminar este plan?" } } do %>
                       <i class="bi bi-trash me-2"></i>Eliminar
                     <% end %>
                   </li>
