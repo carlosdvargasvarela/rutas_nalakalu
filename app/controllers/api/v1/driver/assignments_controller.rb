@@ -29,10 +29,7 @@ module Api
         private
 
         def set_assignment
-          driver_plan_ids = DeliveryPlan.for_driver(current_user.id).pluck(:id)
-          @assignment = DeliveryPlanAssignment
-            .where(delivery_plan_id: driver_plan_ids)
-            .find(params[:id])
+          @assignment = DeliveryPlanAssignment.find(params[:id])
         rescue ActiveRecord::RecordNotFound
           render json: {error: "Parada no encontrada"}, status: :not_found
         end

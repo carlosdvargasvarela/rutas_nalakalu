@@ -26,10 +26,20 @@ module Api
 
         test "index devuelve planes de cualquier conductor, no solo del autenticado" do
           other_plan = delivery_plans(:one) # sin driver asignado
+          other_plan.update!(status: :routes_created)
           get api_v1_driver_delivery_plans_path, headers: auth
           ids = JSON.parse(response.body).map { |p| p["id"] }
           assert_includes ids, @plan.id
           assert_includes ids, other_plan.id
+        end
+
+        test "index excluye planes completed, aborted o draft" do
+          completed = delivery_plans(:one)
+          completed.update_columns(status: DeliveryPlan.statuses[:completed])
+
+          get api_v1_driver_delivery_plans_path, headers: auth
+          ids = JSON.parse(response.body).map { |p| p["id"] }
+          assert_not_includes ids, completed.id
         end
 
         test "show devuelve plan con assignments y progress" do
@@ -189,6 +199,32 @@ module Api
 
           crew = JSON.parse(response.body)["crew"]
           assert_equal [{"name" => "Carlos Ayudante", "id_number" => "1-2222-3333"}], crew
+        end
+
+        test "show devuelve tracking_url nulo en vez de 500 si el delivery no tiene tracking_token" do
+          client = Client.create!(name: "Cliente Sin Token")
+          seller = Seller.create!(name: "Vendedor Sin Token", seller_code: "V-02", user: @driver)
+          order = Order.create!(client: client, seller: seller, number: "ORD-TEST-2")
+          address = DeliveryAddress.create!(client: client, address: "Heredia, Costa Rica", latitude: 10.0, longitude: -84.1)
+          delivery = Delivery.create!(order: order, delivery_address: address, delivery_date: Date.current)
+          delivery.update_column(:tracking_token, nil)
+          assignment = @plan.delivery_plan_assignments.create!(delivery: delivery, stop_order: 2)
+
+          get api_v1_driver_delivery_plan_path(@plan), headers: auth
+          assert_response :success
+
+          stop = JSON.parse(response.body)["assignments"].find { |x| x["id"] == assignment.id }["delivery"]
+          assert_nil stop["tracking_url"]
+        end
+
+        test "claim_tracking requiere token" do
+          patch claim_tracking_api_v1_driver_delivery_plan_path(@plan)
+          assert_response :unauthorized
+        end
+
+        test "update_position_batch requiere token" do
+          post update_position_batch_api_v1_driver_delivery_plan_path(@plan), params: {positions: []}
+          assert_response :unauthorized
         end
 
         test "claim_tracking toma el plan para el usuario actual" do

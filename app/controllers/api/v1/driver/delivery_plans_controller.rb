@@ -9,6 +9,8 @@ module Api
         def index
           delivered_status = Delivery.statuses[:delivered]
           plans = DeliveryPlan
+            .active
+            .preload(:last_recorded_by)
             .left_joins(:deliveries)
             .select(<<~SQL)
               delivery_plans.*,
@@ -72,16 +74,37 @@ module Api
         end
 
         def update_position_batch
-          if active_tracker_blocking?
-            return render json: {
-              error: "otro_conductor_activo",
-              active_driver_name: @plan.last_recorded_by.name
-            }, status: :conflict
+          positions = params[:positions] || []
+
+          if positions.any?
+            last = positions.last
+            # Check-and-claim en una sola sentencia UPDATE atómica: evita el TOCTOU
+            # entre "¿puedo escribir?" y "escribo" que permitía a un batch en vuelo
+            # revertir silenciosamente un claim_tracking concurrente (bypaseaba el
+            # optimistic locking porque esto usa update_all, no update!).
+            updated = DeliveryPlan
+              .where(id: @plan.id)
+              .where(
+                "last_recorded_by_id IS NULL OR last_recorded_by_id = ? OR last_seen_at IS NULL OR last_seen_at <= ?",
+                current_user.id, ACTIVE_TRACKER_WINDOW.ago
+              )
+              .update_all(
+                current_lat:         last[:latitude]&.to_f,
+                current_lng:         last[:longitude]&.to_f,
+                last_seen_at:        Time.current,
+                last_recorded_by_id: current_user.id
+              )
+
+            if updated.zero?
+              @plan.reload
+              return render json: {
+                error: "otro_conductor_activo",
+                active_driver_name: @plan.last_recorded_by.name
+              }, status: :conflict
+            end
           end
 
-          positions = params[:positions] || []
           saved_count = 0
-
           positions.each do |pos|
             loc = @plan.delivery_plan_locations.create(
               latitude:       pos[:latitude],
@@ -97,13 +120,7 @@ module Api
           end
 
           if positions.any?
-            last = positions.last
-            @plan.update_columns(
-              current_lat:         last[:latitude]&.to_f,
-              current_lng:         last[:longitude]&.to_f,
-              last_seen_at:        Time.current,
-              last_recorded_by_id: current_user.id
-            )
+            @plan.reload
             DeliveryPlanChannel.broadcast_to(@plan, {
               type: "position_update",
               current_lat: @plan.current_lat,
@@ -122,14 +139,6 @@ module Api
           @plan = DeliveryPlan.find(params[:id])
         rescue ActiveRecord::RecordNotFound
           render json: {error: "Plan no encontrado"}, status: :not_found
-        end
-
-        def active_tracker_blocking?
-          return false if @plan.last_recorded_by_id.blank?
-          return false if @plan.last_recorded_by_id == current_user.id
-          return false if @plan.last_seen_at.blank?
-
-          @plan.last_seen_at > ACTIVE_TRACKER_WINDOW.ago
         end
 
         def active_tracker_for(plan)
@@ -186,7 +195,11 @@ module Api
             [{name: d.contact_name, phone: d.contact_phone, is_primary: true}].select { |c| c[:name].present? || c[:phone].present? }
           end
 
-          items_json = d.items_visible_in_plan.reject(&:cancelled?).map do |item|
+          # d.items_visible_in_plan usa .merge, que devuelve una relación nueva sin
+          # el preload de `show` — filtramos en Ruby sobre la asociación YA cargada
+          # (delivery_items) para no disparar una query por delivery. Mismo filtro
+          # que eligible_for_plan_for_others (excluye rescheduled) + cancelled.
+          items_json = d.delivery_items.reject { |i| i.rescheduled? || i.cancelled? }.map do |item|
             {
               product: item.product,
               quantity: item.quantity,

@@ -49,10 +49,30 @@ module Api
           assert_response :unauthorized
         end
 
-        test "rechaza assignment de otro conductor" do
-          other = delivery_plan_assignments(:one)
-          patch complete_api_v1_driver_assignment_path(other), headers: auth
+        test "rechaza assignment inexistente" do
+          patch complete_api_v1_driver_assignment_path(id: 0), headers: auth
           assert_response :not_found
+        end
+
+        test "un conductor con OTRO token puede completar/fallar/anotar un assignment de un plan que no es suyo por driver_id" do
+          other_driver_auth = {"X-Driver-Token" => "test_driver_token_def456"}
+          @assignment.update!(status: :in_route)
+
+          patch complete_api_v1_driver_assignment_path(@assignment), headers: other_driver_auth
+          assert_response :success
+          assert JSON.parse(response.body)["success"]
+
+          @assignment.update!(status: :in_route)
+          patch fail_api_v1_driver_assignment_path(@assignment),
+                params: {reason: "Cliente no estaba"},
+                headers: other_driver_auth
+          assert_response :success
+
+          patch add_note_api_v1_driver_assignment_path(@assignment),
+                params: {note: "Sin elevador"},
+                headers: other_driver_auth
+          assert_response :success
+          assert @assignment.reload.driver_notes.include?("Sin elevador")
         end
       end
     end

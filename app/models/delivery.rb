@@ -28,6 +28,7 @@ class Delivery < ApplicationRecord
   end
 
   def public_tracking_url
+    return nil if tracking_token.blank?
     Rails.application.routes.url_helpers.public_tracking_url(token: tracking_token)
   end
 
