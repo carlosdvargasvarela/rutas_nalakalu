@@ -28,6 +28,7 @@ export default class extends Controller {
         if (data.type === "position_update") {
           this.updateDriverPosition(data.current_lat, data.current_lng);
           this.updateLastSeenTime(data.last_seen_at);
+          this.updateRecordedBy(data.recorded_by_name);
         }
       },
     );
@@ -348,6 +349,13 @@ export default class extends Controller {
     const adminUpdate = document.getElementById("admin-last-update");
     if (adminUpdate) {
       adminUpdate.textContent = timeText;
+    }
+  }
+
+  updateRecordedBy(name) {
+    const element = document.getElementById("admin-recorded-by");
+    if (element) {
+      element.textContent = name || "Nadie";
     }
   }
 
