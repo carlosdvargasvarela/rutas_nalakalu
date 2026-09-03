@@ -1,0 +1,24 @@
+<% visible = assignments.reject { |a| a.delivery.hidden_from_route_map? } %>
+<div id="delivery_progress">
+  <%# ── Progreso de entregas ── %>
+  <% total = visible.size %>
+  <% if total > 0 %>
+    <% completed = visible.count { |a| a.status.to_s == "completed" } %>
+    <% pct = (completed * 100.0 / total).round %>
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <span class="text-muted small fw-semibold text-uppercase">Progreso</span>
+      <div class="progress flex-grow-1" style="height:8px; border-radius:4px;">
+        <div class="progress-bar bg-success" style="width:<%= pct %>%" role="progressbar"
+             aria-valuenow="<%= pct %>" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
+      <span class="small fw-bold text-nowrap"><%= completed %>/<%= total %> entregadas</span>
+    </div>
+  <% end %>
+
+  <%# ── Tabla de entregas (desktop) ── %>
+  <%= render "delivery_plans/show_partials/deliveries_table",
+        delivery_plan: delivery_plan %>
+  <%# ── Cards de entregas (móvil) ── %>
+  <%= render "delivery_plans/show_partials/deliveries_cards",
+        delivery_plan: delivery_plan %>
+</div>
