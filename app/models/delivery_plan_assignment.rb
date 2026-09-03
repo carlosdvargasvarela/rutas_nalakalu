@@ -14,6 +14,7 @@ class DeliveryPlanAssignment < ApplicationRecord
   after_create :record_stop_added
   after_destroy :revert_statuses
   after_destroy :record_stop_removed
+  after_update_commit :broadcast_progress_update, if: :saved_change_to_status?
 
   # Validaciones
   validates :stop_order, numericality: {only_integer: true, allow_nil: true}
@@ -185,5 +186,14 @@ class DeliveryPlanAssignment < ApplicationRecord
     "Pedido #{delivery.order_number} — #{delivery.delivery_address&.address}"
   rescue StandardError
     "Entrega ##{delivery_id}"
+  end
+
+  def broadcast_progress_update
+    delivery_plan.broadcast_replace_to(
+      delivery_plan,
+      target: "delivery_progress",
+      partial: "delivery_plans/show_partials/progress_section",
+      locals: {delivery_plan: delivery_plan, assignments: delivery_plan.delivery_plan_assignments.includes(:delivery)}
+    )
   end
 end

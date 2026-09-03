@@ -1,4 +1,5 @@
 <% visible_assignments = @assignments.reject { |a| a.delivery.hidden_from_route_map? } %>
+<%= turbo_stream_from @delivery_plan %>
 <div class="container-fluid py-4">
   <%= render "delivery_plans/show_partials/alerts", delivery_plan: @delivery_plan %>
   <%= render "delivery_plans/show_partials/header",
@@ -43,27 +44,9 @@
     })
   </script>
 
-  <%# ── Progreso de entregas ── %>
-  <% total = visible_assignments.size %>
-  <% if total > 0 %>
-    <% completed = visible_assignments.count { |a| a.status.to_s == "completed" } %>
-    <% pct = (completed * 100.0 / total).round %>
-    <div class="d-flex align-items-center gap-3 mb-3">
-      <span class="text-muted small fw-semibold text-uppercase">Progreso</span>
-      <div class="progress flex-grow-1" style="height:8px; border-radius:4px;">
-        <div class="progress-bar bg-success" style="width:<%= pct %>%" role="progressbar"
-             aria-valuenow="<%= pct %>" aria-valuemin="0" aria-valuemax="100"></div>
-      </div>
-      <span class="small fw-bold text-nowrap"><%= completed %>/<%= total %> entregadas</span>
-    </div>
-  <% end %>
-
-  <%# ── Tabla de entregas (desktop) ── %>
-  <%= render "delivery_plans/show_partials/deliveries_table",
-        delivery_plan: @delivery_plan %>
-  <%# ── Cards de entregas (móvil) ── %>
-  <%= render "delivery_plans/show_partials/deliveries_cards",
-        delivery_plan: @delivery_plan %>
+  <%= render "delivery_plans/show_partials/progress_section",
+        delivery_plan: @delivery_plan,
+        assignments: @assignments %>
 
   <div class="mt-4">
     <%= render "delivery_plans/show_partials/back_button" %>
