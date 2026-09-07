@@ -12,6 +12,26 @@ class ReportsController < ApplicationController
       .where.not(status: %w[cancelled archived])
       .order("clients.name ASC, deliveries.delivery_date ASC")
 
+    seller_ids = Array(params[:seller_id]).reject(&:blank?)
+    @deliveries = @deliveries.where(orders: {seller_id: seller_ids}) if seller_ids.present?
+
+    statuses = Array(params[:status]).reject(&:blank?)
+    @deliveries = @deliveries.where(status: statuses) if statuses.present?
+
+    if params[:only_service_cases].present?
+      matching_ids = @deliveries.includes(delivery_items: :order_item)
+        .select { |delivery| delivery.requires_service_case_action? }
+        .map(&:id)
+      @deliveries = @deliveries.where(id: matching_ids)
+    end
+
+    if params[:only_repair_services].present?
+      matching_ids = @deliveries.includes(delivery_items: :order_item)
+        .select { |delivery| delivery.requires_repair_service_action? }
+        .map(&:id)
+      @deliveries = @deliveries.where(id: matching_ids)
+    end
+
     respond_to do |format|
       format.html
 

@@ -9,15 +9,31 @@
   <%= form_with url: report_deliveries_by_client_path, method: :get, local: true, class: "card shadow-sm mb-4" do |f| %>
     <div class="card-body">
       <div class="row g-3 align-items-end">
-        <div class="col-sm-4">
+        <div class="col-sm-3">
           <%= f.label :from, "Desde", class: "form-label small fw-semibold" %>
           <%= f.date_field :from, value: @from, class: "form-control" %>
         </div>
-        <div class="col-sm-4">
+        <div class="col-sm-3">
           <%= f.label :to, "Hasta", class: "form-label small fw-semibold" %>
           <%= f.date_field :to, value: @to, class: "form-control" %>
         </div>
-        <div class="col-sm-4">
+        <div class="col-sm-3 d-flex gap-3 align-items-center">
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="only_service_cases" value="1"
+                   id="filter_service_report" <%= "checked" if params[:only_service_cases].present? %>>
+            <label class="form-check-label small" for="filter_service_report">
+              <i class="bi bi-tools text-info me-1"></i>Servicio
+            </label>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="only_repair_services" value="1"
+                   id="filter_repair_report" <%= "checked" if params[:only_repair_services].present? %>>
+            <label class="form-check-label small" for="filter_repair_report">
+              <i class="bi bi-wrench text-info me-1"></i>Reparación
+            </label>
+          </div>
+        </div>
+        <div class="col-sm-3">
           <%= f.submit "Filtrar", class: "btn btn-primary w-100" %>
         </div>
       </div>
@@ -27,12 +43,18 @@
   <%# Descarga %>
   <% if @deliveries.any? %>
     <div class="d-flex gap-2 mb-3">
-      <%= link_to report_deliveries_by_client_path(from: @from, to: @to, format: :xlsx),
-            class: "btn btn-success" do %>
+      <%= link_to report_deliveries_by_client_path(
+            from: @from, to: @to, format: :xlsx,
+            only_service_cases: params[:only_service_cases],
+            only_repair_services: params[:only_repair_services]
+          ), class: "btn btn-success" do %>
         <i class="bi bi-file-earmark-excel me-1"></i>Descargar Excel
       <% end %>
-      <%= link_to report_deliveries_by_client_path(from: @from, to: @to, format: :pdf),
-            class: "btn btn-danger" do %>
+      <%= link_to report_deliveries_by_client_path(
+            from: @from, to: @to, format: :pdf,
+            only_service_cases: params[:only_service_cases],
+            only_repair_services: params[:only_repair_services]
+          ), class: "btn btn-danger" do %>
         <i class="bi bi-file-earmark-pdf me-1"></i>Descargar PDF
       <% end %>
     </div>
