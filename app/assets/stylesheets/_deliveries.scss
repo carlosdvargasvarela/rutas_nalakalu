@@ -219,3 +219,63 @@
   position: relative;
   z-index: 1000;
 }
+
+// ── Timeline de eventos de entrega (_delivery_timeline.html.erb) ──
+.delivery-timeline { position: relative; }
+.dt-item {
+  position: relative;
+  padding-left: 44px;
+  padding-bottom: 20px;
+}
+.dt-item::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 30px;
+  bottom: -4px;
+  width: 2px;
+  background: #e6e0da;
+}
+.dt-item-last::before { display: none; }
+.dt-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #e6e0da;
+  flex-shrink: 0;
+}
+.dt-body {
+  background: #fff;
+  border: 1px solid #e6e0da;
+  border-radius: 8px;
+  padding: 10px 12px;
+  transition: box-shadow 0.15s ease;
+}
+.dt-body:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+
+// ── Badge de evento cruzado / fallback de contexto (_delivery_timeline.html.erb) ──
+.dt-context-badge { background-color: #fff7ee; border-color: #c49d90 !important; }
+.dt-badge-fallback {
+  color: #3d342c;
+  border-color: #c49d90;
+}
+
+// ── Bordes de mapa (map placeholder / mapa interactivo) ──
+.map-placeholder { background: #fff7ee; }
+.delivery-map-frame { border: 1px solid #e6e0da; }
+.list-panel-bg { background-color: #fff7ee; }
+
+// ── Categoría "Bodegaje" (warehousing) ──
+.warehousing-accent { border-color: #3d342c !important; }
+.warehousing-badge   { background-color: #ece7e3; color: #3d342c; border: 1px solid #c49d90; }
+.warehousing-header  { background-color: #3d342c; }
+
+// ── Layout público de tracking (layouts/public.html.erb) ──
+body.public-tracking-layout { background: #fff7ee; }
+#public-map { height: 400px; width: 100%; border-radius: 12px; }

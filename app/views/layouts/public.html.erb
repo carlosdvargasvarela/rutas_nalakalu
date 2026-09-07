@@ -8,12 +8,8 @@
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
     <script src="https://maps.googleapis.com/maps/api/js?key=<%= ENV['GOOGLE_MAPS_API_KEY'] %>&libraries=places"></script>
-    <style>
-      body { background: #f8f9fa; }
-      #public-map { height: 400px; width: 100%; border-radius: 12px; }
-    </style>
   </head>
-  <body>
+  <body class="public-tracking-layout">
     <div class="container py-4">
       <div class="text-center mb-4">
         <h2 class="fw-bold text-primary">NaLakalu</h2>

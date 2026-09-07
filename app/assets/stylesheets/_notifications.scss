@@ -33,3 +33,15 @@
 .notif-new-badge        { font-size: 0.58rem; letter-spacing: 0.04em; }
 .notif-mark-read-btn    { font-size: 0.75rem; }
 .notif-read-text        { font-size: 0.72rem; }
+.notif-read-border      { border-left-color: #c49d90 !important; }
+
+.notification-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.notification-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.08) !important;
+}
+.notification-card.unread {
+  background-color: #fdf1e7;
+}

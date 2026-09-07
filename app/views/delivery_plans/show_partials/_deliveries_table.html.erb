@@ -107,7 +107,7 @@
                     </div>
                   <% elsif delivery.rescheduled? %>
                     <% next_del = delivery.next_rescheduled_delivery %>
-                    <div class="rounded p-2 text-center border border-warning border-2" style="background:#fff3cd;min-width:165px">
+                    <div class="rounded p-2 text-center border border-warning border-2 bg-warning-subtle" style="min-width:165px">
                       <div class="fw-bold text-warning-emphasis" style="font-size:1.05rem">
                         <i class="bi bi-calendar-x-fill me-1"></i>REAGENDADO
                       </div>
@@ -154,7 +154,7 @@
 
                             <%# NOTAS del DeliveryItem: MUY VISIBLES %>
                             <% if item.notes.present? %>
-                              <div class="mt-2 p-2" style="background:#fff4e5; border-left:4px solid #fd7e14; border-radius:6px;">
+                              <div class="mt-2 p-2 dpnote-orange" style="border-radius:6px;">
                                 <span class="fw-bold text-dark">
                                   <i class="bi bi-pin-angle-fill me-1 text-warning"></i> Nota de entrega:
                                 </span>
@@ -164,7 +164,7 @@
 
                             <%# NOTAS del OrderItem: también visibles pero secundarias %>
                             <% if item.order_item.notes.present? %>
-                              <div class="mt-2 p-2" style="background:#eef6ff; border-left:4px solid #0d6efd; border-radius:6px;">
+                              <div class="mt-2 p-2 dpnote-blue" style="border-radius:6px;">
                                 <span class="fw-bold text-primary">
                                   <i class="bi bi-info-circle me-1"></i> Nota del producto:
                                 </span>

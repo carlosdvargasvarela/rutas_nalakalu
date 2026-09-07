@@ -79,7 +79,7 @@
                   </div>
                 <% elsif delivery.rescheduled? || delivery.delivery_items.any? %>
                   <% next_del = delivery.next_rescheduled_delivery %>
-                  <div class="mt-2 rounded p-3 border border-warning border-2 text-center" style="background:#fff3cd">
+                  <div class="mt-2 rounded p-3 border border-warning border-2 text-center bg-warning-subtle">
                     <div class="fw-bold text-warning-emphasis fs-5">
                       <i class="bi bi-calendar-x-fill me-1"></i>REAGENDADO
                     </div>

@@ -1,5 +1,5 @@
 <%= turbo_frame_tag "modal" do %>
-  <div class="modal-header text-white" style="background-color:#6f42c1;">
+  <div class="modal-header text-white warehousing-header">
     <h5 class="modal-title">
       <i class="bi bi-building me-2"></i>
       <%= @delivery.warehousing? ? "Cambiar fecha de bodegaje" : "Pasar a Bodegaje" %>
@@ -33,8 +33,7 @@
       </button>
       <%= f.submit(
             @delivery.warehousing? ? "Actualizar fecha" : "Confirmar bodegaje",
-            class: "btn px-4 text-white fw-semibold",
-            style: "background-color:#6f42c1;"
+            class: "btn px-4 text-white fw-semibold warehousing-header"
           ) %>
     </div>
   <% end %>
