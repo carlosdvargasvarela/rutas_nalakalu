@@ -23,8 +23,8 @@
 /* Hover effect en items con sombra profunda */
 .delivery-item-animated:hover {
     @include linear-gradient(to right, #f8f9fa, #ffffff);
-    border-left-color: #0d6efd;
-    @include box-shadow-layered(0 8px 24px rgba(13, 110, 253, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08));
+    border-left-color: #a54e1e;
+    @include box-shadow-layered(0 8px 24px rgba(165, 78, 30, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08));
     transform: translateX(8px) translateY(-4px);
 }
 
@@ -39,7 +39,7 @@
 
 /* Título con efecto de subrayado animado */
 .delivery-title {
-    @include animated-border-bottom(3px, #0d6efd, #0dcaf0, 0.5s);
+    @include animated-border-bottom(3px, #a54e1e, #c49d90, 0.5s);
     display: inline-block;
 }
 
@@ -52,7 +52,7 @@
 .delivery-item-animated:hover i.bi-geo-alt,
 .delivery-item-animated:hover i.bi-person-badge,
 .delivery-item-animated:hover i.bi-clock {
-    @include icon-hover-effect(1.3, 5deg, #0d6efd);
+    @include icon-hover-effect(1.3, 5deg, #a54e1e);
 }
 
 /* Paginación mejorada con sombra */
@@ -75,7 +75,7 @@
     
     .delivery-item-animated:hover {
         transform: translateX(0) translateY(-2px);
-        @include box-shadow(0, 4px, 12px, rgba(13, 110, 253, 0.12));
+        @include box-shadow(0, 4px, 12px, rgba(165, 78, 30, 0.12));
     }
     
     .delivery-btn-group {

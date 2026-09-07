@@ -13,7 +13,7 @@
 
 // Header Section
 .dashboard-header {
-  @include linear-gradient(135deg, #1a1a1a, #2d2d2d);
+  @include linear-gradient(135deg, #3d342c, #241e19);
   border-radius: 1.5rem;
   padding: 2rem;
   margin-bottom: 2rem;
@@ -114,11 +114,11 @@
   overflow: hidden;
   
     .card-header {
-    @include linear-gradient(135deg, #000000, #1a1a1a);
+    @include linear-gradient(135deg, #241e19, #3d342c);
     border: none;
     padding: 1.5rem;
     position: relative;
-    
+
     &::after {
       content: '';
       position: absolute;
@@ -126,7 +126,7 @@
       left: 0;
       width: 100%;
       height: 3px;
-      @include linear-gradient(90deg, #667eea, #764ba2);
+      @include linear-gradient(90deg, #a54e1e, #89987b);
     }
     
     h5 {
@@ -143,7 +143,7 @@
       @include smooth-transition();
       
       &:hover {
-        background: linear-gradient(90deg, rgba(102, 126, 234, 0.08) 0%, transparent 100%);
+        background: linear-gradient(90deg, rgba(165, 78, 30, 0.08) 0%, transparent 100%);
         transform: translateX(5px);
       }
     }
@@ -238,17 +238,17 @@
     
     .badge {
       @include smooth-transition();
-      @include box-shadow(0, 2px, 8px, rgba(13, 202, 240, 0.3));
-      
+      @include box-shadow(0, 2px, 8px, rgba(180, 83, 9, 0.3));
+
       &:hover {
         transform: scale(1.05);
-        @include box-shadow(0, 4px, 12px, rgba(13, 202, 240, 0.4));
+        @include box-shadow(0, 4px, 12px, rgba(180, 83, 9, 0.4));
       }
     }
   }
-  
+
   .table tbody tr {
-    @include hover-border-left(#0dcaf0, rgba(13, 202, 240, 0.08), 5px);
+    @include hover-border-left(#b45309, rgba(180, 83, 9, 0.08), 5px);
   }
 }
 
@@ -267,15 +267,15 @@
   }
   
   .delivery-item-animated {
-    @include hover-border-left(#0d6efd, rgba(13, 110, 253, 0.05), 5px);
+    @include hover-border-left(#a54e1e, rgba(165, 78, 30, 0.05), 5px);
   }
-  
+
   .delivery-count-badge {
     @include badge-hover-effect(1.05);
-    @include box-shadow(0, 2px, 8px, rgba(13, 110, 253, 0.3));
-    
+    @include box-shadow(0, 2px, 8px, rgba(165, 78, 30, 0.3));
+
     &:hover {
-      @include box-shadow(0, 4px, 12px, rgba(13, 110, 253, 0.4));
+      @include box-shadow(0, 4px, 12px, rgba(165, 78, 30, 0.4));
     }
   }
 }
@@ -287,7 +287,7 @@
   animation: fadeInUp 0.7s ease-out;
   
   .list-group-item {
-    @include hover-border-left(#ffc107, rgba(255, 193, 7, 0.1), 5px);
+    @include hover-border-left(#b45309, rgba(180, 83, 9, 0.1), 5px);
   }
 }
 
@@ -299,9 +299,9 @@
   animation: fadeInUp 0.7s ease-out;
   animation-delay: 0.1s;
   animation-fill-mode: both;
-  
+
   .list-group-item {
-    @include hover-border-left(#0d6efd, rgba(13, 110, 253, 0.05), 5px);
+    @include hover-border-left(#a54e1e, rgba(165, 78, 30, 0.05), 5px);
   }
 }
 
@@ -320,7 +320,7 @@
     margin-bottom: 0.5rem !important;
     
     &:hover {
-      background: rgba(25, 135, 84, 0.05);
+      background: rgba(75, 123, 79, 0.05);
       transform: translateX(5px);
       @include box-shadow(0, 2px, 10px, rgba(0, 0, 0, 0.05));
     }
@@ -361,23 +361,23 @@
   @include smooth-transition();
   
   &.bg-primary:hover {
-    @include linear-gradient(135deg, #0d6efd, #0b5ed7);
+    @include linear-gradient(135deg, #a54e1e, #8a3f17);
   }
-  
+
   &.bg-success:hover {
-    @include linear-gradient(135deg, #198754, #157347);
+    @include linear-gradient(135deg, #4b7b4f, #3a6140);
   }
-  
+
   &.bg-warning:hover {
-    @include linear-gradient(135deg, #ffc107, #ffca2c);
+    @include linear-gradient(135deg, #b45309, #8f4207);
   }
-  
+
   &.bg-info:hover {
-    @include linear-gradient(135deg, #0dcaf0, #31d2f2);
+    @include linear-gradient(135deg, #c49d90, #b08b7d);
   }
-  
+
   &.bg-secondary:hover {
-    @include linear-gradient(135deg, #6c757d, #5c636a);
+    @include linear-gradient(135deg, #89987b, #6f7d63);
   }
 }
 
