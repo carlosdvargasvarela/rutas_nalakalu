@@ -4,7 +4,7 @@
 /* Badge contador en header con animación */
 .delivery-count-badge {
     animation: pulse-subtle 2s ease-in-out infinite;
-    @include box-shadow(0, 3px, 10px, rgba(13, 110, 253, 0.3));
+    @include box-shadow(0, 3px, 10px, rgba(165, 78, 30, 0.3));
 }
 
 /* Badge de fecha con sombra y efecto 3D */

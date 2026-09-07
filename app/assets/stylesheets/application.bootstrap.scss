@@ -1,4 +1,17 @@
 // app/assets/stylesheets/application.bootstrap.scss
+
+// Paleta Na Lakalú (brandkit-nalakalu.pdf) — sobrescribe los $default de
+// Bootstrap antes del import para que todos los componentes (botones,
+// badges, focus rings, links) hereden la marca sin tocarlos uno por uno.
+$primary:    #A54E1E; // Naranja
+$secondary:  #89987B; // Verde Laurel
+$success:    #4B7B4F;
+$warning:    #B45309;
+$light:      #E2D2B9; // Beige
+$dark:       #3D342C; // Café
+$body-bg:    #FFF7EE; // Blanco Hueso
+$body-color: #3D342C; // Café
+
 @import "bootstrap/scss/bootstrap";
 @import "bootstrap-icons/font/bootstrap-icons";
 @import "variables";
