@@ -105,18 +105,24 @@ module Api
           end
 
           saved_count = 0
-          positions.each do |pos|
-            loc = @plan.delivery_plan_locations.create(
-              latitude:       pos[:latitude],
-              longitude:      pos[:longitude],
-              accuracy:       pos[:accuracy],
-              speed:          pos[:speed],
-              heading:        pos[:heading],
-              captured_at:    pos[:timestamp] || Time.current,
-              source:         "batch",
-              recorded_by_id: current_user.id
-            )
-            saved_count += 1 if loc.persisted?
+          # Una sola transacción para todo el lote: con backlogs grandes (celular
+          # offline varios días), N transacciones individuales mantienen el
+          # escritor de SQLite ocupado el tiempo suficiente para chocar con otro
+          # request concurrente y disparar "database is locked".
+          ActiveRecord::Base.transaction do
+            positions.each do |pos|
+              loc = @plan.delivery_plan_locations.create(
+                latitude:       pos[:latitude],
+                longitude:      pos[:longitude],
+                accuracy:       pos[:accuracy],
+                speed:          pos[:speed],
+                heading:        pos[:heading],
+                captured_at:    pos[:timestamp] || Time.current,
+                source:         "batch",
+                recorded_by_id: current_user.id
+              )
+              saved_count += 1 if loc.persisted?
+            end
           end
 
           if positions.any?
