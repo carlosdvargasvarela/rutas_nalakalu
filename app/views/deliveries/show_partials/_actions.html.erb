@@ -14,8 +14,7 @@
       <%= button_to warehousing_form_delivery_path(delivery),
             method: :get,
             form: { data: { turbo_frame: "modal" } },
-            class: "btn btn-sm d-inline-flex align-items-center gap-2 px-3",
-            style: "background-color:#f3e8ff; color:#6f42c1; border:1px solid #ce93d8;" do %>
+            class: "btn btn-sm d-inline-flex align-items-center gap-2 px-3 warehousing-badge" do %>
         <i class="bi bi-calendar-range"></i>
         <span>Cambiar fecha de bodegaje</span>
       <% end %>

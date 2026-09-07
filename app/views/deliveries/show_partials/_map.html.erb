@@ -23,7 +23,8 @@
            address: delivery.delivery_address.address,
            order_number: delivery.order&.number
          }].to_json %>"
-      style="min-height: 280px; height: 35vh; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6;">
+      class="delivery-map-frame"
+      style="min-height: 280px; height: 35vh; border-radius: 8px; overflow: hidden;">
   </div>
   <%# Alerta de error de dirección %>
   <% if delivery.address_error? %>

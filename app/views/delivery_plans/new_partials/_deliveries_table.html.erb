@@ -74,7 +74,7 @@
               <td class="py-4 pe-4" style="min-width: 350px;">
                 <%# Nota de la entrega %>
                 <% if delivery.respond_to?(:delivery_notes) && delivery.delivery_notes.present? %>
-                  <div class="modern-note note-orange mb-3">
+                  <div class="modern-note dpnote-orange mb-3">
                     <div class="note-header"><i class="bi bi-exclamation-circle-fill me-2"></i>Nota de Logística</div>
                     <div class="note-body"><%= delivery.delivery_notes %></div>
                   </div>
@@ -82,13 +82,13 @@
                 <%# Notas de Items (Agrupadas) %>
                 <% delivery.active_items_for_plan_for(current_user).each do |item| %>
                   <% if item.notes.present? %>
-                    <div class="modern-note note-blue mb-2">
+                    <div class="modern-note dpnote-blue mb-2">
                       <div class="note-header"><i class="bi bi-info-square-fill me-2"></i><%= item.order_item.product %></div>
                       <div class="note-body"><%= item.notes %></div>
                     </div>
                   <% end %>
                   <% if item.order_item.notes.present? %>
-                    <div class="modern-note note-gray mb-2">
+                    <div class="modern-note dpnote-gray mb-2">
                       <div class="note-header text-muted"><i class="bi bi-chat-left-text me-2"></i>Nota de Venta: <%= item.order_item.product %></div>
                       <div class="note-body"><%= item.order_item.notes %></div>
                     </div>
@@ -108,42 +108,3 @@
     <p class="text-muted">Intenta ajustar los filtros de fecha arriba.</p>
   </div>
 <% end %>
-<style>
-  /* Estilos para Notas Modernas */
-  .modern-note {
-    border-radius: 10px;
-    padding: 12px;
-    font-size: 0.95rem;
-    border: 1px solid rgba(0,0,0,0.05);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-  }
-  .note-header {
-    font-weight: 800;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-    display: flex;
-    align-items: center;
-  }
-  .note-body {
-    line-height: 1.4;
-    color: #333;
-  }
-
-  /* Variaciones de Color */
-  .note-orange { background-color: #fff8f0; border-left: 5px solid #fd7e14; }
-  .note-orange .note-header { color: #d9480f; }
-
-  .note-blue { background-color: #f0f7ff; border-left: 5px solid #0d6efd; }
-  .note-blue .note-header { color: #0056b3; }
-
-  .note-gray { background-color: #f8f9fa; border-left: 5px solid #adb5bd; }
-
-  .shadow-xs { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-
-  /* Hover effect en filas */
-  .js-delivery-row:hover {
-    background-color: #fcfcfc !important;
-  }
-</style>

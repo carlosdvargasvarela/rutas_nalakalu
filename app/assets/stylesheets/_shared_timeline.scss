@@ -1,0 +1,160 @@
+// app/assets/stylesheets/_shared_timeline.scss
+// Extraído de app/views/shared/_timeline.html.erb (paleta Na Lakalú)
+.modern-timeline { position: relative; }
+
+.timeline-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  position: relative;
+}
+
+/* Línea vertical */
+.timeline-block:not(:last-child) .timeline-marker::after {
+  content: '';
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  bottom: -16px;
+  background: #e6e0da;
+}
+
+/* Timestamp */
+.timeline-time {
+  width: 52px;
+  flex-shrink: 0;
+  text-align: right;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.time-hour {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #3d342c;
+  line-height: 1.2;
+}
+.time-date {
+  font-size: 0.68rem;
+  color: #8a7d72;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Dot */
+.timeline-marker {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  display: flex;
+  justify-content: center;
+}
+.dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  z-index: 1;
+}
+.dot--critical {
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(220,53,69,0.15), 0 2px 6px rgba(0,0,0,0.12);
+}
+
+/* Tarjeta */
+.timeline-card {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #e6e0da;
+  border-radius: 12px;
+  padding: 12px 14px;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  margin-bottom: 0;
+}
+.timeline-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  transform: translateX(3px);
+}
+// Estado crítico: se conserva el rojo de peligro (semántico, no de marca)
+.timeline-card--critical {
+  background: #fff8f8;
+  border-color: rgba(220,53,69,0.3);
+}
+
+/* Header de tarjeta */
+.tc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.tc-actor {
+  font-size: 0.75rem;
+  color: #8a7d72;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Descripción */
+.tc-desc {
+  font-size: 0.875rem;
+  color: #3d342c;
+  line-height: 1.5;
+}
+
+/* Cambios técnicos secundarios */
+.tc-secondary {
+  border-top: 1px dashed #e6e0da;
+  padding-top: 8px;
+}
+.tc-secondary-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8a7d72;
+  margin-bottom: 4px;
+}
+.tc-secondary-item {
+  font-size: 0.78rem;
+  color: #8a7d72;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  line-height: 1.4;
+  margin-bottom: 2px;
+}
+
+/* Bloque crítico — rojo de peligro semántico, se conserva */
+.timeline-block--critical .timeline-time .time-hour { color: #dc3545; }
+
+/* Diffs de campos PaperTrail */
+.tc-diff { }
+.tc-diff-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+  font-size: 0.78rem;
+}
+.tc-diff-badge { font-size: 0.62rem !important; }
+.tc-diff-val {
+  background: #fff7ee;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.72rem;
+  max-width: 260px;
+  word-break: break-word;
+  white-space: pre-wrap;
+  display: inline-block;
+  vertical-align: top;
+}
