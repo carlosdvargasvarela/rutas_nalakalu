@@ -41,12 +41,24 @@
                   <% if policy(Delivery).new_internal_delivery? || policy(Delivery).new_showroom_movement? || policy(Delivery).new_service_case? %>
                     <li><hr class="dropdown-divider"></li>
                   <% end %>
-                  <li><%= link_to "Exportar Excel", deliveries_path(format: :xlsx, q: params[:q]&.to_unsafe_h), class: "dropdown-item" %></li>
+                  <li><%= link_to "Exportar Excel", deliveries_path(
+                        format: :xlsx,
+                        q: params[:q]&.to_unsafe_h,
+                        no_plan: params[:no_plan],
+                        show_rescheduled: params[:show_rescheduled],
+                        show_archived: params[:show_archived],
+                        only_service_cases: params[:only_service_cases],
+                        only_repair_services: params[:only_repair_services]
+                      ), class: "dropdown-item" %></li>
                   <li>
                     <%= link_to report_deliveries_by_client_path(
                           format: :xlsx,
                           from: params.dig(:q, :delivery_date_gteq),
-                          to:   params.dig(:q, :delivery_date_lteq)
+                          to:   params.dig(:q, :delivery_date_lteq),
+                          seller_id: params.dig(:q, :order_seller_id_in),
+                          status: params.dig(:q, :status_in),
+                          only_service_cases: params[:only_service_cases],
+                          only_repair_services: params[:only_repair_services]
                         ), class: "dropdown-item" do %>
                       <i class="bi bi-file-earmark-excel me-1 text-success"></i>Entregas por cliente (Excel)
                     <% end %>
@@ -122,6 +134,13 @@
                   </label>
                 </div>
                 <div class="form-check form-check-inline">
+                  <input type="checkbox" class="form-check-input" name="only_repair_services" value="1"
+                         id="filter_repair" <%= 'checked' if params[:only_repair_services].present? %>>
+                  <label class="form-check-label small" for="filter_repair">
+                    <i class="bi bi-wrench text-info me-1"></i>Reparación
+                  </label>
+                </div>
+                <div class="form-check form-check-inline">
                   <input type="checkbox" class="form-check-input" name="show_archived" value="1"
                          id="filter_archived" <%= 'checked' if params[:show_archived] == '1' %>>
                   <label class="form-check-label small" for="filter_archived">
@@ -146,6 +165,7 @@
                     show_rescheduled: params[:show_rescheduled],
                     show_archived: params[:show_archived],
                     only_service_cases: params[:only_service_cases],
+                    only_repair_services: params[:only_repair_services],
                     q: (params[:q]&.to_unsafe_h || {}).merge("order_seller_id_in" => [current_user.seller.id])
                   ),
                   class: "btn btn-xs btn-outline-primary #{params.dig(:q, :order_seller_id_in)&.map(&:to_s)&.include?(current_user.seller.id.to_s) ? 'active' : ''}" do %>

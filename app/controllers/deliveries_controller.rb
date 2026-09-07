@@ -48,6 +48,13 @@ class DeliveriesController < ApplicationController
       base_scope = base_scope.where(id: matching_ids)
     end
 
+    if params[:only_repair_services].present?
+      matching_ids = base_scope.includes(delivery_items: :order_item)
+        .select { |delivery| delivery.requires_repair_service_action? }
+        .map(&:id)
+      base_scope = base_scope.where(id: matching_ids)
+    end
+
     @q = base_scope.ransack(params[:q])
     deliveries_scope = @q.result.includes(order: [:client, :seller, :order_contacts], delivery_address: :client)
 
