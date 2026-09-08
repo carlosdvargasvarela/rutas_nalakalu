@@ -72,20 +72,7 @@ export default class extends Controller {
 
     let marker = null;
     if (this._validCoord(plan.current_lat) && this._validCoord(plan.current_lng)) {
-      marker = new google.maps.Marker({
-        position: { lat: plan.current_lat, lng: plan.current_lng },
-        map: this.map,
-        icon: {
-          path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-          scale: 6,
-          fillColor: "#0d6efd",
-          fillOpacity: 1,
-          strokeColor: "#ffffff",
-          strokeWeight: 2,
-        },
-        title: plan.driver_name,
-      });
-      marker.addListener("click", () => this.map.panTo(marker.getPosition()));
+      marker = this._buildMarker(plan.id, { lat: plan.current_lat, lng: plan.current_lng }, plan.driver_name);
     }
 
     const subscription = subscribeToDeliveryPlan(plan.id, (data) => {
@@ -107,6 +94,7 @@ export default class extends Controller {
     const row = document.createElement("li");
     row.className = "list-group-item";
     row.dataset.planId = plan.id;
+    row.style.cursor = "pointer";
     row.innerHTML = `
       <div class="d-flex justify-content-between align-items-start">
         <div>
@@ -120,8 +108,41 @@ export default class extends Controller {
         Ver recorrido
       </button>
     `;
-    row.querySelector('[data-role="route-toggle"]').addEventListener("click", () => this.toggleRoute(plan.id));
+    row.addEventListener("click", () => this.selectTruck(plan.id));
+    row.querySelector('[data-role="route-toggle"]').addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggleRoute(plan.id);
+    });
     return row;
+  }
+
+  _buildMarker(planId, position, title) {
+    const marker = new google.maps.Marker({
+      position,
+      map: this.map,
+      icon: {
+        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+        scale: 6,
+        fillColor: "#0d6efd",
+        fillOpacity: 1,
+        strokeColor: "#ffffff",
+        strokeWeight: 2,
+      },
+      title,
+    });
+    marker.addListener("click", () => this.selectTruck(planId));
+    return marker;
+  }
+
+  selectTruck(planId) {
+    const truck = this.trucks.get(planId);
+    if (!truck) return;
+
+    if (this.selectedRow) this.selectedRow.classList.remove("active");
+    truck.row.classList.add("active");
+    this.selectedRow = truck.row;
+
+    if (truck.marker) this.map.panTo(truck.marker.getPosition());
   }
 
   _escapeHtml(str) {
@@ -150,19 +171,7 @@ export default class extends Controller {
     if (truck.marker) {
       truck.marker.setPosition(position);
     } else {
-      truck.marker = new google.maps.Marker({
-        position,
-        map: this.map,
-        icon: {
-          path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-          scale: 6,
-          fillColor: "#0d6efd",
-          fillOpacity: 1,
-          strokeColor: "#ffffff",
-          strokeWeight: 2,
-        },
-        title: truck.data.driver_name,
-      });
+      truck.marker = this._buildMarker(planId, position, truck.data.driver_name);
     }
 
     this.refreshAlerts();
