@@ -2,6 +2,8 @@
 import { Controller } from "@hotwired/stimulus";
 import { subscribeToDeliveryPlan } from "channels/delivery_plan_channel";
 
+const ETA_THROTTLE_MS = 60000; // no recalcular ruta más seguido que esto
+
 export default class extends Controller {
   static values = {
     planId: Number,
@@ -10,15 +12,20 @@ export default class extends Controller {
     truckLat: Number,
     truckLng: Number,
   };
-  static targets = ["lastUpdate"];
+  static targets = ["map", "lastUpdate", "eta", "connectionBanner"];
 
   connect() {
+    this.lastEtaAt = 0;
     this.initMap();
-    this.subscription = subscribeToDeliveryPlan(this.planIdValue, (data) => {
-      if (data.type === "position_update") {
-        this.updateTruck(data.current_lat, data.current_lng, data.last_seen_at);
-      }
-    });
+    this.subscription = subscribeToDeliveryPlan(
+      this.planIdValue,
+      (data) => {
+        if (data.type === "position_update") {
+          this.updateTruck(data.current_lat, data.current_lng, data.last_seen_at);
+        }
+      },
+      (isConnected) => this.updateConnectionBanner(isConnected),
+    );
   }
 
   disconnect() {
@@ -46,7 +53,7 @@ export default class extends Controller {
     const truckPos = { lat: this.truckLatValue, lng: this.truckLngValue };
     const destPos = { lat: this.destLatValue, lng: this.destLngValue };
 
-    this.map = new google.maps.Map(this.element, {
+    this.map = new google.maps.Map(this.mapTarget, {
       center: truckPos,
       zoom: 14,
       disableDefaultUI: true,
@@ -75,7 +82,9 @@ export default class extends Controller {
       icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
     });
 
+    this.directionsService = new google.maps.DirectionsService();
     this.fitBounds();
+    this.updateEta();
   }
 
   updateTruck(lat, lng, timestamp) {
@@ -91,6 +100,37 @@ export default class extends Controller {
     if (this.lastUpdateTarget) {
       this.lastUpdateTarget.textContent = "Actualizado hace un momento";
     }
+
+    this.updateEta();
+  }
+
+  updateEta() {
+    if (!this.hasEtaTarget || !this.directionsService) return;
+
+    // La posición no cambia perceptiblemente en pocos segundos — evita
+    // pegarle a la Directions API en cada position_update (cada ~15s).
+    const now = Date.now();
+    if (now - this.lastEtaAt < ETA_THROTTLE_MS) return;
+    this.lastEtaAt = now;
+
+    this.directionsService.route(
+      {
+        origin: this.truckMarker.getPosition(),
+        destination: { lat: this.destLatValue, lng: this.destLngValue },
+        travelMode: google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status !== google.maps.DirectionsStatus.OK) return;
+
+        const leg = result.routes[0].legs[0];
+        this.etaTarget.textContent = `Llega en aprox. ${leg.duration.text} (${leg.distance.text})`;
+      },
+    );
+  }
+
+  updateConnectionBanner(isConnected) {
+    if (!this.hasConnectionBannerTarget) return;
+    this.connectionBannerTarget.hidden = isConnected;
   }
 
   fitBounds() {

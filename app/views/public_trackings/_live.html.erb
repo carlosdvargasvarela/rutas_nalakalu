@@ -9,21 +9,23 @@
         </div>
       </div>
       <!-- Mapa en tiempo real -->
-      <div class="card shadow-sm border-0 mb-3">
+      <div class="card shadow-sm border-0 mb-3"
+           data-controller="public-tracking-map"
+           data-public-tracking-map-plan-id-value="<%= @plan.id %>"
+           data-public-tracking-map-dest-lat-value="<%= @address.latitude %>"
+           data-public-tracking-map-dest-lng-value="<%= @address.longitude %>"
+           data-public-tracking-map-truck-lat-value="<%= @plan.current_lat || @address.latitude %>"
+           data-public-tracking-map-truck-lng-value="<%= @plan.current_lng || @address.longitude %>">
+        <div class="alert alert-warning rounded-0 mb-0 py-2 text-center small" data-public-tracking-map-target="connectionBanner" hidden>
+          Reconectando...
+        </div>
         <div class="card-body p-0">
-          <div
-            class="tracking-map"
-            data-controller="public-tracking-map"
-            data-public-tracking-map-plan-id-value="<%= @plan.id %>"
-            data-public-tracking-map-dest-lat-value="<%= @address.latitude %>"
-            data-public-tracking-map-dest-lng-value="<%= @address.longitude %>"
-            data-public-tracking-map-truck-lat-value="<%= @plan.current_lat || @address.latitude %>"
-            data-public-tracking-map-truck-lng-value="<%= @plan.current_lng || @address.longitude %>">
-          </div>
+          <div class="tracking-map" data-public-tracking-map-target="map"></div>
           <div class="p-3 bg-light border-top">
-            <small class="text-muted" data-public-tracking-map-target="lastUpdate">
+            <small class="text-muted d-block" data-public-tracking-map-target="lastUpdate">
               <%= @plan.last_seen_at ? "Última actualización: #{time_ago_in_words(@plan.last_seen_at)} atrás" : "Esperando ubicación..." %>
             </small>
+            <small class="fw-semibold" style="color: var(--color-brand-primary)" data-public-tracking-map-target="eta"></small>
           </div>
         </div>
       </div>
