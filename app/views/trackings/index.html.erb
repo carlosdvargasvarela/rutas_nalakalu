@@ -14,7 +14,7 @@
     <div class="col-lg-4">
       <div class="card shadow-sm">
         <div class="card-header bg-white fw-semibold">Camiones activos (<%= @plans.size %>)</div>
-        <ul class="list-group list-group-flush" data-fleet-tracking-map-target="list">
+        <ul id="tracking-truck-list" class="list-group list-group-flush" data-fleet-tracking-map-target="list">
           <% if @plans.empty? %>
             <li class="list-group-item text-muted small">No hay planes activos en este momento.</li>
           <% end %>
@@ -23,3 +23,6 @@
     </div>
   </div>
 </div>
+<style>
+  #tracking-truck-list .list-group-item.active { color: #fff; }
+</style>
