@@ -19,7 +19,7 @@
   <body class="driver-layout">
 
     <!-- Navbar -->
-    <nav class="dk-nav">
+    <nav class="dk-nav" id="dk-nav" data-turbo-permanent>
       <a href="<%= driver_delivery_plans_path %>" class="dk-nav-brand">
         <i class="bi bi-truck-front-fill" style="font-size:1.25rem;"></i>
         NaLakalu
@@ -50,7 +50,7 @@
     </nav>
 
     <!-- Offline banner -->
-    <div id="dk-offline" class="dk-offline">
+    <div id="dk-offline" class="dk-offline" data-turbo-permanent>
       <i class="bi bi-wifi-off me-2"></i>Sin conexión · Las acciones se guardan y sincronizan al volver
     </div>
 
@@ -58,9 +58,11 @@
     <%= yield %>
 
     <!-- Toast container -->
-    <div id="dk-toasts" class="dk-toast-wrap"></div>
+    <div id="dk-toasts" class="dk-toast-wrap" data-turbo-permanent></div>
 
-    <script>
+    <!-- ponytail: data-turbo-eval="false" + data-turbo-permanent arriba evitan que Turbo re-ejecute este script
+         (y truene con "already declared") y re-cree estos nodos en cada navegación dentro de /driver -->
+    <script data-turbo-eval="false">
       // ── Service Worker ──────────────────────────────────
       if ('serviceWorker' in navigator && location.pathname.startsWith('/driver')) {
         addEventListener('load', async () => {

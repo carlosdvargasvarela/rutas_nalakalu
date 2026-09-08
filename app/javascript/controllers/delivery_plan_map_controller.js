@@ -48,9 +48,20 @@ export default class extends Controller {
   initMap() {
     if (!this.pointsValue.length) return;
 
+    // ponytail: entregas sin lat/lng (0/nil) rompían Directions API con NaN; se excluyen del mapa
+    this.validPoints = this.pointsValue.filter(
+      (p) => Number.isFinite(parseFloat(p.lat)) && Number.isFinite(parseFloat(p.lng)),
+    );
+    if (this.validPoints.length < this.pointsValue.length) {
+      console.warn(
+        `⚠️ ${this.pointsValue.length - this.validPoints.length} parada(s) sin coordenadas válidas, excluidas del mapa`,
+      );
+    }
+    if (!this.validPoints.length) return;
+
     const center = {
-      lat: parseFloat(this.pointsValue[0].lat),
-      lng: parseFloat(this.pointsValue[0].lng),
+      lat: parseFloat(this.validPoints[0].lat),
+      lng: parseFloat(this.validPoints[0].lng),
     };
 
     this.map = new google.maps.Map(this.mapTarget, {
@@ -76,7 +87,7 @@ export default class extends Controller {
   }
 
   addMarkers() {
-    this.pointsValue.forEach((p, idx) => {
+    this.validPoints.forEach((p, idx) => {
       const position = { lat: parseFloat(p.lat), lng: parseFloat(p.lng) };
 
       // Marker personalizado con número de parada
@@ -95,7 +106,7 @@ export default class extends Controller {
           fillColor:
             idx === 0
               ? "#28a745"
-              : idx === this.pointsValue.length - 1
+              : idx === this.validPoints.length - 1
               ? "#dc3545"
               : "#007bff",
           fillOpacity: 1,
@@ -128,24 +139,24 @@ export default class extends Controller {
   }
 
   drawRoute() {
-    if (this.pointsValue.length < 2) {
+    if (this.validPoints.length < 2) {
       this.map.fitBounds(this.bounds);
       return;
     }
 
     // Preparar origen, destino y waypoints
     const origin = {
-      lat: parseFloat(this.pointsValue[0].lat),
-      lng: parseFloat(this.pointsValue[0].lng),
+      lat: parseFloat(this.validPoints[0].lat),
+      lng: parseFloat(this.validPoints[0].lng),
     };
 
     const destination = {
-      lat: parseFloat(this.pointsValue[this.pointsValue.length - 1].lat),
-      lng: parseFloat(this.pointsValue[this.pointsValue.length - 1].lng),
+      lat: parseFloat(this.validPoints[this.validPoints.length - 1].lat),
+      lng: parseFloat(this.validPoints[this.validPoints.length - 1].lng),
     };
 
     // Waypoints intermedios (máximo 25 por request según Google)
-    const waypoints = this.pointsValue.slice(1, -1).map((p) => ({
+    const waypoints = this.validPoints.slice(1, -1).map((p) => ({
       location: {
         lat: parseFloat(p.lat),
         lng: parseFloat(p.lng),
@@ -204,7 +215,7 @@ export default class extends Controller {
   drawPolylineFallback() {
     // Fallback: línea simple si falla Directions API
     const routePath = new google.maps.Polyline({
-      path: this.pointsValue.map((p) => ({
+      path: this.validPoints.map((p) => ({
         lat: parseFloat(p.lat),
         lng: parseFloat(p.lng),
       })),

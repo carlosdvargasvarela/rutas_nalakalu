@@ -94,6 +94,7 @@ export default class extends Controller {
 
     // Marcadores de entregas
     this.deliveryMarkers = [];
+    this.bounds = new google.maps.LatLngBounds();
     this.createDeliveryMarkers();
 
     // Dibujar ruta
