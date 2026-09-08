@@ -1,6 +1,40 @@
 // app/assets/stylesheets/_status_system.scss
 // Bordes laterales semánticos y badges de estado
 
+// ── Colores de estado retonados a marca (azul/gris/cian → tono Na Lakalú) ──
+// Igual lógica que $success (#4B7B4F) y $warning (#B45309): misma familia de
+// color que el Bootstrap original, pero apagada al carácter cálido de la marca.
+// Deliberadamente NO tocan $primary/$secondary/$info globales (botones, navbar,
+// etc. siguen en Naranja/Verde Laurel/Palo Rosa) — solo aplican a badges de estado.
+:root {
+  --status-blue:  #3F6B85; // antes primary (azul Bootstrap)
+  --status-taupe: #8C8074; // antes secondary (gris Bootstrap)
+  --status-teal:  #5E8C8A; // antes info (cian Bootstrap)
+}
+
+// Taupe y teal no dan suficiente contraste con el blanco por defecto de .badge
+// (fórmula WCAG ~3.8:1, bajo el mínimo 4.5:1) — texto oscuro fijo en el propio badge
+// para que funcione sin depender de que cada vista agregue "text-dark".
+.badge.bg-status-blue  { background-color: var(--status-blue)  !important; }
+.badge.bg-status-taupe { background-color: var(--status-taupe) !important; color: #3D342C !important; }
+.badge.bg-status-teal  { background-color: var(--status-teal)  !important; color: #3D342C !important; }
+
+.bg-status-blue-subtle   { background-color: #E2E9ED !important; }
+.text-status-blue-emphasis { color: #294656 !important; }
+.border-status-blue-subtle { border-color: #B2C4CE !important; }
+
+.bg-status-taupe-subtle   { background-color: #EEECEA !important; }
+.text-status-taupe-emphasis { color: #5B534B !important; }
+.border-status-taupe-subtle { border-color: #D1CCC7 !important; }
+
+.bg-status-teal-subtle   { background-color: #E7EEED !important; }
+.text-status-teal-emphasis { color: #3D5B5A !important; }
+.border-status-teal-subtle { border-color: #BFD1D0 !important; }
+
+.state-border-status-blue  { border-left: 4px solid var(--status-blue)  !important; }
+.state-border-status-taupe { border-left: 4px solid var(--status-taupe) !important; }
+.state-border-status-teal  { border-left: 4px solid var(--status-teal)  !important; }
+
 .state-border-warning   { border-left: 4px solid var(--bs-warning)   !important; }
 .state-border-primary   { border-left: 4px solid var(--bs-primary)   !important; }
 .state-border-success   { border-left: 4px solid var(--bs-success)   !important; }

@@ -35,7 +35,7 @@ module DeliveryPlansHelper
     when "cancelled"
       "danger"
     else
-      "secondary"
+      "status-taupe"
     end
   end
 
@@ -43,11 +43,11 @@ module DeliveryPlansHelper
   def delivery_plan_status_color(status)
     case status.to_s
     when "draft"
-      "secondary"
+      "status-taupe"
     when "sent_to_logistics"
-      "info"
+      "status-teal"
     when "routes_created"
-      "primary"
+      "status-blue"
     when "in_progress"
       "warning"
     when "completed"
@@ -55,7 +55,7 @@ module DeliveryPlansHelper
     when "aborted"
       "danger"
     else
-      "secondary"
+      "status-taupe"
     end
   end
 

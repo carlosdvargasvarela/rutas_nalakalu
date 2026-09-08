@@ -1,7 +1,9 @@
 # app/helpers/application_helper.rb
 module ApplicationHelper
-  # Variantes válidas de Bootstrap 5 para badges
-  BOOTSTRAP_BADGE_VARIANTS = %w[primary secondary success danger warning info light dark].freeze
+  # Variantes válidas de Bootstrap 5 para badges, más las variantes de estado
+  # retonadas a marca (status-blue/taupe/teal — ver _status_system.scss)
+  BOOTSTRAP_BADGE_VARIANTS = %w[primary secondary success danger warning info light dark
+                                 status-blue status-taupe status-teal].freeze
 
   def normalize_badge_color(color)
     c = color.to_s.strip
@@ -28,11 +30,11 @@ module ApplicationHelper
   # Delivery: usa EXACTAMENTE tus enums
   DELIVERY_STATUS_COLORS = {
     "scheduled" => "warning",
-    "ready_to_deliver" => "primary",
-    "in_plan" => "primary",
+    "ready_to_deliver" => "status-blue",
+    "in_plan" => "status-blue",
     "in_route" => "dark",
     "delivered" => "success",
-    "rescheduled" => "info",
+    "rescheduled" => "status-teal",
     "cancelled" => "danger",
     "archived" => "light",
     "failed" => "danger",
@@ -42,11 +44,11 @@ module ApplicationHelper
   # DeliveryItem: estados típicos en tu app
   DELIVERY_ITEM_STATUS_COLORS = {
     "pending" => "warning",
-    "confirmed" => "primary",
-    "in_plan" => "primary",
+    "confirmed" => "status-blue",
+    "in_plan" => "status-blue",
     "in_route" => "dark",
     "delivered" => "success",
-    "rescheduled" => "info",
+    "rescheduled" => "status-teal",
     "cancelled" => "danger",
     "failed" => "danger",
     "loaded_on_truck" => "dark",      # 👈 CAMBIO: Ahora es 'dark'
@@ -54,25 +56,25 @@ module ApplicationHelper
   }.freeze
 
   ORDER_STATUS_COLORS = {
-    "in_production" => "secondary",
-    "ready_for_delivery" => "info",
+    "in_production" => "status-taupe",
+    "ready_for_delivery" => "status-teal",
     "delivered" => "success",
     "rescheduled" => "dark",
     "cancelled" => "danger"
   }.freeze
 
   ORDER_ITEM_STATUS_COLORS = {
-    "in_production" => "secondary",
-    "ready" => "info",
+    "in_production" => "status-taupe",
+    "ready" => "status-teal",
     "delivered" => "success",
     "cancelled" => "danger",
     "missing" => "warning"
   }.freeze
 
   DELIVERY_PLAN_STATUS_COLORS = {
-    "draft" => "secondary",
-    "sent_to_logistics" => "info",
-    "routes_created" => "primary",
+    "draft" => "status-taupe",
+    "sent_to_logistics" => "status-teal",
+    "routes_created" => "status-blue",
     "in_progress" => "warning",
     "completed" => "success",
     "aborted" => "danger"
@@ -161,7 +163,7 @@ module ApplicationHelper
 
   # Determina si un color necesita texto oscuro para mejor contraste
   def needs_text_dark?(color)
-    %w[light warning info].include?(color)
+    %w[light warning info status-taupe status-teal].include?(color)
   end
 
   # Label del estado, priorizando display_status si existe

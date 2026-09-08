@@ -11,11 +11,11 @@ module DeliveriesHelper
 
     # --- FLUJO OPERATIVO (Azules) ---
     when "confirmed", "ready_to_deliver"
-      "info"
+      "status-teal"
     when "in_plan", "loaded_on_truck"
-      "primary"
+      "status-blue"
     when "in_route"
-      "primary"
+      "status-blue"
 
     # --- FINALIZADO EXITOSO (Verde) ---
     when "delivered"
@@ -30,9 +30,9 @@ module DeliveriesHelper
 
     # --- OTROS (Gris) ---
     when "archived"
-      "secondary"
+      "status-taupe"
     else
-      "secondary"
+      "status-taupe"
     end
   end
 
@@ -43,14 +43,14 @@ module DeliveriesHelper
 
   def delivery_status_border_color(status)
     case delivery_status_color(status)
-    when "warning" then "#ffc107"
-    when "info" then "#0dcaf0"
-    when "primary" then "#0d6efd"
-    when "success" then "#198754"
+    when "warning" then "#B45309"
+    when "status-teal" then "#5E8C8A"
+    when "status-blue" then "#3F6B85"
+    when "success" then "#4B7B4F"
     when "danger" then "#dc3545"
-    when "secondary" then "#6c757d"
+    when "status-taupe" then "#8C8074"
     when "warehousing" then "#6f42c1"
-    else "#6c757d"
+    else "#8C8074"
     end
   end
 
