@@ -1,7 +1,7 @@
 # Dashboard de tracking de flota (admin/vendedores/logística)
 
-**Fecha:** 2026-09-08
-**Alcance:** Nueva pantalla `/tracking` que muestra en un solo mapa la posición en vivo de todos los planes de entrega activos, visible para todos los roles autenticados salvo `driver`. Alertas visuales básicas de GPS perdido/camión detenido. No incluye histórico de recorrido ni notificaciones push/email (quedan para una segunda entrega).
+**Fecha:** 2026-09-08 (revisado el mismo día: se incorpora histórico de recorrido tras confirmar que el backend ya existe)
+**Alcance:** Nueva pantalla `/tracking` que muestra en un solo mapa la posición en vivo de todos los planes de entrega activos, visible para todos los roles autenticados salvo `driver`. Alertas visuales básicas de GPS perdido/camión detenido. Incluye ver el recorrido histórico de un camión (polyline) bajo demanda. No incluye notificaciones push/email (queda para una segunda entrega).
 
 ---
 
@@ -10,6 +10,8 @@
 El tracking en vivo por plan individual ya existe y funciona (`delivery_plans#show`, tab "Seguimiento en vivo", `AdminDriverMapController` + `DeliveryPlanChannel` vía ActionCable). Lo que falta es una vista agregada: hoy, para saber dónde está cada camión activo, hay que entrar plan por plan.
 
 Este módulo llevaba casi un año sin terminarse. Se rediseña desde cero, reutilizando toda la infraestructura de tracking en vivo que ya existe (broadcast de posición, canal ActionCable, cálculo de `last_seen_at`/`last_recorded_by`) en vez de crear una capa nueva de tiempo real.
+
+**Corrección sobre la primera versión de este spec:** se asumió que el histórico de recorrido requería una tabla nueva. Al revisar el modelo se confirmó que `DeliveryPlanLocation` (tabla `delivery_plan_locations`) ya existe y ya guarda **cada ping GPS** del batch (`Api::V1::Driver::DeliveryPlansController#update_position_batch` inserta todas las posiciones del lote, no solo la última — `current_lat/current_lng` en `DeliveryPlan` es solo un cache de la última). Columnas: `latitude`, `longitude`, `speed`, `heading`, `accuracy`, `captured_at`, `source` (`live`/`batch`), `recorded_by_id`, con índice `[delivery_plan_id, captured_at]`. Ningún controller ni vista la consulta hoy. Por lo tanto el histórico se incluye en esta entrega: es una query + una polyline, no una migración.
 
 **Gap actual de visibilidad:** `DeliveryPlanPolicy::Scope` limita a roles no-admin/logística/producción a `where(driver_id: user.id)` — un vendedor no ve ningún plan hoy. El dashboard nuevo necesita su propia policy para no alterar ese comportamiento en la gestión de planes (donde sí tiene sentido restringir).
 
@@ -57,6 +59,11 @@ Ambos son puramente visuales — ni se persisten ni disparan notificación.
 ### Navegación
 Link nuevo en el nav principal, visible para todos los roles salvo `driver` (mismo criterio que `TrackingPolicy#index?`).
 
+### Histórico de recorrido (nuevo, bajo demanda)
+- `GET /tracking/:delivery_plan_id/route` → `TrackingsController#route`, autorizado con la misma `TrackingPolicy#index?`.
+- Devuelve JSON: `plan.delivery_plan_locations.ordered.pluck(:latitude, :longitude, :captured_at)` (sin límite de tiempo en esta primera versión — un plan activo dura como mucho unos días).
+- Botón "Ver recorrido" en la fila de cada camión del panel lateral. Al click, `fleet_tracking_map_controller.js` hace `fetch` a esa ruta y dibuja una `google.maps.Polyline` sobre el mapa (mismo patrón de `drawPolylineFallback()` que ya usa `delivery_plan_map_controller.js`, reutilizado tal cual). Un segundo click la oculta.
+
 ---
 
 ## 4. Flujo de datos
@@ -80,6 +87,7 @@ Link nuevo en el nav principal, visible para todos los roles salvo `driver` (mis
 ## 6. Testing
 
 - Request spec `TrackingsController#index`: 200 para cada rol salvo `driver` (403/redirect), payload incluye solo planes `active`.
+- Request spec `TrackingsController#route`: 200 con los puntos ordenados por `captured_at`, 403/redirect para `driver`.
 - Policy spec `TrackingPolicy`.
 - Sin test de JS/Stimulus (no hay precedente de esto en el proyecto para los otros map controllers — se verifica manualmente en navegador, igual que los mapas existentes).
 
@@ -87,6 +95,6 @@ Link nuevo en el nav principal, visible para todos los roles salvo `driver` (mis
 
 ## 7. Fuera de alcance (explícitamente diferido)
 
-- Histórico de recorrido (trazo real del camino) — requiere tabla nueva de pings de posición; hoy `update_position_batch` solo persiste el último punto del batch.
 - Notificaciones push/email por alertas — solo visual por ahora.
 - Filtro de vendedor por sus propios clientes — se decidió flota completa sin filtro para todos los roles con acceso.
+- Límite/paginación de puntos del recorrido histórico — se acepta traer todos los puntos de `delivery_plan_locations` para un plan; si en producción resulta ser demasiados puntos por plan, se agrega un límite en una iteración posterior.
