@@ -46,6 +46,9 @@
 
 /node_modules
 
+# Este proyecto usa yarn/npm; bun.lock es cruft de un intento de tooling ajeno
+/bun.lock
+
 # Claude / AI tooling
 /.claude/
 /.claude-flow/
