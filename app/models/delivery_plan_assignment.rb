@@ -195,5 +195,14 @@ class DeliveryPlanAssignment < ApplicationRecord
       partial: "delivery_plans/show_partials/progress_section",
       locals: {delivery_plan: delivery_plan, assignments: delivery_plan.delivery_plan_assignments.includes(:delivery)}
     )
+
+    # Le permite a la página pública de tracking del cliente (que ya está
+    # suscrita a este mismo canal para la posición del camión) reaccionar
+    # en vivo cuando SU parada pasa a in_route, sin tener que recargar.
+    DeliveryPlanChannel.broadcast_to(delivery_plan, {
+      type: "assignment_update",
+      delivery_id: delivery_id,
+      status: status
+    })
   end
 end

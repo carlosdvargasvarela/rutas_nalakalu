@@ -21,11 +21,21 @@ class PublicTrackingsController < ApplicationController
     end
 
     @address = @delivery.delivery_address
+    # El stage decide qué parcial se renderiza (ver show.html.erb); solo el
+    # parcial de :live lee la posición del camión desde @plan. Antes de que
+    # el conductor arranque ESTA parada, el cliente no debe poder ver por
+    # dónde anda el camión (revelaría otras paradas de la ruta) ni asumir
+    # que "ya viene" cuando aún no le toca.
+    @stage = client_stage
+  end
 
-    # Coordenadas para el mapa (asegurando Floats para Google Maps)
-    @truck_lat = @plan.current_lat&.to_f
-    @truck_lng = @plan.current_lng&.to_f
-    @dest_lat = @address.latitude&.to_f
-    @dest_lng = @address.longitude&.to_f
+  private
+
+  def client_stage
+    return :issue if @delivery.rescheduled?
+    return :issue if @assignment.cancelled?
+    return :delivered if @assignment.completed?
+    return :live if @assignment.in_route?
+    :waiting
   end
 end

@@ -1,6 +1,21 @@
 require "test_helper"
 
 class DeliveryPlanAssignmentTest < ActiveSupport::TestCase
+  include ActionCable::TestHelper
+
+  test "start! broadcasts an assignment_update so the client tracking page can react live" do
+    assignment = delivery_plan_assignments(:one)
+
+    messages = capture_broadcasts(DeliveryPlanChannel.broadcasting_for(assignment.delivery_plan)) do
+      assignment.start!
+    end
+
+    payload = messages.last
+    assert_equal "assignment_update", payload["type"]
+    assert_equal assignment.delivery_id, payload["delivery_id"]
+    assert_equal "in_route", payload["status"]
+  end
+
   test "creating an assignment records a stop_added PlanEvent on its plan" do
     plan = DeliveryPlan.create!(week: "30", year: 2026, status: :draft)
     delivery = deliveries(:one)
