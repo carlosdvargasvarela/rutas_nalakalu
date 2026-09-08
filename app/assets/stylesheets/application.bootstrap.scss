@@ -11,6 +11,8 @@ $light:      #E2D2B9; // Beige
 $dark:       #3D342C; // Café
 $body-bg:    #FFF7EE; // Blanco Hueso
 $body-color: #3D342C; // Café
+$font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+$btn-disabled-opacity: .75; // .65 por defecto se perdía contra fondos beige/crema de marca
 
 @import "bootstrap/scss/bootstrap";
 @import "bootstrap-icons/font/bootstrap-icons";
@@ -33,6 +35,7 @@ $body-color: #3D342C; // Café
 
 body {
   background-color: var(--color-brand-bg) !important;
+  font-family: var(--font-body);
 
   &.bg-light {
     background-color: var(--color-brand-bg) !important;

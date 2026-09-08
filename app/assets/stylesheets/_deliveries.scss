@@ -11,7 +11,8 @@
 
 .delivery-card {
   transition: all 0.2s ease;
-  border: 1px solid #edf2f7;
+  background-color: var(--color-surface) !important; // blanco: se separa del fondo crema de la página/lista
+  border: 1px solid var(--color-border);
   border-radius: 12px !important;
 }
 .delivery-card:hover {
@@ -20,9 +21,9 @@
 }
 
 .active-card .delivery-card {
-  background-color: #f0f7ff !important;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15) !important;
+  background-color: rgba(165, 78, 30, 0.08) !important; // tinte naranja de marca, no azul genérico
+  border-color: var(--color-brand-primary) !important;
+  box-shadow: 0 2px 8px rgba(165, 78, 30, 0.2) !important;
 }
 
 .delivery-card .card-title {
