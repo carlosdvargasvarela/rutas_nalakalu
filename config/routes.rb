@@ -191,6 +191,8 @@ Rails.application.routes.draw do
     resources :delivery_plan_assignments, only: [:destroy]
   end
 
+  get "/tracking", to: "trackings#index", as: :tracking
+
   # =============================================================================
   # IMPORTACIÓN DE ENTREGAS
   # =============================================================================
