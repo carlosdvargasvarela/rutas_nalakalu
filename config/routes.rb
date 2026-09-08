@@ -192,6 +192,7 @@ Rails.application.routes.draw do
   end
 
   get "/tracking", to: "trackings#index", as: :tracking
+  get "/tracking/:delivery_plan_id/route", to: "trackings#route", as: :tracking_route
 
   # =============================================================================
   # IMPORTACIÓN DE ENTREGAS

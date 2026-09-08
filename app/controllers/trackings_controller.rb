@@ -7,6 +7,17 @@ class TrackingsController < ApplicationController
       .map { |plan| serialize_plan(plan) }
   end
 
+  def route
+    authorize :tracking, :index?
+    plan = DeliveryPlan.find(params[:delivery_plan_id])
+
+    points = plan.delivery_plan_locations.ordered.map do |loc|
+      {lat: loc.latitude.to_f, lng: loc.longitude.to_f, captured_at: loc.captured_at}
+    end
+
+    render json: points
+  end
+
   private
 
   def serialize_plan(plan)
