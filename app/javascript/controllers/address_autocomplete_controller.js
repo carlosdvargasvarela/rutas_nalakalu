@@ -145,27 +145,28 @@ export default class extends Controller {
 
     try {
       const { Map } = await google.maps.importLibrary("maps");
-      const { AdvancedMarkerElement } =
-        await google.maps.importLibrary("marker");
+      await google.maps.importLibrary("marker");
       await google.maps.importLibrary("places");
 
       const initialLat = parseFloat(this.latTarget?.value) || 9.9281;
       const initialLng = parseFloat(this.lngTarget?.value) || -84.0907;
       const hasExisting = initialLat !== 9.9281 || initialLng !== -84.0907;
 
+      // ponytail: mapId + AdvancedMarkerElement fuerza el render "vector" (WebGL);
+      // cuando WebGL falla/está deshabilitado el mapa queda en gris sin error visible.
+      // google.maps.Marker (raster) es lo que ya usa el resto del código sin este problema.
       this.map = new Map(this.mapTarget, {
         center: { lat: initialLat, lng: initialLng },
         zoom: hasExisting ? 17 : 8,
-        mapId: "DEMO_MAP_ID", // Placeholder oficial de Google para Advanced Markers, no un Map ID propio
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: true,
       });
 
-      this.marker = new AdvancedMarkerElement({
+      this.marker = new google.maps.Marker({
         map: this.map,
         position: { lat: initialLat, lng: initialLng },
-        gmpDraggable: true,
+        draggable: true,
         title: "Ubicación de entrega",
       });
 
@@ -183,7 +184,7 @@ export default class extends Controller {
         this._lastInputSource = "map_click";
         const lat = event.latLng.lat();
         const lng = event.latLng.lng();
-        this.marker.position = event.latLng;
+        this.marker.setPosition(event.latLng);
         this.updateFromCoords(lat, lng);
         await this.reverseGeocode({ lat, lng });
       });
@@ -337,7 +338,10 @@ export default class extends Controller {
     if (!placeId) return null;
 
     return new Promise((resolve) => {
-      const service = new google.maps.places.PlacesService(this.mapTarget);
+      // ponytail: pasar el div del mapa (en vez de this.map) hace que PlacesService
+      // tome ese contenedor para su atribución "Powered by Google" y lo vacíe,
+      // borrando el mapa visualmente (childList queda en 0 tras seleccionar un lugar)
+      const service = new google.maps.places.PlacesService(this.map);
       service.getDetails(
         {
           placeId,
@@ -742,7 +746,7 @@ export default class extends Controller {
       this.map.setCenter(pos);
       this.map.setZoom(17);
     }
-    if (this.marker) this.marker.position = pos;
+    if (this.marker) this.marker.setPosition(pos);
     this.updateFields(lat, lng);
     this.updateDisplays(lat, lng);
     this.validateStatus();
