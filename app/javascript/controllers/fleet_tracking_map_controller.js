@@ -155,7 +155,7 @@ export default class extends Controller {
 
     const lat = parseFloat(current_lat);
     const lng = parseFloat(current_lng);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    if (!this._validCoord(lat) || !this._validCoord(lng)) return;
 
     // "Detenido" mide si la posición cambió, no solo si llegó un mensaje —
     // el driver puede seguir enviando batches idénticos mientras espera en una parada.

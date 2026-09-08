@@ -24,6 +24,7 @@
   </div>
 </div>
 <style>
-  #tracking-truck-list .list-group-item.active,
-  #tracking-truck-list .list-group-item.active .text-muted { color: rgba(255, 255, 255, 0.85); }
+  #tracking-truck-list .list-group-item.active { color: #fff; }
+  /* !important: la utility .text-muted de Bootstrap ya lo trae ($enable-important-utilities). */
+  #tracking-truck-list .list-group-item.active .text-muted { color: rgba(255, 255, 255, 0.85) !important; }
 </style>

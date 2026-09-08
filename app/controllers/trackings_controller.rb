@@ -3,13 +3,13 @@ class TrackingsController < ApplicationController
     authorize :tracking, :index?
 
     @plans = DeliveryPlan.active
-      .includes(:driver, :last_recorded_by, delivery_plan_assignments: {delivery: [:delivery_address, order: :client]})
+      .includes(:driver, :last_recorded_by, delivery_plan_assignments: :delivery)
       .map { |plan| serialize_plan(plan) }
   end
 
   def route
     authorize :tracking, :index?
-    plan = DeliveryPlan.find(params[:delivery_plan_id])
+    plan = DeliveryPlan.active.find(params[:delivery_plan_id])
 
     points = plan.delivery_plan_locations.ordered.map do |loc|
       {lat: loc.latitude.to_f, lng: loc.longitude.to_f, captured_at: loc.captured_at}

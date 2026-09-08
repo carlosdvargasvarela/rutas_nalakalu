@@ -33,8 +33,9 @@ class TrackingsControllerTest < ActionDispatch::IntegrationTest
 
     get tracking_url
     assert_response :success
-    assert_match active_plan.id.to_s, response.body
-    refute_match(/"id":#{draft_plan.id}[,}]/, response.body)
+    # El JSON va dentro de un atributo HTML, así que Rails escapa las comillas.
+    assert_match(/&quot;id&quot;:#{active_plan.id}[,}]/, response.body)
+    refute_match(/&quot;id&quot;:#{draft_plan.id}[,}]/, response.body)
   end
 
   test "route returns ordered GPS pings for a plan" do
