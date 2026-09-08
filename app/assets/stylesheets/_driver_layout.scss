@@ -27,7 +27,12 @@ body.driver-layout {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   padding-top: var(--dk-nav-h);
-  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  // Sprockets vuelve a pasar el CSS ya compilado por SassC en la etapa de
+  // compresión, y esa segunda pasada tampoco entiende max(...) con env()
+  // como argumento — así que evitamos max() del todo: el fallback de
+  // env() ya cubre el caso sin soporte, y en los dispositivos con inset
+  // real (los que lo necesitan) el valor típico ya supera los 16px.
+  padding-bottom: env(safe-area-inset-bottom, 16px);
   min-height: 100dvh;
   margin: 0;
 }
