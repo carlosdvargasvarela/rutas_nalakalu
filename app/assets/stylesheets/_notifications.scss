@@ -4,7 +4,7 @@
 .notification-item {
   transition: all 0.2s ease;
 }
-.notification-item:hover { background-color: #f8f9fa !important; }
+.notification-item:hover { background-color: var(--color-surface-subtle) !important; }
 
 .notification-content { line-height: 1.6; }
 .notification-content p { margin-bottom: 0.5rem; }
@@ -21,9 +21,9 @@
 }
 
 @keyframes pulse-light {
-  0%   { background-color: #e3f2fd; }
-  50%  { background-color: #f8f9fa; }
-  100% { background-color: #f8f9fa; }
+  0%   { background-color: var(--color-brand-bg); }
+  50%  { background-color: var(--color-surface-subtle); }
+  100% { background-color: var(--color-surface-subtle); }
 }
 .bg-light { animation: pulse-light 2s ease-in-out; }
 

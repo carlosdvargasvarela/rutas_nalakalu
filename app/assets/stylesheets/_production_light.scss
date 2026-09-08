@@ -4,21 +4,21 @@
    ============================================================ */
 
 .production-light {
-  --pd-bg:            #f8f9fa;
-  --pd-card:          #ffffff;
-  --pd-card-inner:    #f8f9fa;
-  --pd-border:        #dee2e6;
-  --pd-accent:        var(--color-brand-primary, #0d6efd);
-  --pd-text:          #212529;
-  --pd-muted:         #6c757d;
-  --pd-success-text:  #198754;
-  --pd-success-bg:    #d1e7dd;
+  --pd-bg:            var(--color-brand-bg);
+  --pd-card:          var(--color-surface);
+  --pd-card-inner:    var(--color-surface-subtle);
+  --pd-border:        var(--color-border);
+  --pd-accent:        var(--color-brand-primary);
+  --pd-text:          var(--color-text);
+  --pd-muted:         var(--color-text-muted);
+  --pd-success-text:  var(--color-success);
+  --pd-success-bg:    var(--color-success-subtle);
   --pd-success-item:  #f0fdf4;
-  --pd-danger-text:   #dc3545;
-  --pd-danger-bg:     #f8d7da;
+  --pd-danger-text:   var(--color-danger);
+  --pd-danger-bg:     var(--color-danger-subtle);
   --pd-danger-item:   #fff5f5;
-  --pd-warning-text:  #856404;
-  --pd-warning-bg:    #fff3cd;
+  --pd-warning-text:  var(--color-warning);
+  --pd-warning-bg:    var(--color-warning-subtle);
   --pd-warning-item:  #fffbeb;
   --pd-note-text:     #664d03;
 
@@ -28,7 +28,7 @@
 }
 
 .pd-header {
-  background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+  background: linear-gradient(135deg, var(--color-brand-primary) 0%, var(--color-text) 100%);
   padding: 14px 16px 16px;
 }
 
@@ -71,11 +71,11 @@
   height: 100%;
   border-radius: 5px;
   transition: width 0.3s ease;
-  background: #a54e1e;
+  background: var(--color-brand-primary);
 }
 
-.pd-load-summary-bar { background: #fff7ee; border-bottom: 1px solid #e6e0da; }
-.pd-mark-all-btn { background: #e9efe9; color: #4b7b4f; border: none; }
+.pd-load-summary-bar { background: var(--color-brand-bg); border-bottom: 1px solid #e6e0da; }
+.pd-mark-all-btn { background: var(--color-success-subtle); color: var(--color-success); border: none; }
 
 .pd-badge {
   font-size: 0.7rem;
@@ -85,10 +85,10 @@
   display: inline-block;
 }
 
-.pd-badge--ok      { background: #d1e7dd; color: #198754; }
-.pd-badge--missing { background: #f8d7da; color: #dc3545; }
-.pd-badge--partial { background: #fff3cd; color: #856404; }
-.pd-badge--pending { background: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6; }
+.pd-badge--ok      { background: var(--color-success-subtle); color: var(--color-success); }
+.pd-badge--missing { background: var(--color-danger-subtle); color: var(--color-danger); }
+.pd-badge--partial { background: var(--color-warning-subtle); color: var(--color-warning); }
+.pd-badge--pending { background: var(--color-surface-subtle); color: var(--color-text-muted); border: 1px solid var(--color-border); }
 
 .pd-avatar {
   border-radius: 14px;
@@ -98,7 +98,7 @@
   font-weight: 800;
   color: #fff;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #0d6efd, #6610f2);
+  background: linear-gradient(135deg, var(--color-brand-primary), var(--color-text));
 }
 
 .pd-filter-bar {
@@ -125,11 +125,11 @@
   transition: background 0.15s;
 }
 
-.pd-chip--all     { background: #0d6efd; color: #fff; }
-.pd-chip--unloaded{ background: #f8f9fa; color: #6c757d; border-color: #dee2e6; }
-.pd-chip--partial { background: #fff3cd; color: #856404; border-color: rgba(255,193,7,0.27); }
-.pd-chip--loaded  { background: #d1e7dd; color: #198754; border-color: rgba(25,135,84,0.27); }
-.pd-chip--missing { background: #f8d7da; color: #dc3545; border-color: rgba(220,53,69,0.27); }
+.pd-chip--all     { background: var(--color-brand-primary); color: #fff; }
+.pd-chip--unloaded{ background: var(--color-surface-subtle); color: var(--color-text-muted); border-color: var(--color-border); }
+.pd-chip--partial { background: var(--color-warning-subtle); color: var(--color-warning); border-color: rgba(180,83,9,0.27); }
+.pd-chip--loaded  { background: var(--color-success-subtle); color: var(--color-success); border-color: rgba(75,123,79,0.27); }
+.pd-chip--missing { background: var(--color-danger-subtle); color: var(--color-danger); border-color: rgba(220,53,69,0.27); }
 
 .pd-search-wrap {
   background: var(--pd-card-inner);
@@ -150,8 +150,8 @@
 
 .pd-search-input::placeholder { color: var(--pd-muted); }
 .pd-search-input:focus {
-  border-color: #0d6efd;
-  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 3px rgba(165, 78, 30, 0.15);
 }
 
 .pd-search-icon {
@@ -177,7 +177,7 @@
   width: 30px;
   height: 30px;
   border-radius: 9px;
-  background: #0d6efd;
+  background: var(--color-brand-primary);
   color: #fff;
   font-size: 0.75rem;
   font-weight: 800;
@@ -187,8 +187,8 @@
   flex-shrink: 0;
 }
 
-.pd-stop-badge--done    { background: #d1e7dd; color: #198754; }
-.pd-stop-badge--pending { background: #f0f0f0; color: #6c757d; }
+.pd-stop-badge--done    { background: var(--color-success-subtle); color: var(--color-success); }
+.pd-stop-badge--pending { background: #f0f0f0; color: var(--color-text-muted); }
 
 .pd-item-row {
   padding: 10px 14px;
@@ -202,7 +202,7 @@
 
 .pd-btn-ok {
   flex: 3;
-  background: #198754;
+  background: var(--color-success);
   color: #fff;
   border-radius: 11px;
   padding: 11px 0;
@@ -219,13 +219,13 @@
 .pd-btn-miss {
   flex: 3;
   background: #fff5f5;
-  color: #dc3545;
+  color: var(--color-danger);
   border-radius: 11px;
   padding: 11px 0;
   text-align: center;
   font-size: 0.8rem;
   font-weight: 700;
-  border: 1px solid #f8d7da;
+  border: 1px solid var(--color-danger-subtle);
   cursor: pointer;
   text-decoration: none;
   display: block;
@@ -234,13 +234,13 @@
 
 .pd-btn-undo {
   flex: 2;
-  background: #f8f9fa;
-  color: #6c757d;
+  background: var(--color-surface-subtle);
+  color: var(--color-text-muted);
   border-radius: 11px;
   padding: 11px 0;
   text-align: center;
   font-size: 0.75rem;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--color-border);
   cursor: pointer;
   text-decoration: none;
   display: block;
@@ -249,34 +249,34 @@
 
 .pd-btn-note {
   width: 44px;
-  background: #f8f9fa;
-  color: #6c757d;
+  background: var(--color-surface-subtle);
+  color: var(--color-text-muted);
   border-radius: 11px;
   padding: 11px 0;
   text-align: center;
   font-size: 1rem;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--color-border);
   cursor: pointer;
   display: block;
   flex-shrink: 0;
   min-height: 44px;
 }
 
-.pd-btn-note--active { color: #664d03; border-color: rgba(255,193,7,0.27); background: #fffbeb; }
-.pd-btn-note--loaded { color: #198754; border-color: rgba(25,135,84,0.27); }
+.pd-btn-note--active { color: #664d03; border-color: rgba(180,83,9,0.27); background: #fffbeb; }
+.pd-btn-note--loaded { color: var(--color-success); border-color: rgba(75,123,79,0.27); }
 
 .pd-card-footer {
-  border-top: 1px solid #dee2e6;
+  border-top: 1px solid var(--color-border);
   padding: 8px 14px;
   display: flex;
   gap: 8px;
-  background: #f8f9fa;
+  background: var(--color-surface-subtle);
 }
 
 .pd-btn-all {
   flex: 1;
-  background: #d1e7dd;
-  color: #198754;
+  background: var(--color-success-subtle);
+  color: var(--color-success);
   border-radius: 10px;
   padding: 8px;
   text-align: center;
@@ -287,13 +287,13 @@
 }
 
 .pd-btn-reset {
-  background: #f8f9fa;
-  color: #6c757d;
+  background: var(--color-surface-subtle);
+  color: var(--color-text-muted);
   border-radius: 10px;
   padding: 8px 12px;
   text-align: center;
   font-size: 0.8rem;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--color-border);
   cursor: pointer;
 }
 
@@ -342,15 +342,15 @@
 .pd-sheet-handle {
   width: 40px;
   height: 4px;
-  background: #dee2e6;
+  background: var(--color-border);
   border-radius: 2px;
   margin: 0 auto 14px;
 }
 
 .pd-sheet-product {
   font-size: 0.8rem;
-  color: #0d6efd;
-  background: rgba(13, 110, 253, 0.08);
+  color: var(--color-brand-primary);
+  background: rgba(165, 78, 30, 0.08);
   padding: 5px 10px;
   border-radius: 8px;
   display: inline-block;
@@ -360,7 +360,7 @@
 .pd-sheet-textarea {
   width: 100%;
   background: #fffbeb;
-  border: 1px solid #ffc107;
+  border: 1px solid var(--color-warning);
   border-radius: 12px;
   color: #664d03;
   font-size: 0.9rem;
@@ -373,13 +373,13 @@
 }
 
 .pd-sheet-textarea:focus {
-  border-color: #ffc107;
-  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
+  border-color: var(--color-warning);
+  box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.2);
 }
 
 .pd-sheet-save {
   flex: 2;
-  background: linear-gradient(135deg, #d97706, #f59e0b);
+  background: linear-gradient(135deg, var(--color-warning), #f59e0b);
   color: #000;
   border-radius: 12px;
   padding: 12px;
@@ -392,19 +392,19 @@
 
 .pd-sheet-cancel {
   flex: 1;
-  background: #f8f9fa;
-  color: #6c757d;
+  background: var(--color-surface-subtle);
+  color: var(--color-text-muted);
   border-radius: 12px;
   padding: 12px;
   text-align: center;
   font-size: 0.9rem;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--color-border);
   cursor: pointer;
 }
 
 .pd-plan-cta {
   display: block;
-  background: linear-gradient(135deg, #6d28d9, #4f46e5);
+  background: linear-gradient(135deg, var(--color-brand-primary), var(--color-text));
   color: #fff;
   border-radius: 12px;
   padding: 11px;
@@ -419,12 +419,12 @@
 .pd-plan-cta--missing { background: linear-gradient(135deg, #7f1d1d, #b91c1c); }
 
 @keyframes pd-flash-success {
-  0%   { background: #d1e7dd; }
+  0%   { background: var(--color-success-subtle); }
   100% { background: #f0fdf4; }
 }
 
 @keyframes pd-flash-error {
-  0%   { background: #f8d7da; }
+  0%   { background: var(--color-danger-subtle); }
   100% { background: #fff5f5; }
 }
 
@@ -437,6 +437,76 @@
 .pd-header-subtitle {
   font-size: 0.8rem;
   color: rgba(255,255,255,0.6);
+}
+
+// Close button on the note bottom-sheet (production/delivery_plans/loading)
+.pd-sheet-close {
+  color: #64748b;
+  font-size: 1.1rem;
+  background: none;
+  border: none;
+}
+
+// Utility: allow flex children to shrink/truncate below content size
+.min-width-0 { min-width: 0; }
+
+// Delivery card header text (production/deliveries/_delivery_card, delivery_items/_delivery_item_row)
+.pd-client-name    { font-size: 0.9rem; color: #1e293b; }
+.pd-client-address { font-size: 0.75rem; color: #64748b; }
+.pd-chevron-icon    { color: #94a3b8; font-size: 0.8rem; }
+
+.pd-badge--info {
+  background: rgba(137, 152, 123, 0.15);
+  color: var(--color-brand-accent);
+  border: 1px solid rgba(137, 152, 123, 0.3);
+}
+
+.pd-mini-progress-track {
+  width: 36px;
+  height: 5px;
+  background: var(--color-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.pd-mini-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+// Task note (mandado sin ítems) — fondo/borde verde de estado "cargado", se conserva
+.pd-task-note {
+  background: #f0fdf4;
+  border-left: 3px solid #22c55e;
+  color: #374151;
+  font-size: 0.82rem;
+}
+
+// Load summary bar (production/delivery_plans/_load_summary)
+.pd-summary-title {
+  color: #64748b;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.pd-summary-value        { color: #475569; }
+.pd-summary-value--ok    { color: #16a34a; }
+.pd-summary-value--warn  { color: #d97706; }
+.pd-summary-sublabel {
+  font-size: 0.65rem;
+  color: #94a3b8;
+}
+
+// Stat cell inside .pd-header (semi-transparent, on dark gradient)
+.pd-header-stat-cell {
+  background: rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 6px 4px;
+  text-align: center;
+}
+
+.pd-header-stat-label {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.4);
 }
 
 // Date navigation buttons (prev/next chevron)
@@ -460,7 +530,7 @@
 // "Hoy" / today button
 .pd-today-btn {
   background: #fff;
-  color: #6d28d9;
+  color: var(--color-brand-primary);
   border-radius: 10px;
   padding: 6px 12px;
 }
@@ -468,18 +538,18 @@
 // Empty-state elements
 .pd-empty-icon {
   font-size: 3rem;
-  color: #2d2d4e;
+  color: var(--color-text-muted);
 }
 .pd-empty-title {
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 .pd-empty-subtitle {
-  color: #475569;
+  color: var(--color-text-muted);
   font-size: 0.85rem;
 }
 .pd-empty-link {
-  border: 1px solid #7c3aed;
-  color: #a78bfa;
+  border: 1px solid var(--color-brand-primary);
+  color: var(--color-brand-primary);
   border-radius: 10px;
 }
 
@@ -515,7 +585,7 @@
 // Driver name inside plan card header
 .pd-driver-name {
   font-size: 0.95rem;
-  color: #f1f5f9;
+  color: var(--color-text);
 }
 
 // Progress caption label
@@ -523,4 +593,3 @@
   color: #64748b;
   font-size: 0.72rem;
 }
-

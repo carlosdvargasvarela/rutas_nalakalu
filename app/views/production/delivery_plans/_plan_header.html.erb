@@ -30,18 +30,17 @@
   <%# Fila superior: atrás + avatar + nombre + badge %>
   <div class="d-flex align-items-center gap-3 mb-3">
     <%= link_to production_delivery_plans_path(date: delivery_plan.first_delivery_date || Date.current),
-        class: "d-flex align-items-center justify-content-center flex-shrink-0",
-        style: "background:rgba(255,255,255,0.12);color:#fff;width:34px;height:34px;border-radius:10px;text-decoration:none;" do %>
+        class: "pd-nav-btn text-decoration-none d-flex align-items-center justify-content-center flex-shrink-0" do %>
       <i class="bi bi-chevron-left"></i>
     <% end %>
-    <div class="pd-avatar flex-shrink-0" style="width:40px;height:40px;font-size:0.9rem;">
+    <div class="pd-avatar pd-avatar-lg flex-shrink-0">
       <%= initials %>
     </div>
-    <div class="flex-grow-1" style="min-width:0;">
-      <div class="fw-bold text-white text-truncate" style="font-size:0.95rem;">
+    <div class="flex-grow-1 min-width-0">
+      <div class="fw-bold text-white text-truncate pd-driver-name">
         <%= delivery_plan.driver&.name || "Sin asignar" %>
       </div>
-      <div style="font-size:0.72rem;color:rgba(255,255,255,0.6);">
+      <div class="pd-header-subtitle">
         <i class="bi bi-truck me-1"></i><%= delivery_plan.truck_label || "N/A" %>
         &nbsp;·&nbsp;Plan #<%= delivery_plan.id %>
         &nbsp;·&nbsp;Sem. <%= delivery_plan.week %>/<%= delivery_plan.year %>
@@ -52,7 +51,7 @@
 
   <%# Barra de progreso %>
   <div class="d-flex justify-content-between align-items-center mb-1">
-    <small style="color:rgba(255,255,255,0.55);font-size:0.72rem;">Progreso de carga del plan</small>
+    <small class="pd-header-subtitle">Progreso de carga del plan</small>
     <span class="fw-bold" style="color:<%= pct_color %>;font-size:0.95rem;"><%= delivery_plan.load_percentage %>%</span>
   </div>
   <div class="pd-progress-wrap mb-3">
@@ -62,27 +61,27 @@
   <%# Stats row: 4 celdas %>
   <div class="row g-2">
     <div class="col-3">
-      <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:6px 4px;text-align:center;">
-        <div class="fw-bold" style="color:#94a3b8;font-size:1rem;"><%= load_stats[:total_items] %></div>
-        <div style="font-size:0.65rem;color:rgba(255,255,255,0.4);">Total</div>
+      <div class="pd-header-stat-cell">
+        <div class="fw-bold fs-6 pd-stat-value"><%= load_stats[:total_items] %></div>
+        <div class="pd-header-stat-label">Total</div>
       </div>
     </div>
     <div class="col-3">
-      <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:6px 4px;text-align:center;">
-        <div class="fw-bold" style="color:#4ade80;font-size:1rem;"><%= load_stats[:loaded_items] %></div>
-        <div style="font-size:0.65rem;color:rgba(255,255,255,0.4);">Cargados</div>
+      <div class="pd-header-stat-cell">
+        <div class="fw-bold fs-6 pd-stat-value--ok"><%= load_stats[:loaded_items] %></div>
+        <div class="pd-header-stat-label">Cargados</div>
       </div>
     </div>
     <div class="col-3">
-      <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:6px 4px;text-align:center;">
-        <div class="fw-bold" style="color:#fbbf24;font-size:1rem;"><%= load_stats[:unloaded_items] %></div>
-        <div style="font-size:0.65rem;color:rgba(255,255,255,0.4);">Pendientes</div>
+      <div class="pd-header-stat-cell">
+        <div class="fw-bold fs-6 pd-stat-value--warn"><%= load_stats[:unloaded_items] %></div>
+        <div class="pd-header-stat-label">Pendientes</div>
       </div>
     </div>
     <div class="col-3">
-      <div style="background:rgba(255,255,255,0.08);border-radius:10px;padding:6px 4px;text-align:center;">
-        <div class="fw-bold" style="color:#f87171;font-size:1rem;"><%= load_stats[:missing_items] %></div>
-        <div style="font-size:0.65rem;color:rgba(255,255,255,0.4);">Faltantes</div>
+      <div class="pd-header-stat-cell">
+        <div class="fw-bold fs-6 pd-stat-value--error"><%= load_stats[:missing_items] %></div>
+        <div class="pd-header-stat-label">Faltantes</div>
       </div>
     </div>
   </div>

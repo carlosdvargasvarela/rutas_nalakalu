@@ -92,7 +92,7 @@
 .kpi-card {
   border-radius: 1.25rem;
   border: none;
-  @include linear-gradient(135deg, #ffffff, #f8f9fa);
+  @include linear-gradient(135deg, var(--color-surface), var(--color-surface-subtle));
   @include box-shadow(0, 4px, 20px, rgba(0, 0, 0, 0.08));
   @include cubic-transition(all, 0.4s);
   animation: fadeInUp 0.6s ease-out;
@@ -233,7 +233,7 @@
     @include smooth-transition();
     
     &:hover {
-      @include linear-gradient(135deg, #f8f9fa, #e9ecef);
+      @include linear-gradient(135deg, var(--color-surface-subtle), #e9ecef);
     }
     
     .badge {
@@ -262,7 +262,7 @@
     @include smooth-transition();
     
     &:hover {
-      @include linear-gradient(135deg, #f8f9fa, #e9ecef);
+      @include linear-gradient(135deg, var(--color-surface-subtle), #e9ecef);
     }
   }
   

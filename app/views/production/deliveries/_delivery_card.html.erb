@@ -28,24 +28,24 @@
        data-bs-target="#delivery_items_<%= delivery.id %>"
        aria-expanded="<%= delivery.load_status == 'all_loaded' ? 'false' : 'true' %>">
     <div class="pd-stop-badge <%= stop_badge_class %>"><%= stop_num %></div>
-    <div class="flex-grow-1" style="min-width:0;">
-      <div class="fw-bold text-truncate" style="font-size:0.9rem;color:#1e293b;">
+    <div class="flex-grow-1 min-width-0">
+      <div class="fw-bold text-truncate pd-client-name">
         <%= delivery.client&.name %>
       </div>
-      <div class="text-truncate" style="font-size:0.75rem;color:#64748b;">
+      <div class="text-truncate pd-client-address">
         <i class="bi bi-geo-alt me-1"></i><%= delivery.delivery_address&.address&.truncate(45) %>
       </div>
     </div>
     <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
       <% if delivery.internal_delivery? && delivery.delivery_items.empty? %>
         <%# Mandado sin ítems: solo badge de tipo %>
-        <span class="pd-badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;">
+        <span class="pd-badge pd-badge--info">
           <i class="bi bi-clipboard-check me-1"></i>Mandado
         </span>
       <% else %>
         <%# Mini progress bar %>
-        <div style="width:36px;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;">
-          <div style="height:100%;width:<%= delivery.load_percentage %>%;background:<%= top_color %>;border-radius:3px;"></div>
+        <div class="pd-mini-progress-track">
+          <div class="pd-mini-progress-fill" style="width:<%= delivery.load_percentage %>%;background:<%= top_color %>;"></div>
         </div>
         <%# Badge count %>
         <% loaded = delivery.delivery_items.count { |i| i.load_status == "loaded" } %>
@@ -60,7 +60,7 @@
         %>
         <span class="pd-badge <%= count_badge_class %>"><%= loaded %>/<%= total %></span>
       <% end %>
-      <i class="bi bi-chevron-down" style="color:#94a3b8;font-size:0.8rem;"></i>
+      <i class="bi bi-chevron-down pd-chevron-icon"></i>
     </div>
   </div>
 
@@ -71,7 +71,7 @@
     <% if delivery.internal_delivery? && delivery.delivery_items.empty? %>
       <div class="px-3 py-2">
         <% if delivery.delivery_notes.present? %>
-          <div class="small p-2 rounded" style="background:#f0fdf4;border-left:3px solid #22c55e;color:#374151;font-size:0.82rem;">
+          <div class="small p-2 rounded pd-task-note">
             <i class="bi bi-clipboard-check me-1 text-success"></i>
             <%= delivery.delivery_notes %>
           </div>

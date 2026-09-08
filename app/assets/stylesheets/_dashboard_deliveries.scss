@@ -22,7 +22,7 @@
 
 /* Hover effect en items con sombra profunda */
 .delivery-item-animated:hover {
-    @include linear-gradient(to right, #f8f9fa, #ffffff);
+    @include linear-gradient(to right, var(--color-surface-subtle), var(--color-surface));
     border-left-color: #a54e1e;
     @include box-shadow-layered(0 8px 24px rgba(165, 78, 30, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08));
     transform: translateX(8px) translateY(-4px);
@@ -57,7 +57,7 @@
 
 /* Paginación mejorada con sombra */
 .unplanned-deliveries-card .card-footer {
-    @include linear-gradient(to bottom, #ffffff, #f8f9fa);
+    @include linear-gradient(to bottom, var(--color-surface), var(--color-surface-subtle));
     border-top: 1px solid rgba(0, 0, 0, 0.05);
     @include box-shadow(0, -4px, 12px, rgba(0, 0, 0, 0.06));
 }

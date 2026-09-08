@@ -134,7 +134,7 @@
 }
 
 /* Bloque crítico — rojo de peligro semántico, se conserva */
-.timeline-block--critical .timeline-time .time-hour { color: #dc3545; }
+.timeline-block--critical .timeline-time .time-hour { color: var(--color-danger); }
 
 /* Diffs de campos PaperTrail */
 .tc-diff { }

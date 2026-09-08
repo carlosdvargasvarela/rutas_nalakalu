@@ -81,7 +81,7 @@
 }
 
 // Mixin para borde animado inferior
-@mixin animated-border-bottom($height: 3px, $color-start: #0d6efd, $color-end: #0dcaf0, $duration: 0.5s) {
+@mixin animated-border-bottom($height: 3px, $color-start: #a54e1e, $color-end: #89987b, $duration: 0.5s) {
   position: relative;
   
   &::after {
@@ -102,7 +102,7 @@
 }
 
 // Mixin para efecto de escala en iconos
-@mixin icon-hover-effect($scale: 1.3, $rotate: 5deg, $color: #0d6efd) {
+@mixin icon-hover-effect($scale: 1.3, $rotate: 5deg, $color: #a54e1e) {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0));
   
@@ -124,7 +124,7 @@
 }
 
 // Mixin para hover con borde izquierdo
-@mixin hover-border-left($border-color: #0d6efd, $bg-gradient-start: rgba(13, 110, 253, 0.05), $translate-x: 5px) {
+@mixin hover-border-left($border-color: #a54e1e, $bg-gradient-start: rgba(165, 78, 30, 0.05), $translate-x: 5px) {
   transition: all 0.3s ease;
   border-left: 3px solid transparent;
   

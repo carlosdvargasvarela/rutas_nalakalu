@@ -1,7 +1,7 @@
 <%# app/views/production/delivery_plans/_load_summary.html.erb %>
 <div class="px-2 py-2 pd-load-summary-bar">
   <div class="d-flex justify-content-between align-items-center mb-2">
-    <small class="fw-semibold" style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;">
+    <small class="fw-semibold pd-summary-title">
       <i class="bi bi-box-seam me-1"></i>Resumen de productos
     </small>
     <% if policy(delivery_plan).mark_all_loaded? %>
@@ -17,28 +17,28 @@
   <div class="row g-2">
     <div class="col-3">
       <div class="pd-mini-stat">
-        <div class="fw-bold" style="color:#475569;font-size:1rem;"><%= load_stats[:total_items] %></div>
-        <div style="font-size:0.65rem;color:#94a3b8;">Total</div>
+        <div class="fw-bold fs-6 pd-summary-value"><%= load_stats[:total_items] %></div>
+        <div class="pd-summary-sublabel">Total</div>
       </div>
     </div>
     <div class="col-3">
       <div class="pd-mini-stat">
-        <div class="fw-bold" style="color:#16a34a;font-size:1rem;"><%= load_stats[:loaded_items] %></div>
-        <div style="font-size:0.65rem;color:#94a3b8;">Cargados</div>
+        <div class="fw-bold fs-6 pd-summary-value--ok"><%= load_stats[:loaded_items] %></div>
+        <div class="pd-summary-sublabel">Cargados</div>
       </div>
     </div>
     <div class="col-3">
       <div class="pd-mini-stat">
-        <div class="fw-bold" style="color:#d97706;font-size:1rem;"><%= load_stats[:unloaded_items] %></div>
-        <div style="font-size:0.65rem;color:#94a3b8;">Pendientes</div>
+        <div class="fw-bold fs-6 pd-summary-value--warn"><%= load_stats[:unloaded_items] %></div>
+        <div class="pd-summary-sublabel">Pendientes</div>
       </div>
     </div>
     <div class="col-3">
       <div class="pd-mini-stat">
-        <div class="fw-bold" style="color:<%= load_stats[:missing_items] > 0 ? '#dc2626' : '#94a3b8' %>;font-size:1rem;">
+        <div class="fw-bold fs-6" style="color:<%= load_stats[:missing_items] > 0 ? '#dc2626' : '#94a3b8' %>;">
           <%= load_stats[:missing_items] %>
         </div>
-        <div style="font-size:0.65rem;color:#94a3b8;">Faltantes</div>
+        <div class="pd-summary-sublabel">Faltantes</div>
       </div>
     </div>
   </div>
