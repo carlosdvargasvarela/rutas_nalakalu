@@ -222,6 +222,8 @@ class DeliveriesController < ApplicationController
       end
       format.html { redirect_to @delivery, notice: "Entrega aprobada correctamente para esta semana." }
     end
+  rescue => e
+    render_delivery_error_flash("Error al aprobar la entrega: #{e.message}")
   end
 
   def mark_as_delivered
@@ -244,6 +246,8 @@ class DeliveriesController < ApplicationController
       end
       format.html { redirect_to @delivery, notice: "Entrega marcada como completada." }
     end
+  rescue => e
+    render_delivery_error_flash("Error al marcar la entrega como completada: #{e.message}")
   end
 
   def start_warehousing
@@ -284,6 +288,8 @@ class DeliveriesController < ApplicationController
       end
       format.html { redirect_to @delivery, notice: "Entrega en bodegaje." }
     end
+  rescue => e
+    render_delivery_error_flash("Error al iniciar el bodegaje: #{e.message}")
   end
 
   def end_warehousing
@@ -304,6 +310,8 @@ class DeliveriesController < ApplicationController
       end
       format.html { redirect_to @delivery, notice: "Bodegaje finalizado." }
     end
+  rescue => e
+    render_delivery_error_flash("Error al finalizar el bodegaje: #{e.message}")
   end
 
   def split_form
@@ -945,14 +953,7 @@ class DeliveriesController < ApplicationController
       format.html { redirect_to @delivery, notice: "Entrega desconfirmada correctamente." }
     end
   rescue => e
-    respond_to do |format|
-      format.turbo_stream do
-        flash.now[:alert] = "Error al desconfirmar: #{e.message}"
-        render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          status: :unprocessable_entity
-      end
-      format.html { redirect_to @delivery, alert: "Error al desconfirmar: #{e.message}" }
-    end
+    render_delivery_error_flash("Error al desconfirmar: #{e.message}")
   end
 
   def update_status
@@ -1026,14 +1027,7 @@ class DeliveriesController < ApplicationController
       format.html { redirect_to @delivery, notice: "Entrega reabierta correctamente." }
     end
   rescue => e
-    respond_to do |format|
-      format.turbo_stream do
-        flash.now[:alert] = "Error al reabrir la entrega: #{e.message}"
-        render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          status: :unprocessable_entity
-      end
-      format.html { redirect_to @delivery, alert: "Error al reabrir: #{e.message}" }
-    end
+    render_delivery_error_flash("Error al reabrir la entrega: #{e.message}")
   end
 
   private
@@ -1109,6 +1103,17 @@ class DeliveriesController < ApplicationController
     )
 
     render turbo_stream: streams
+  end
+
+  def render_delivery_error_flash(message)
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:alert] = message
+        render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          status: :unprocessable_entity
+      end
+      format.html { redirect_to @delivery, alert: message }
+    end
   end
 
   def sanitize_delivery_address_param!
