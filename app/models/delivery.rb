@@ -220,6 +220,18 @@ class Delivery < ApplicationRecord
     %w[order delivery_address delivery_items]
   end
 
+  # Filtra `scope` a las entregas donde el predicate de instancia (ej.
+  # :requires_service_case_action?, :requires_repair_service_action?) da
+  # true. Esos predicates dependen de keywords dinámicos y normalización de
+  # texto (ver Deliveries::ServiceCaseDetector/RepairServiceDetector) que no
+  # es practicable expresar en SQL, así que hay que cargar y evaluar en
+  # memoria — esto al menos evita repetir ese "select → ids → where(id:)"
+  # en cada controller que necesita filtrar por uno de estos predicates.
+  def self.filter_by_predicate(scope, predicate)
+    ids = scope.includes(delivery_items: :order_item).select { |d| d.public_send(predicate) }.map(&:id)
+    scope.where(id: ids)
+  end
+
   # ============================================================================
   # MÉTODOS PÚBLICOS
   # ============================================================================

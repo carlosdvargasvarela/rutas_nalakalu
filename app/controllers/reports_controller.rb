@@ -19,17 +19,11 @@ class ReportsController < ApplicationController
     @deliveries = @deliveries.where(status: statuses) if statuses.present?
 
     if params[:only_service_cases].present?
-      matching_ids = @deliveries.includes(delivery_items: :order_item)
-        .select { |delivery| delivery.requires_service_case_action? }
-        .map(&:id)
-      @deliveries = @deliveries.where(id: matching_ids)
+      @deliveries = Delivery.filter_by_predicate(@deliveries, :requires_service_case_action?)
     end
 
     if params[:only_repair_services].present?
-      matching_ids = @deliveries.includes(delivery_items: :order_item)
-        .select { |delivery| delivery.requires_repair_service_action? }
-        .map(&:id)
-      @deliveries = @deliveries.where(id: matching_ids)
+      @deliveries = Delivery.filter_by_predicate(@deliveries, :requires_repair_service_action?)
     end
 
     respond_to do |format|
