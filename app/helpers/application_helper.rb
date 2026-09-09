@@ -21,14 +21,6 @@ module ApplicationHelper
     BOOTSTRAP_BADGE_VARIANTS.include?(c) ? c : "secondary"
   end
 
-  def smart_deliveries_path(params = {})
-    if current_user&.production_manager? || current_user&.logistics?
-      management_production_deliveries_path(params)
-    else
-      deliveries_path(params)
-    end
-  end
-
   def smart_delivery_path(delivery)
     if current_user&.production_manager? || current_user&.logistics?
       production_delivery_path(delivery)
@@ -122,11 +114,6 @@ module ApplicationHelper
   def format_date_dd_mm_yyyy(date)
     return "" if date.blank?
     date.strftime("%d/%m/%Y")
-  end
-
-  def format_datetime_dd_mm_yyyy_hh_mm(datetime)
-    return "" if datetime.blank?
-    datetime.strftime("%d/%m/%Y %H:%M")
   end
 
   # Métodos de color por entidad
