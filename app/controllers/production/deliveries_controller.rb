@@ -282,7 +282,7 @@ class Production::DeliveriesController < ApplicationController
 
   def filtered_deliveries
     base = Delivery
-      .includes(order: [:client, :seller], delivery_address: :client)
+      .includes(order: [:client, :seller, :order_contacts], delivery_address: :client)
       .preload(delivery_items: :order_item)
 
     if @date_from || @date_to

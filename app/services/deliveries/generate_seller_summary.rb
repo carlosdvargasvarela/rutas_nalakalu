@@ -14,7 +14,7 @@ module Deliveries
         .where("deliveries.created_at >= ? AND deliveries.created_at <= ?", window_start, window_end)
         .includes(
           :delivery_address,
-          order: [:client, :seller],
+          order: [:client, :seller, :order_contacts],
           delivery_items: {order_item: :order}
         )
         .order(:created_at)
