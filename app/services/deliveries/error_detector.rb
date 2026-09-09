@@ -68,23 +68,39 @@ module Deliveries
     # ==========================
     # 2. ERRORES DE CONTACTO
     # ==========================
+    # Un pedido con contactos propios (order_contacts) ya no depende de los
+    # campos contact_name/contact_phone de la entrega — esos solo son el
+    # fallback legacy para pedidos que nunca migraron a contactos múltiples
+    # (ver app/views/deliveries/_order_contacts_display.html.erb, la misma
+    # prioridad se usa ahí para mostrarlos).
     def contact_errors
       errors = []
+      order_contacts = delivery.order&.order_contacts.presence
 
-      if delivery.contact_name.blank?
-        errors << {
-          category: "Contacto",
-          severity: "high",
-          message: "Sin nombre de contacto"
-        }
-      end
+      if order_contacts.present?
+        if order_contacts.none? { |c| c.phone.present? }
+          errors << {
+            category: "Contacto",
+            severity: "critical",
+            message: "Ningún contacto del pedido tiene teléfono registrado"
+          }
+        end
+      else
+        if delivery.contact_name.blank?
+          errors << {
+            category: "Contacto",
+            severity: "high",
+            message: "Sin nombre de contacto"
+          }
+        end
 
-      if delivery.contact_phone.blank?
-        errors << {
-          category: "Contacto",
-          severity: "critical",
-          message: "Sin teléfono de contacto"
-        }
+        if delivery.contact_phone.blank?
+          errors << {
+            category: "Contacto",
+            severity: "critical",
+            message: "Sin teléfono de contacto"
+          }
+        end
       end
 
       errors

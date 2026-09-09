@@ -69,7 +69,7 @@ class DashboardController < ApplicationController
       .where(delivery_date: @error_date_range)
       .where(status: [:scheduled, :ready_to_deliver])
       .includes(
-        order: [:client, :seller, :order_items],
+        order: [:client, :seller, :order_items, :order_contacts],
         delivery_address: :client,
         delivery_items: :order_item
       )
