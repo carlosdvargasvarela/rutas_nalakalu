@@ -1217,44 +1217,40 @@ class DeliveriesController < ApplicationController
     )
   end
 
-  def register_devolucion_note
-    note = params.dig(:delivery, :delivery_notes).presence ||
-      "#{Deliveries::Vocabulary.service_type_label("devolucion")} al cliente"
+  def register_delivery_note(default_note:, event_action:, event_context:)
+    note = params.dig(:delivery, :delivery_notes).presence || default_note
     existing = @delivery.delivery_notes.to_s.strip
     new_notes = existing.present? ? "#{existing}\n#{note}" : note
     @delivery.update!(delivery_notes: new_notes)
     DeliveryEvent.record(
       delivery: @delivery,
-      action: "service_case_noted",
+      action: event_action,
       actor: current_user,
-      payload: { context: "devolucion", note: note }
+      payload: { context: event_context, note: note }
+    )
+  end
+
+  def register_devolucion_note
+    register_delivery_note(
+      default_note: "#{Deliveries::Vocabulary.service_type_label("devolucion")} al cliente",
+      event_action: "service_case_noted",
+      event_context: "devolucion"
     )
   end
 
   def register_reparacion_note
-    note = params.dig(:delivery, :delivery_notes).presence ||
-      Deliveries::Vocabulary.service_type_label("reparacion")
-    existing = @delivery.delivery_notes.to_s.strip
-    new_notes = existing.present? ? "#{existing}\n#{note}" : note
-    @delivery.update!(delivery_notes: new_notes)
-    DeliveryEvent.record(
-      delivery: @delivery,
-      action: "service_case_noted",
-      actor: current_user,
-      payload: { context: "reparacion", note: note }
+    register_delivery_note(
+      default_note: Deliveries::Vocabulary.service_type_label("reparacion"),
+      event_action: "service_case_noted",
+      event_context: "reparacion"
     )
   end
 
   def register_repair_entrega_note
-    note = params.dig(:delivery, :delivery_notes).presence || "Entrega de producto reparado al cliente"
-    existing = @delivery.delivery_notes.to_s.strip
-    new_notes = existing.present? ? "#{existing}\n#{note}" : note
-    @delivery.update!(delivery_notes: new_notes)
-    DeliveryEvent.record(
-      delivery: @delivery,
-      action: "repair_service_noted",
-      actor: current_user,
-      payload: { context: "repair_entrega", note: note }
+    register_delivery_note(
+      default_note: "Entrega de producto reparado al cliente",
+      event_action: "repair_service_noted",
+      event_context: "repair_entrega"
     )
   end
 
