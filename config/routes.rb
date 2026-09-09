@@ -261,7 +261,9 @@ Rails.application.routes.draw do
 
   namespace :admin do
     resources :showrooms, only: [:index, :new, :create, :edit, :update, :destroy]
-    resources :vendors, only: [:index, :new, :create, :edit, :update, :destroy]
+    resources :vendors, only: [:index, :new, :create, :edit, :update, :destroy] do
+      resources :vendor_contacts, only: [:create, :update, :destroy]
+    end
 
     resources :users, only: [:index, :new, :create, :edit, :update] do
       member do

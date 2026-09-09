@@ -6,9 +6,6 @@ class Vendor < ApplicationRecord
   has_many :vendor_addresses, dependent: :destroy
   has_many :vendor_business_hours, dependent: :destroy
 
-  accepts_nested_attributes_for :vendor_contacts, allow_destroy: true, reject_if: proc { |attrs|
-    attrs["name"].blank?
-  }
   accepts_nested_attributes_for :vendor_addresses, allow_destroy: true, reject_if: proc { |attrs|
     attrs["address"].blank?
   }

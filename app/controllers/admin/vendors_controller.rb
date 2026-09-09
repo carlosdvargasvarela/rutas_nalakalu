@@ -10,7 +10,6 @@ class Admin::VendorsController < ApplicationController
 
   def new
     @vendor = Vendor.new
-    @vendor.vendor_contacts.build
     ensure_business_hours!(@vendor)
     authorize @vendor
   end
@@ -24,14 +23,12 @@ class Admin::VendorsController < ApplicationController
         format.turbo_stream { render turbo_stream: close_modal_and_refresh_vendor_select }
       end
     else
-      @vendor.vendor_contacts.build if @vendor.vendor_contacts.empty?
       ensure_business_hours!(@vendor)
       render :new, status: :unprocessable_entity
     end
   end
 
   def edit
-    @vendor.vendor_contacts.build
     ensure_business_hours!(@vendor)
     authorize @vendor
     render layout: false if turbo_frame_request?
@@ -57,7 +54,6 @@ class Admin::VendorsController < ApplicationController
         end
       end
     else
-      @vendor.vendor_contacts.build
       ensure_business_hours!(@vendor)
       respond_to do |format|
         format.html { render :edit, status: :unprocessable_entity }
@@ -100,7 +96,6 @@ class Admin::VendorsController < ApplicationController
   def vendor_params
     params.require(:vendor).permit(
       :name,
-      vendor_contacts_attributes: [:id, :name, :phone, :is_primary, :_destroy],
       vendor_addresses_attributes: [:id, :address, :description, :latitude, :longitude, :plus_code, :_destroy],
       vendor_business_hours_attributes: [:id, :day_of_week, :opens_at, :closes_at, :closed]
     )

@@ -72,13 +72,12 @@ class Admin::VendorsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "Ferretería EPA Norte"
   end
 
-  test "admin can create a vendor with a contact and address" do
+  test "admin can create a vendor with an address" do
     sign_in @admin
-    assert_difference -> { Vendor.count } => 1, -> { VendorContact.count } => 1, -> { VendorAddress.count } => 1 do
+    assert_difference -> { Vendor.count } => 1, -> { VendorAddress.count } => 1 do
       post admin_vendors_url, params: {
         vendor: {
           name: "Ferretería EPA",
-          vendor_contacts_attributes: {"0" => {name: "Juan Pérez", phone: "8888-8888", is_primary: "1"}},
           vendor_addresses_attributes: {"0" => {address: "San José", latitude: "9.93", longitude: "-84.08"}}
         }
       }

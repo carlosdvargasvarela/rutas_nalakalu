@@ -1,71 +1,55 @@
-<%= simple_form_for [:admin, vendor] do |f| %>
-  <% if vendor.errors.any? %>
-    <div class="alert alert-danger">
-      <ul class="mb-0">
-        <% vendor.errors.full_messages.each do |msg| %>
-          <li><%= msg %></li>
+<% if vendor.errors.any? %>
+  <div class="alert alert-danger">
+    <ul class="mb-0">
+      <% vendor.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<div class="accordion" id="vendorAccordion">
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#vendorGeneral">
+        <i class="bi bi-truck me-2 text-primary"></i><strong>Datos generales</strong>
+      </button>
+    </h2>
+    <div id="vendorGeneral" class="accordion-collapse collapse show" data-bs-parent="#vendorAccordion">
+      <div class="accordion-body">
+        <div class="mb-3">
+          <label class="form-label fw-bold" for="vendor_name">Nombre del proveedor</label>
+          <%# form="vendor_form": vive fuera del <form> de abajo a propósito (el bloque de
+              Contactos, entre este campo y ese form, tiene sus propios <form> turbo_stream;
+              anidar <form> es inválido y el navegador manda el submit al equivocado). Este
+              atributo lo asocia igual al form principal sin necesidad de envolverlo. %>
+          <input type="text" name="vendor[name]" id="vendor_name" form="vendor_form"
+                 value="<%= vendor.name %>" class="form-control" placeholder="Ej: Ferretería EPA">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vendorContacts">
+        <i class="bi bi-person-lines-fill me-2 text-success"></i><strong>Contactos</strong> <span class="text-muted small ms-2">(opcional)</span>
+      </button>
+    </h2>
+    <div id="vendorContacts" class="accordion-collapse collapse" data-bs-parent="#vendorAccordion">
+      <div class="accordion-body">
+        <% if vendor.persisted? %>
+          <%= render "admin/vendors/contacts", vendor: vendor %>
+        <% else %>
+          <p class="text-muted small fst-italic mb-0">
+            <i class="bi bi-info-circle me-1"></i>Guarda el proveedor primero para agregar contactos.
+          </p>
         <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-  <div class="accordion" id="vendorAccordion">
-    <div class="accordion-item">
-      <h2 class="accordion-header">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#vendorGeneral">
-          <i class="bi bi-truck me-2 text-primary"></i><strong>Datos generales</strong>
-        </button>
-      </h2>
-      <div id="vendorGeneral" class="accordion-collapse collapse show" data-bs-parent="#vendorAccordion">
-        <div class="accordion-body">
-          <%= f.input :name, label: "Nombre del proveedor",
-              input_html: { class: "form-control", placeholder: "Ej: Ferretería EPA" },
-              label_html: { class: "form-label fw-bold" } %>
-        </div>
       </div>
     </div>
+  </div>
 
-    <div class="accordion-item">
-      <h2 class="accordion-header">
-        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vendorContacts">
-          <i class="bi bi-person-lines-fill me-2 text-success"></i><strong>Contactos</strong> <span class="text-muted small ms-2">(opcional)</span>
-        </button>
-      </h2>
-      <div id="vendorContacts" class="accordion-collapse collapse" data-bs-parent="#vendorAccordion">
-        <div class="accordion-body">
-          <div class="row g-3">
-            <% vendor.vendor_contacts.each_with_index do |contact, i| %>
-              <div class="col-md-5">
-                <input type="text" name="vendor[vendor_contacts_attributes][<%= i %>][name]"
-                       class="form-control" value="<%= contact.name %>" placeholder="Nombre del contacto">
-              </div>
-              <div class="col-md-4">
-                <input type="text" name="vendor[vendor_contacts_attributes][<%= i %>][phone]"
-                       class="form-control" value="<%= contact.phone %>" placeholder="Teléfono">
-              </div>
-              <div class="col-md-3 d-flex align-items-center gap-2">
-                <div class="form-check">
-                  <input type="checkbox" name="vendor[vendor_contacts_attributes][<%= i %>][is_primary]"
-                         value="1" class="form-check-input" id="contact_primary_<%= i %>"
-                         <%= "checked" if contact.is_primary? %>>
-                  <input type="hidden" name="vendor[vendor_contacts_attributes][<%= i %>][is_primary]" value="0">
-                  <label class="form-check-label small" for="contact_primary_<%= i %>">Principal</label>
-                </div>
-                <% if contact.persisted? %>
-                  <input type="hidden" name="vendor[vendor_contacts_attributes][<%= i %>][id]" value="<%= contact.id %>">
-                  <div class="form-check">
-                    <input type="checkbox" name="vendor[vendor_contacts_attributes][<%= i %>][_destroy]"
-                           value="1" class="form-check-input" id="contact_destroy_<%= i %>">
-                    <label class="form-check-label small text-danger" for="contact_destroy_<%= i %>">Eliminar</label>
-                  </div>
-                <% end %>
-              </div>
-            <% end %>
-          </div>
-        </div>
-      </div>
-    </div>
-
+  <%= simple_form_for [:admin, vendor], html: {id: "vendor_form"} do |f| %>
     <div class="accordion-item">
       <h2 class="accordion-header">
         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vendorHours">
@@ -185,19 +169,21 @@
         </div>
       </div>
     </div>
-  </div>
+  <% end %>
+</div>
 
-  <div class="d-flex justify-content-between mt-4">
-    <div class="d-flex gap-2">
-      <% if local_assigns[:modal] %>
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-      <% else %>
-        <%= link_to "Cancelar", admin_vendors_path, class: "btn btn-outline-secondary" %>
-      <% end %>
-    </div>
-    <%= f.submit vendor.new_record? ? "Crear proveedor" : "Guardar cambios", class: "btn btn-primary px-4" %>
+<div class="d-flex justify-content-between mt-4">
+  <div class="d-flex gap-2">
+    <% if local_assigns[:modal] %>
+      <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+    <% else %>
+      <%= link_to "Cancelar", admin_vendors_path, class: "btn btn-outline-secondary" %>
+    <% end %>
   </div>
-<% end %>
+  <button type="submit" form="vendor_form" class="btn btn-primary px-4">
+    <%= vendor.new_record? ? "Crear proveedor" : "Guardar cambios" %>
+  </button>
+</div>
 
 <%# button_to genera su propio <form>: debe vivir fuera del simple_form_for de
     arriba, un <form> anidado dentro de otro es HTML inválido y el navegador
