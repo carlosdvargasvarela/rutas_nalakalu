@@ -137,30 +137,7 @@ class DeliveriesController < ApplicationController
     end
 
     respond_to do |format|
-      format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-
-        flash.now[:notice] = "Entrega actualizada correctamente."
-
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
-      end
+      format.turbo_stream { render_delivery_update_stream(notice: "Entrega actualizada correctamente.") }
       format.html do
         redirect_to(
           session[:deliveries_return_to] || deliveries_path,
@@ -263,33 +240,7 @@ class DeliveriesController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-
-        flash.now[:notice] = "Entrega marcada como completada."
-
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
-          ),
-          turbo_stream.replace(
-            "delivery_items_list",
-            partial: "deliveries/show_partials/product_table",
-            locals: {delivery: @delivery}
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
+        render_delivery_update_stream(notice: "Entrega marcada como completada.", include_product_table: true)
       end
       format.html { redirect_to @delivery, notice: "Entrega marcada como completada." }
     end
@@ -326,29 +277,10 @@ class DeliveriesController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-
-        flash.now[:notice] = "Entrega en bodegaje hasta el #{I18n.l until_date, format: :long}."
-
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.update("modal", ""),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
+        render_delivery_update_stream(
+          notice: "Entrega en bodegaje hasta el #{I18n.l until_date, format: :long}.",
+          extra_streams: [turbo_stream.update("modal", "")]
+        )
       end
       format.html { redirect_to @delivery, notice: "Entrega en bodegaje." }
     end
@@ -368,28 +300,7 @@ class DeliveriesController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-
-        flash.now[:notice] = "Bodegaje finalizado. Entrega vuelve a estado pendiente."
-
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
+        render_delivery_update_stream(notice: "Bodegaje finalizado. Entrega vuelve a estado pendiente.")
       end
       format.html { redirect_to @delivery, notice: "Bodegaje finalizado." }
     end
@@ -953,27 +864,10 @@ class DeliveriesController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-        flash.now[:notice] = "#{items.count} producto(s) confirmado(s) para entrega."
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {delivery: @delivery, future_deliveries: @future_deliveries, delivery_history: @delivery_history}
-          ),
-          turbo_stream.replace(
-            "delivery_items_list",
-            partial: "deliveries/show_partials/product_table",
-            locals: {delivery: @delivery}
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
+        render_delivery_update_stream(
+          notice: "#{items.count} producto(s) confirmado(s) para entrega.",
+          include_product_table: true
+        )
       end
       format.html { redirect_to delivery_path(@delivery), notice: "Producto(s) confirmado(s) para entrega." }
     end
@@ -1039,27 +933,10 @@ class DeliveriesController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-        flash.now[:notice] = "Entrega desconfirmada. Los productos volvieron a estado pendiente."
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {delivery: @delivery, future_deliveries: @future_deliveries, delivery_history: @delivery_history}
-          ),
-          turbo_stream.replace(
-            "delivery_items_list",
-            partial: "deliveries/show_partials/product_table",
-            locals: {delivery: @delivery}
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
+        render_delivery_update_stream(
+          notice: "Entrega desconfirmada. Los productos volvieron a estado pendiente.",
+          include_product_table: true
+        )
       end
       format.html { redirect_to @delivery, notice: "Entrega desconfirmada correctamente." }
     end
@@ -1194,6 +1071,40 @@ class DeliveriesController < ApplicationController
 
   def set_addresses
     @addresses = @delivery&.order&.client&.delivery_addresses&.to_a || []
+  end
+
+  # Compartido por las acciones que, tras actualizar @delivery, refrescan el
+  # panel de detalle + la tarjeta del índice vía turbo_stream (update,
+  # mark_as_delivered, start/end_warehousing, confirm_all_items, unconfirm).
+  # `extra_streams` va ANTES del stream de detalle (ej. cerrar un modal);
+  # `include_product_table` agrega el refresco de la tabla de productos
+  # entre el detalle y la tarjeta, para las acciones que tocan delivery_items.
+  def render_delivery_update_stream(notice:, extra_streams: [], include_product_table: false)
+    load_delivery_for_panel
+    set_delivery_panel_data
+    flash.now[:notice] = notice
+
+    streams = [turbo_stream.replace("flash_messages", partial: "layouts/flashes")]
+    streams.concat(extra_streams)
+    streams << turbo_stream.replace(
+      dom_id(@delivery, :detail),
+      partial: "deliveries/show_partials/detail_data",
+      locals: {delivery: @delivery, future_deliveries: @future_deliveries, delivery_history: @delivery_history}
+    )
+    if include_product_table
+      streams << turbo_stream.replace(
+        "delivery_items_list",
+        partial: "deliveries/show_partials/product_table",
+        locals: {delivery: @delivery}
+      )
+    end
+    streams << turbo_stream.replace(
+      dom_id(@delivery, :card),
+      partial: "deliveries/index_partials/delivery_card",
+      locals: {delivery: @delivery}
+    )
+
+    render turbo_stream: streams
   end
 
   def sanitize_delivery_address_param!
