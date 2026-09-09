@@ -47,7 +47,7 @@
 
                   <%# Indicador de que hay notas en ítems u order_items %>
                   <% if delivery.delivery_items.any? { |di| di.notes.present? || di.order_item.notes.present? } %>
-                    <span class="badge bg-warning text-dark ms-1">
+                    <span class="badge bg-warning ms-1">
                       <i class="bi bi-sticky"></i> Nota
                     </span>
                   <% end %>

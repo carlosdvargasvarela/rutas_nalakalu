@@ -8,16 +8,16 @@
 // etc. siguen en Naranja/Verde Laurel/Palo Rosa) — solo aplican a badges de estado.
 :root {
   --status-blue:  #3F6B85; // antes primary (azul Bootstrap)
-  --status-taupe: #8C8074; // antes secondary (gris Bootstrap)
-  --status-teal:  #5E8C8A; // antes info (cian Bootstrap)
+  --status-taupe: #776D63; // antes secondary (gris Bootstrap) — oscurecido de #8C8074
+  --status-teal:  #507775; // antes info (cian Bootstrap) — oscurecido de #5E8C8A
 }
 
-// Taupe y teal no dan suficiente contraste con el blanco por defecto de .badge
-// (fórmula WCAG ~3.8:1, bajo el mínimo 4.5:1) — texto oscuro fijo en el propio badge
-// para que funcione sin depender de que cada vista agregue "text-dark".
+// Taupe y teal ya oscurecidos dan >=4.5:1 con el texto blanco por defecto de
+// .badge (antes se intentaba con texto oscuro fijo, pero el bg original solo
+// llegaba a ~3.2:1 con #3D342C — el problema era el bg, no el texto).
 .badge.bg-status-blue  { background-color: var(--status-blue)  !important; }
-.badge.bg-status-taupe { background-color: var(--status-taupe) !important; color: #3D342C !important; }
-.badge.bg-status-teal  { background-color: var(--status-teal)  !important; color: #3D342C !important; }
+.badge.bg-status-taupe { background-color: var(--status-taupe) !important; }
+.badge.bg-status-teal  { background-color: var(--status-teal)  !important; }
 
 .bg-status-blue-subtle   { background-color: #E2E9ED !important; }
 .text-status-blue-emphasis { color: #294656 !important; }

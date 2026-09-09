@@ -41,7 +41,7 @@
       <i class="bi bi-person-lines-fill text-secondary card-row-icon"></i>
       <span class="text-truncate card-truncate-col"><%= primary.name.truncate(35) %></span>
       <% if order_contacts.size > 1 %>
-        <span class="badge bg-secondary-subtle text-secondary rounded-pill ms-1" style="font-size:.65rem;">+<%= order_contacts.size - 1 %></span>
+        <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill ms-1" style="font-size:.65rem;">+<%= order_contacts.size - 1 %></span>
       <% end %>
     </div>
 
@@ -52,7 +52,7 @@
         <i class="bi bi-person-lines-fill text-secondary" style="font-size:.8rem;"></i>
         <span class="small fw-semibold"><%= contact.name %></span>
         <% if contact.is_primary? %>
-          <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill" style="font-size:.6rem;padding:1px 5px;">Principal</span>
+          <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle rounded-pill" style="font-size:.6rem;padding:1px 5px;">Principal</span>
         <% end %>
       </div>
       <% if contact.phone.present? %>

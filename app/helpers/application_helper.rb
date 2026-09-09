@@ -161,9 +161,12 @@ module ApplicationHelper
     end
   end
 
-  # Determina si un color necesita texto oscuro para mejor contraste
+  # Determina si un color necesita texto oscuro para mejor contraste.
+  # "warning" y "status-taupe"/"status-teal" NO están acá: con la paleta de
+  # marca (fondos oscuros/medios), el texto blanco por defecto de .badge ya
+  # pasa WCAG AA (5.0:1 / 4.5-5.0:1) — forzar texto oscuro ahí daba ~2.4-3.2:1.
   def needs_text_dark?(color)
-    %w[light warning info status-taupe status-teal].include?(color)
+    %w[light info].include?(color)
   end
 
   # Label del estado, priorizando display_status si existe

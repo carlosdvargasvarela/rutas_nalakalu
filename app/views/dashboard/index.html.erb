@@ -61,7 +61,7 @@
             <li class="nav-item" role="presentation">
               <button class="nav-link rounded-pill" id="reschedules-tab" data-bs-toggle="pill" data-bs-target="#reschedules" type="button">
                 <i class="bi bi-arrow-repeat me-1"></i> Reprogramaciones
-                <span class="badge bg-warning text-dark ms-1"><%= @reschedule_notifications.total_count %></span>
+                <span class="badge bg-warning ms-1"><%= @reschedule_notifications.total_count %></span>
               </button>
             </li>
             <% if @pending_approvals.any? %>
