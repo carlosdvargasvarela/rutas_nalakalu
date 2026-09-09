@@ -31,11 +31,30 @@ class TrackingsControllerTest < ActionDispatch::IntegrationTest
     draft_plan = delivery_plans(:one)
     draft_plan.update_columns(status: DeliveryPlan.statuses[:draft])
 
-    get tracking_url
+    # show_all=1 para no depender de la fecha de las entregas del fixture.
+    get tracking_url(show_all: 1)
     assert_response :success
     # El JSON va dentro de un atributo HTML, así que Rails escapa las comillas.
     assert_match(/&quot;id&quot;:#{active_plan.id}[,}]/, response.body)
     refute_match(/&quot;id&quot;:#{draft_plan.id}[,}]/, response.body)
+  end
+
+  test "index defaults to today's plans and excludes active plans from other dates" do
+    admin = users(:one)
+    admin.update!(role: :admin, force_password_change: false)
+    sign_in admin
+
+    today_plan = delivery_plans(:plan_for_driver)
+    today_plan.update_columns(status: DeliveryPlan.statuses[:routes_created])
+    today_plan.deliveries.update_all(delivery_date: Date.current)
+
+    other_day_plan = delivery_plans(:one)
+    other_day_plan.update_columns(status: DeliveryPlan.statuses[:routes_created])
+
+    get tracking_url
+    assert_response :success
+    assert_match(/&quot;id&quot;:#{today_plan.id}[,}]/, response.body)
+    refute_match(/&quot;id&quot;:#{other_day_plan.id}[,}]/, response.body)
   end
 
   test "route returns ordered GPS pings for a plan" do

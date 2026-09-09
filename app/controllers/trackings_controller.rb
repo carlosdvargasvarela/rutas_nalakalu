@@ -2,8 +2,13 @@ class TrackingsController < ApplicationController
   def index
     authorize :tracking, :index?
 
-    @plans = DeliveryPlan.active
-      .includes(:driver, :last_recorded_by, delivery_plan_assignments: :delivery)
+    @show_all = params[:show_all] == "1"
+    @date = @show_all ? nil : (parse_date(params[:date]) || Date.current)
+
+    scope = DeliveryPlan.active
+    scope = scope.joins(:deliveries).where(deliveries: {delivery_date: @date}).distinct if @date
+
+    @plans = scope.includes(:driver, :last_recorded_by, delivery_plan_assignments: :delivery)
       .map { |plan| serialize_plan(plan) }
   end
 
@@ -19,6 +24,12 @@ class TrackingsController < ApplicationController
   end
 
   private
+
+  def parse_date(value)
+    Date.parse(value) if value.present?
+  rescue ArgumentError
+    nil
+  end
 
   def serialize_plan(plan)
     visible_assignments = plan.delivery_plan_assignments.reject { |a| a.delivery.hidden_from_route_map? }

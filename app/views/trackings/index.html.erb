@@ -1,6 +1,20 @@
 <%# app/views/trackings/index.html.erb %>
 <div class="container-fluid py-4">
-  <h1 class="h4 mb-4"><i class="bi bi-broadcast text-success me-2"></i>Seguimiento de flota</h1>
+  <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center mb-4">
+    <h1 class="h4 mb-0"><i class="bi bi-broadcast text-success me-2"></i>Seguimiento de flota</h1>
+
+    <%= form_with url: tracking_path, method: :get, html: {class: "d-flex flex-wrap gap-2 align-items-center"} do %>
+      <div class="input-group input-group-sm" style="width: auto;">
+        <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar-event"></i></span>
+        <%= date_field_tag :date, @date&.iso8601, class: "form-control", disabled: @show_all %>
+      </div>
+      <div class="btn-group btn-group-sm" role="group">
+        <%= link_to "Hoy", tracking_path, class: "btn #{!@show_all && @date == Date.current ? 'btn-primary' : 'btn-outline-secondary'}" %>
+        <button type="submit" class="btn btn-outline-secondary" <%= "disabled" if @show_all %>>Ver fecha</button>
+        <%= link_to "Todos los activos", tracking_path(show_all: 1), class: "btn #{@show_all ? 'btn-primary' : 'btn-outline-secondary'}" %>
+      </div>
+    <% end %>
+  </div>
 
   <div class="row g-3"
        data-controller="fleet-tracking-map"
@@ -13,10 +27,19 @@
     </div>
     <div class="col-lg-4">
       <div class="card shadow-sm">
-        <div class="card-header bg-white fw-semibold">Camiones activos (<%= @plans.size %>)</div>
+        <div class="card-header bg-white fw-semibold">
+          Camiones <%= @show_all ? "activos" : "de hoy" %> (<%= @plans.size %>)
+        </div>
         <ul id="tracking-truck-list" class="list-group list-group-flush" data-fleet-tracking-map-target="list">
           <% if @plans.empty? %>
-            <li class="list-group-item text-muted small">No hay planes activos en este momento.</li>
+            <li class="list-group-item text-muted small">
+              <% if @show_all %>
+                No hay planes activos en este momento.
+              <% else %>
+                No hay entregas programadas para el <%= l(@date, format: :long) %>.
+                <%= link_to "Ver todos los activos", tracking_path(show_all: 1), class: "d-block mt-1" %>
+              <% end %>
+            </li>
           <% end %>
         </ul>
       </div>
