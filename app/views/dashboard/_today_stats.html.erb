@@ -1,0 +1,47 @@
+<%# app/views/dashboard/_today_stats.html.erb
+    Locals: today_stats, active_orders_count, unread_notifications_count, unplanned_count %>
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+  <div class="card-body py-3">
+    <div class="d-flex flex-wrap gap-4 justify-content-between">
+      <%= link_to tracking_path, class: "text-decoration-none text-dark d-flex align-items-center gap-2" do %>
+        <i class="bi bi-broadcast fs-4 text-success"></i>
+        <div>
+          <div class="fw-bold fs-5 lh-1"><%= today_stats[:trucks_in_route] %></div>
+          <div class="small text-muted">Camiones en ruta hoy</div>
+        </div>
+      <% end %>
+
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-truck fs-4 text-primary"></i>
+        <div>
+          <div class="fw-bold fs-5 lh-1"><%= today_stats[:completed_today] %>/<%= today_stats[:total_today] %></div>
+          <div class="small text-muted">Entregas de hoy completadas</div>
+        </div>
+      </div>
+
+      <%= link_to orders_path(q: {status_in: %w[pending in_production]}), class: "text-decoration-none text-dark d-flex align-items-center gap-2" do %>
+        <i class="bi bi-box-seam fs-4 text-success"></i>
+        <div>
+          <div class="fw-bold fs-5 lh-1"><%= active_orders_count %></div>
+          <div class="small text-muted">Pedidos activos</div>
+        </div>
+      <% end %>
+
+      <%= link_to "#unplanned", class: "text-decoration-none text-dark d-flex align-items-center gap-2" do %>
+        <i class="bi bi-calendar-x fs-4 text-warning"></i>
+        <div>
+          <div class="fw-bold fs-5 lh-1"><%= unplanned_count %></div>
+          <div class="small text-muted">Sin plan esta semana</div>
+        </div>
+      <% end %>
+
+      <%= link_to notifications_path, class: "text-decoration-none text-dark d-flex align-items-center gap-2" do %>
+        <i class="bi bi-bell fs-4 text-info"></i>
+        <div>
+          <div class="fw-bold fs-5 lh-1"><%= unread_notifications_count %></div>
+          <div class="small text-muted">Notificaciones sin leer</div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

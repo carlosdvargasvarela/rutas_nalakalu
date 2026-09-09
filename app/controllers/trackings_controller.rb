@@ -6,7 +6,7 @@ class TrackingsController < ApplicationController
     @date = @show_all ? nil : (parse_date(params[:date]) || Date.current)
 
     scope = DeliveryPlan.active
-    scope = scope.joins(:deliveries).where(deliveries: {delivery_date: @date}).distinct if @date
+    scope = scope.with_deliveries_on(@date) if @date
 
     @plans = scope.includes(:driver, :last_recorded_by, delivery_plan_assignments: :delivery)
       .map { |plan| serialize_plan(plan) }

@@ -56,7 +56,7 @@ module Deliveries
       addr_errors.each do |msg|
         severity =
           case msg
-          when /Fuera de Costa Rica/i, /Coordenadas cero/i, /Sin coordenadas/i
+          when /Fuera de Costa Rica/i, /Coordenadas cero/i, /Sin coordenadas/i, /Coordenadas no confirmadas/i
             "high"
           when /Geocodificación sin resultados/i
             "medium"

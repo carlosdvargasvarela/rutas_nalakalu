@@ -22,6 +22,22 @@ class DeliveryAddress < ApplicationRecord
   CR_LON_MIN = -86.0
   CR_LON_MAX = -82.0
 
+  # Centro de San José: fallback que usan todos los mapas de la app (ver
+  # app/javascript/controllers/*_map_controller.js) cuando nadie mueve el pin
+  # todavía. Una dirección guardada exactamente aquí nunca fue geocodificada
+  # de verdad, pero missing_coordinates? no lo detecta porque no está en blanco.
+  DEFAULT_MAP_LAT = 9.9281
+  DEFAULT_MAP_LNG = -84.0907
+
+  scope :stuck_at_default_coordinates, -> {
+    where("ROUND(latitude, 4) = ? AND ROUND(longitude, 4) = ?", DEFAULT_MAP_LAT.round(4), DEFAULT_MAP_LNG.round(4))
+  }
+
+  def stuck_at_default_coordinates?
+    return false if latitude.blank? || longitude.blank?
+    latitude.to_f.round(4) == DEFAULT_MAP_LAT.round(4) && longitude.to_f.round(4) == DEFAULT_MAP_LNG.round(4)
+  end
+
   # Método principal que devuelve errores y recomendaciones por separado
   def address_findings(recipient_email: nil)
     errors = []
@@ -29,6 +45,7 @@ class DeliveryAddress < ApplicationRecord
 
     errors << "Sin coordenadas" if missing_coordinates?
     errors << "Coordenadas cero" if latitude.to_f.zero? && longitude.to_f.zero?
+    errors << "Coordenadas no confirmadas (nunca se movió el pin del mapa)" if stuck_at_default_coordinates?
     errors << "Dirección vacía" if address.blank?
     errors << "Texto de dirección inválido" if invalid_address_text?
     errors << "Fuera de Costa Rica" if out_of_cr_bounds?

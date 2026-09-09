@@ -74,6 +74,7 @@ class DeliveryPlan < ApplicationRecord
 
   scope :for_driver, ->(driver_id) { where(driver_id: driver_id) }
   scope :active, -> { where(status: [:routes_created, :in_progress]) }
+  scope :with_deliveries_on, ->(date) { joins(:deliveries).where(deliveries: {delivery_date: date}).distinct }
 
   def stats
     {

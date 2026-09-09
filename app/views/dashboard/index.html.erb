@@ -8,7 +8,7 @@
         Panel de Control
       </h2>
       <p class="text-muted mb-0">
-        Hola, <strong><%= current_user.name %></strong>. 
+        Hola, <strong><%= current_user.name %></strong>.
         Aquí tienes el resumen de logística para hoy.
       </p>
     </div>
@@ -36,65 +36,29 @@
       <% end %>
     </div>
   </div>
-  <!-- KPIs en Cards Minimalistas -->
-  <div class="row g-3 mb-4">
-    <%= render "dashboard/kpi_cards" %>
-  </div>
+
+  <%= render "dashboard/today_stats",
+        today_stats: @today_stats,
+        active_orders_count: @active_orders_count,
+        unread_notifications_count: @unread_notifications_count,
+        unplanned_count: @unplanned_this_week.total_count %>
+
+  <%= render "dashboard/data_quality", issues: @data_quality_issues %>
+
   <div class="row g-4">
-    <!-- Columna Izquierda: Tablas de Datos (UX Mejorada con Tabs) -->
+    <!-- Columna Izquierda: Colas de trabajo -->
     <div class="col-lg-8">
-      <div class="card border-0 shadow-sm rounded-4">
+      <%= render "dashboard/attention_queue", items: @attention_queue, active_category: params[:category] %>
+
+      <div class="card border-0 shadow-sm rounded-4" id="unplanned">
         <div class="card-header bg-white border-0 pt-4 px-4">
-          <ul class="nav nav-pills mb-3" id="dashboardTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active rounded-pill" id="unplanned-tab" data-bs-toggle="pill" data-bs-target="#unplanned" type="button">
-                <i class="bi bi-list-ul me-1"></i> Sin Plan (Esta Semana)
-                <span class="badge bg-light text-primary ms-1"><%= @unplanned_this_week.total_count %></span>
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link rounded-pill" id="errors-tab" data-bs-toggle="pill" data-bs-target="#errors" type="button">
-                <i class="bi bi-exclamation-triangle me-1"></i> Con Errores 
-                <span class="badge bg-danger ms-1"><%= @deliveries_with_errors.total_count %></span>
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link rounded-pill" id="reschedules-tab" data-bs-toggle="pill" data-bs-target="#reschedules" type="button">
-                <i class="bi bi-arrow-repeat me-1"></i> Reprogramaciones
-                <span class="badge bg-warning ms-1"><%= @reschedule_notifications.total_count %></span>
-              </button>
-            </li>
-            <% if @pending_approvals.any? %>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link rounded-pill" id="approvals-tab" data-bs-toggle="pill" data-bs-target="#approvals" type="button">
-                  <i class="bi bi-shield-check me-1"></i> Por Aprobar 
-                  <span class="badge bg-info text-dark ms-1"><%= @pending_approvals.total_count %></span>
-                </button>
-              </li>
-            <% end %>
-          </ul>
+          <h5 class="mb-0 fw-bold">
+            <i class="bi bi-calendar-x text-warning me-1"></i> Sin plan (esta semana)
+            <span class="badge bg-light text-dark ms-1"><%= @unplanned_this_week.total_count %></span>
+          </h5>
         </div>
         <div class="card-body p-0">
-          <div class="tab-content" id="dashboardTabsContent">
-            <!-- Tab: Sin Plan (Esta Semana) -->
-            <div class="tab-pane fade show active" id="unplanned" role="tabpanel">
-              <%= render "dashboard/table_unplanned", deliveries: @unplanned_this_week %>
-            </div>
-            <!-- Tab: Errores -->
-            <div class="tab-pane fade" id="errors" role="tabpanel">
-              <%= render "dashboard/table_errors", deliveries: @deliveries_with_errors %>
-            </div>
-            <!-- Tab: Reprogramaciones -->
-            <div class="tab-pane fade" id="reschedules" role="tabpanel">
-              <%= render "dashboard/table_reschedules", notifications: @reschedule_notifications %>
-            </div>
-            <!-- Tab: Por Aprobar -->
-            <% if @pending_approvals.any? %>
-              <div class="tab-pane fade" id="approvals" role="tabpanel">
-                <%= render "dashboard/table_approvals", deliveries: @pending_approvals %>
-              </div>
-            <% end %>
-          </div>
+          <%= render "dashboard/table_unplanned", deliveries: @unplanned_this_week %>
         </div>
       </div>
     </div>
@@ -112,7 +76,7 @@
   <div class="alert alert-info mt-5 rounded-3 d-flex align-items-center shadow-sm">
     <i class="bi bi-question-circle-fill fs-4 me-2"></i>
     <span>
-      ¿Necesitas ayuda? 
+      ¿Necesitas ayuda?
       <a href="mailto:cvargas@nalakalu.com" class="fw-semibold ms-1">Contacta al equipo de soporte</a>
     </span>
   </div>

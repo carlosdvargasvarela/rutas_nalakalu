@@ -1,0 +1,76 @@
+<%# app/views/dashboard/_attention_queue.html.erb
+    Locals: items (paginated array of {delivery:, categories:}), active_category %>
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+  <div class="card-header bg-white border-0 pt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <h5 class="mb-0 fw-bold">
+        <i class="bi bi-exclamation-circle text-danger me-1"></i> Requiere tu atención
+        <span class="badge bg-light text-dark ms-1"><%= items.total_count %></span>
+      </h5>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <%= link_to "Todas", root_path, class: "btn btn-sm rounded-pill #{active_category.nil? ? "btn-dark" : "btn-outline-secondary"}" %>
+      <% DashboardHelper::ATTENTION_CATEGORIES.each do |key, info| %>
+        <%= link_to root_path(category: key), class: "btn btn-sm rounded-pill #{active_category == key.to_s ? "btn-#{info[:color]}" : "btn-outline-#{info[:color]}"}" do %>
+          <i class="bi <%= info[:icon] %> me-1"></i><%= info[:label] %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light">
+          <tr>
+            <th class="ps-4">Fecha</th>
+            <th>Pedido</th>
+            <th>Cliente</th>
+            <th>Categorías</th>
+            <th class="text-end pe-4">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if items.any? %>
+            <% items.each do |item| %>
+              <% delivery = item[:delivery] %>
+              <tr>
+                <td class="ps-4">
+                  <span class="text-muted small"><%= delivery.delivery_date ? l(delivery.delivery_date, format: :short) : "Sin fecha" %></span>
+                </td>
+                <td>
+                  <%= link_to delivery.order.number, smart_delivery_path(delivery), class: "fw-bold text-dark text-decoration-none" %>
+                </td>
+                <td><%= delivery.order.client.name %></td>
+                <td>
+                  <div class="d-flex flex-wrap gap-1">
+                    <% item[:categories].each do |category| %>
+                      <%= attention_category_badge(category) %>
+                    <% end %>
+                  </div>
+                </td>
+                <td class="text-end pe-4">
+                  <% target_path = current_user.production_manager? ? smart_delivery_path(delivery) : edit_delivery_path(delivery) %>
+                  <%= link_to target_path, class: "btn btn-sm btn-outline-primary rounded-pill" do %>
+                    <i class="bi bi-arrow-right"></i>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="5" class="text-center py-5 text-muted">
+                <i class="bi bi-check-circle fs-1 text-success d-block mb-2"></i>
+                <strong>¡Todo en orden!</strong> No hay nada pendiente en esta categoría.
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <% if items.any? %>
+    <div class="card-footer bg-white border-0 d-flex justify-content-center py-3">
+      <%= paginate items, param_name: "page_attention" %>
+    </div>
+  <% end %>
+</div>

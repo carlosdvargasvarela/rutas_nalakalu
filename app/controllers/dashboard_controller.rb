@@ -12,13 +12,11 @@ class DashboardController < ApplicationController
     # Rango de fechas: Desde hoy hasta el final de la próxima semana
     @error_date_range = Date.current..Date.current.next_week.end_of_week
 
-    # KPIs Principales
-    @pending_deliveries_count = current_user_deliveries.where(status: [:scheduled, :ready_to_deliver]).count
+    @today_stats = build_today_stats
     @active_orders_count = current_user_orders.where(status: [:pending, :in_production]).count
-    @upcoming_plans_count = upcoming_delivery_plans.count
     @unread_notifications_count = current_user.notifications.unread.count
 
-    # 1. Entregas de esta semana sin plan
+    # Entregas de esta semana sin plan
     @unplanned_this_week = current_user_deliveries
       .where(delivery_date: Date.current.beginning_of_week..Date.current.end_of_week)
       .available_for_plan
@@ -27,29 +25,15 @@ class DashboardController < ApplicationController
       .page(params[:page_unplanned])
       .per(10)
 
-    # 2. Entregas con Errores (Semana actual y siguiente) - OPTIMIZADO
-    @deliveries_with_errors = detect_deliveries_with_errors
-      .page(params[:page_errors])
-      .per(10)
+    # Cola unificada: errores, servicio, reparación, sala, aprobación,
+    # bodegaje por vencer y reprogramaciones — una sola tabla en vez de una
+    # pestaña por categoría, filtrable por categoría vía ?category=
+    attention_items = build_attention_queue
+    attention_items = attention_items.select { |i| i[:categories].include?(params[:category].to_sym) } if params[:category].present?
+    @attention_queue = Kaminari.paginate_array(attention_items).page(params[:page_attention]).per(15)
 
-    # 3. Pendientes de aprobación (Admin/PM)
-    @pending_approvals = if current_user.admin? || current_user.production_manager?
-      Delivery.where(approved: false)
-        .where(delivery_date: Date.current.beginning_of_week..Date.current.end_of_week)
-        .includes(order: [:client, :seller])
-        .order(:delivery_date)
-        .page(params[:page_approvals])
-        .per(10)
-    else
-      Delivery.none.page(1)
-    end
+    @data_quality_issues = current_user.admin? ? build_data_quality_issues : []
 
-    # 4. Notificaciones de Reschedule
-    @reschedule_notifications = fetch_reschedule_notifications
-      .page(params[:page_reschedules])
-      .per(10)
-
-    # 5. Tareas y Notificaciones generales
     @pending_tasks = build_pending_tasks
     @recent_notifications = current_user.notifications.recent.limit(5)
   end
@@ -67,8 +51,20 @@ class DashboardController < ApplicationController
     # Si es seller o admin, continúa al dashboard normal
   end
 
-  def detect_deliveries_with_errors
-    # Filtramos entregas solo en el rango solicitado: Semana actual y siguiente
+  def build_today_stats
+    today_deliveries = current_user_deliveries.where(delivery_date: Date.current)
+
+    {
+      trucks_in_route: DeliveryPlan.status_in_progress.with_deliveries_on(Date.current).count,
+      total_today: today_deliveries.count,
+      completed_today: today_deliveries.where(status: :delivered).count
+    }
+  end
+
+  # Recorre una sola vez las entregas candidatas y les asigna todas las
+  # categorías que apliquen (una entrega puede tener varias a la vez), en vez
+  # de hacer un query + scan separado por categoría.
+  def build_attention_queue
     candidates = current_user_deliveries
       .where(delivery_date: @error_date_range)
       .where(status: [:scheduled, :ready_to_deliver])
@@ -77,18 +73,67 @@ class DashboardController < ApplicationController
         delivery_address: :client,
         delivery_items: :order_item
       )
-      .order(:delivery_date)
 
-    # Identificamos IDs que tienen errores usando el Service Object
-    ids_with_errors = candidates.select do |delivery|
-      Deliveries::ErrorDetector.new(delivery).has_errors?
-    end.map(&:id)
+    items_by_id = {}
+    can_see_approvals = current_user.admin? || current_user.production_manager?
 
-    # Retornamos una relación de ActiveRecord para que Kaminari pueda paginar
-    current_user_deliveries
-      .where(id: ids_with_errors)
-      .includes(order: [:client, :seller], delivery_address: :client)
-      .order(:delivery_date)
+    candidates.each do |delivery|
+      categories = []
+      categories << :error if Deliveries::ErrorDetector.new(delivery).has_errors?
+      categories << :service if delivery.requires_service_case_action?
+      categories << :repair if delivery.repair_service? || delivery.requires_repair_service_action?
+      categories << :sala_pickup if delivery.requires_sala_pickup?
+      categories << :approval if can_see_approvals && !delivery.approved?
+      next if categories.empty?
+
+      items_by_id[delivery.id] = {delivery: delivery, categories: categories}
+    end
+
+    # Bodegaje por vencer: ventana de fecha distinta (warehousing_until, no
+    # delivery_date), así que no cae dentro del scope de candidates de arriba.
+    current_user_deliveries.warehousing_expiring_soon
+      .includes(order: [:client, :seller])
+      .each do |delivery|
+        entry = (items_by_id[delivery.id] ||= {delivery: delivery, categories: []})
+        entry[:categories] << :warehousing
+      end
+
+    # Reprogramaciones: vienen de notificaciones, no de delivery_date. Solo
+    # las no leídas y cuya entrega siga activa — una notificación vieja de
+    # una entrega ya entregada/cancelada/archivada no tiene nada que atender.
+    fetch_reschedule_notifications.unread.each do |notification|
+      delivery = notification.notifiable
+      next unless delivery.is_a?(Delivery)
+      next if delivery.status.in?(%w[delivered cancelled archived])
+
+      entry = (items_by_id[delivery.id] ||= {delivery: delivery, categories: []})
+      entry[:categories] << :reschedule unless entry[:categories].include?(:reschedule)
+    end
+
+    items_by_id.values.sort_by { |i| i[:delivery].delivery_date || Date.current }
+  end
+
+  def build_data_quality_issues
+    issues = []
+
+    vendors_without_hours = Vendor.left_joins(:vendor_business_hours)
+      .where(vendor_business_hours: {id: nil}).distinct.count
+    if vendors_without_hours > 0
+      issues << {
+        label: "#{vendors_without_hours} proveedor(es) sin horario de atención",
+        url: admin_vendors_path
+      }
+    end
+
+    stale_coordinates = DeliveryAddress.stuck_at_default_coordinates.count
+    if stale_coordinates > 0
+      issues << {
+        label: "#{stale_coordinates} dirección(es) con coordenadas sin confirmar (nunca se movió el pin del mapa)",
+        url: nil
+      }
+    end
+
+    issues
   end
 
   def fetch_reschedule_notifications
@@ -113,10 +158,6 @@ class DashboardController < ApplicationController
 
   def current_user_orders
     current_user.seller? ? (current_user.seller&.orders || Order.none) : Order.all
-  end
-
-  def upcoming_delivery_plans
-    DeliveryPlan.where(week: Date.current.cweek..Date.current.cweek + 1, year: Date.current.year)
   end
 
   def build_pending_tasks

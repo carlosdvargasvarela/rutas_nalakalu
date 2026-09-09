@@ -1,0 +1,24 @@
+<%# app/views/dashboard/_data_quality.html.erb
+    Locals: issues %>
+<% return if issues.empty? %>
+<div class="mb-4">
+  <button class="btn btn-sm btn-outline-secondary rounded-pill" type="button" data-bs-toggle="collapse" data-bs-target="#dataQualityIssues">
+    <i class="bi bi-database-exclamation me-1"></i>
+    <%= issues.size %> <%= issues.size == 1 ? "pendiente de revisar" : "pendientes de revisar" %>
+    <i class="bi bi-chevron-down ms-1"></i>
+  </button>
+  <div class="collapse mt-2" id="dataQualityIssues">
+    <ul class="list-group list-group-flush small">
+      <% issues.each do |issue| %>
+        <li class="list-group-item bg-transparent px-0 py-1 border-0">
+          <i class="bi bi-dot text-muted"></i>
+          <% if issue[:url] %>
+            <%= link_to issue[:label], issue[:url] %>
+          <% else %>
+            <%= issue[:label] %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+</div>
