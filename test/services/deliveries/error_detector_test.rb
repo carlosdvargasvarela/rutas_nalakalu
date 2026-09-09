@@ -27,25 +27,6 @@ module Deliveries
       assert_match(/se entregó 99 pero se pidieron 1/, finding[:message])
     end
 
-    test "flags a client with no phone and no email" do
-      delivery = deliveries(:one)
-      delivery.order.client.update!(phone: nil, email: nil)
-
-      detector = ErrorDetector.new(delivery)
-      finding = detector.errors.find { |e| e[:category] == "Cliente" }
-
-      assert finding
-      assert_equal "medium", finding[:severity]
-    end
-
-    test "does not flag a client with at least a phone" do
-      delivery = deliveries(:one)
-      delivery.order.client.update!(phone: "8888-8888", email: nil)
-
-      detector = ErrorDetector.new(delivery)
-      refute detector.errors.any? { |e| e[:category] == "Cliente" }
-    end
-
     test "product error names the item explicitly instead of a generic count" do
       delivery = deliveries(:one)
       delivery.delivery_items.first.update!(status: :cancelled)

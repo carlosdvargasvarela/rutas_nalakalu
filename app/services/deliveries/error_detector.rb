@@ -181,14 +181,6 @@ module Deliveries
 
       return errors if client.blank?
 
-      if client.phone.blank? && client.email.blank?
-        errors << {
-          category: "Cliente",
-          severity: "medium",
-          message: "Cliente '#{client.name}' sin teléfono ni correo registrado"
-        }
-      end
-
       errors
     end
 
