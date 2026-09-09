@@ -25,6 +25,9 @@ module Api
         end
 
         def show
+          # El conductor nunca es admin: solo ve paradas cuya entrega está en
+          # un estado "normal" del flujo — una cancelada/reagendada/archivada/
+          # fallida/en bodegaje no debería seguir apareciendo en su ruta.
           assignments = @plan.delivery_plan_assignments
             .includes(delivery: [
               :delivery_address,
@@ -32,6 +35,8 @@ module Api
               {delivery_items: :order_item}
             ])
             .order(:stop_order)
+            .to_a
+            .select { |a| a.delivery.status.in?(Delivery::VISIBLE_TO_ALL_STATUSES) }
 
           render json: serialize_detail(@plan, assignments)
         end
@@ -203,9 +208,9 @@ module Api
 
           # d.items_visible_in_plan usa .merge, que devuelve una relación nueva sin
           # el preload de `show` — filtramos en Ruby sobre la asociación YA cargada
-          # (delivery_items) para no disparar una query por delivery. Mismo filtro
-          # que eligible_for_plan_for_others (excluye rescheduled) + cancelled.
-          items_json = d.delivery_items.reject { |i| i.rescheduled? || i.cancelled? }.map do |item|
+          # (delivery_items) para no disparar una query por delivery. Mismo
+          # criterio que DeliveryItem::VISIBLE_TO_ALL_STATUSES.
+          items_json = d.delivery_items.select(&:visible_to_all?).map do |item|
             {
               id: item.id,
               product: item.product,

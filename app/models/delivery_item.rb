@@ -35,9 +35,15 @@ class DeliveryItem < ApplicationRecord
   # SCOPES
   # ============================================================================
 
+  # Estados que cualquier rol (no solo admin) puede ver en un plan ya armado.
+  # cancelled/failed/rescheduled/warehousing quedan afuera porque confunden a
+  # logística/vendedores — un producto cancelado no debería seguir
+  # apareciendo como si fuera parte de la entrega.
+  VISIBLE_TO_ALL_STATUSES = %w[pending confirmed in_plan in_route delivered loaded_on_truck].freeze
+
   scope :service_cases, -> { where(service_case: true) }
   scope :eligible_for_plan, -> { where.not(status: [:delivered, :cancelled, :rescheduled, :loaded_on_truck, :warehousing, :failed]) }
-  scope :eligible_for_plan_for_others, -> { where.not(status: [:rescheduled]) }
+  scope :eligible_for_plan_for_others, -> { where(status: VISIBLE_TO_ALL_STATUSES) }
   scope :loaded_items, -> { where(load_status: :loaded) }
   scope :unloaded_items, -> { where(load_status: :unloaded) }
   scope :missing_items, -> { where(load_status: :missing) }
@@ -134,6 +140,13 @@ class DeliveryItem < ApplicationRecord
 
   def bulk_reschedulable?
     status.in?(%w[pending confirmed in_plan])
+  end
+
+  # Mismo criterio que el scope eligible_for_plan_for_others, pero sobre un
+  # registro ya cargado en memoria (evita una query extra cuando se filtra
+  # una colección ya preloaded, ej. delivery.delivery_items.select(&:visible_to_all?)).
+  def visible_to_all?
+    status.in?(VISIBLE_TO_ALL_STATUSES)
   end
 
   def bulk_actionable?

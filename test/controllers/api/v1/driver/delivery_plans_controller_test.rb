@@ -227,6 +227,45 @@ module Api
           assert_response :unauthorized
         end
 
+        test "show excluye una parada cuyo delivery está cancelado" do
+          client = Client.create!(name: "Cliente Cancelado")
+          seller = Seller.create!(name: "Vendedor X", seller_code: "V-03", user: @driver)
+          order = Order.create!(client: client, seller: seller, number: "ORD-TEST-CANCEL")
+          address = DeliveryAddress.create!(client: client, address: "Cartago, Costa Rica", latitude: 9.86, longitude: -83.92)
+          delivery = Delivery.create!(order: order, delivery_address: address, delivery_date: Date.current)
+          assignment = @plan.delivery_plan_assignments.create!(delivery: delivery, stop_order: 3)
+          # change_deliveries_statuses (after_create en el assignment) pisa el status a
+          # in_plan — hay que fijar "cancelled" después de crear el assignment.
+          delivery.update_columns(status: Delivery.statuses[:cancelled])
+
+          get api_v1_driver_delivery_plan_path(@plan), headers: auth
+          assert_response :success
+
+          assignment_ids = JSON.parse(response.body)["assignments"].map { |x| x["id"] }
+          assert_not_includes assignment_ids, assignment.id
+        end
+
+        test "show excluye un producto cancelado pero mantiene los demás de la misma entrega" do
+          client = Client.create!(name: "Cliente Producto Cancelado")
+          seller = Seller.create!(name: "Vendedor Y", seller_code: "V-04", user: @driver)
+          order = Order.create!(client: client, seller: seller, number: "ORD-TEST-ITEM-CANCEL")
+          address = DeliveryAddress.create!(client: client, address: "Alajuela, Costa Rica", latitude: 10.02, longitude: -84.21)
+          delivery = Delivery.create!(order: order, delivery_address: address, delivery_date: Date.current)
+          active_order_item = OrderItem.create!(order: order, product: "Mesa", quantity: 1)
+          cancelled_order_item = OrderItem.create!(order: order, product: "Silla cancelada", quantity: 4)
+          DeliveryItem.create!(delivery: delivery, order_item: active_order_item, quantity_delivered: 1, status: :pending)
+          DeliveryItem.create!(delivery: delivery, order_item: cancelled_order_item, quantity_delivered: 4, status: :cancelled)
+          assignment = @plan.delivery_plan_assignments.create!(delivery: delivery, stop_order: 4)
+
+          get api_v1_driver_delivery_plan_path(@plan), headers: auth
+          assert_response :success
+
+          stop = JSON.parse(response.body)["assignments"].find { |x| x["id"] == assignment.id }["delivery"]
+          products = stop["items"].map { |i| i["product"] }
+          assert_includes products, "Mesa"
+          assert_not_includes products, "Silla cancelada"
+        end
+
         test "claim_tracking toma el plan para el usuario actual" do
           @plan.update_columns(last_recorded_by_id: users(:two).id, last_seen_at: 1.minute.ago)
 

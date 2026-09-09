@@ -44,4 +44,40 @@ class DeliveryPlansControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to delivery_plan_path(plan)
     assert_equal "routes_created", plan.reload.status
   end
+
+  test "show hides a cancelled delivery from a non-admin but keeps it visible for admin" do
+    plan = delivery_plans(:one)
+    delivery = delivery_plan_assignments(:one).delivery
+    delivery.update_columns(status: Delivery.statuses[:cancelled])
+    delivery_marker = "productosEntrega#{delivery.id}"
+
+    sign_out @admin
+    seller = users(:two)
+    seller.update!(role: :seller, force_password_change: false)
+    sign_in seller
+
+    get delivery_plan_url(plan)
+    assert_response :success
+    refute_match delivery_marker, response.body
+
+    sign_out seller
+    sign_in @admin
+
+    get delivery_plan_url(plan)
+    assert_response :success
+    assert_match delivery_marker, response.body
+    assert_match "Cancelad", response.body
+  end
+
+  test "show hides a cancelled product from a non-admin but keeps it visible (flagged) for admin" do
+    plan = delivery_plans(:one)
+    item = delivery_plan_assignments(:one).delivery.delivery_items.first
+    item.update_columns(status: DeliveryItem.statuses[:cancelled])
+    item.order_item.update_columns(product: "PRODUCTO-UNICO-TEST-123")
+
+    get delivery_plan_url(plan)
+    assert_response :success
+    assert_match "PRODUCTO-UNICO-TEST-123", response.body
+    assert_match "Cancelad", response.body
+  end
 end

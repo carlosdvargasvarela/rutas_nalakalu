@@ -3,11 +3,12 @@
     <i class="bi bi-truck-flatbed me-1"></i> Entregas de este plan
   </div>
   <div class="card-body">
-    <% if delivery_plan.delivery_plan_assignments.any? %>
+    <% visible_assignments = delivery_plan.delivery_plan_assignments.order(:stop_order).select { |a| a.delivery.visible_in_plan_for?(current_user_or_nil) } %>
+    <% if visible_assignments.any? %>
       <div class="row g-2">
-        <% delivery_plan.delivery_plan_assignments.order(:stop_order).each do |assignment| %>
+        <% visible_assignments.each do |assignment| %>
           <% delivery = assignment.delivery %>
-          <% active_items = delivery.items_visible_in_plan %>
+          <% active_items = delivery.items_visible_in_plan(current_user_or_nil) %>
           <div class="col-12">
             <div class="card shadow-sm">
               <div class="card-body p-3">
@@ -65,6 +66,11 @@
                         <li>
                           <strong><%= item.order_item.product %></strong>
                           <span class="badge bg-secondary ms-1"><%= item.quantity %></span>
+                          <% unless item.visible_to_all? %>
+                            <span class="badge bg-danger ms-1">
+                              <i class="bi bi-exclamation-triangle-fill"></i> <%= item.display_status %>
+                            </span>
+                          <% end %>
                           <% if item.notes.present? %>
                             <br>
                             <span class="text-primary"><i class="bi bi-pin-angle-fill"></i> <em><%= item.notes %></em></span>

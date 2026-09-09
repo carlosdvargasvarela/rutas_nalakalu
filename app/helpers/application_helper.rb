@@ -5,6 +5,16 @@ module ApplicationHelper
   BOOTSTRAP_BADGE_VARIANTS = %w[primary secondary success danger warning info light dark
                                  status-blue status-taupe status-teal].freeze
 
+  # current_user, pero segura de usar en partials que también se renderizan
+  # fuera de un request real (ej. ActionCable broadcast_replace_to, donde no
+  # hay Warden/sesión). Ante la duda, trata al viewer como no-admin — nunca
+  # como admin — para no filtrar de más contenido restringido.
+  def current_user_or_nil
+    current_user
+  rescue StandardError
+    nil
+  end
+
   def normalize_badge_color(color)
     c = color.to_s.strip
     return "secondary" if c.blank?
