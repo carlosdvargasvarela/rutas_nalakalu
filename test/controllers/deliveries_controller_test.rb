@@ -2,6 +2,7 @@ require "test_helper"
 
 class DeliveriesControllerTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+  include ActionView::RecordIdentifier
 
   setup do
     @admin = users(:one)
@@ -36,6 +37,24 @@ class DeliveriesControllerTest < ActionDispatch::IntegrationTest
     get new_internal_delivery_deliveries_url
     assert_response :success
     assert_select "[data-controller~=vendor-address-select]"
+  end
+
+  test "index enables the tracking link button only for deliveries already in a plan" do
+    with_plan = deliveries(:one)
+    assert with_plan.delivery_plan_assignment.present?
+
+    without_plan = with_plan.order.deliveries.create!(
+      delivery_address: with_plan.delivery_address,
+      delivery_date: with_plan.delivery_date,
+      status: with_plan.status
+    )
+    assert_nil without_plan.delivery_plan_assignment
+
+    get deliveries_url
+    assert_response :success
+
+    assert_select "##{dom_id(with_plan, :card_content)} button[data-controller=clipboard]:not([disabled])"
+    assert_select "##{dom_id(without_plan, :card_content)} button[data-controller=clipboard][disabled]"
   end
 
   test "update handles a duplicate-product validation failure without crashing on _return_to_panel" do

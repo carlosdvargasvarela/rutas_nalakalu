@@ -71,7 +71,17 @@
           <i class="bi bi-person-badge"></i>
           <%= delivery.order&.seller&.name&.truncate(20) || "S/V" %>
         </span>
-        <div class="d-flex gap-1 flex-wrap justify-content-end">
+        <div class="d-flex gap-1 flex-wrap justify-content-end align-items-center">
+          <% has_plan = delivery.delivery_plan.present? %>
+          <button type="button"
+                  class="btn btn-outline-secondary btn-xs"
+                  data-controller="clipboard"
+                  data-clipboard-text-value="<%= delivery.public_tracking_url %>"
+                  data-action="click->clipboard#copy"
+                  <%= "disabled" unless has_plan %>
+                  title="<%= has_plan ? "Copiar enlace de seguimiento para el cliente" : "Disponible cuando la entrega esté en un plan" %>">
+            <i class="bi bi-link-45deg"></i>
+          </button>
           <% if delivery.showroom? %>
             <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill badge-xxs">
               <i class="bi bi-shop me-1"></i>Showroom
