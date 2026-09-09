@@ -1162,18 +1162,7 @@ class DeliveriesController < ApplicationController
   def handle_create_error(e)
     Rails.logger.error "Error crear entrega: #{e.message}"
     @delivery ||= Delivery.new
-    if params[:delivery].present?
-      permitted = params.require(:delivery).permit(
-        :delivery_date, :delivery_address_id, :order_id,
-        :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
-        :condominio_number, :casa_number, :_return_to_panel,
-        delivery_items_attributes: [
-          :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
-          {order_item_attributes: [:id, :product, :quantity, :notes]}
-        ]
-      )
-      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
-      permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
+    if (permitted = delivery_rerender_params)
       @delivery.assign_attributes(permitted.except(:_return_to_panel))
     end
 
@@ -1188,18 +1177,7 @@ class DeliveriesController < ApplicationController
   end
 
   def handle_update_error(e)
-    if params[:delivery].present?
-      permitted = params.require(:delivery).permit(
-        :delivery_date, :delivery_address_id, :order_id,
-        :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
-        :condominio_number, :casa_number, :_return_to_panel,
-        delivery_items_attributes: [
-          :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
-          {order_item_attributes: [:id, :product, :quantity, :notes]}
-        ]
-      )
-      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
-      permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
+    if (permitted = delivery_rerender_params)
       @delivery.assign_attributes(permitted.except(:_return_to_panel))
     end
 
@@ -1211,6 +1189,28 @@ class DeliveriesController < ApplicationController
 
     flash.now[:alert] = "Error al actualizar la entrega: #{e.message}"
     render :edit, status: :unprocessable_entity
+  end
+
+  # Permit list compartida por handle_create_error/handle_update_error para
+  # re-renderizar el formulario tras un fallo. Reusa los sanitizadores de
+  # "__new__" ya existentes (sanitize_delivery_address_param!/
+  # sanitize_order_id_param!) en vez de reimplementarlos sobre el hash ya
+  # permitido.
+  def delivery_rerender_params
+    return nil unless params[:delivery].present?
+
+    sanitize_delivery_address_param!
+    sanitize_order_id_param!
+
+    params.require(:delivery).permit(
+      :delivery_date, :delivery_address_id, :order_id,
+      :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
+      :condominio_number, :casa_number, :_return_to_panel,
+      delivery_items_attributes: [
+        :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
+        {order_item_attributes: [:id, :product, :quantity, :notes]}
+      ]
+    )
   end
 
   def register_devolucion_note
@@ -1260,6 +1260,9 @@ class DeliveriesController < ApplicationController
     @delivery.status ||= :scheduled
 
     if params[:delivery].present?
+      sanitize_delivery_address_param!
+      sanitize_order_id_param!
+
       permitted = params.require(:delivery).permit(
         :delivery_date, :delivery_address_id, :order_id,
         :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
@@ -1268,8 +1271,6 @@ class DeliveriesController < ApplicationController
           {order_item_attributes: [:id, :product, :quantity, :notes]}
         ]
       )
-      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
-      permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
       @delivery.assign_attributes(permitted)
     end
 
@@ -1309,6 +1310,8 @@ class DeliveriesController < ApplicationController
     )
 
     if params[:delivery].present?
+      sanitize_delivery_address_param!
+
       permitted = params.require(:delivery).permit(
         :delivery_date, :delivery_type, :delivery_address_id,
         delivery_items_attributes: [
@@ -1316,7 +1319,6 @@ class DeliveriesController < ApplicationController
           {order_item_attributes: [:id, :product, :quantity, :notes]}
         ]
       )
-      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
       @service_case.assign_attributes(permitted)
 
       if @service_case.delivery_type.is_a?(String)
@@ -1380,6 +1382,9 @@ class DeliveriesController < ApplicationController
     @delivery ||= Delivery.new(delivery_type: :repair_pickup, status: :scheduled)
 
     if params[:delivery].present?
+      sanitize_delivery_address_param!
+      sanitize_order_id_param!
+
       permitted = params.require(:delivery).permit(
         :delivery_date, :delivery_address_id, :order_id,
         :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
@@ -1388,8 +1393,6 @@ class DeliveriesController < ApplicationController
           {order_item_attributes: [:id, :product, :quantity, :notes]}
         ]
       )
-      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
-      permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
       # "repair_with_return" es un valor de despacho del formulario, no un delivery_type real.
       permitted.delete(:delivery_type) unless Delivery.delivery_types.key?(permitted[:delivery_type].to_s)
       @delivery.assign_attributes(permitted)
