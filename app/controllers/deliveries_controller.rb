@@ -62,8 +62,8 @@ class DeliveriesController < ApplicationController
 
     respond_to do |format|
       format.html
-      format.xlsx { response.headers["Content-Disposition"] = "attachment; filename=entregas_#{Date.today.strftime("%Y%m%d")}.xlsx" }
-      format.csv { send_data @all_deliveries.to_csv, filename: "entregas_#{Date.today.strftime("%Y%m%d")}.csv" }
+      format.xlsx { response.headers["Content-Disposition"] = "attachment; filename=entregas_#{Date.current.strftime("%Y%m%d")}.xlsx" }
+      format.csv { send_data @all_deliveries.to_csv, filename: "entregas_#{Date.current.strftime("%Y%m%d")}.csv" }
     end
   end
 
@@ -492,7 +492,7 @@ class DeliveriesController < ApplicationController
       contact_name: @delivery.contact_name,
       contact_phone: @delivery.contact_phone,
       delivery_type: :pickup_with_return,
-      delivery_date: Date.today,
+      delivery_date: Date.current,
       status: :scheduled
     )
 
@@ -543,7 +543,7 @@ class DeliveriesController < ApplicationController
       contact_name: @delivery.contact_name,
       contact_phone: @delivery.contact_phone,
       delivery_type: :repair_pickup,
-      delivery_date: Date.today,
+      delivery_date: Date.current,
       status: :scheduled
     )
 
@@ -879,8 +879,8 @@ class DeliveriesController < ApplicationController
 
   def by_week
     session[:deliveries_return_to] = request.fullpath
-    @week = (1..53).cover?(params[:week].to_i) ? params[:week].to_i : Date.today.cweek
-    @year = (params[:year].to_i >= 2000) ? params[:year].to_i : Date.today.cwyear
+    @week = (1..53).cover?(params[:week].to_i) ? params[:week].to_i : Date.current.cweek
+    @year = (params[:year].to_i >= 2000) ? params[:year].to_i : Date.current.cwyear
     start_date = Date.commercial(@year, @week, 1)
     @deliveries = Delivery.for_week(start_date).includes(order: :client, delivery_address: {}, delivery_items: {}).order("deliveries.delivery_date ASC").page(params[:page])
     render :index
@@ -1329,11 +1329,7 @@ class DeliveriesController < ApplicationController
         @service_case.delivery_type = @service_case.delivery_type.to_sym
       end
       if (dd = params.dig(:delivery, :delivery_date)).present?
-        @service_case.delivery_date = begin
-          Date.parse(dd)
-        rescue
-          @service_case.delivery_date
-        end
+        @service_case.delivery_date = parse_date(dd) || @service_case.delivery_date
       end
     else
       @service_case.delivery_type ||= :pickup_with_return
