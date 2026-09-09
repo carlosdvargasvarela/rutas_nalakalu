@@ -62,12 +62,7 @@ class DeliveryPlan < ApplicationRecord
   def completed? = status_completed?
   def aborted? = status_aborted?
 
-  def draft! = status_draft!
-  def sent_to_logistics! = status_sent_to_logistics!
-  def routes_created! = status_routes_created!
-  def in_progress! = status_in_progress!
   def completed! = status_completed!
-  def aborted! = status_aborted!
 
   validates :year, presence: true, numericality: {only_integer: true, greater_than: 2000}
   validates :week, presence: true, numericality: {only_integer: true, greater_than: 0, less_than_or_equal_to: 54}
@@ -214,33 +209,11 @@ class DeliveryPlan < ApplicationRecord
     delivery_plan_assignments.create!(delivery: delivery)
   end
 
-  def send_to_logistics!
-    update!(status: :routes_created)
-  end
-
   def ensure_deletable
     if status_in_progress? || status_completed? || status_aborted?
       errors.add(:base, "No se puede eliminar un plan en progreso, completado o abortado.")
       throw(:abort)
     end
-  end
-
-  def fail_all_pending_assignments!(reason:, failed_by:)
-    transaction do
-      delivery_plan_assignments.where(status: [:pending, :in_route]).find_each do |assignment|
-        assignment.mark_as_failed!(reason: reason, failed_by: failed_by)
-      end
-      abort! unless status_completed?
-    end
-  end
-
-  def statistics
-    {
-      total_deliveries: total_deliveries,
-      service_cases: service_case_deliveries.count,
-      normal_deliveries: normal_deliveries.count,
-      total_items: deliveries.joins(:delivery_items).sum("delivery_items.quantity_delivered")
-    }
   end
 
   def self.ransackable_attributes(auth_object = nil)

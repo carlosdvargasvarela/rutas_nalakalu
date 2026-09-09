@@ -42,11 +42,6 @@ class OrderItem < ApplicationRecord
     delivery_items.sum(:quantity_delivered)
   end
 
-  def pending_quantity
-    quantity - delivered_quantity
-  end
-
-
   def update_status_based_on_deliveries
     if delivery_items.any? && delivery_items.all? { |di| di.status == "delivered" }
       update_column(:status, OrderItem.statuses[:delivered])
@@ -73,10 +68,6 @@ class OrderItem < ApplicationRecord
 
   def ready_to_deliver?
     status == "ready"
-  end
-
-  def item_delivery_status
-    delivery_items.last.status
   end
 
   def product_name

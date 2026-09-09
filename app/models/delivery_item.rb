@@ -136,10 +136,6 @@ class DeliveryItem < ApplicationRecord
     # El callback after_commit :recalculate_delivery_status se encarga del resto
   end
 
-  def bulk_reschedulable?
-    status.in?(%w[pending confirmed in_plan])
-  end
-
   # Mismo criterio que el scope eligible_for_plan_for_others, pero sobre un
   # registro ya cargado en memoria (evita una query extra cuando se filtra
   # una colección ya preloaded, ej. delivery.delivery_items.select(&:visible_to_all?)).
@@ -149,14 +145,6 @@ class DeliveryItem < ApplicationRecord
 
   def bulk_actionable?
     !status.in?(%w[delivered rescheduled cancelled failed warehousing])
-  end
-
-  def logistics_info
-    {
-      product: order_item.product,
-      quantity: quantity_delivered,
-      service_case: service_case?
-    }
   end
 
   def quantity

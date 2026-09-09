@@ -156,49 +156,6 @@ class Order < ApplicationRecord
     end
   end
 
-  # Método de clase para corregir TODAS las órdenes
-  def self.fix_all_order_item_quantities!
-    corrected_count = 0
-    error_count = 0
-
-    Order.includes(:order_items).find_each do |order|
-      order.fix_order_item_quantities!
-      corrected_count += 1
-      print "." # Progreso visual
-    rescue => e
-      Rails.logger.error "Error corrigiendo Order #{order.number}: #{e.message}"
-      error_count += 1
-      print "X"
-    end
-  end
-
-  # Método para obtener un reporte de diferencias SIN corregir
-  def self.audit_order_item_quantities
-    discrepancies = []
-
-    Order.includes(:order_items).find_each do |order|
-      order.order_items.each do |order_item|
-        valid_delivery_items = DeliveryItem.joins(:delivery)
-          .where(order_item: order_item)
-          .where.not(deliveries: {status: :rescheduled})
-
-        total_delivered = valid_delivery_items.sum(:quantity_delivered)
-
-        if order_item.quantity != total_delivered
-          discrepancies << {
-            order_number: order.number,
-            product: order_item.product,
-            current_quantity: order_item.quantity,
-            should_be_quantity: total_delivered,
-            difference: total_delivered - order_item.quantity
-          }
-        end
-      end
-    end
-
-    discrepancies
-  end
-
   def reassign_to_seller!(seller)
     update!(seller: seller)
   end
@@ -218,46 +175,6 @@ class Order < ApplicationRecord
   # Total de items en el pedido
   def total_items
     order_items.sum(:quantity)
-  end
-
-  def pending_items
-    order_items.where.not(status: :delivered)
-  end
-
-  # Métodos de conveniencia para casos de servicio
-  def has_service_deliveries?
-    deliveries.service_cases.any?
-  end
-
-  def service_delivery_types
-    deliveries.service_cases.pluck(:delivery_type).uniq
-  end
-
-  # Método para crear deliveries de servicio
-  def create_service_deliveries(pickup: false, return_delivery: false, onsite_repair: false, delivery_date: Date.current, contact_name: nil, contact_phone: nil, delivery_address_id: nil)
-    delivery_params = {
-      delivery_date: delivery_date,
-      contact_name: contact_name,
-      contact_phone: contact_phone,
-      delivery_address_id: delivery_address_id,
-      status: :ready_to_deliver
-    }
-
-    created_deliveries = []
-
-    if pickup
-      created_deliveries << deliveries.create!(delivery_params.merge(delivery_type: :pickup))
-    end
-
-    if return_delivery
-      created_deliveries << deliveries.create!(delivery_params.merge(delivery_type: :return_delivery))
-    end
-
-    if onsite_repair
-      created_deliveries << deliveries.create!(delivery_params.merge(delivery_type: :onsite_repair))
-    end
-
-    created_deliveries
   end
 
   # ============================================================================
@@ -310,10 +227,6 @@ class Order < ApplicationRecord
 
   def self.ransackable_associations(auth_object = nil)
     ["client", "seller", "order_items", "deliveries", "delivery_item_notes"]
-  end
-
-  def self.human_enum_name(enum_name, value)
-    I18n.t("activerecord.attributes.#{model_name.i18n_key}.#{enum_name.to_s.pluralize}.#{value}")
   end
 
   def self.status_options_for_select

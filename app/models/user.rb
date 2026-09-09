@@ -65,10 +65,6 @@ class User < ApplicationRecord
     end
   end
 
-  def notifications_enabled?
-    send_notifications?
-  end
-
   def seller?
     role == "seller"
   end

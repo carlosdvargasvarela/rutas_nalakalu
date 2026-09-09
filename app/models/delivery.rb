@@ -169,10 +169,6 @@ class Delivery < ApplicationRecord
     status.in?(BULK_LOCKED_STATUSES)
   end
 
-  def bulk_available?
-    !bulk_locked? && delivery_items.bulk_actionable.exists?
-  end
-
   def reopenable?
     status.in?(REOPENABLE_STATUSES)
   end
@@ -429,10 +425,6 @@ class Delivery < ApplicationRecord
     delivery_items.merge(DeliveryItem.eligible_for_plan_for_others)
   end
 
-  def has_service_cases?
-    delivery_items.any?(&:service_case?)
-  end
-
   def total_items
     delivery_items.sum(:quantity_delivered)
   end
@@ -489,32 +481,12 @@ class Delivery < ApplicationRecord
     DeliveryEvent.where(delivery_id: sibling_delivery_ids).count
   end
 
-  def client_info
-    {
-      name: order.client.name,
-      address: delivery_address.address,
-      contact: contact_name,
-      phone: contact_phone,
-      seller: order.seller.name,
-      condominio_number: condominio_number,
-      casa_number: casa_number
-    }
-  end
-
   def status_humanize
     status.humanize
   end
 
   def delivery_type_humanize
     delivery_type.humanize
-  end
-
-  def status_i18n(status_value, type)
-    case type
-    when :delivery then Delivery.statuses.key(status_value).humanize
-    when :order then Order.statuses.key(status_value).humanize
-    else status_value.to_s.humanize
-    end
   end
 
   # ============================================================================
@@ -558,11 +530,6 @@ class Delivery < ApplicationRecord
     )
   end
 
-  def unconfirm_by_vendor!
-    update!(confirmed_by_vendor: false, confirmed_by_vendor_at: nil)
-    Rails.logger.info "[Delivery##{id}] Confirmación de vendedor removida"
-  end
-
   def unconfirm!
     return if bulk_locked?
 
@@ -572,10 +539,6 @@ class Delivery < ApplicationRecord
       reload
       update_status_based_on_items
     end
-  end
-
-  def self.unconfirmed_by_vendor
-    where(confirmed_by_vendor: false)
   end
 
   def associated_deliveries
