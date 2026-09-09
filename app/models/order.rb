@@ -1,5 +1,15 @@
 # app/models/order.rb
 class Order < ApplicationRecord
+  include HasDisplayStatus
+
+  DISPLAY_STATUS_LABELS = {
+    "in_production" => "En producción",
+    "ready_for_delivery" => "Listo para entrega",
+    "delivered" => "Entregado",
+    "rescheduled" => "Reprogramado",
+    "cancelled" => "Cancelado"
+  }.freeze
+
   # ============================================================================
   # CONFIGURACIÓN Y RELACIONES
   # ============================================================================
@@ -102,16 +112,6 @@ class Order < ApplicationRecord
   # MÉTODOS DE ESTADO Y UTILIDAD
   # ============================================================================
 
-  def display_status
-    case status
-    when "in_production" then "En producción"
-    when "ready_for_delivery" then "Listo para entrega"
-    when "delivered" then "Entregado"
-    when "rescheduled" then "Reprogramado"
-    when "cancelled" then "Cancelado"
-    else status.to_s.humanize
-    end
-  end
 
   # Actualiza el estado basado en los order_items
   def check_and_update_status!

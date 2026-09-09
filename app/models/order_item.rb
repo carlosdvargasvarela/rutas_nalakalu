@@ -1,5 +1,15 @@
 # app/models/order_item.rb
 class OrderItem < ApplicationRecord
+  include HasDisplayStatus
+
+  DISPLAY_STATUS_LABELS = {
+    "in_production" => "En producción",
+    "ready" => "Listo",
+    "delivered" => "Entregado",
+    "cancelled" => "Cancelado",
+    "missing" => "Faltante"
+  }.freeze
+
   has_paper_trail
 
   # Relaciones
@@ -36,16 +46,6 @@ class OrderItem < ApplicationRecord
     quantity - delivered_quantity
   end
 
-  def display_status
-    case status
-    when "in_production" then "En producción"
-    when "ready" then "Listo"
-    when "delivered" then "Entregado"
-    when "cancelled" then "Cancelado"
-    when "missing" then "Faltante"
-    else status.to_s.humanize
-    end
-  end
 
   def update_status_based_on_deliveries
     if delivery_items.any? && delivery_items.all? { |di| di.status == "delivered" }

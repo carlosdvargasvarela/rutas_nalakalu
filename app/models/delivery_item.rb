@@ -1,5 +1,19 @@
 class DeliveryItem < ApplicationRecord
   include ActionView::RecordIdentifier
+  include HasDisplayStatus
+
+  DISPLAY_STATUS_LABELS = {
+    "pending" => "Pendiente de confirmar",
+    "confirmed" => "Confirmado",
+    "in_plan" => "En plan de entregas",
+    "in_route" => "En ruta",
+    "delivered" => "Entregado",
+    "rescheduled" => "Reprogramado",
+    "cancelled" => "Cancelado",
+    "failed" => "Entrega fracasada",
+    "loaded_on_truck" => "Cargado en camión",
+    "warehousing" => "En bodegaje"
+  }.freeze
 
   has_paper_trail
   belongs_to :delivery
@@ -74,22 +88,6 @@ class DeliveryItem < ApplicationRecord
   # ============================================================================
   # MÉTODOS PÚBLICOS
   # ============================================================================
-
-  def display_status
-    case status
-    when "pending" then "Pendiente de confirmar"
-    when "confirmed" then "Confirmado"
-    when "in_plan" then "En plan de entregas"
-    when "in_route" then "En ruta"
-    when "delivered" then "Entregado"
-    when "rescheduled" then "Reprogramado"
-    when "cancelled" then "Cancelado"
-    when "failed" then "Entrega fracasada"
-    when "loaded_on_truck" then "Cargado en camión"
-    when "warehousing" then "En bodegaje"
-    else status.to_s.humanize
-    end
-  end
 
   def mark_loaded!
     raise StandardError, "No se puede cargar un producto en estado #{status}." unless bulk_actionable?

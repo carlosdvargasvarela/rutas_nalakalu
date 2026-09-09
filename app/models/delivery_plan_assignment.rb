@@ -2,6 +2,15 @@
 # frozen_string_literal: true
 
 class DeliveryPlanAssignment < ApplicationRecord
+  include HasDisplayStatus
+
+  DISPLAY_STATUS_LABELS = {
+    "pending" => "Pendiente",
+    "in_route" => "En ruta",
+    "completed" => "Completado",
+    "cancelled" => "Cancelado"
+  }.freeze
+
   # Versionado y auditoría
   has_paper_trail
 
@@ -120,16 +129,6 @@ class DeliveryPlanAssignment < ApplicationRecord
     update!(driver_notes: updated)
   end
 
-  # Etiqueta legible del estado
-  def display_status
-    case status
-    when "pending" then "Pendiente"
-    when "in_route" then "En ruta"
-    when "completed" then "Completado"
-    when "cancelled" then "Cancelado"
-    else status.to_s.humanize
-    end
-  end
 
   # ============================================================================
   # MÉTODOS PRIVADOS

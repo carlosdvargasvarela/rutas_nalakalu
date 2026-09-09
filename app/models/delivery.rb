@@ -1,5 +1,20 @@
 class Delivery < ApplicationRecord
   include ActionView::RecordIdentifier
+  include HasDisplayStatus
+
+  DISPLAY_STATUS_LABELS = {
+    "scheduled" => "Pendiente de confirmar",
+    "ready_to_deliver" => "Confirmada para entregar",
+    "in_plan" => "En plan",
+    "in_route" => "En ruta",
+    "delivered" => "Entregada",
+    "rescheduled" => "Reprogramada",
+    "cancelled" => "Cancelada",
+    "archived" => "Archivada",
+    "failed" => "Entrega fracasada",
+    "loaded_on_truck" => "Cargada en camión",
+    "warehousing" => "En bodegaje"
+  }.freeze
 
   has_paper_trail
   belongs_to :order
@@ -240,23 +255,6 @@ class Delivery < ApplicationRecord
 
   def repair_service?
     delivery_type.in?(REPAIR_SERVICE_TYPES)
-  end
-
-  def display_status
-    case status
-    when "scheduled" then "Pendiente de confirmar"
-    when "ready_to_deliver" then "Confirmada para entregar"
-    when "in_plan" then "En plan"
-    when "in_route" then "En ruta"
-    when "delivered" then "Entregada"
-    when "rescheduled" then "Reprogramada"
-    when "cancelled" then "Cancelada"
-    when "archived" then "Archivada"
-    when "failed" then "Entrega fracasada"
-    when "loaded_on_truck" then "Cargada en camión"
-    when "warehousing" then "En bodegaje"
-    else status.to_s.humanize
-    end
   end
 
   def display_type

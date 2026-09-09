@@ -1,5 +1,16 @@
 # app/models/delivery_plan.rb
 class DeliveryPlan < ApplicationRecord
+  include HasDisplayStatus
+
+  DISPLAY_STATUS_LABELS = {
+    "draft" => "Borrador",
+    "sent_to_logistics" => "Enviado a logística",
+    "routes_created" => "Ruta creada",
+    "in_progress" => "En progreso",
+    "completed" => "Completado",
+    "aborted" => "Abortado"
+  }.freeze
+
   has_paper_trail
   has_many :delivery_plan_assignments, -> { order(:stop_order) }, dependent: :destroy
   has_many :deliveries, through: :delivery_plan_assignments
@@ -83,18 +94,6 @@ class DeliveryPlan < ApplicationRecord
       service_cases: deliveries.joins(:delivery_items).where(delivery_items: {service_case: true}).count,
       confirmed_items: deliveries.joins(delivery_items: :order_item).where(order_items: {confirmed: true}).count
     }
-  end
-
-  def display_status
-    case status
-    when "draft" then "Borrador"
-    when "sent_to_logistics" then "Enviado a logística"
-    when "routes_created" then "Ruta creada"
-    when "in_progress" then "En progreso"
-    when "completed" then "Completado"
-    when "aborted" then "Abortado"
-    else "Desconocido"
-    end
   end
 
   # Recalcular estado de carga del plan (basado en items)
