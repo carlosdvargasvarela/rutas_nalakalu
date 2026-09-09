@@ -25,12 +25,6 @@ class TrackingsController < ApplicationController
 
   private
 
-  def parse_date(value)
-    Date.parse(value) if value.present?
-  rescue ArgumentError
-    nil
-  end
-
   def serialize_plan(plan)
     visible_assignments = plan.delivery_plan_assignments.reject { |a| a.delivery.hidden_from_route_map? }
 

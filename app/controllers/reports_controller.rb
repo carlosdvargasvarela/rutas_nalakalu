@@ -78,12 +78,6 @@ class ReportsController < ApplicationController
 
   private
 
-  def parse_date(val)
-    Date.parse(val) if val.present?
-  rescue ArgumentError
-    nil
-  end
-
   def truck_for(delivery)
     delivery.delivery_plan_assignment&.delivery_plan&.truck || "Sin asignar"
   end

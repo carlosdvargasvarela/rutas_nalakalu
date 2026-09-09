@@ -133,7 +133,7 @@ class DeliveriesController < ApplicationController
     if (new_date_str = params.dig(:delivery, :reschedule_new_date)).present?
       @delivery = Deliveries::Rescheduler.new(
         delivery: @delivery,
-        new_date: safe_date(new_date_str),
+        new_date: parse_date(new_date_str),
         current_user: current_user,
         reason: params.dig(:delivery, :reschedule_reason)
       ).call
@@ -189,7 +189,7 @@ class DeliveriesController < ApplicationController
 
     target_delivery = Deliveries::Rescheduler.new(
       delivery: @delivery,
-      new_date: safe_date(params[:new_date]),
+      new_date: parse_date(params[:new_date]),
       current_user: current_user,
       reason: reason
     ).call
@@ -304,7 +304,7 @@ class DeliveriesController < ApplicationController
   def start_warehousing
     authorize @delivery, :edit?
 
-    until_date = safe_date(params[:warehousing_until])
+    until_date = parse_date(params[:warehousing_until])
 
     unless until_date.present? && until_date > Date.current
       respond_to do |format|
@@ -1214,10 +1214,6 @@ class DeliveriesController < ApplicationController
     params[:delivery][:order_id] = nil if raw == "__new__" || raw.blank?
   rescue
     nil
-  end
-
-  def safe_date(str)
-    str.present? ? Date.parse(str) : nil
   end
 
   def find_or_initialize_client_from_params

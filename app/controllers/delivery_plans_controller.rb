@@ -107,16 +107,9 @@ class DeliveryPlansController < ApplicationController
 
   def new
     authorize DeliveryPlan
-    if params.dig(:q, :delivery_date_gteq).present? && params.dig(:q, :delivery_date_lteq).present?
-      from = Date.parse(params[:q][:delivery_date_gteq])
-      to = Date.parse(params[:q][:delivery_date_lteq])
-    else
-      from = to = Date.today
-    end
+    from, to = resolve_delivery_date_range
 
-    base_scope = Delivery
-      .where(delivery_date: from..to)
-      .available_for_plan
+    base_scope = Delivery.where(delivery_date: from..to).available_for_plan
 
     @q = base_scope.ransack(params[:q])
     @deliveries = @q.result
@@ -549,17 +542,9 @@ class DeliveryPlansController < ApplicationController
   end
 
   def render_new_with_selection(selected_ids)
-    if params.dig(:q, :delivery_date_gteq).present? && params.dig(:q, :delivery_date_lteq).present?
-      from = Date.parse(params[:q][:delivery_date_gteq])
-      to = Date.parse(params[:q][:delivery_date_lteq])
-    else
-      from = to = Date.today
-    end
+    from, to = resolve_delivery_date_range
 
-    base_scope = Delivery
-      .where(delivery_date: from..to)
-      .where(status: [:scheduled, :ready_to_deliver])
-      .where.not(id: DeliveryPlanAssignment.select(:delivery_id))
+    base_scope = Delivery.where(delivery_date: from..to).available_for_plan
 
     @q = base_scope.ransack(params[:q])
     @deliveries = @q.result
@@ -570,5 +555,16 @@ class DeliveryPlansController < ApplicationController
     @to = to
     @selected_delivery_ids = selected_ids.map(&:to_i)
     render :new, status: :unprocessable_entity
+  end
+
+  # Compartido por new y render_new_with_selection: si el usuario filtró por
+  # fecha (params[:q][:delivery_date_gteq/lteq]), se usa ese rango; si no,
+  # el default es hoy.
+  def resolve_delivery_date_range
+    if params.dig(:q, :delivery_date_gteq).present? && params.dig(:q, :delivery_date_lteq).present?
+      [Date.parse(params[:q][:delivery_date_gteq]), Date.parse(params[:q][:delivery_date_lteq])]
+    else
+      [Date.current, Date.current]
+    end
   end
 end
