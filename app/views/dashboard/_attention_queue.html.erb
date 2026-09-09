@@ -42,11 +42,21 @@
                 </td>
                 <td><%= delivery.order.client.name %></td>
                 <td>
-                  <div class="d-flex flex-wrap gap-1">
+                  <div class="d-flex flex-wrap gap-1 mb-1">
                     <% item[:categories].each do |category| %>
                       <%= attention_category_badge(category) %>
                     <% end %>
                   </div>
+                  <% if item[:reasons].present? %>
+                    <div class="small text-muted">
+                      <% item[:reasons].take(2).each do |reason| %>
+                        <div><i class="bi bi-dot"></i><%= truncate(reason, length: 70) %></div>
+                      <% end %>
+                      <% if item[:reasons].size > 2 %>
+                        <div class="fst-italic">+ <%= item[:reasons].size - 2 %> más...</div>
+                      <% end %>
+                    </div>
+                  <% end %>
                 </td>
                 <td class="text-end pe-4">
                   <% target_path = current_user.production_manager? ? smart_delivery_path(delivery) : edit_delivery_path(delivery) %>

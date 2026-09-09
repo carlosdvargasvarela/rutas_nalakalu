@@ -38,18 +38,24 @@ class DeliveryAddress < ApplicationRecord
     latitude.to_f.round(4) == DEFAULT_MAP_LAT.round(4) && longitude.to_f.round(4) == DEFAULT_MAP_LNG.round(4)
   end
 
-  # Método principal que devuelve errores y recomendaciones por separado
+  # Método principal que devuelve errores y recomendaciones por separado.
+  # Cada error declara su propia severidad aquí mismo, junto al chequeo que
+  # la origina — antes había que adivinarla en otro archivo (ErrorDetector)
+  # con regex sobre el texto del mensaje, así que un mensaje reescrito
+  # silenciosamente rompía la severidad.
   def address_findings(recipient_email: nil)
     errors = []
     recommendations = []
 
-    errors << "Sin coordenadas" if missing_coordinates?
-    errors << "Coordenadas cero" if latitude.to_f.zero? && longitude.to_f.zero?
-    errors << "Coordenadas no confirmadas (nunca se movió el pin del mapa)" if stuck_at_default_coordinates?
-    errors << "Dirección vacía" if address.blank?
-    errors << "Texto de dirección inválido" if invalid_address_text?
-    errors << "Fuera de Costa Rica" if out_of_cr_bounds?
-    errors << "Geocodificación sin resultados" if geocode_quality == "no_match"
+    errors << {message: "Sin coordenadas", severity: "high"} if missing_coordinates?
+    errors << {message: "Coordenadas cero", severity: "high"} if latitude.to_f.zero? && longitude.to_f.zero?
+    if stuck_at_default_coordinates?
+      errors << {message: "Coordenadas no confirmadas (nunca se movió el pin del mapa)", severity: "high"}
+    end
+    errors << {message: "Dirección vacía", severity: "critical"} if address.blank?
+    errors << {message: "Texto de dirección inválido", severity: "critical"} if invalid_address_text?
+    errors << {message: "Fuera de Costa Rica", severity: "high"} if out_of_cr_bounds?
+    errors << {message: "Geocodificación sin resultados", severity: "medium"} if geocode_quality == "no_match"
 
     # Geocodificación parcial ahora es RECOMENDACIÓN, no error
     if geocode_quality&.include?("partial")
@@ -64,6 +70,13 @@ class DeliveryAddress < ApplicationRecord
 
   # Métodos de conveniencia
   def address_errors(recipient_email: nil)
+    address_findings(recipient_email: recipient_email)[:errors].map { |e| e[:message] }
+  end
+
+  # Igual que address_errors pero conserva la severidad de cada uno —
+  # para consumidores (como Deliveries::ErrorDetector) que la necesitan sin
+  # tener que re-derivarla del texto.
+  def address_errors_with_severity(recipient_email: nil)
     address_findings(recipient_email: recipient_email)[:errors]
   end
 

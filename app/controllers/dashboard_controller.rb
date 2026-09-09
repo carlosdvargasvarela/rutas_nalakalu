@@ -79,14 +79,32 @@ class DashboardController < ApplicationController
 
     candidates.each do |delivery|
       categories = []
-      categories << :error if Deliveries::ErrorDetector.new(delivery).has_errors?
-      categories << :service if delivery.requires_service_case_action?
-      categories << :repair if delivery.repair_service? || delivery.requires_repair_service_action?
-      categories << :sala_pickup if delivery.requires_sala_pickup?
-      categories << :approval if can_see_approvals && !delivery.approved?
+      reasons = []
+
+      detector = Deliveries::ErrorDetector.new(delivery)
+      if detector.has_errors?
+        categories << :error
+        reasons.concat(detector.errors.map { |e| e[:message] })
+      end
+      if delivery.requires_service_case_action?
+        categories << :service
+        reasons.concat(delivery.service_case_items.map { |i| "Caso de servicio: #{i.order_item.product}" })
+      end
+      if delivery.repair_service? || delivery.requires_repair_service_action?
+        categories << :repair
+        reasons.concat(delivery.repair_service_items.map { |i| "Reparación: #{i.order_item.product}" })
+      end
+      if delivery.requires_sala_pickup?
+        categories << :sala_pickup
+        reasons.concat(delivery.sala_pickup_items.map { |i| "Retirar en sala: #{i.order_item.product}" })
+      end
+      if can_see_approvals && !delivery.approved?
+        categories << :approval
+        reasons << "Pendiente de aprobación"
+      end
       next if categories.empty?
 
-      items_by_id[delivery.id] = {delivery: delivery, categories: categories}
+      items_by_id[delivery.id] = {delivery: delivery, categories: categories, reasons: reasons}
     end
 
     # Bodegaje por vencer: ventana de fecha distinta (warehousing_until, no
@@ -94,8 +112,9 @@ class DashboardController < ApplicationController
     current_user_deliveries.warehousing_expiring_soon
       .includes(order: [:client, :seller])
       .each do |delivery|
-        entry = (items_by_id[delivery.id] ||= {delivery: delivery, categories: []})
+        entry = (items_by_id[delivery.id] ||= {delivery: delivery, categories: [], reasons: []})
         entry[:categories] << :warehousing
+        entry[:reasons] << "Bodegaje vence en #{delivery.warehousing_days_remaining} día(s)"
       end
 
     # Reprogramaciones: vienen de notificaciones, no de delivery_date. Solo
@@ -106,7 +125,8 @@ class DashboardController < ApplicationController
       next unless delivery.is_a?(Delivery)
       next if delivery.status.in?(%w[delivered cancelled archived])
 
-      entry = (items_by_id[delivery.id] ||= {delivery: delivery, categories: []})
+      entry = (items_by_id[delivery.id] ||= {delivery: delivery, categories: [], reasons: []})
+      entry[:reasons] << (delivery.reschedule_reason.presence || "Entrega reprogramada, todavía sin plan nuevo") unless entry[:categories].include?(:reschedule)
       entry[:categories] << :reschedule unless entry[:categories].include?(:reschedule)
     end
 

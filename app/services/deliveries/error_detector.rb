@@ -51,25 +51,14 @@ module Deliveries
         return errors
       end
 
-      # Usamos la lógica centralizada del modelo DeliveryAddress
-      addr_errors = address.address_errors
-      addr_errors.each do |msg|
-        severity =
-          case msg
-          when /Fuera de Costa Rica/i, /Coordenadas cero/i, /Sin coordenadas/i, /Coordenadas no confirmadas/i
-            "high"
-          when /Geocodificación sin resultados/i
-            "medium"
-          when /Texto de dirección inválido/i, /Dirección vacía/i
-            "critical"
-          else
-            "medium"
-          end
-
+      # Usamos la lógica centralizada del modelo DeliveryAddress. Cada
+      # chequeo ya declara su propia severidad ahí mismo — nada de adivinarla
+      # con regex sobre el texto del mensaje.
+      address.address_errors_with_severity.each do |finding|
         errors << {
           category: "Dirección",
-          severity: severity,
-          message: msg
+          severity: finding[:severity],
+          message: finding[:message]
         }
       end
 
@@ -131,21 +120,26 @@ module Deliveries
           errors << {
             category: "Productos",
             severity: "high",
-            message: "Item sin descripción de producto"
+            message: "Producto sin descripción configurada (item ##{item.id} del pedido)"
+          }
+        end
+
+        # Entregado más de lo pedido
+        if item.quantity_delivered.to_i > item.order_item.quantity.to_i
+          errors << {
+            category: "Productos",
+            severity: "high",
+            message: "Producto '#{item.order_item.product}': se entregó #{item.quantity_delivered} pero se pidieron #{item.order_item.quantity}"
           }
         end
       end
 
-      # Items con estado problemático
-      problematic_items = delivery.delivery_items.select do |item|
-        item.status.in?(%w[cancelled failed])
-      end
-
-      if problematic_items.any?
+      # Items con estado problemático: uno por producto, para saber cuál y por qué.
+      delivery.delivery_items.select { |item| item.status.in?(%w[cancelled failed]) }.each do |item|
         errors << {
           category: "Productos",
           severity: "medium",
-          message: "#{problematic_items.count} producto(s) con estado problemático"
+          message: "Producto '#{item.order_item.product}' en estado #{item.status.humanize.downcase}"
         }
       end
 
@@ -167,7 +161,7 @@ module Deliveries
         return errors
       end
 
-      if delivery.delivery_date < Date.today
+      if delivery.delivery_date < Date.current
         errors << {
           category: "Fecha",
           severity: "high",
@@ -186,6 +180,14 @@ module Deliveries
       client = delivery.order&.client
 
       return errors if client.blank?
+
+      if client.phone.blank? && client.email.blank?
+        errors << {
+          category: "Cliente",
+          severity: "medium",
+          message: "Cliente '#{client.name}' sin teléfono ni correo registrado"
+        }
+      end
 
       errors
     end
