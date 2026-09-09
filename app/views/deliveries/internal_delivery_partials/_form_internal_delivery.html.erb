@@ -1,8 +1,9 @@
-<%= simple_form_for delivery, 
+<%= simple_form_for delivery,
       url: create_internal_delivery_deliveries_path,
       html: {
         data: {
-          controller: "internal-delivery-form"
+          controller: "internal-delivery-form vendor-address-select",
+          "vendor-address-select-url-template-value" => edit_admin_vendor_path(0).sub("0", "__ID__")
         }
       } do |f| %>
   

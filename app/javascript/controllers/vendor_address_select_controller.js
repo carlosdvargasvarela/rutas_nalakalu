@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus";
 // Fills the hidden delivery_address fields from the data-* attributes of the
 // chosen <option>, mirroring what address-autocomplete does after a map pick.
 export default class extends Controller {
-  static targets = ["select", "address", "description", "latitude", "longitude", "plusCode", "editVendorLink"];
+  static targets = ["select", "address", "description", "latitude", "longitude", "plusCode", "editVendorLink", "contactName", "contactPhone"];
   static values = {urlTemplate: String};
 
   fill() {
@@ -18,6 +18,16 @@ export default class extends Controller {
     this.latitudeTarget.value = option.dataset.latitude || "";
     this.longitudeTarget.value = option.dataset.longitude || "";
     this.plusCodeTarget.value = option.dataset.plusCode || "";
+
+    // Solo rellena el responsable si el usuario no lo ha editado a mano.
+    if (this.hasContactNameTarget && !this.contactNameTarget.value.trim() && option.dataset.contactName) {
+      this.contactNameTarget.value = option.dataset.contactName;
+      this.contactNameTarget.dispatchEvent(new Event("input", {bubbles: true}));
+    }
+    if (this.hasContactPhoneTarget && !this.contactPhoneTarget.value.trim() && option.dataset.contactPhone) {
+      this.contactPhoneTarget.value = option.dataset.contactPhone;
+      this.contactPhoneTarget.dispatchEvent(new Event("input", {bubbles: true}));
+    }
 
     if (option.dataset.vendorId) {
       this.editVendorLinkTarget.href = this.urlTemplateValue.replace("__ID__", option.dataset.vendorId);

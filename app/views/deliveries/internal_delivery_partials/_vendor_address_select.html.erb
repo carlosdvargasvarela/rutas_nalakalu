@@ -7,7 +7,8 @@
      data-searchable-select-search-placeholder-value="Buscar proveedor o dirección...">
   <%= select_tag "vendor_address_id",
         options_for_select(
-          Vendor.includes(:vendor_addresses).order(:name).flat_map { |vendor|
+          Vendor.includes(:vendor_addresses, :vendor_contacts).order(:name).flat_map { |vendor|
+            primary_contact = vendor.vendor_contacts.primary_first.first
             vendor.vendor_addresses.map { |a|
               ["#{vendor.name} — #{a.full_address}", a.id, {
                 "data-address" => a.address,
@@ -15,7 +16,9 @@
                 "data-latitude" => a.latitude,
                 "data-longitude" => a.longitude,
                 "data-plus-code" => a.plus_code,
-                "data-vendor-id" => vendor.id
+                "data-vendor-id" => vendor.id,
+                "data-contact-name" => primary_contact&.name,
+                "data-contact-phone" => primary_contact&.phone
               }]
             }
           }

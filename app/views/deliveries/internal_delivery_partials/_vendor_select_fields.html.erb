@@ -1,7 +1,5 @@
 <%# app/views/deliveries/internal_delivery_partials/_vendor_select_fields.html.erb %>
-<div class="card shadow-sm border-primary mb-4"
-     data-controller="vendor-address-select"
-     data-vendor-address-select-url-template-value="<%= edit_admin_vendor_path(0).sub("0", "__ID__") %>">
+<div class="card shadow-sm border-primary mb-4">
   <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
     <h5 class="mb-0"><i class="bi bi-truck me-2"></i>Dirección del proveedor</h5>
     <%= link_to new_admin_vendor_path, data: {turbo_frame: "modal"}, class: "btn btn-sm btn-light" do %>

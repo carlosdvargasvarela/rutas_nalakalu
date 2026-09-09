@@ -35,7 +35,7 @@ class DeliveriesControllerTest < ActionDispatch::IntegrationTest
     @admin.update!(role: :proveeduria)
     get new_internal_delivery_deliveries_url
     assert_response :success
-    assert_select "[data-controller=vendor-address-select]"
+    assert_select "[data-controller~=vendor-address-select]"
   end
 
   test "update handles a duplicate-product validation failure without crashing on _return_to_panel" do

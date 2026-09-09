@@ -9,25 +9,27 @@
     </div>
     <div class="row g-3">
       <div class="col-md-6">
-        <%= f.input :contact_name, 
-            label: "Nombre completo", 
-            input_html: { 
-              class: "form-control form-control-lg", 
+        <%= f.input :contact_name,
+            label: "Nombre completo",
+            input_html: {
+              class: "form-control form-control-lg",
               placeholder: "Ej: Juan Pérez",
-              data: { 
-                action: "input->internal-delivery-form#validateResponsible" 
+              data: {
+                action: "input->internal-delivery-form#validateResponsible",
+                "vendor-address-select-target": "contactName"
               }
             },
             label_html: { class: "form-label fw-bold" } %>
       </div>
       <div class="col-md-6">
-        <%= f.input :contact_phone, 
-            label: "Teléfono de contacto", 
-            input_html: { 
-              class: "form-control form-control-lg", 
+        <%= f.input :contact_phone,
+            label: "Teléfono de contacto",
+            input_html: {
+              class: "form-control form-control-lg",
               placeholder: "8888-8888",
-              data: { 
-                action: "input->internal-delivery-form#validateResponsible" 
+              data: {
+                action: "input->internal-delivery-form#validateResponsible",
+                "vendor-address-select-target": "contactPhone"
               }
             },
             label_html: { class: "form-label fw-bold" } %>
