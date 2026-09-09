@@ -47,6 +47,10 @@ Rails.application.configure do
   # incoming request so you'll need to provide the :host parameter yourself.
   config.action_mailer.default_url_options = { host: "www.example.com" }
 
+  # Delivery#public_tracking_url builds a full URL via Rails.application.routes.url_helpers
+  # (no request context), same reason mailers need default_url_options above.
+  Rails.application.routes.default_url_options[:host] = "www.example.com"
+
   # Print deprecation notices to the stderr.
   config.active_support.deprecation = :stderr
 

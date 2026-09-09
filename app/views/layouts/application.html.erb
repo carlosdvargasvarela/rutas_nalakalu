@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=Space+Mono&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="manifest" href="/manifest.json">
@@ -27,7 +30,7 @@
             <strong>Modo mantenimiento activo</strong>
             <% if mw&.ends_at %>
               &mdash;
-              <span class="badge bg-warning text-dark">
+              <span class="badge bg-warning">
                 <i class="bi bi-clock-history me-1"></i><%= mw.time_remaining %> min restantes
               </span>
             <% end %>

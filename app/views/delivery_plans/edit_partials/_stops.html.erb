@@ -46,7 +46,7 @@
                 </span>
               <% end %>
               <% if group.any? { |a| a.delivery.delivery_items.any?(&:service_case?) } %>
-                <span class="badge bg-warning text-dark">
+                <span class="badge bg-warning">
                   <i class="bi bi-tools me-1"></i>Caso Servicio
                 </span>
               <% end %>
@@ -128,7 +128,7 @@
                           <span class="badge bg-secondary stop-qty-badge">x<%= di.quantity_delivered %></span>
                           <span class="small text-dark"><%= di.order_item.product %></span>
                           <% if di.service_case? %>
-                            <span class="badge bg-warning text-dark stop-service-badge">
+                            <span class="badge bg-warning stop-service-badge">
                               <i class="bi bi-tools"></i>
                             </span>
                           <% end %>

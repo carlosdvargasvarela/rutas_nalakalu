@@ -78,7 +78,7 @@
                     <span class="<​%= user == current_user ? 'fw-semibold' : '' %>">
                       <%= user.name %>
                       <% if user == current_user %>
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1 fw-normal small">Tú</span>
+                        <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle ms-1 fw-normal small">Tú</span>
                       <% end %>
                     </span>
                     <span class="badge bg-light text-dark border fw-normal small"><%= user.display_role %></span>

@@ -52,11 +52,10 @@
        data-loading-target="deliveryList">
     <% if @assignments.empty? %>
       <div class="text-center py-5">
-        <i class="bi bi-inbox" style="font-size:2.5rem;color:#2d2d4e;"></i>
-        <p class="mt-3" style="color:#64748b;">No hay entregas que coincidan.</p>
+        <i class="bi bi-inbox pd-empty-icon"></i>
+        <p class="mt-3 pd-empty-subtitle">No hay entregas que coincidan.</p>
         <%= link_to "Ver todas", loading_production_delivery_plan_path(@delivery_plan),
-            class: "btn btn-sm mt-1",
-            style: "border:1px solid #7c3aed;color:#a78bfa;border-radius:10px;" %>
+            class: "btn btn-sm mt-1 pd-empty-link" %>
       </div>
     <% else %>
       <% @assignments.each do |assignment| %>
@@ -79,8 +78,7 @@
         <h6 class="fw-bold mb-0 text-white">
           <i class="bi bi-chat-left-text me-2"></i>Nota del producto
         </h6>
-        <button class="btn p-0"
-                style="color:#64748b;font-size:1.1rem;background:none;border:none;"
+        <button class="btn p-0 pd-sheet-close"
                 data-action="click->note-sheet#close">
           <i class="bi bi-x-lg"></i>
         </button>
@@ -89,8 +87,7 @@
            data-note-sheet-target="productLabel">
         Producto
       </div>
-      <label class="d-block mb-1"
-             style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">
+      <label class="d-block mb-1 pd-summary-title">
         Observación
       </label>
       <textarea class="pd-sheet-textarea"

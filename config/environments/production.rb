@@ -133,4 +133,9 @@ Rails.application.configure do
   }
 
   config.action_mailer.default_url_options = {host: "rutas-nalakalu.com", protocol: "https"}
+
+  # Delivery#public_tracking_url builds a full URL via Rails.application.routes.url_helpers
+  # (no request context), same reason mailers need default_url_options above.
+  Rails.application.routes.default_url_options[:host] = "rutas-nalakalu.com"
+  Rails.application.routes.default_url_options[:protocol] = "https"
 end

@@ -1,25 +1,34 @@
 // app/assets/stylesheets/_variables.scss
+// Paleta Na Lakalú (brandkit-nalakalu.pdf): Beige #E2D2B9, Café #3D342C,
+// Naranja #A54E1E, Palo Rosa #C49D90, Verde Laurel #89987B, Blanco Hueso #FFF7EE.
 :root {
   // ── Brand ─────────────────────────────────────────────
-  --color-brand-primary:    #0d6efd;
-  --color-brand-accent:     #6610f2;
-  --color-brand-bg:         #fff7ee;
+  --color-brand-primary:    #a54e1e; // Naranja
+  --color-brand-accent:     #89987b; // Verde Laurel
+  --color-brand-secondary-accent: #c49d90; // Palo Rosa
+  --color-brand-bg:         #fff7ee; // Blanco Hueso
+  --color-brand-beige:      #e2d2b9; // Beige
 
   // ── Surface ───────────────────────────────────────────
   --color-surface:          #ffffff;
-  --color-surface-subtle:   #f8f9fa;
-  --color-border:           #dee2e6;
+  --color-surface-subtle:   #f8f4ec;
+  --color-border:           #e2d2b9; // Beige
+
+  // ── Typography ────────────────────────────────────────
+  --font-heading: 'Fraunces', serif;
+  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:    'Space Mono', monospace;
 
   // ── Text ──────────────────────────────────────────────
-  --color-text:             #212529;
-  --color-text-muted:       #6c757d;
+  --color-text:             #3d342c; // Café
+  --color-text-muted:       #7a6c5d;
 
   // ── Status ────────────────────────────────────────────
-  --color-success:          #198754;
-  --color-success-subtle:   #d1e7dd;
+  --color-success:          #4b7b4f;
+  --color-success-subtle:   #e3ecdf;
   --color-danger:           #dc3545;
   --color-danger-subtle:    #f8d7da;
-  --color-warning:          #856404;
+  --color-warning:          #b45309;
   --color-warning-subtle:   #fff3cd;
 
   // ── Production module ─────────────────────────────────
@@ -31,4 +40,12 @@
   --pd-danger-item:         #fff5f5;
   --pd-warning-item:        #fffbeb;
   --pd-note-text:           #664d03;
+}
+
+// ── Headings: Fraunces (marca) en títulos reales de página/sección ──
+// No aplica a badges, botones, tablas ni texto pequeño de UI (ver guía de marca).
+h1, h2, h3, h4,
+.pd-header h5,
+.approval-card .card-header h5 {
+  font-family: var(--font-heading);
 }

@@ -136,7 +136,7 @@ $nalakalu-green: #89987B;
   background: rgba(255, 255, 255, 0.7) !important;
   border-color: rgba(61, 52, 44, 0.2) !important;
   color: $nalakalu-brown !important;
-  font-family: 'Inter', 'Matter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
   font-size: 1rem !important;
   
   &:focus {
@@ -148,7 +148,7 @@ $nalakalu-green: #89987B;
 
   &::placeholder {
     color: rgba(61, 52, 44, 0.45);
-    font-family: 'Inter', 'Matter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
   }
 }
 
@@ -190,7 +190,7 @@ $nalakalu-green: #89987B;
   border: none;
   @include button-states(-2px, 0);
   box-shadow: 0 4px 12px rgba(61, 52, 44, 0.25) !important;
-  font-family: 'Inter', 'Matter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
   font-weight: 600 !important;
   font-size: 1.05rem !important;
   letter-spacing: 0.3px;
@@ -259,7 +259,7 @@ $nalakalu-green: #89987B;
   
   // Subtexto de branding
   .brand-subtitle {
-    font-family: 'Inter', 'Matter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     font-size: 0.875rem !important;
     color: rgba(61, 52, 44, 0.7) !important;
     letter-spacing: 0.3px;
@@ -275,7 +275,7 @@ $nalakalu-green: #89987B;
   z-index: 1;
 
   label {
-    font-family: 'Inter', 'Matter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     color: $nalakalu-brown !important;
     font-weight: 500 !important;
     font-size: 0.95rem !important;
@@ -284,7 +284,7 @@ $nalakalu-green: #89987B;
   .form-check-label {
     color: rgba(61, 52, 44, 0.8) !important;
     font-weight: 400 !important;
-    font-family: 'Inter', 'Matter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
   }
 }
 

@@ -28,11 +28,11 @@
 
   <%# Info del producto %>
   <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-    <div class="flex-grow-1" style="min-width:0;">
-      <div class="fw-bold text-truncate" style="font-size:0.9rem;color:#1e293b;">
+    <div class="flex-grow-1 min-width-0">
+      <div class="fw-bold text-truncate pd-client-name">
         <%= item.order_item&.product_name || "Producto sin nombre" %>
       </div>
-      <div class="d-flex flex-wrap gap-2 mt-1" style="font-size:0.75rem;color:#64748b;">
+      <div class="d-flex flex-wrap gap-2 mt-1 pd-client-address">
         <span><i class="bi bi-layers me-1"></i>&times;<%= item.quantity %></span>
         <% if item.service_case? %>
           <span class="pd-badge pd-badge--partial">

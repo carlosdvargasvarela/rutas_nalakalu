@@ -14,7 +14,7 @@
 .workspace-container {
   height: calc(100vh - 80px); // 56px navbar + 24px (mt-4 en <main>)
   overflow: hidden;
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-subtle);
 }
 
 .workspace-row {
@@ -76,7 +76,7 @@
 .product-table-workspace .table { table-layout: fixed; width: 100%; }
 .product-table-workspace thead.sticky-top th {
   background-color: #fff;
-  box-shadow: 0 1px 0 #dee2e6;
+  box-shadow: 0 1px 0 var(--color-border);
 }
 .product-table-workspace tbody tr { animation: fadeInRow 0.25s ease-out both; }
 
@@ -105,7 +105,7 @@
 .overflow-auto::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
 
 // ── Turbo ─────────────────────────────────────────────────────
-.turbo-progress-bar { background-color: #0d6efd; }
+.turbo-progress-bar { background-color: #a54e1e; }
 
 // ── Summary cards v2 ─────────────────────────────────────────
 .summary-card-v2 {
@@ -225,14 +225,14 @@
 .mw-inactive-desc      { max-width: 420px; }
 
 // ── admin/quickbooks/show ────────────────────────────────────────
-.qb-current-date-box   { background-color: #f8f9fa; }
+.qb-current-date-box   { background-color: var(--color-surface-subtle); }
 .qb-date-input         { max-width: 220px; }
 
 // ── deliveries/show_partials/_alerts ─────────────────────────────
-.warehousing-alert        { background-color: #f3e8ff; border-left: 4px solid #6f42c1 !important; }
-.warehousing-alert-icon   { color: #6f42c1; }
-.warehousing-alert-title  { color: #4a148c; }
-.warehousing-btn          { color: #6f42c1; border: 1px solid #6f42c1; background-color: transparent; }
+.warehousing-alert        { background-color: #efeee9; border-left: 4px solid var(--color-brand-accent) !important; }
+.warehousing-alert-icon   { color: var(--color-brand-accent); }
+.warehousing-alert-title  { color: var(--color-text); }
+.warehousing-btn          { color: var(--color-brand-accent); border: 1px solid var(--color-brand-accent); background-color: transparent; }
 
 // ── deliveries/show_partials/_history ────────────────────────────
 .history-header-cursor    { cursor: pointer; }

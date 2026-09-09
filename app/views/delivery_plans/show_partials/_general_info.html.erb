@@ -61,7 +61,7 @@
         <div class="d-flex align-items-center gap-2">
           <span class="fw-bold fs-5"><%= delivery_plan.delivery_plan_assignments.size %></span>
           <% if service_cases > 0 %>
-            <span class="badge bg-warning text-dark"
+            <span class="badge bg-warning"
                   data-bs-toggle="tooltip"
                   title="<%= service_cases %> caso<%= service_cases > 1 ? 's' : '' %> de servicio">
               <i class="bi bi-exclamation-triangle me-1"></i><%= service_cases %>

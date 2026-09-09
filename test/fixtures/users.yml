@@ -9,9 +9,11 @@ one:
   email: user_one@test.com
   encrypted_password: $2a$12$tMkozx3HPI48wsqunKzlBO8FijoYjqyguyYnXmgOzTAPKsJvEMe2G
   role: 0
+  api_token: test_driver_token_abc123
 
 two:
   name: User Two
   email: user_two@test.com
   encrypted_password: $2a$12$tMkozx3HPI48wsqunKzlBO8FijoYjqyguyYnXmgOzTAPKsJvEMe2G
   role: 0
+  api_token: test_driver_token_def456

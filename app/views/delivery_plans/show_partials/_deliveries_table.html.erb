@@ -3,7 +3,8 @@
     <i class="bi bi-truck-flatbed me-1"></i> Entregas de este plan
   </div>
   <div class="card-body">
-    <% if delivery_plan.delivery_plan_assignments.any? %>
+    <% visible_assignments = delivery_plan.delivery_plan_assignments.order(:stop_order).select { |a| a.delivery.visible_in_plan_for?(current_user_or_nil) } %>
+    <% if visible_assignments.any? %>
       <div class="table-responsive">
         <table class="table table-striped table-hover align-middle mb-0">
           <thead class="table-light">
@@ -21,9 +22,9 @@
             </tr>
           </thead>
           <tbody>
-            <% delivery_plan.delivery_plan_assignments.order(:stop_order).each do |assignment| %>
+            <% visible_assignments.each do |assignment| %>
               <% delivery = assignment.delivery %>
-              <% active_items = delivery.items_visible_in_plan %>
+              <% active_items = delivery.items_visible_in_plan(current_user_or_nil) %>
               <tr>
                 <td>
                   <span class="badge bg-primary"><%= assignment.stop_order %></span>
@@ -47,7 +48,7 @@
 
                   <%# Indicador de que hay notas en ítems u order_items %>
                   <% if delivery.delivery_items.any? { |di| di.notes.present? || di.order_item.notes.present? } %>
-                    <span class="badge bg-warning text-dark ms-1">
+                    <span class="badge bg-warning ms-1">
                       <i class="bi bi-sticky"></i> Nota
                     </span>
                   <% end %>
@@ -107,7 +108,7 @@
                     </div>
                   <% elsif delivery.rescheduled? %>
                     <% next_del = delivery.next_rescheduled_delivery %>
-                    <div class="rounded p-2 text-center border border-warning border-2" style="background:#fff3cd;min-width:165px">
+                    <div class="rounded p-2 text-center border border-warning border-2 bg-warning-subtle" style="min-width:165px">
                       <div class="fw-bold text-warning-emphasis" style="font-size:1.05rem">
                         <i class="bi bi-calendar-x-fill me-1"></i>REAGENDADO
                       </div>
@@ -149,12 +150,17 @@
                               <div>
                                 <strong><%= item.order_item.product %></strong>
                                 <span class="badge bg-secondary ms-1"><%= item.quantity %></span>
+                                <% unless item.visible_to_all? %>
+                                  <span class="badge bg-danger ms-1">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> <%= item.display_status %>
+                                  </span>
+                                <% end %>
                               </div>
                             </div>
 
                             <%# NOTAS del DeliveryItem: MUY VISIBLES %>
                             <% if item.notes.present? %>
-                              <div class="mt-2 p-2" style="background:#fff4e5; border-left:4px solid #fd7e14; border-radius:6px;">
+                              <div class="mt-2 p-2 dpnote-orange" style="border-radius:6px;">
                                 <span class="fw-bold text-dark">
                                   <i class="bi bi-pin-angle-fill me-1 text-warning"></i> Nota de entrega:
                                 </span>
@@ -164,7 +170,7 @@
 
                             <%# NOTAS del OrderItem: también visibles pero secundarias %>
                             <% if item.order_item.notes.present? %>
-                              <div class="mt-2 p-2" style="background:#eef6ff; border-left:4px solid #0d6efd; border-radius:6px;">
+                              <div class="mt-2 p-2 dpnote-blue" style="border-radius:6px;">
                                 <span class="fw-bold text-primary">
                                   <i class="bi bi-info-circle me-1"></i> Nota del producto:
                                 </span>

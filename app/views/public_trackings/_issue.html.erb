@@ -1,0 +1,26 @@
+<div class="container py-4">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center py-5">
+          <div class="mb-4">
+            <i class="bi bi-exclamation-circle" style="font-size: 3rem; color: var(--color-warning)"></i>
+          </div>
+          <% if @delivery.rescheduled? %>
+            <h3 class="fw-bold mb-3">Tu entrega fue reagendada</h3>
+            <p class="text-muted mb-4">
+              Pedido <strong>#<%= @delivery.order.number %></strong> — estamos coordinando una
+              nueva fecha. Te contactaremos pronto con los detalles.
+            </p>
+          <% else %>
+            <h3 class="fw-bold mb-3">Hubo un problema con tu entrega</h3>
+            <p class="text-muted mb-4">
+              Pedido <strong>#<%= @delivery.order.number %></strong> — nuestro equipo ya está al
+              tanto y se pondrá en contacto para resolverlo.
+            </p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

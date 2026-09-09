@@ -30,13 +30,13 @@
               <span class="badge"
                     style="font-size:0.7rem;
                     background-color: var(--bs-<%= event.color %>-bg-subtle, rgba(0,0,0,0.06));
-                    color: var(--bs-<%= event.color %>-text-emphasis, #333);
-                    border: 1px solid var(--bs-<%= event.color %>-border-subtle, #ccc);">
+                    color: var(--bs-<%= event.color %>-text-emphasis, #3d342c);
+                    border: 1px solid var(--bs-<%= event.color %>-border-subtle, #c49d90);">
                 <%= event.label %>
               </span>
               <% if event.delivery_id != delivery.id %>
-                <span class="badge rounded-pill text-secondary border"
-                      style="font-size:0.62rem; background-color:#f1f3f5; border-color:#dee2e6 !important;">
+                <span class="badge rounded-pill text-secondary border dt-context-badge"
+                      style="font-size:0.62rem;">
                   <i class="bi bi-calendar3 me-1"></i><%= l(event.delivery.delivery_date, format: :short) %>
                 </span>
               <% end %>
@@ -105,42 +105,3 @@
     <p class="text-muted small mb-0">Sin eventos registrados aún</p>
   </div>
 <% end %>
-<style>
-  .delivery-timeline { position: relative; }
-  .dt-item {
-    position: relative;
-    padding-left: 44px;
-    padding-bottom: 20px;
-  }
-  .dt-item::before {
-    content: '';
-    position: absolute;
-    left: 14px;
-    top: 30px;
-    bottom: -4px;
-    width: 2px;
-    background: #e9ecef;
-  }
-  .dt-item-last::before { display: none; }
-  .dt-dot {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 0 3px #fff, 0 0 0 5px #e9ecef;
-    flex-shrink: 0;
-  }
-  .dt-body {
-    background: #fff;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 10px 12px;
-    transition: box-shadow 0.15s ease;
-  }
-  .dt-body:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
-</style>

@@ -1,6 +1,9 @@
 wb = xlsx_package.workbook
 is_ops_user = current_user.logistics? || current_user.production_manager?
-@assignments = current_user.admin? ? @assignments : @assignments.reject { |a| a.delivery.rescheduled? }
+# El Excel siempre muestra solo los 6 estados "normales" del flujo, incluso
+# para admin — es un documento que circula fuera de la app (impreso, WhatsApp,
+# etc.), no tiene sentido el flag visual que sí cabe en la vista web.
+@assignments = @assignments.select { |a| a.delivery.status.in?(Delivery::VISIBLE_TO_ALL_STATUSES) }
 
 if is_ops_user
   # =====================

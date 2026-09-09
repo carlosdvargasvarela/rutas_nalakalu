@@ -7,3 +7,9 @@ one:
 two:
   delivery: two
   delivery_plan: two
+
+assignment_for_driver:
+  delivery: two
+  delivery_plan: plan_for_driver
+  stop_order: 1
+  status: 0

@@ -62,7 +62,7 @@ if is_ops_user
           {delivery_items: :order_item}
         ]
       ).order(:stop_order)
-      assignments = assignments.reject { |a| a.delivery.rescheduled? } unless current_user.admin?
+      assignments = assignments.select { |a| a.delivery.status.in?(Delivery::VISIBLE_TO_ALL_STATUSES) }
 
       assignments.each do |assignment|
         delivery = assignment.delivery
@@ -217,7 +217,7 @@ else
           {delivery_items: :order_item}
         ]
       ).order(:stop_order)
-      assignments = assignments.reject { |a| a.delivery.rescheduled? } unless current_user.admin?
+      assignments = assignments.select { |a| a.delivery.status.in?(Delivery::VISIBLE_TO_ALL_STATUSES) }
 
       assignments.each do |assignment|
         delivery = assignment.delivery

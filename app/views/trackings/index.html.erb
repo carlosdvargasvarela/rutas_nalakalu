@@ -1,0 +1,30 @@
+<%# app/views/trackings/index.html.erb %>
+<div class="container-fluid py-4">
+  <h1 class="h4 mb-4"><i class="bi bi-broadcast text-success me-2"></i>Seguimiento de flota</h1>
+
+  <div class="row g-3"
+       data-controller="fleet-tracking-map"
+       data-fleet-tracking-map-api-key-value="<%= ENV['GOOGLE_MAPS_API_KEY'] %>"
+       data-fleet-tracking-map-plans-value="<%= @plans.to_json %>">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div style="height:650px" data-fleet-tracking-map-target="map"></div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white fw-semibold">Camiones activos (<%= @plans.size %>)</div>
+        <ul id="tracking-truck-list" class="list-group list-group-flush" data-fleet-tracking-map-target="list">
+          <% if @plans.empty? %>
+            <li class="list-group-item text-muted small">No hay planes activos en este momento.</li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  #tracking-truck-list .list-group-item.active { color: #fff; }
+  /* !important: la utility .text-muted de Bootstrap ya lo trae ($enable-important-utilities). */
+  #tracking-truck-list .list-group-item.active .text-muted { color: rgba(255, 255, 255, 0.85) !important; }
+</style>

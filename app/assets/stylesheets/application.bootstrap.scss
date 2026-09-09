@@ -1,4 +1,20 @@
 // app/assets/stylesheets/application.bootstrap.scss
+
+// Paleta Na Lakalú (brandkit-nalakalu.pdf) — sobrescribe los $default de
+// Bootstrap antes del import para que todos los componentes (botones,
+// badges, focus rings, links) hereden la marca sin tocarlos uno por uno.
+$primary:    #A54E1E; // Naranja
+$secondary:  #89987B; // Verde Laurel
+$success:    #4B7B4F;
+$warning:    #B45309;
+$info:       #C49D90; // Palo Rosa — antes caía al cyan por defecto de Bootstrap sin sobrescribir
+$light:      #E2D2B9; // Beige
+$dark:       #3D342C; // Café
+$body-bg:    #FFF7EE; // Blanco Hueso
+$body-color: #3D342C; // Café
+$font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+$btn-disabled-opacity: .75; // .65 por defecto se perdía contra fondos beige/crema de marca
+
 @import "bootstrap/scss/bootstrap";
 @import "bootstrap-icons/font/bootstrap-icons";
 @import "variables";
@@ -14,9 +30,13 @@
 @import "delivery_plans";
 @import "production";
 @import "production_light";
+@import "driver_layout";
+@import "audit_logs";
+@import "shared_timeline";
 
 body {
   background-color: var(--color-brand-bg) !important;
+  font-family: var(--font-body);
 
   &.bg-light {
     background-color: var(--color-brand-bg) !important;

@@ -1,25 +1,35 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Tracking de Entrega | NaLakalu</title>
+    <title>Tracking de Entrega | Na Lakalú</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=Space+Mono&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
     <script src="https://maps.googleapis.com/maps/api/js?key=<%= ENV['GOOGLE_MAPS_API_KEY'] %>&libraries=places"></script>
-    <style>
-      body { background: #f8f9fa; }
-      #public-map { height: 400px; width: 100%; border-radius: 12px; }
-    </style>
   </head>
-  <body>
+  <body class="public-tracking-layout">
     <div class="container py-4">
       <div class="text-center mb-4">
-        <h2 class="fw-bold text-primary">NaLakalu</h2>
+        <h2 class="brand-wordmark mb-1">Na Lakalú</h2>
         <p class="text-muted">Seguimiento de tu entrega</p>
       </div>
       <%= yield %>
     </div>
   </body>
 </html>
+<style>
+  /* Tratamiento del wordmark según brandkit-nalakalu.pdf (pág. 8-9): mayúsculas
+     con tracking amplio, sin ícono — la marca es puramente tipográfica. */
+  .brand-wordmark {
+    font-family: var(--font-body);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--color-brand-primary);
+  }
+</style>

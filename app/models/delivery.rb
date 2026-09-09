@@ -28,6 +28,7 @@ class Delivery < ApplicationRecord
   end
 
   def public_tracking_url
+    return nil if tracking_token.blank?
     Rails.application.routes.url_helpers.public_tracking_url(token: tracking_token)
   end
 
@@ -77,6 +78,12 @@ class Delivery < ApplicationRecord
   BULK_LOCKED_STATUSES = %w[delivered rescheduled cancelled archived failed warehousing].freeze
   REOPENABLE_STATUSES = %w[delivered cancelled archived].freeze
   HIDDEN_FROM_ROUTE_MAP_STATUSES = %w[cancelled rescheduled archived].freeze
+
+  # Estados que cualquier rol (no solo admin) puede ver al mirar un plan ya
+  # armado (tabla de paradas, tarjetas, Excel). cancelled/archived/rescheduled/
+  # failed/warehousing quedan afuera para todos salvo admin — ver una entrega
+  # cancelada ahí genera confusión en logística/vendedores.
+  VISIBLE_TO_ALL_STATUSES = %w[scheduled ready_to_deliver in_plan in_route delivered loaded_on_truck].freeze
 
   # Estados terminales de items — no participan en el flujo activo
   ITEM_TERMINAL_STATUSES = %w[delivered cancelled rescheduled failed].freeze
@@ -160,6 +167,12 @@ class Delivery < ApplicationRecord
   # cuando cambia el status del delivery, así que hay que filtrarla aquí).
   def hidden_from_route_map?
     status.in?(HIDDEN_FROM_ROUTE_MAP_STATUSES)
+  end
+
+  # Admin ve toda entrega en un plan ya armado (marcada con su estado real);
+  # cualquier otro rol solo ve las que están en un estado "normal" del flujo.
+  def visible_in_plan_for?(user)
+    user&.admin? || status.in?(VISIBLE_TO_ALL_STATUSES)
   end
 
   def reopen!
@@ -398,9 +411,11 @@ class Delivery < ApplicationRecord
   end
 
   # Items to show when viewing an ALREADY-ASSIGNED plan (not when building a
-  # new one) — everyone should see everything on the delivery regardless of
-  # role, except items that got rescheduled off of it.
-  def items_visible_in_plan
+  # new one). Sin user (o user no-admin): solo los 6 estados "normales" del
+  # flujo — cancelado/reagendado/archivado/fallido/bodegaje se ocultan del
+  # todo, generan confusión en logística/vendedores. Admin ve todo.
+  def items_visible_in_plan(user = nil)
+    return delivery_items if user&.admin?
     delivery_items.merge(DeliveryItem.eligible_for_plan_for_others)
   end
 

@@ -25,17 +25,21 @@
 </div>
 <div class="p-3 bg-light border-top">
   <div class="row text-center">
-    <div class="col-md-4">
+    <div class="col-md-3">
       <small class="text-muted d-block">Última actualización</small>
       <strong id="admin-last-update">
         <%= @delivery_plan.last_seen_at ? time_ago_in_words(@delivery_plan.last_seen_at) + " atrás" : "Sin datos" %>
       </strong>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
       <small class="text-muted d-block">Conductor</small>
       <strong><%= @delivery_plan.driver&.name || "Sin asignar" %></strong>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
+      <small class="text-muted d-block">Enviando ubicación</small>
+      <strong id="admin-recorded-by"><%= @delivery_plan.last_recorded_by&.name || "Nadie" %></strong>
+    </div>
+    <div class="col-md-3">
       <small class="text-muted d-block">Camión</small>
       <strong><%= @delivery_plan.truck || "Sin asignar" %></strong>
     </div>

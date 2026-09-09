@@ -121,4 +121,22 @@ class DeliveryPlanTest < ActiveSupport::TestCase
     assert_operator PaperTrail::Version.where(item_type: "DeliveryPlan", item_id: plan.id).count, :>, versions_before
     assert_equal "routes_created", plan.plan_events.last.action
   end
+
+  test "belongs to last_recorded_by, optional" do
+    plan = delivery_plans(:one)
+    plan.update!(last_recorded_by: users(:two))
+
+    assert_equal users(:two), plan.reload.last_recorded_by
+  end
+
+  test "updating last_recorded_by on a stale in-memory copy raises StaleObjectError" do
+    plan = delivery_plans(:one)
+    stale_copy = DeliveryPlan.find(plan.id)
+
+    plan.update!(last_recorded_by: users(:one)) # bumps lock_version
+
+    assert_raises(ActiveRecord::StaleObjectError) do
+      stale_copy.update!(last_recorded_by: users(:two))
+    end
+  end
 end

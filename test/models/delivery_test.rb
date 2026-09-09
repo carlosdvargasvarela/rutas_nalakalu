@@ -113,4 +113,45 @@ class DeliveryTest < ActiveSupport::TestCase
       assert_equal "pending", delivery.default_item_status, "for delivery status #{delivery_status}"
     end
   end
+
+  test "visible_in_plan_for? is true for the 6-status allowlist for any user, and only admin for the rest" do
+    delivery = deliveries(:one)
+    seller = User.new(role: "seller")
+    admin = User.new(role: "admin")
+
+    %w[scheduled ready_to_deliver in_plan in_route delivered loaded_on_truck].each do |status|
+      delivery.status = status
+      assert delivery.visible_in_plan_for?(seller), "#{status} debería ser visible para seller"
+      assert delivery.visible_in_plan_for?(admin), "#{status} debería ser visible para admin"
+    end
+
+    %w[cancelled archived rescheduled failed warehousing].each do |status|
+      delivery.status = status
+      refute delivery.visible_in_plan_for?(seller), "#{status} NO debería ser visible para seller"
+      assert delivery.visible_in_plan_for?(admin), "#{status} debería seguir siendo visible para admin"
+    end
+  end
+
+  test "visible_in_plan_for? treats a nil user like a non-admin" do
+    delivery = deliveries(:one)
+    delivery.status = "cancelled"
+    refute delivery.visible_in_plan_for?(nil)
+  end
+
+  test "items_visible_in_plan without a user filters to the 6-status allowlist" do
+    delivery = deliveries(:one)
+    item = delivery.delivery_items.first
+    item.update_columns(status: DeliveryItem.statuses["cancelled"])
+
+    refute delivery.items_visible_in_plan.exists?(item.id)
+  end
+
+  test "items_visible_in_plan for an admin user returns every item regardless of status" do
+    delivery = deliveries(:one)
+    item = delivery.delivery_items.first
+    item.update_columns(status: DeliveryItem.statuses["cancelled"])
+    admin = User.new(role: "admin")
+
+    assert_includes delivery.items_visible_in_plan(admin), item
+  end
 end

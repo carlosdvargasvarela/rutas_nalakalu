@@ -175,7 +175,7 @@
           </div>
         </div>
         <%# Lista de tarjetas %>
-        <%= turbo_frame_tag "deliveries_list", class: "flex-grow-1 overflow-auto p-2", style: "background-color: #f4f6f9;" do %>
+        <%= turbo_frame_tag "deliveries_list", class: "flex-grow-1 overflow-auto p-2 list-panel-bg" do %>
           <% if @deliveries.any? %>
             <div class="d-flex flex-column" id="deliveries_cards_container">
               <% @deliveries.each do |delivery| %>

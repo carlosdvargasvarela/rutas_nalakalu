@@ -1,5 +1,5 @@
 .ring-highlight {
-  outline: 3px solid #0d6efd;
+  outline: 3px solid #a54e1e;
   transition: outline 1.5s ease;
 }
 
@@ -40,24 +40,24 @@
     flex-shrink: 0;
   }
 
-  // Gradientes
+  // Gradientes (paleta Na Lakalú)
   &--purple {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #a54e1e 0%, #7a3814 100%);
   }
   &--pink {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: linear-gradient(135deg, #c49d90 0%, #a67c6d 100%);
   }
   &--blue {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    background: linear-gradient(135deg, #89987b 0%, #6b7a5e 100%);
   }
   &--green {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    background: linear-gradient(135deg, #4b7b4f 0%, #3a6140 100%);
   }
   &--teal {
-    background: linear-gradient(135deg, #0acffe 0%, #495aff 100%);
+    background: linear-gradient(135deg, #3d342c 0%, #241e19 100%);
   }
   &--orange {
-    background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+    background: linear-gradient(135deg, #b45309 0%, #8f4207 100%);
   }
 
   // Card de "Por Estado" — fondo neutro, label oscuro
@@ -65,7 +65,7 @@
     background: #fff;
 
     .stat-card__label {
-      color: #6c757d;
+      color: #8a7d72;
     }
   }
 }
@@ -85,7 +85,7 @@
   &--draft {
     background: #f1f3f5;
     color: #495057;
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--color-border);
   }
   &--sent_to_logistics {
     background: #e7f5ff;
@@ -133,13 +133,13 @@
   &__number {
     font-weight: 700;
     font-size: 0.9rem;
-    color: #0d6efd;
+    color: #a54e1e;
     line-height: 1;
   }
 
   &__year {
     font-size: 0.65rem;
-    color: #6c757d;
+    color: var(--color-text-muted);
   }
 }
 
@@ -159,13 +159,13 @@
 // ── Tabla de planes ──────────────────────────────────────────
 .delivery-plans-table {
   thead tr {
-    background: #f8f9fa;
+    background: var(--color-surface-subtle);
 
     th {
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.4px;
-      color: #6c757d;
+      color: var(--color-text-muted);
       font-weight: 600;
       border-bottom: 2px solid #e9ecef;
       padding: 0.85rem 1rem;
@@ -196,7 +196,7 @@
     transform 0.15s ease;
 
   &:hover {
-    box-shadow: 0 6px 20px rgba(13, 110, 253, 0.12) !important;
+    box-shadow: 0 6px 20px rgba(165, 78, 30, 0.12) !important;
     transform: translateY(-1px);
   }
 }
@@ -218,16 +218,16 @@
     background: #0dcaf0;
   }
   &--completed {
-    background: #198754;
+    background: var(--color-success);
   }
   &--aborted {
-    background: #dc3545;
+    background: var(--color-danger);
   }
   &--pending {
-    background: #ffc107;
+    background: var(--color-warning);
   }
   &--cancelled {
-    background: #dc3545;
+    background: var(--color-danger);
   }
 }
 
@@ -236,7 +236,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: #f8f9fa;
+  background: var(--color-surface-subtle);
   border-radius: 8px;
   padding: 0.5rem 0.65rem;
 
@@ -249,7 +249,7 @@
     display: block;
     font-size: 0.6rem;
     text-transform: uppercase;
-    color: #6c757d;
+    color: var(--color-text-muted);
     font-weight: 600;
     line-height: 1;
   }
@@ -271,7 +271,7 @@
   transition: background 0.15s ease;
 
   &:hover {
-    background: rgba(13, 110, 253, 0.15) !important;
+    background: rgba(165, 78, 30, 0.15) !important;
   }
 }
 
@@ -288,7 +288,7 @@
 .empty-state-icon {
   width: 80px;
   height: 80px;
-  background: #f8f9fa;
+  background: var(--color-surface-subtle);
   border-radius: 50%;
   display: flex;
   align-items: center;

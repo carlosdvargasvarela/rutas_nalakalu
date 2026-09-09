@@ -191,6 +191,9 @@ Rails.application.routes.draw do
     resources :delivery_plan_assignments, only: [:destroy]
   end
 
+  get "/tracking", to: "trackings#index", as: :tracking
+  get "/tracking/:delivery_plan_id/route", to: "trackings#route", as: :tracking_route
+
   # =============================================================================
   # IMPORTACIÓN DE ENTREGAS
   # =============================================================================
@@ -369,6 +372,26 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :deliveries, only: [:index, :show]
+
+      namespace :driver do
+        resources :delivery_plans, only: [:index, :show] do
+          member do
+            patch :start
+            patch :finish
+            patch :abort
+            post  :update_position_batch
+            patch :claim_tracking
+          end
+        end
+        resources :assignments, only: [] do
+          member do
+            patch :start
+            patch :complete
+            patch :fail
+            patch :add_note
+          end
+        end
+      end
     end
   end
 end

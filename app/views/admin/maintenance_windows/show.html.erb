@@ -12,11 +12,11 @@
         <i class="bi bi-tools me-2 text-primary"></i>Control de Acceso al Sistema
       </h5>
       <% if MaintenanceWindow.active? %>
-        <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3">
+        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis border border-danger-subtle px-3">
           <i class="bi bi-lock-fill me-1"></i>Bloqueado
         </span>
       <% else %>
-        <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3">
+        <span class="badge rounded-pill bg-success-subtle text-success-emphasis border border-success-subtle px-3">
           <i class="bi bi-unlock-fill me-1"></i>Operativo
         </span>
       <% end %>
