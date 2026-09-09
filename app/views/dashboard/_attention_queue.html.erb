@@ -50,7 +50,7 @@
                   <% if item[:reasons].present? %>
                     <div class="small text-muted">
                       <% item[:reasons].take(2).each do |reason| %>
-                        <div><i class="bi bi-dot"></i><%= truncate(reason, length: 70) %></div>
+                        <div><i class="bi bi-dot"></i><%= reason %></div>
                       <% end %>
                       <% if item[:reasons].size > 2 %>
                         <div class="fst-italic">+ <%= item[:reasons].size - 2 %> más...</div>
