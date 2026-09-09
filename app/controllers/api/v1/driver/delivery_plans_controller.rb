@@ -199,6 +199,10 @@ module Api
           d = a.delivery
           addr = d.delivery_address
           order = d.order
+          vendor = d.internal_delivery? ? addr&.matching_vendor : nil
+          vendor_hours_json = vendor&.vendor_business_hours&.any? ? vendor.vendor_business_hours.map { |bh|
+            {day_of_week: bh.day_of_week, day_name: bh.day_name, opens_at: bh.opens_at&.strftime("%H:%M"), closes_at: bh.closes_at&.strftime("%H:%M"), closed: bh.closed?, label: bh.label}
+          } : nil
           contacts = order&.order_contacts.to_a.sort_by { |c| c.is_primary? ? 0 : 1 }
           contacts_json = if contacts.any?
             contacts.map { |c| {name: c.name, phone: c.phone, is_primary: c.is_primary?} }
@@ -234,7 +238,8 @@ module Api
               order_number: order&.number,
               client_name: order&.client&.name,
               seller_code: order&.seller&.seller_code,
-              vendor_name: (d.internal_delivery? ? addr&.matching_vendor&.name : nil),
+              vendor_name: vendor&.name,
+              vendor_hours: vendor_hours_json,
               contact_name: d.contact_name,
               contact_phone: d.contact_phone,
               contacts: contacts_json,

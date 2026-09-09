@@ -20,4 +20,21 @@ class VendorTest < ActiveSupport::TestCase
     address.valid?
     assert_includes address.errors[:base], "La dirección debe tener coordenadas"
   end
+
+  test "today_hours returns the business hour matching the current day" do
+    vendor = Vendor.new(name: "Proveedor Test")
+    vendor.vendor_business_hours.build(day_of_week: Date.current.wday, opens_at: "08:00", closes_at: "17:00")
+
+    assert_equal "8:00 AM - 5:00 PM", vendor.today_hours.label
+  end
+
+  test "business hour invalid without opens_at/closes_at unless closed" do
+    hour = VendorBusinessHour.new(day_of_week: 1)
+    hour.valid?
+    assert_includes hour.errors[:opens_at], "no puede estar en blanco"
+
+    hour.closed = true
+    hour.valid?
+    assert_empty hour.errors[:opens_at]
+  end
 end

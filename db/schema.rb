@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_09_01_180100) do
+ActiveRecord::Schema[7.2].define(version: 2026_09_09_192943) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -458,6 +458,18 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_01_180100) do
     t.index ["vendor_id"], name: "index_vendor_addresses_on_vendor_id"
   end
 
+  create_table "vendor_business_hours", force: :cascade do |t|
+    t.integer "vendor_id", null: false
+    t.integer "day_of_week", null: false
+    t.time "opens_at"
+    t.time "closes_at"
+    t.boolean "closed", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["vendor_id", "day_of_week"], name: "index_vendor_business_hours_on_vendor_and_day", unique: true
+    t.index ["vendor_id"], name: "index_vendor_business_hours_on_vendor_id"
+  end
+
   create_table "vendor_contacts", force: :cascade do |t|
     t.integer "vendor_id", null: false
     t.string "name", null: false
@@ -522,5 +534,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_01_180100) do
   add_foreign_key "sellers", "users"
   add_foreign_key "showrooms", "delivery_addresses"
   add_foreign_key "vendor_addresses", "vendors"
+  add_foreign_key "vendor_business_hours", "vendors"
   add_foreign_key "vendor_contacts", "vendors"
 end

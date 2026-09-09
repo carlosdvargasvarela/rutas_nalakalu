@@ -68,6 +68,45 @@
 
     <div class="accordion-item">
       <h2 class="accordion-header">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vendorHours">
+          <i class="bi bi-clock-fill me-2 text-warning"></i><strong>Horario de atención</strong> <span class="text-muted small ms-2">(opcional)</span>
+        </button>
+      </h2>
+      <div id="vendorHours" class="accordion-collapse collapse" data-bs-parent="#vendorAccordion">
+        <div class="accordion-body">
+          <% ordered_hours = Vendor::DISPLAY_DAY_ORDER.map { |day| vendor.vendor_business_hours.find { |bh| bh.day_of_week == day } }.compact %>
+          <% ordered_hours.each_with_index do |bh, i| %>
+            <div class="row g-2 align-items-center mb-2">
+              <input type="hidden" name="vendor[vendor_business_hours_attributes][<%= i %>][day_of_week]" value="<%= bh.day_of_week %>">
+              <% if bh.persisted? %>
+                <input type="hidden" name="vendor[vendor_business_hours_attributes][<%= i %>][id]" value="<%= bh.id %>">
+              <% end %>
+              <div class="col-3 col-md-2 fw-semibold small"><%= bh.day_name %></div>
+              <div class="col-3 col-md-2">
+                <div class="form-check">
+                  <input type="hidden" name="vendor[vendor_business_hours_attributes][<%= i %>][closed]" value="0">
+                  <input type="checkbox" name="vendor[vendor_business_hours_attributes][<%= i %>][closed]"
+                         value="1" class="form-check-input" id="bh_closed_<%= bh.day_of_week %>"
+                         <%= "checked" if bh.closed? %>>
+                  <label class="form-check-label small text-muted" for="bh_closed_<%= bh.day_of_week %>">Cerrado</label>
+                </div>
+              </div>
+              <div class="col-3 col-md-4">
+                <input type="time" name="vendor[vendor_business_hours_attributes][<%= i %>][opens_at]"
+                       class="form-control form-control-sm" value="<%= bh.opens_at&.strftime("%H:%M") %>">
+              </div>
+              <div class="col-3 col-md-4">
+                <input type="time" name="vendor[vendor_business_hours_attributes][<%= i %>][closes_at]"
+                       class="form-control form-control-sm" value="<%= bh.closes_at&.strftime("%H:%M") %>">
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h2 class="accordion-header">
         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vendorAddresses">
           <i class="bi bi-geo-alt-fill me-2 text-danger"></i><strong>Direcciones</strong> <span class="text-muted small ms-2">(al menos una)</span>
         </button>

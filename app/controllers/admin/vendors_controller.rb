@@ -11,6 +11,7 @@ class Admin::VendorsController < ApplicationController
   def new
     @vendor = Vendor.new
     @vendor.vendor_contacts.build
+    ensure_business_hours!(@vendor)
     authorize @vendor
   end
 
@@ -24,12 +25,14 @@ class Admin::VendorsController < ApplicationController
       end
     else
       @vendor.vendor_contacts.build if @vendor.vendor_contacts.empty?
+      ensure_business_hours!(@vendor)
       render :new, status: :unprocessable_entity
     end
   end
 
   def edit
     @vendor.vendor_contacts.build
+    ensure_business_hours!(@vendor)
     authorize @vendor
     render layout: false if turbo_frame_request?
   end
@@ -55,6 +58,7 @@ class Admin::VendorsController < ApplicationController
       end
     else
       @vendor.vendor_contacts.build
+      ensure_business_hours!(@vendor)
       respond_to do |format|
         format.html { render :edit, status: :unprocessable_entity }
         format.turbo_stream do
@@ -97,7 +101,18 @@ class Admin::VendorsController < ApplicationController
     params.require(:vendor).permit(
       :name,
       vendor_contacts_attributes: [:id, :name, :phone, :is_primary, :_destroy],
-      vendor_addresses_attributes: [:id, :address, :description, :latitude, :longitude, :plus_code, :_destroy]
+      vendor_addresses_attributes: [:id, :address, :description, :latitude, :longitude, :plus_code, :_destroy],
+      vendor_business_hours_attributes: [:id, :day_of_week, :opens_at, :closes_at, :closed]
     )
+  end
+
+  # El formulario siempre muestra los 7 días; completa los que aún no existen
+  # en BD con registros nuevos (sin guardar) para que el usuario los llene.
+  def ensure_business_hours!(vendor)
+    existing_days = vendor.vendor_business_hours.map(&:day_of_week)
+    (0..6).each do |day|
+      next if existing_days.include?(day)
+      vendor.vendor_business_hours.build(day_of_week: day, closed: true)
+    end
   end
 end
