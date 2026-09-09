@@ -13,6 +13,7 @@ class ClientsController < ApplicationController
     authorize @client
     @delivery_addresses = @client.delivery_addresses.order(created_at: :desc)
     @orders = @client.orders.includes(:seller).order(created_at: :desc).page(params[:orders_page]).per(10)
+    render layout: false if turbo_frame_request?
   end
 
   def new

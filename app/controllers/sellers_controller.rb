@@ -12,5 +12,6 @@ class SellersController < ApplicationController
     @seller = Seller.find(params[:id])
     authorize @seller
     @orders = @seller.orders.includes(:client).order(created_at: :desc).page(params[:orders_page]).per(10)
+    render layout: false if turbo_frame_request?
   end
 end

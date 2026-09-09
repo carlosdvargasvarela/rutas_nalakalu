@@ -1,0 +1,58 @@
+<%# app/views/sellers/show_partials/_detail.html.erb %>
+<div class="h-100 overflow-auto bg-white p-4">
+  <div class="d-flex align-items-center mb-4">
+    <i class="bi bi-person-badge fs-2 text-primary me-3"></i>
+    <div>
+      <h1 class="h4 mb-0"><%= seller.name %> <span class="badge text-bg-primary"><%= seller.seller_code %></span></h1>
+      <p class="text-muted small mb-0">Creado el <%= l(seller.created_at, format: :short) %></p>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header bg-light fw-semibold">Información</div>
+    <div class="card-body">
+      <p class="mb-0"><i class="bi bi-envelope me-2 text-muted"></i><%= seller.user&.email || "Sin usuario asignado" %></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header bg-light fw-semibold">Pedidos recientes</div>
+    <div class="card-body p-0">
+      <% if orders.any? %>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Número</th>
+                <th>Cliente</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% orders.each do |order| %>
+                <tr>
+                  <td><%= link_to order.number, order_path(order), class: "link-primary", data: { turbo_frame: "_top" } %></td>
+                  <td><%= order.client.name %></td>
+                  <td>
+                    <% badge_class = (order.status.to_s == "delivered" ? "text-bg-success" : "text-bg-secondary") %>
+                    <span class="badge <%= badge_class %>"><%= order.status.humanize %></span>
+                  </td>
+                  <td><%= l(order.created_at, format: :short) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <div class="p-2 d-flex justify-content-center">
+          <%= paginate orders, param_name: :orders_page %>
+        </div>
+      <% else %>
+        <div class="p-4 text-center text-muted">
+          <i class="bi bi-box-seam fs-3 d-block mb-2"></i>
+          Este vendedor no tiene pedidos aún.
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,31 @@
+<%# app/views/clients/index_partials/_client_card.html.erb %>
+<div id="<%= dom_id(client, :card) %>"
+     class="card shadow-sm mb-2"
+     data-workspace-target="card"
+     data-action="click->workspace#select">
+  <%= link_to client_path(client),
+        class: "text-decoration-none d-block text-body",
+        data: { card_link: true, turbo_frame: "client_detail" } do %>
+    <div class="card-body py-2 px-3">
+      <div class="d-flex justify-content-between align-items-start">
+        <div class="flex-grow-1">
+          <div class="fw-semibold">
+            <%= client.name %>
+            <% if client.pinned_notes.any? %>
+              <i class="bi bi-pin-angle-fill text-warning ms-1" title="Tiene notas fijadas"></i>
+            <% end %>
+          </div>
+          <div class="small text-muted">
+            <%= [client.phone.presence, client.email.presence].compact.join(" · ").presence || "Sin contacto" %>
+          </div>
+        </div>
+        <% count = client.notes_count %>
+        <% if count > 0 %>
+          <span class="badge rounded-pill bg-warning text-dark d-inline-flex align-items-center gap-1">
+            <i class="bi bi-sticky-fill"></i> <%= count %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>
