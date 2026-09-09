@@ -356,9 +356,13 @@ class DeliveriesController < ApplicationController
     end
 
     values = @delivery.attributes.slice(*fields)
-    Delivery.where(id: target_ids).each { |d| d.update!(values) }
+    Delivery.transaction do
+      Delivery.where(id: target_ids).each { |d| d.update!(values) }
+    end
 
     render json: { updated_count: target_ids.size }
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: "No se pudo propagar: #{e.message}" }, status: :unprocessable_entity
   end
 
   def reassign_seller
