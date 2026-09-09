@@ -7,6 +7,13 @@
       <i class="bi bi-info-circle me-2"></i>
       <strong>Información del responsable:</strong> Persona que recibirá o coordinará el mandado en destino
     </div>
+    <div class="mb-3 d-none" data-vendor-address-select-target="contactChips">
+      <label class="form-label fw-bold small text-muted mb-1">
+        <i class="bi bi-person-lines-fill me-1"></i>Contactos del proveedor — clic para usar uno
+      </label>
+      <div class="d-flex flex-wrap gap-2" data-vendor-address-select-target="contactChipsList"></div>
+    </div>
+
     <div class="row g-3">
       <div class="col-md-6">
         <%= f.input :contact_name,
