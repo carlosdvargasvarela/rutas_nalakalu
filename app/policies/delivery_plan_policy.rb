@@ -56,7 +56,7 @@ class DeliveryPlanPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
       # Admin, logística y producción ven todo
-      if user.admin? || user.role.to_s == "production_manager" || user.role.to_s == "logistic"
+      if user.admin? || user.production_manager? || user.logistics?
         scope.all
       else
         # Chofer ve solo sus planes
@@ -68,6 +68,6 @@ class DeliveryPlanPolicy < ApplicationPolicy
   private
 
   def admin_or_manager_or_logistic?
-    user.admin? || user.role.to_s == "production_manager" || user.role.to_s == "logistic"
+    user.admin? || user.production_manager? || user.logistics?
   end
 end

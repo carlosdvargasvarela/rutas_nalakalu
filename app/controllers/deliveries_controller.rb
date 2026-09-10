@@ -1,4 +1,11 @@
 # app/controllers/deliveries_controller.rb
+
+# CRUD + acciones operativas sobre {Delivery}: aprobar, marcar entregado,
+# bodegaje, dividir, reagendar, casos de servicio/reparación (nuevos y sobre
+# una entrega existente), retiro en sala, movimientos de showroom y mandados
+# internos. La mayoría de las acciones de escritura responden tanto HTML
+# (redirect) como turbo_stream (ver {#render_delivery_update_stream}, que
+# centraliza el refresco del panel de detalle + tarjeta de índice).
 class DeliveriesController < ApplicationController
   include ActionView::RecordIdentifier
 
@@ -57,8 +64,6 @@ class DeliveriesController < ApplicationController
     @all_deliveries = deliveries_scope
       .includes(delivery_items: {order_item: :order})
       .order(delivery_date: :asc)
-
-    authorize Delivery
 
     respond_to do |format|
       format.html
@@ -331,6 +336,8 @@ class DeliveriesController < ApplicationController
       .order(:delivery_date)
   end
 
+  # Divide los productos "reschedulables" de la entrega entre una o más
+  # entregas destino (existentes o nuevas por fecha), vía Deliveries::Splitter.
   def split
     authorize @delivery, :edit?
 
@@ -347,6 +354,9 @@ class DeliveriesController < ApplicationController
     redirect_to split_form_delivery_path(@delivery), alert: e.message
   end
 
+  # Copia los campos indicados (ver DeliveryGroup::PROPAGATABLE_FIELDS) de
+  # esta entrega hacia otras entregas del mismo delivery_group. Responde JSON
+  # (usado desde un modal AJAX).
   def propagate_to_associated
     authorize @delivery, :update?
 
@@ -567,7 +577,7 @@ class DeliveriesController < ApplicationController
   end
 
   def create_repair_service_for_existing
-    parent_delivery = Delivery.find(params[:id])
+    parent_delivery = @delivery
     authorize parent_delivery, :edit?
 
     service = Deliveries::RepairServiceForExistingCreator.new(
@@ -703,6 +713,9 @@ class DeliveriesController < ApplicationController
     render layout: false
   end
 
+  # Acción "workspace" del caso de servicio: según params[:delivery][:mode]
+  # registra solo una nota (devolucion/reparacion) o, si no hay mode, crea la
+  # entrega de devolución real vía Deliveries::ServiceCaseFromWorkspaceCreator.
   def create_service_case_from_workspace
     authorize @delivery, :edit?
 
@@ -765,6 +778,7 @@ class DeliveriesController < ApplicationController
     render layout: false
   end
 
+  # Análogo a #create_service_case_from_workspace para servicio de reparación.
   def create_repair_service_from_workspace
     authorize @delivery, :edit?
 
@@ -885,18 +899,30 @@ class DeliveriesController < ApplicationController
     end
   end
 
+  # Variante de #index filtrada a una semana ISO (params[:week]/[:year]),
+  # reusando la vista deliveries/index.
   def by_week
+    authorize Delivery, :index?
+    @sellers = Seller.order(:name)
     session[:deliveries_return_to] = request.fullpath
     @week = (1..53).cover?(params[:week].to_i) ? params[:week].to_i : Date.current.cweek
     @year = (params[:year].to_i >= 2000) ? params[:year].to_i : Date.current.cwyear
     start_date = Date.commercial(@year, @week, 1)
-    @deliveries = Delivery.for_week(start_date).includes(order: :client, delivery_address: {}, delivery_items: {}).order("deliveries.delivery_date ASC").page(params[:page])
+    scope = Delivery.for_week(start_date).includes(order: :client, delivery_address: {}, delivery_items: {})
+    @q = scope.ransack(params[:q])
+    @deliveries = @q.result.order("deliveries.delivery_date ASC").page(params[:page])
     render :index
   end
 
+  # Variante de #index filtrada a entregas con delivery_items marcados
+  # service_case, reusando la vista deliveries/index.
   def service_cases
+    authorize Delivery, :index?
+    @sellers = Seller.order(:name)
     session[:deliveries_return_to] = request.fullpath
-    @deliveries = Delivery.joins(order: :client).merge(Delivery.with_service_cases).includes(:order, :delivery_address, :delivery_items).order("deliveries.delivery_date ASC, clients.name ASC").page(params[:page])
+    scope = Delivery.joins(order: :client).merge(Delivery.with_service_cases).includes(:order, :delivery_address, :delivery_items)
+    @q = scope.ransack(params[:q])
+    @deliveries = @q.result.order("deliveries.delivery_date ASC, clients.name ASC").page(params[:page])
     render :index
   end
 

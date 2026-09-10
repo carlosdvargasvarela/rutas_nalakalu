@@ -1,4 +1,10 @@
 # app/models/order.rb
+
+# Pedido de un cliente, tomado por un vendedor (seller). Un Order agrupa
+# {OrderItem}s (los productos pedidos) y se entrega mediante una o varias
+# {Delivery}s. El status de un Order es derivado: se recalcula automáticamente
+# en {#check_and_update_status!} cada vez que cambia el status de alguno de
+# sus order_items (ver {OrderItem#update_status_based_on_deliveries}).
 class Order < ApplicationRecord
   include HasDisplayStatus
 
@@ -66,54 +72,25 @@ class Order < ApplicationRecord
   scope :by_seller_code, ->(code) { joins(:seller).where(sellers: {seller_code: code}) }
 
   # Pedidos activos
-  scope :active, -> { where(status: [:pending, :in_production, :ready_for_delivery, :rescheduled]) }
+  scope :active, -> { where(status: [:in_production, :ready_for_delivery, :rescheduled]) }
 
   scope :in_production, -> { where(status: :in_production) }
 
-  scope :notes_status_with, -> {
-    where(
-      "EXISTS (
-        SELECT 1
-        FROM delivery_item_notes
-        JOIN delivery_items ON delivery_items.id = delivery_item_notes.delivery_item_id
-        JOIN order_items ON order_items.id = delivery_items.order_item_id
-        WHERE order_items.order_id = orders.id
-      )"
-    )
-  }
-
-  scope :notes_status_open, -> {
-    where(
-      "EXISTS (
-        SELECT 1
-        FROM delivery_item_notes
-        JOIN delivery_items ON delivery_items.id = delivery_item_notes.delivery_item_id
-        JOIN order_items ON order_items.id = delivery_items.order_item_id
-        WHERE order_items.order_id = orders.id
-        AND delivery_item_notes.closed = 0
-      )"
-    )
-  }
-
-  scope :notes_status_closed, -> {
-    where(
-      "EXISTS (
-        SELECT 1
-        FROM delivery_item_notes
-        JOIN delivery_items ON delivery_items.id = delivery_item_notes.delivery_item_id
-        JOIN order_items ON order_items.id = delivery_items.order_item_id
-        WHERE order_items.order_id = orders.id
-        AND delivery_item_notes.closed = 1
-      )"
-    )
-  }
+  scope :notes_status_with, -> { where(notes_status_exists_sql(nil)) }
+  scope :notes_status_open, -> { where(notes_status_exists_sql(false)) }
+  scope :notes_status_closed, -> { where(notes_status_exists_sql(true)) }
 
   # ============================================================================
   # MÉTODOS DE ESTADO Y UTILIDAD
   # ============================================================================
 
 
-  # Actualiza el estado basado en los order_items
+  # Recalcula y persiste el status del pedido en base al status agregado de
+  # sus order_items. Se llama automáticamente desde
+  # {OrderItem#update_order_status} cada vez que un order_item cambia; no
+  # suele hacer falta invocarlo a mano salvo para corregir datos.
+  #
+  # @return [void]
   def check_and_update_status!
     return if order_items.empty?
 
@@ -134,7 +111,12 @@ class Order < ApplicationRecord
     end
   end
 
-  # Método para corregir las cantidades de order_items basándose en deliveries reales
+  # Corrige `quantity` de cada order_item para que coincida con la suma real
+  # de `quantity_delivered` entre sus delivery_items (excluyendo los de
+  # deliveries rescheduled/archived). Método de reparación de datos, no se
+  # llama en el flujo normal.
+  #
+  # @return [void]
   def fix_order_item_quantities!
     transaction do
       order_items.each do |order_item|
@@ -156,10 +138,19 @@ class Order < ApplicationRecord
     end
   end
 
+  # Reasigna el pedido a otro vendedor.
+  #
+  # @param seller [Seller]
+  # @return [void]
   def reassign_to_seller!(seller)
     update!(seller: seller)
   end
 
+  # Reasigna el pedido al vendedor asociado a un usuario.
+  #
+  # @param user [User] debe tener un {Seller} asociado (`user.seller`)
+  # @raise [RuntimeError] si el usuario no tiene vendedor asociado
+  # @return [void]
   def take_by_user!(user)
     seller_record = user.seller
     raise "El usuario no tiene vendedor asociado" unless seller_record
@@ -167,12 +158,12 @@ class Order < ApplicationRecord
     update!(seller: seller_record)
   end
 
-  # Verifica si todos los items están listos
+  # @return [Boolean] true si todos los order_items están en status "ready"
   def all_items_ready?
     order_items.all? { |item| item.ready? }
   end
 
-  # Total de items en el pedido
+  # @return [Integer] suma de `quantity` de todos los order_items del pedido
   def total_items
     order_items.sum(:quantity)
   end
@@ -181,41 +172,31 @@ class Order < ApplicationRecord
   # RANSACK
   # ============================================================================
 
+  # SQL compartido por los scopes notes_status_* y el ransacker notes_status.
+  #
+  # @param closed [Boolean, nil] nil => sin filtrar por closed (cualquier
+  #   nota), false => solo notas abiertas, true => solo notas cerradas
+  # @return [Arel::Nodes::SqlLiteral] fragmento `EXISTS (...)` listo para `where`
+  def self.notes_status_exists_sql(closed)
+    closed_clause = closed.nil? ? "" : "AND delivery_item_notes.closed = #{closed ? 1 : 0}"
+    Arel.sql <<-SQL
+      EXISTS (
+        SELECT 1
+        FROM delivery_item_notes
+        JOIN delivery_items ON delivery_items.id = delivery_item_notes.delivery_item_id
+        JOIN order_items ON order_items.id = delivery_items.order_item_id
+        WHERE order_items.order_id = orders.id
+        #{closed_clause}
+      )
+    SQL
+  end
+
   ransacker :notes_status,
     formatter: proc { |value|
       case value.to_s
-      when "with"
-        Arel.sql <<-SQL
-          EXISTS (
-            SELECT 1
-            FROM delivery_item_notes
-            JOIN delivery_items ON delivery_items.id = delivery_item_notes.delivery_item_id
-            JOIN order_items ON order_items.id = delivery_items.order_item_id
-            WHERE order_items.order_id = orders.id
-          )
-        SQL
-      when "open"
-        Arel.sql <<-SQL
-          EXISTS (
-            SELECT 1
-            FROM delivery_item_notes
-            JOIN delivery_items ON delivery_items.id = delivery_item_notes.delivery_item_id
-            JOIN order_items ON order_items.id = delivery_items.order_item_id
-            WHERE order_items.order_id = orders.id
-            AND delivery_item_notes.closed = 0
-          )
-        SQL
-      when "closed"
-        Arel.sql <<-SQL
-          EXISTS (
-            SELECT 1
-            FROM delivery_item_notes
-            JOIN delivery_items ON delivery_items.id = delivery_item_notes.delivery_item_id
-            JOIN order_items ON order_items.id = delivery_items.order_item_id
-            WHERE order_items.order_id = orders.id
-            AND delivery_item_notes.closed = 1
-          )
-        SQL
+      when "with" then notes_status_exists_sql(nil)
+      when "open" then notes_status_exists_sql(false)
+      when "closed" then notes_status_exists_sql(true)
       end
     } do |_parent|
     Arel.sql("TRUE") # dummy, solo para que ransack lo acepte
@@ -229,6 +210,8 @@ class Order < ApplicationRecord
     ["client", "seller", "order_items", "deliveries", "delivery_item_notes"]
   end
 
+  # @return [Array<Array(String, String)>] pares [etiqueta legible, valor de
+  #   enum] para poblar un `<select>` de status
   def self.status_options_for_select
     statuses.keys.map do |s|
       [Order.new(status: s).display_status, s]
@@ -241,7 +224,11 @@ class Order < ApplicationRecord
 
   private
 
-  # Notifica cuando cambia el estado del pedido
+  # Hook para notificar cuando cambia el estado del pedido.
+  #
+  # @note actualmente es un no-op: la única rama (ready_for_delivery) tiene
+  #   la llamada al servicio de notificación comentada.
+  # @return [void]
   def notify_status_change
     case status
     when "ready_for_delivery"
@@ -249,7 +236,7 @@ class Order < ApplicationRecord
     end
   end
 
-  # Setea el estado por defecto al crear un pedido
+  # @return [void]
   def set_default_status
     self.status ||= :in_production
   end

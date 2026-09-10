@@ -1,3 +1,9 @@
+# Una entrega (o retiro/servicio) sobre una dirección, perteneciente a un
+# {Order}. Agrupa {DeliveryItem}s; su status es derivado del status agregado
+# de esos items (ver {#calculate_delivery_status}) salvo en estados que
+# "congelan" el recálculo (archived, warehousing). Puede pertenecer a un
+# {DeliveryPlan} (a través de delivery_plan_assignment) y a un
+# {DeliveryGroup} (entregas relacionadas que se gestionan juntas).
 class Delivery < ApplicationRecord
   include ActionView::RecordIdentifier
   include HasDisplayStatus
@@ -38,10 +44,12 @@ class Delivery < ApplicationRecord
   delegate :latitude, :longitude, :address, :plus_code, to: :delivery_address, allow_nil: true
   delegate :client, to: :delivery_address, allow_nil: true
 
+  # @return [Hash{Symbol => Float}] coordenadas de la dirección de entrega
   def location
     {lat: latitude.to_f, lng: longitude.to_f}
   end
 
+  # @return [String, nil] URL pública de tracking (nil si no hay token)
   def public_tracking_url
     return nil if tracking_token.blank?
     Rails.application.routes.url_helpers.public_tracking_url(token: tracking_token)
@@ -148,11 +156,8 @@ class Delivery < ApplicationRecord
       .eligible_for_plan
       .not_assigned_to_plan
   }
-  scope :for_week, ->(date) {
-    week = date.cweek
-    year = date.cwyear
-    where("EXTRACT(week FROM delivery_date) = ? AND EXTRACT(year FROM delivery_date) = ?", week, year)
-  }
+  # @param date [Date] cualquier día dentro de la semana ISO deseada
+  scope :for_week, ->(date) { where(delivery_date: date.beginning_of_week..date.end_of_week) }
   scope :with_service_cases, -> {
     joins(:delivery_items).where(delivery_items: {service_case: true}).distinct
   }
@@ -165,10 +170,12 @@ class Delivery < ApplicationRecord
   # BULK ACTIONS
   # ============================================================================
 
+  # @return [Boolean] true si el status actual bloquea acciones masivas (bulk actions)
   def bulk_locked?
     status.in?(BULK_LOCKED_STATUSES)
   end
 
+  # @return [Boolean] true si la entrega puede reabrirse con {#reopen!}
   def reopenable?
     status.in?(REOPENABLE_STATUSES)
   end
@@ -176,16 +183,25 @@ class Delivery < ApplicationRecord
   # Una entrega cancelada, reagendada o archivada ya no debe verse como
   # parada en el mapa de la ruta (el DeliveryPlanAssignment no se destruye
   # cuando cambia el status del delivery, así que hay que filtrarla aquí).
+  #
+  # @return [Boolean]
   def hidden_from_route_map?
     status.in?(HIDDEN_FROM_ROUTE_MAP_STATUSES)
   end
 
   # Admin ve toda entrega en un plan ya armado (marcada con su estado real);
   # cualquier otro rol solo ve las que están en un estado "normal" del flujo.
+  #
+  # @param user [User, nil]
+  # @return [Boolean]
   def visible_in_plan_for?(user)
     user&.admin? || status.in?(VISIBLE_TO_ALL_STATUSES)
   end
 
+  # Reabre una entrega bloqueada (delivered/cancelled/archived): vuelve la
+  # entrega y todos sus items a su estado inicial (scheduled/pending).
+  #
+  # @return [void]
   def reopen!
     transaction do
       delivery_items.find_each do |item|
@@ -223,6 +239,10 @@ class Delivery < ApplicationRecord
   # es practicable expresar en SQL, así que hay que cargar y evaluar en
   # memoria — esto al menos evita repetir ese "select → ids → where(id:)"
   # en cada controller que necesita filtrar por uno de estos predicates.
+  #
+  # @param scope [ActiveRecord::Relation<Delivery>]
+  # @param predicate [Symbol] nombre de un predicate de instancia (ej. :requires_service_case_action?)
+  # @return [ActiveRecord::Relation<Delivery>]
   def self.filter_by_predicate(scope, predicate)
     ids = scope.includes(delivery_items: :order_item).select { |d| d.public_send(predicate) }.map(&:id)
     scope.where(id: ids)
@@ -232,39 +252,53 @@ class Delivery < ApplicationRecord
   # MÉTODOS PÚBLICOS
   # ============================================================================
 
+  # @return [Boolean] true si está en bodegaje y vence en 8 días o menos
   def warehousing_expiring_soon?
     warehousing? && warehousing_until.present? && warehousing_until <= Date.current + 8.days
   end
 
+  # @return [Integer, nil] días restantes de bodegaje, o nil si no aplica
   def warehousing_days_remaining
     return nil unless warehousing? && warehousing_until.present?
     (warehousing_until - Date.current).to_i
   end
 
+  # Pone la entrega en bodegaje hasta la fecha dada.
+  #
+  # @param until_date [Date]
+  # @return [void]
   def start_warehousing!(until_date)
     update!(status: :warehousing, warehousing_until: until_date)
   end
 
+  # Saca la entrega de bodegaje, volviendo a "scheduled".
+  #
+  # @return [void]
   def end_warehousing!
     update!(status: :scheduled, warehousing_until: nil)
   end
 
+  # @return [String]
   def client_name
     order.client.name
   end
 
+  # @return [String]
   def order_number
     order.number
   end
 
+  # @return [Boolean] true si el delivery_type es uno de los "caso de servicio"
   def service_case?
     delivery_type.in?(SERVICE_CASE_TYPES)
   end
 
+  # @return [Boolean] true si el delivery_type es uno de "servicio de reparación"
   def repair_service?
     delivery_type.in?(REPAIR_SERVICE_TYPES)
   end
 
+  # @return [String] etiqueta legible del delivery_type
   def display_type
     case delivery_type
     when "normal" then "Entrega normal"
@@ -280,6 +314,11 @@ class Delivery < ApplicationRecord
     end
   end
 
+  # Recalcula `load_status` en base al load_status de los delivery_items
+  # (empty/partial/all_loaded/some_missing). Si todos quedan cargados,
+  # además avanza el status de la entrega a :loaded_on_truck.
+  #
+  # @return [void]
   def recalculate_load_status!
     items = delivery_items.reload
     return if items.empty?
@@ -305,6 +344,10 @@ class Delivery < ApplicationRecord
     end
   end
 
+  # Marca como cargados todos los items accionables en bulk (excepto los
+  # marcados missing) y recalcula load_status/status de la entrega.
+  #
+  # @return [void]
   def mark_all_loaded!
     transaction do
       delivery_items
@@ -319,10 +362,14 @@ class Delivery < ApplicationRecord
     end
   end
 
+  # @return [Boolean] true si {Deliveries::ErrorDetector} reporta un error de dirección
   def address_error?
     Deliveries::ErrorDetector.new(self).errors.any? { |e| e[:category] == "Dirección" }
   end
 
+  # Vuelve todos los items a load_status :unloaded y recalcula.
+  #
+  # @return [void]
   def reset_load_status!
     transaction do
       delivery_items.find_each do |item|
@@ -333,6 +380,7 @@ class Delivery < ApplicationRecord
     end
   end
 
+  # @return [String] etiqueta legible del load_status
   def display_load_status
     case load_status
     when "empty" then "Sin cargar"
@@ -343,6 +391,7 @@ class Delivery < ApplicationRecord
     end
   end
 
+  # @return [Integer] porcentaje (0-100) de items con load_status :loaded
   def load_percentage
     total = delivery_items.count
     return 0 if total.zero?
@@ -350,30 +399,37 @@ class Delivery < ApplicationRecord
     ((loaded.to_f / total) * 100).round
   end
 
+  # @return [Array<DeliveryItem>] items pendientes de retiro en sala (memoized)
   def sala_pickup_items
     @sala_pickup_items ||= Deliveries::SalaPickupDetector.new(self).actionable_items
   end
 
+  # @return [Hash] items pendientes de retiro agrupados por sala (memoized)
   def items_by_sala
     @items_by_sala ||= Deliveries::SalaPickupDetector.new(self).items_by_sala
   end
 
+  # @return [Array<DeliveryItem>] items que requieren acción de caso de servicio (memoized)
   def service_case_items
     @service_case_items ||= Deliveries::ServiceCaseDetector.new(self).actionable_items
   end
 
+  # @return [Boolean]
   def requires_service_case_action?
     service_case_items.any?
   end
 
+  # @return [Array<DeliveryItem>] items que requieren acción de servicio de reparación (memoized)
   def repair_service_items
     @repair_service_items ||= Deliveries::RepairServiceDetector.new(self).actionable_items
   end
 
+  # @return [Boolean]
   def requires_repair_service_action?
     repair_service_items.any?
   end
 
+  # @return [Boolean]
   def requires_sala_pickup?
     sala_pickup_items.any?
   end
@@ -386,12 +442,15 @@ class Delivery < ApplicationRecord
   # entrega: el nivel al que ya llegó la entrega, no siempre "pending".
   # Evita que agregar un producto a una entrega en in_plan/ready_to_deliver/
   # in_route/etc. la retroceda a "Pendiente de confirmar".
+  # @return [String] status que debe recibir un item nuevo/reactivado
   def default_item_status
     DELIVERY_STATUS_TO_ITEM_STATUS.fetch(status, "pending")
   end
 
   # Punto de entrada principal. Siempre refleja el estado real de los items.
   # No bloquea por estado actual de la entrega (excepto archived/warehousing).
+  #
+  # @return [void]
   def update_status_based_on_items
     return if archived? || warehousing?
 
@@ -408,10 +467,13 @@ class Delivery < ApplicationRecord
     end
   end
 
+  # @return [ActiveRecord::Relation<DeliveryItem>] items elegibles para armar un plan nuevo
   def active_items_for_plan
     delivery_items.eligible_for_plan
   end
 
+  # @param user [User, nil]
+  # @return [ActiveRecord::Relation<DeliveryItem>]
   def active_items_for_plan_for(user)
     delivery_items.merge(DeliveryItem.eligible_for_plan_for(user))
   end
@@ -420,15 +482,23 @@ class Delivery < ApplicationRecord
   # new one). Sin user (o user no-admin): solo los 6 estados "normales" del
   # flujo — cancelado/reagendado/archivado/fallido/bodegaje se ocultan del
   # todo, generan confusión en logística/vendedores. Admin ve todo.
+  #
+  # @param user [User, nil]
+  # @return [ActiveRecord::Relation<DeliveryItem>]
   def items_visible_in_plan(user = nil)
     return delivery_items if user&.admin?
     delivery_items.merge(DeliveryItem.eligible_for_plan_for_others)
   end
 
+  # @return [Integer] suma de `quantity_delivered` entre todos los delivery_items
   def total_items
     delivery_items.sum(:quantity_delivered)
   end
 
+  # Marca como entregados todos los items en estados activos y avanza el
+  # status de la entrega a :delivered si todos quedaron entregados.
+  #
+  # @return [void]
   def mark_as_delivered!
     transaction do
       delivery_items
@@ -446,10 +516,12 @@ class Delivery < ApplicationRecord
     end
   end
 
+  # @return [Boolean] true si todos los order_items asociados están "ready"
   def confirmed?
     order_items.all? { |oi| oi.status == "ready" }
   end
 
+  # @return [Delivery, nil] próxima entrega (id mayor, no cancelled/archived) del mismo pedido
   def next_rescheduled_delivery
     order.deliveries
       .where("id > ?", id)
@@ -458,6 +530,7 @@ class Delivery < ApplicationRecord
       .first
   end
 
+  # @return [ActiveRecord::Relation<Delivery>] historial de entregas del mismo pedido y dirección
   def delivery_history
     order.deliveries
       .where(delivery_address_id: delivery_address_id)
@@ -469,6 +542,8 @@ class Delivery < ApplicationRecord
   # al menos un order_item_id (misma dirección, mismo pedido).
   # Esto permite ver el ciclo completo de un ítem aunque haya cruzado
   # varias entregas (A→B→A de vuelta).
+  # @param limit [Integer]
+  # @return [ActiveRecord::Relation<DeliveryEvent>]
   def related_events(limit: 50)
     DeliveryEvent
       .where(delivery_id: sibling_delivery_ids)
@@ -477,14 +552,17 @@ class Delivery < ApplicationRecord
       .limit(limit)
   end
 
+  # @return [Integer]
   def related_events_count
     DeliveryEvent.where(delivery_id: sibling_delivery_ids).count
   end
 
+  # @return [String]
   def status_humanize
     status.humanize
   end
 
+  # @return [String]
   def delivery_type_humanize
     delivery_type.humanize
   end
@@ -493,10 +571,14 @@ class Delivery < ApplicationRecord
   # MÉTODOS DE CLASE
   # ============================================================================
 
+  # @return [Array<Array(String, String)>] pares [etiqueta legible, valor de
+  #   enum] para poblar un `<select>` de status
   def self.status_options_for_select
     statuses.keys.map { |s| [Delivery.new(status: s).display_status, s.to_s] }
   end
 
+  # @param scope [ActiveRecord::Relation<Delivery>]
+  # @return [String] CSV con una fila por delivery_item de las entregas del scope
   def self.to_csv(scope = all)
     CSV.generate(headers: true) do |csv|
       csv << ["Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo"]
@@ -522,6 +604,10 @@ class Delivery < ApplicationRecord
   # CONFIRMACIÓN POR VENDEDOR
   # ============================================================================
 
+  # Marca la entrega como confirmada por el vendedor.
+  #
+  # @param _user [User, nil] sin uso actualmente, reservado para auditoría futura
+  # @return [void]
   def mark_as_confirmed_by_vendor!(_user = nil)
     update!(
       confirmed_by_vendor: true,
@@ -530,6 +616,9 @@ class Delivery < ApplicationRecord
     )
   end
 
+  # Revierte la confirmación del vendedor (no-op si {#bulk_locked?}).
+  #
+  # @return [void]
   def unconfirm!
     return if bulk_locked?
 
@@ -541,6 +630,7 @@ class Delivery < ApplicationRecord
     end
   end
 
+  # @return [ActiveRecord::Relation<Delivery>] otras entregas del mismo delivery_group
   def associated_deliveries
     return Delivery.none unless delivery_group
     delivery_group.deliveries.where.not(id: id)
@@ -551,6 +641,8 @@ class Delivery < ApplicationRecord
   # IDs de todas las entregas (misma orden + dirección) que comparten al menos
   # un order_item con esta entrega. Incluye la entrega actual.
   # Siempre retorna al menos [id] para que la consulta funcione aunque no haya ítems.
+  #
+  # @return [Array<Integer>]
   def sibling_delivery_ids
     oi_ids = delivery_items.pluck(:order_item_id).uniq
     return [id] if oi_ids.empty?
@@ -589,6 +681,8 @@ class Delivery < ApplicationRecord
   # en_ruta. "warehousing" no se devuelve nunca como resultado (solo se entra
   # ahí vía start_warehousing!, que congela el recálculo) — se trata como
   # equivalente a loaded_on_truck para este cálculo.
+  # @param raw_statuses [Array<String, Symbol>] statuses de los delivery_items actuales
+  # @return [Symbol] status agregado que debería tener la entrega
   def calculate_delivery_status(raw_statuses)
     statuses = raw_statuses.map(&:to_s)
 
@@ -626,6 +720,7 @@ class Delivery < ApplicationRecord
     :in_route
   end
 
+  # @return [void]
   def generate_tracking_token
     self.tracking_token ||= SecureRandom.urlsafe_base64(32)
   end
@@ -634,21 +729,29 @@ class Delivery < ApplicationRecord
   # TURBO STREAM BROADCASTING
   # ============================================================================
 
+  # @return [void]
   def broadcast_delivery_updates
     broadcast_refresh_to("deliveries")
 
+    # El stream es compartido por todos los viewers de esta entrega, sin
+    # importar su rol, así que no podemos calcular la policy real por
+    # usuario aquí (broadcast_replace_to no es request-scoped) — se
+    # renderiza en modo "solo lectura" (sin botones de acción) para no
+    # exponer acciones de admin a quien no las tiene. El siguiente render
+    # normal de la página (controller, con policy real) restaura los
+    # botones para quien sí tenga permiso.
     broadcast_replace_to(
       "delivery_#{id}_detail",
       target: "delivery_detail_header_#{id}",
       partial: "deliveries/show_partials/detail_header",
       locals: {
         delivery: self,
-        can_edit: true,
-        can_approve: true,
-        can_reassign_seller: true,
-        can_new_service_case: true,
-        can_reopen: true,
-        is_admin: true
+        can_edit: false,
+        can_approve: false,
+        can_reassign_seller: false,
+        can_new_service_case: false,
+        can_reopen: false,
+        is_admin: false
       }
     )
   end

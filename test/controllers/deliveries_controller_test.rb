@@ -25,6 +25,16 @@ class DeliveriesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "should get by_week" do
+    get by_week_deliveries_url
+    assert_response :success
+  end
+
+  test "should get service_cases" do
+    get service_cases_deliveries_url
+    assert_response :success
+  end
+
   test "production_manager gets the map/autocomplete address form for new_internal_delivery" do
     @admin.update!(role: :production_manager)
     get new_internal_delivery_deliveries_url

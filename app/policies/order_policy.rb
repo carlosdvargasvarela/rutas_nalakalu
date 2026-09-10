@@ -33,11 +33,12 @@ class OrderPolicy < ApplicationPolicy
       if user.admin? || user.production_manager? || user.logistics?
         scope.all
       elsif user.seller?
-        scope.joins(order: :seller).where(sellers: {user_id: user.id})
+        scope.joins(:seller).where(sellers: {user_id: user.id})
       elsif user.driver?
-        # Solo entregas asignadas a planes donde el driver es el usuario actual
-        scope.joins(delivery_plan_assignments: {delivery_plan: :driver})
+        # Solo pedidos con alguna entrega asignada a un plan del driver actual
+        scope.joins(deliveries: {delivery_plan_assignment: :delivery_plan})
           .where(delivery_plans: {driver_id: user.id})
+          .distinct
       else
         scope.none
       end

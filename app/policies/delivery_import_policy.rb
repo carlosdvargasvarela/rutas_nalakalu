@@ -48,19 +48,24 @@ class DeliveryImportPolicy < ApplicationPolicy
 
   class Scope < Scope
     def resolve
-      # Admin, logística y producción ven todo
-      if user.admin? || user.role.to_s == "production_manager" || user.role.to_s == "logistic"
+      if admin_or_manager_or_logistic?(user)
         scope.all
       else
-        # Chofer ve solo sus planes
-        scope.where(driver_id: user.id)
+        # Cada usuario ve solo las importaciones que él mismo subió
+        scope.where(user_id: user.id)
       end
+    end
+
+    private
+
+    def admin_or_manager_or_logistic?(user)
+      user.admin? || user.production_manager? || user.logistics?
     end
   end
 
   private
 
   def admin_or_manager_or_logistic?
-    user.admin? || user.role.to_s == "production_manager" || user.role.to_s == "logistic"
+    user.admin? || user.production_manager? || user.logistics?
   end
 end

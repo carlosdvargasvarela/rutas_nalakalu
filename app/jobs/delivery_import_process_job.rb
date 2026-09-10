@@ -29,7 +29,7 @@ class DeliveryImportProcessJob
     Rails.logger.error "DeliveryImportProcessJob failed for import #{import_id}: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
 
-    import.update!(
+    import&.update!(
       status: :failed,
       import_errors: "Error en importación final: #{e.message}"
     )
