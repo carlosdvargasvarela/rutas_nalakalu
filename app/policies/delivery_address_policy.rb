@@ -5,7 +5,12 @@ class DeliveryAddressPolicy < ApplicationPolicy
 
   def show?
     return true if user.admin? || user.production_manager? || user.logistics? || user.seller?
-    return true if user.driver? && record.delivery_plan&.driver_id == user.id
+    if user.driver?
+      return Delivery.where(delivery_address_id: record.id)
+        .joins(delivery_plan_assignment: :delivery_plan)
+        .where(delivery_plans: {driver_id: user.id})
+        .exists?
+    end
     false
   end
 
@@ -30,11 +35,14 @@ class DeliveryAddressPolicy < ApplicationPolicy
       if user.admin? || user.production_manager? || user.logistics?
         scope.all
       elsif user.seller?
-        scope.joins(order: :seller).where(sellers: {user_id: user.id})
+        scope.joins(client: {orders: :seller}).where(sellers: {user_id: user.id}).distinct
       elsif user.driver?
-        # Solo entregas asignadas a planes donde el driver es el usuario actual
-        scope.joins(delivery_plan_assignments: {delivery_plan: :driver})
+        # DeliveryAddress no tiene asociación directa a Delivery/driver, así
+        # que se filtra por los delivery_address_id de las entregas
+        # asignadas a un plan del driver actual.
+        scope.where(id: Delivery.joins(delivery_plan_assignment: :delivery_plan)
           .where(delivery_plans: {driver_id: user.id})
+          .select(:delivery_address_id))
       else
         scope.none
       end

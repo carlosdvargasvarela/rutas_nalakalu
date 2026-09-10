@@ -149,7 +149,7 @@ class DeliveryPolicy < ApplicationPolicy
         scope.joins(order: :seller).where(sellers: {user_id: user.id})
       elsif user.driver?
         # Solo entregas asignadas a planes donde el driver es el usuario actual
-        scope.joins(delivery_plan_assignments: {delivery_plan: :driver})
+        scope.joins(delivery_plan_assignment: :delivery_plan)
           .where(delivery_plans: {driver_id: user.id})
       else
         scope.none

@@ -114,7 +114,7 @@ class Production::DeliveriesController < ApplicationController
 
     target_delivery = Deliveries::Rescheduler.new(
       delivery: @delivery,
-      new_date: safe_date(params[:new_date]),
+      new_date: parse_date(params[:new_date]),
       current_user: current_user
     ).call
 
@@ -299,10 +299,6 @@ class Production::DeliveriesController < ApplicationController
     end
 
     base.order("deliveries.delivery_date ASC, deliveries.id ASC")
-  end
-
-  def safe_date(str)
-    str.present? ? Date.parse(str) : nil
   end
 
   def quick_update_params

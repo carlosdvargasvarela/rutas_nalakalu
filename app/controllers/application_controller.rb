@@ -36,6 +36,16 @@ class ApplicationController < ActionController::Base
 
   private
 
+  # Parseo de fecha "a prueba de balas" para params que vienen de un input de
+  # texto/fecha del usuario: nil si viene vacío o si no es una fecha válida,
+  # en vez de reventar con ArgumentError. Compartido por todos los
+  # controllers que antes tenían su propia copia (parse_date/safe_date).
+  def parse_date(value)
+    Date.parse(value) if value.present?
+  rescue ArgumentError, TypeError
+    nil
+  end
+
   def user_not_authorized
     flash[:alert] = "No tienes permiso para realizar esta acción."
     redirect_to(request.referrer || root_path)

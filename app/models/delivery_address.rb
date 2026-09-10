@@ -148,9 +148,4 @@ class DeliveryAddress < ApplicationRecord
 
     lat < CR_LAT_MIN || lat > CR_LAT_MAX || lon < CR_LON_MIN || lon > CR_LON_MAX
   end
-
-  def address_is_manual_reference?
-    # Si address == description, es una referencia manual, no geocodificar
-    address.present? && description.present? && address.strip == description.strip
-  end
 end

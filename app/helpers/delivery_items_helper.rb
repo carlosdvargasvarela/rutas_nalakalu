@@ -4,8 +4,4 @@ module DeliveryItemsHelper
   def delivery_item_status_color(status)
     delivery_status_color(status)
   end
-
-  def delivery_item_status_badge_class(status)
-    delivery_status_badge_class(status)
-  end
 end

@@ -264,19 +264,6 @@ module AuditLogsHelper
 
   # ── Recurso ────────────────────────────────────────────────────────────────
 
-  def resource_label(version, items_cache = {})
-    item = items_cache.dig(version.item_type, version.item_id)
-    return "#{version.item_type} ##{version.item_id}" unless item
-
-    if item.respond_to?(:name) && item.name.present?
-      "#{version.item_type}: #{item.name}"
-    elsif item.respond_to?(:order_number) && item.order_number.present?
-      "#{version.item_type}: #{item.order_number}"
-    else
-      "#{version.item_type} ##{version.item_id}"
-    end
-  end
-
   def related_context_description(resource)
     case resource
     when Delivery    then "Ítems de esta entrega"

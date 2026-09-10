@@ -1,4 +1,11 @@
 # app/controllers/deliveries_controller.rb
+
+# CRUD + acciones operativas sobre {Delivery}: aprobar, marcar entregado,
+# bodegaje, dividir, reagendar, casos de servicio/reparación (nuevos y sobre
+# una entrega existente), retiro en sala, movimientos de showroom y mandados
+# internos. La mayoría de las acciones de escritura responden tanto HTML
+# (redirect) como turbo_stream (ver {#render_delivery_update_stream}, que
+# centraliza el refresco del panel de detalle + tarjeta de índice).
 class DeliveriesController < ApplicationController
   include ActionView::RecordIdentifier
 
@@ -42,17 +49,11 @@ class DeliveriesController < ApplicationController
     base_scope = base_scope.where.not(status: excluded_statuses) if params[:no_plan].present?
 
     if params[:only_service_cases].present?
-      matching_ids = base_scope.includes(delivery_items: :order_item)
-        .select { |delivery| delivery.requires_service_case_action? }
-        .map(&:id)
-      base_scope = base_scope.where(id: matching_ids)
+      base_scope = Delivery.filter_by_predicate(base_scope, :requires_service_case_action?)
     end
 
     if params[:only_repair_services].present?
-      matching_ids = base_scope.includes(delivery_items: :order_item)
-        .select { |delivery| delivery.requires_repair_service_action? }
-        .map(&:id)
-      base_scope = base_scope.where(id: matching_ids)
+      base_scope = Delivery.filter_by_predicate(base_scope, :requires_repair_service_action?)
     end
 
     @q = base_scope.ransack(params[:q])
@@ -64,12 +65,10 @@ class DeliveriesController < ApplicationController
       .includes(delivery_items: {order_item: :order})
       .order(delivery_date: :asc)
 
-    authorize Delivery
-
     respond_to do |format|
       format.html
-      format.xlsx { response.headers["Content-Disposition"] = "attachment; filename=entregas_#{Date.today.strftime("%Y%m%d")}.xlsx" }
-      format.csv { send_data @all_deliveries.to_csv, filename: "entregas_#{Date.today.strftime("%Y%m%d")}.csv" }
+      format.xlsx { response.headers["Content-Disposition"] = "attachment; filename=entregas_#{Date.current.strftime("%Y%m%d")}.xlsx" }
+      format.csv { send_data @all_deliveries.to_csv, filename: "entregas_#{Date.current.strftime("%Y%m%d")}.csv" }
     end
   end
 
@@ -133,7 +132,7 @@ class DeliveriesController < ApplicationController
     if (new_date_str = params.dig(:delivery, :reschedule_new_date)).present?
       @delivery = Deliveries::Rescheduler.new(
         delivery: @delivery,
-        new_date: safe_date(new_date_str),
+        new_date: parse_date(new_date_str),
         current_user: current_user,
         reason: params.dig(:delivery, :reschedule_reason)
       ).call
@@ -143,30 +142,7 @@ class DeliveriesController < ApplicationController
     end
 
     respond_to do |format|
-      format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-
-        flash.now[:notice] = "Entrega actualizada correctamente."
-
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
-      end
+      format.turbo_stream { render_delivery_update_stream(notice: "Entrega actualizada correctamente.") }
       format.html do
         redirect_to(
           session[:deliveries_return_to] || deliveries_path,
@@ -189,7 +165,7 @@ class DeliveriesController < ApplicationController
 
     target_delivery = Deliveries::Rescheduler.new(
       delivery: @delivery,
-      new_date: safe_date(params[:new_date]),
+      new_date: parse_date(params[:new_date]),
       current_user: current_user,
       reason: reason
     ).call
@@ -251,6 +227,8 @@ class DeliveriesController < ApplicationController
       end
       format.html { redirect_to @delivery, notice: "Entrega aprobada correctamente para esta semana." }
     end
+  rescue => e
+    render_delivery_error_flash("Error al aprobar la entrega: #{e.message}")
   end
 
   def mark_as_delivered
@@ -269,42 +247,18 @@ class DeliveriesController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-
-        flash.now[:notice] = "Entrega marcada como completada."
-
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
-          ),
-          turbo_stream.replace(
-            "delivery_items_list",
-            partial: "deliveries/show_partials/product_table",
-            locals: {delivery: @delivery}
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
+        render_delivery_update_stream(notice: "Entrega marcada como completada.", include_product_table: true)
       end
       format.html { redirect_to @delivery, notice: "Entrega marcada como completada." }
     end
+  rescue => e
+    render_delivery_error_flash("Error al marcar la entrega como completada: #{e.message}")
   end
 
   def start_warehousing
     authorize @delivery, :edit?
 
-    until_date = safe_date(params[:warehousing_until])
+    until_date = parse_date(params[:warehousing_until])
 
     unless until_date.present? && until_date > Date.current
       respond_to do |format|
@@ -332,32 +286,15 @@ class DeliveriesController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-
-        flash.now[:notice] = "Entrega en bodegaje hasta el #{I18n.l until_date, format: :long}."
-
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.update("modal", ""),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
+        render_delivery_update_stream(
+          notice: "Entrega en bodegaje hasta el #{I18n.l until_date, format: :long}.",
+          extra_streams: [turbo_stream.update("modal", "")]
+        )
       end
       format.html { redirect_to @delivery, notice: "Entrega en bodegaje." }
     end
+  rescue => e
+    render_delivery_error_flash("Error al iniciar el bodegaje: #{e.message}")
   end
 
   def end_warehousing
@@ -374,31 +311,12 @@ class DeliveriesController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-
-        flash.now[:notice] = "Bodegaje finalizado. Entrega vuelve a estado pendiente."
-
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {
-              delivery: @delivery,
-              future_deliveries: @future_deliveries,
-              delivery_history: @delivery_history
-            }
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
+        render_delivery_update_stream(notice: "Bodegaje finalizado. Entrega vuelve a estado pendiente.")
       end
       format.html { redirect_to @delivery, notice: "Bodegaje finalizado." }
     end
+  rescue => e
+    render_delivery_error_flash("Error al finalizar el bodegaje: #{e.message}")
   end
 
   def split_form
@@ -418,6 +336,8 @@ class DeliveriesController < ApplicationController
       .order(:delivery_date)
   end
 
+  # Divide los productos "reschedulables" de la entrega entre una o más
+  # entregas destino (existentes o nuevas por fecha), vía Deliveries::Splitter.
   def split
     authorize @delivery, :edit?
 
@@ -434,6 +354,9 @@ class DeliveriesController < ApplicationController
     redirect_to split_form_delivery_path(@delivery), alert: e.message
   end
 
+  # Copia los campos indicados (ver DeliveryGroup::PROPAGATABLE_FIELDS) de
+  # esta entrega hacia otras entregas del mismo delivery_group. Responde JSON
+  # (usado desde un modal AJAX).
   def propagate_to_associated
     authorize @delivery, :update?
 
@@ -451,9 +374,13 @@ class DeliveriesController < ApplicationController
     end
 
     values = @delivery.attributes.slice(*fields)
-    Delivery.where(id: target_ids).each { |d| d.update!(values) }
+    Delivery.transaction do
+      Delivery.where(id: target_ids).each { |d| d.update!(values) }
+    end
 
     render json: { updated_count: target_ids.size }
+  rescue ActiveRecord::RecordInvalid => e
+    render json: { error: "No se pudo propagar: #{e.message}" }, status: :unprocessable_entity
   end
 
   def reassign_seller
@@ -583,7 +510,7 @@ class DeliveriesController < ApplicationController
       contact_name: @delivery.contact_name,
       contact_phone: @delivery.contact_phone,
       delivery_type: :pickup_with_return,
-      delivery_date: Date.today,
+      delivery_date: Date.current,
       status: :scheduled
     )
 
@@ -634,7 +561,7 @@ class DeliveriesController < ApplicationController
       contact_name: @delivery.contact_name,
       contact_phone: @delivery.contact_phone,
       delivery_type: :repair_pickup,
-      delivery_date: Date.today,
+      delivery_date: Date.current,
       status: :scheduled
     )
 
@@ -650,7 +577,7 @@ class DeliveriesController < ApplicationController
   end
 
   def create_repair_service_for_existing
-    parent_delivery = Delivery.find(params[:id])
+    parent_delivery = @delivery
     authorize parent_delivery, :edit?
 
     service = Deliveries::RepairServiceForExistingCreator.new(
@@ -786,6 +713,9 @@ class DeliveriesController < ApplicationController
     render layout: false
   end
 
+  # Acción "workspace" del caso de servicio: según params[:delivery][:mode]
+  # registra solo una nota (devolucion/reparacion) o, si no hay mode, crea la
+  # entrega de devolución real vía Deliveries::ServiceCaseFromWorkspaceCreator.
   def create_service_case_from_workspace
     authorize @delivery, :edit?
 
@@ -848,6 +778,7 @@ class DeliveriesController < ApplicationController
     render layout: false
   end
 
+  # Análogo a #create_service_case_from_workspace para servicio de reparación.
   def create_repair_service_from_workspace
     authorize @delivery, :edit?
 
@@ -959,44 +890,39 @@ class DeliveriesController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-        flash.now[:notice] = "#{items.count} producto(s) confirmado(s) para entrega."
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {delivery: @delivery, future_deliveries: @future_deliveries, delivery_history: @delivery_history}
-          ),
-          turbo_stream.replace(
-            "delivery_items_list",
-            partial: "deliveries/show_partials/product_table",
-            locals: {delivery: @delivery}
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
+        render_delivery_update_stream(
+          notice: "#{items.count} producto(s) confirmado(s) para entrega.",
+          include_product_table: true
+        )
       end
       format.html { redirect_to delivery_path(@delivery), notice: "Producto(s) confirmado(s) para entrega." }
     end
   end
 
+  # Variante de #index filtrada a una semana ISO (params[:week]/[:year]),
+  # reusando la vista deliveries/index.
   def by_week
+    authorize Delivery, :index?
+    @sellers = Seller.order(:name)
     session[:deliveries_return_to] = request.fullpath
-    @week = (1..53).cover?(params[:week].to_i) ? params[:week].to_i : Date.today.cweek
-    @year = (params[:year].to_i >= 2000) ? params[:year].to_i : Date.today.cwyear
+    @week = (1..53).cover?(params[:week].to_i) ? params[:week].to_i : Date.current.cweek
+    @year = (params[:year].to_i >= 2000) ? params[:year].to_i : Date.current.cwyear
     start_date = Date.commercial(@year, @week, 1)
-    @deliveries = Delivery.for_week(start_date).includes(order: :client, delivery_address: {}, delivery_items: {}).order("deliveries.delivery_date ASC").page(params[:page])
+    scope = Delivery.for_week(start_date).includes(order: :client, delivery_address: {}, delivery_items: {})
+    @q = scope.ransack(params[:q])
+    @deliveries = @q.result.order("deliveries.delivery_date ASC").page(params[:page])
     render :index
   end
 
+  # Variante de #index filtrada a entregas con delivery_items marcados
+  # service_case, reusando la vista deliveries/index.
   def service_cases
+    authorize Delivery, :index?
+    @sellers = Seller.order(:name)
     session[:deliveries_return_to] = request.fullpath
-    @deliveries = Delivery.joins(order: :client).merge(Delivery.with_service_cases).includes(:order, :delivery_address, :delivery_items).order("deliveries.delivery_date ASC, clients.name ASC").page(params[:page])
+    scope = Delivery.joins(order: :client).merge(Delivery.with_service_cases).includes(:order, :delivery_address, :delivery_items)
+    @q = scope.ransack(params[:q])
+    @deliveries = @q.result.order("deliveries.delivery_date ASC, clients.name ASC").page(params[:page])
     render :index
   end
 
@@ -1045,39 +971,15 @@ class DeliveriesController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
-        load_delivery_for_panel
-        set_delivery_panel_data
-        flash.now[:notice] = "Entrega desconfirmada. Los productos volvieron a estado pendiente."
-        render turbo_stream: [
-          turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          turbo_stream.replace(
-            dom_id(@delivery, :detail),
-            partial: "deliveries/show_partials/detail_data",
-            locals: {delivery: @delivery, future_deliveries: @future_deliveries, delivery_history: @delivery_history}
-          ),
-          turbo_stream.replace(
-            "delivery_items_list",
-            partial: "deliveries/show_partials/product_table",
-            locals: {delivery: @delivery}
-          ),
-          turbo_stream.replace(
-            dom_id(@delivery, :card),
-            partial: "deliveries/index_partials/delivery_card",
-            locals: {delivery: @delivery}
-          )
-        ]
+        render_delivery_update_stream(
+          notice: "Entrega desconfirmada. Los productos volvieron a estado pendiente.",
+          include_product_table: true
+        )
       end
       format.html { redirect_to @delivery, notice: "Entrega desconfirmada correctamente." }
     end
   rescue => e
-    respond_to do |format|
-      format.turbo_stream do
-        flash.now[:alert] = "Error al desconfirmar: #{e.message}"
-        render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          status: :unprocessable_entity
-      end
-      format.html { redirect_to @delivery, alert: "Error al desconfirmar: #{e.message}" }
-    end
+    render_delivery_error_flash("Error al desconfirmar: #{e.message}")
   end
 
   def update_status
@@ -1151,14 +1053,7 @@ class DeliveriesController < ApplicationController
       format.html { redirect_to @delivery, notice: "Entrega reabierta correctamente." }
     end
   rescue => e
-    respond_to do |format|
-      format.turbo_stream do
-        flash.now[:alert] = "Error al reabrir la entrega: #{e.message}"
-        render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
-          status: :unprocessable_entity
-      end
-      format.html { redirect_to @delivery, alert: "Error al reabrir: #{e.message}" }
-    end
+    render_delivery_error_flash("Error al reabrir la entrega: #{e.message}")
   end
 
   private
@@ -1202,6 +1097,51 @@ class DeliveriesController < ApplicationController
     @addresses = @delivery&.order&.client&.delivery_addresses&.to_a || []
   end
 
+  # Compartido por las acciones que, tras actualizar @delivery, refrescan el
+  # panel de detalle + la tarjeta del índice vía turbo_stream (update,
+  # mark_as_delivered, start/end_warehousing, confirm_all_items, unconfirm).
+  # `extra_streams` va ANTES del stream de detalle (ej. cerrar un modal);
+  # `include_product_table` agrega el refresco de la tabla de productos
+  # entre el detalle y la tarjeta, para las acciones que tocan delivery_items.
+  def render_delivery_update_stream(notice:, extra_streams: [], include_product_table: false)
+    load_delivery_for_panel
+    set_delivery_panel_data
+    flash.now[:notice] = notice
+
+    streams = [turbo_stream.replace("flash_messages", partial: "layouts/flashes")]
+    streams.concat(extra_streams)
+    streams << turbo_stream.replace(
+      dom_id(@delivery, :detail),
+      partial: "deliveries/show_partials/detail_data",
+      locals: {delivery: @delivery, future_deliveries: @future_deliveries, delivery_history: @delivery_history}
+    )
+    if include_product_table
+      streams << turbo_stream.replace(
+        "delivery_items_list",
+        partial: "deliveries/show_partials/product_table",
+        locals: {delivery: @delivery}
+      )
+    end
+    streams << turbo_stream.replace(
+      dom_id(@delivery, :card),
+      partial: "deliveries/index_partials/delivery_card",
+      locals: {delivery: @delivery}
+    )
+
+    render turbo_stream: streams
+  end
+
+  def render_delivery_error_flash(message)
+    respond_to do |format|
+      format.turbo_stream do
+        flash.now[:alert] = message
+        render turbo_stream: turbo_stream.replace("flash_messages", partial: "layouts/flashes"),
+          status: :unprocessable_entity
+      end
+      format.html { redirect_to @delivery, alert: message }
+    end
+  end
+
   def sanitize_delivery_address_param!
     raw = params.dig(:delivery, :delivery_address_id).to_s
     params[:delivery][:delivery_address_id] = nil if raw == "__new__" || raw.blank?
@@ -1214,10 +1154,6 @@ class DeliveriesController < ApplicationController
     params[:delivery][:order_id] = nil if raw == "__new__" || raw.blank?
   rescue
     nil
-  end
-
-  def safe_date(str)
-    str.present? ? Date.parse(str) : nil
   end
 
   def find_or_initialize_client_from_params
@@ -1261,18 +1197,7 @@ class DeliveriesController < ApplicationController
   def handle_create_error(e)
     Rails.logger.error "Error crear entrega: #{e.message}"
     @delivery ||= Delivery.new
-    if params[:delivery].present?
-      permitted = params.require(:delivery).permit(
-        :delivery_date, :delivery_address_id, :order_id,
-        :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
-        :condominio_number, :casa_number, :_return_to_panel,
-        delivery_items_attributes: [
-          :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
-          {order_item_attributes: [:id, :product, :quantity, :notes]}
-        ]
-      )
-      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
-      permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
+    if (permitted = delivery_rerender_params)
       @delivery.assign_attributes(permitted.except(:_return_to_panel))
     end
 
@@ -1287,18 +1212,7 @@ class DeliveriesController < ApplicationController
   end
 
   def handle_update_error(e)
-    if params[:delivery].present?
-      permitted = params.require(:delivery).permit(
-        :delivery_date, :delivery_address_id, :order_id,
-        :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
-        :condominio_number, :casa_number, :_return_to_panel,
-        delivery_items_attributes: [
-          :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
-          {order_item_attributes: [:id, :product, :quantity, :notes]}
-        ]
-      )
-      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
-      permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
+    if (permitted = delivery_rerender_params)
       @delivery.assign_attributes(permitted.except(:_return_to_panel))
     end
 
@@ -1312,44 +1226,62 @@ class DeliveriesController < ApplicationController
     render :edit, status: :unprocessable_entity
   end
 
-  def register_devolucion_note
-    note = params.dig(:delivery, :delivery_notes).presence ||
-      "#{Deliveries::Vocabulary.service_type_label("devolucion")} al cliente"
+  # Permit list compartida por handle_create_error/handle_update_error para
+  # re-renderizar el formulario tras un fallo. Reusa los sanitizadores de
+  # "__new__" ya existentes (sanitize_delivery_address_param!/
+  # sanitize_order_id_param!) en vez de reimplementarlos sobre el hash ya
+  # permitido.
+  def delivery_rerender_params
+    return nil unless params[:delivery].present?
+
+    sanitize_delivery_address_param!
+    sanitize_order_id_param!
+
+    params.require(:delivery).permit(
+      :delivery_date, :delivery_address_id, :order_id,
+      :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
+      :condominio_number, :casa_number, :_return_to_panel,
+      delivery_items_attributes: [
+        :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,
+        {order_item_attributes: [:id, :product, :quantity, :notes]}
+      ]
+    )
+  end
+
+  def register_delivery_note(default_note:, event_action:, event_context:)
+    note = params.dig(:delivery, :delivery_notes).presence || default_note
     existing = @delivery.delivery_notes.to_s.strip
     new_notes = existing.present? ? "#{existing}\n#{note}" : note
     @delivery.update!(delivery_notes: new_notes)
     DeliveryEvent.record(
       delivery: @delivery,
-      action: "service_case_noted",
+      action: event_action,
       actor: current_user,
-      payload: { context: "devolucion", note: note }
+      payload: { context: event_context, note: note }
+    )
+  end
+
+  def register_devolucion_note
+    register_delivery_note(
+      default_note: "#{Deliveries::Vocabulary.service_type_label("devolucion")} al cliente",
+      event_action: "service_case_noted",
+      event_context: "devolucion"
     )
   end
 
   def register_reparacion_note
-    note = params.dig(:delivery, :delivery_notes).presence ||
-      Deliveries::Vocabulary.service_type_label("reparacion")
-    existing = @delivery.delivery_notes.to_s.strip
-    new_notes = existing.present? ? "#{existing}\n#{note}" : note
-    @delivery.update!(delivery_notes: new_notes)
-    DeliveryEvent.record(
-      delivery: @delivery,
-      action: "service_case_noted",
-      actor: current_user,
-      payload: { context: "reparacion", note: note }
+    register_delivery_note(
+      default_note: Deliveries::Vocabulary.service_type_label("reparacion"),
+      event_action: "service_case_noted",
+      event_context: "reparacion"
     )
   end
 
   def register_repair_entrega_note
-    note = params.dig(:delivery, :delivery_notes).presence || "Entrega de producto reparado al cliente"
-    existing = @delivery.delivery_notes.to_s.strip
-    new_notes = existing.present? ? "#{existing}\n#{note}" : note
-    @delivery.update!(delivery_notes: new_notes)
-    DeliveryEvent.record(
-      delivery: @delivery,
-      action: "repair_service_noted",
-      actor: current_user,
-      payload: { context: "repair_entrega", note: note }
+    register_delivery_note(
+      default_note: "Entrega de producto reparado al cliente",
+      event_action: "repair_service_noted",
+      event_context: "repair_entrega"
     )
   end
 
@@ -1359,6 +1291,9 @@ class DeliveriesController < ApplicationController
     @delivery.status ||= :scheduled
 
     if params[:delivery].present?
+      sanitize_delivery_address_param!
+      sanitize_order_id_param!
+
       permitted = params.require(:delivery).permit(
         :delivery_date, :delivery_address_id, :order_id,
         :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
@@ -1367,8 +1302,6 @@ class DeliveriesController < ApplicationController
           {order_item_attributes: [:id, :product, :quantity, :notes]}
         ]
       )
-      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
-      permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
       @delivery.assign_attributes(permitted)
     end
 
@@ -1408,6 +1341,8 @@ class DeliveriesController < ApplicationController
     )
 
     if params[:delivery].present?
+      sanitize_delivery_address_param!
+
       permitted = params.require(:delivery).permit(
         :delivery_date, :delivery_type, :delivery_address_id,
         delivery_items_attributes: [
@@ -1415,18 +1350,13 @@ class DeliveriesController < ApplicationController
           {order_item_attributes: [:id, :product, :quantity, :notes]}
         ]
       )
-      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
       @service_case.assign_attributes(permitted)
 
       if @service_case.delivery_type.is_a?(String)
         @service_case.delivery_type = @service_case.delivery_type.to_sym
       end
       if (dd = params.dig(:delivery, :delivery_date)).present?
-        @service_case.delivery_date = begin
-          Date.parse(dd)
-        rescue
-          @service_case.delivery_date
-        end
+        @service_case.delivery_date = parse_date(dd) || @service_case.delivery_date
       end
     else
       @service_case.delivery_type ||= :pickup_with_return
@@ -1479,6 +1409,9 @@ class DeliveriesController < ApplicationController
     @delivery ||= Delivery.new(delivery_type: :repair_pickup, status: :scheduled)
 
     if params[:delivery].present?
+      sanitize_delivery_address_param!
+      sanitize_order_id_param!
+
       permitted = params.require(:delivery).permit(
         :delivery_date, :delivery_address_id, :order_id,
         :contact_name, :contact_phone, :delivery_notes, :delivery_type, :delivery_time_preference,
@@ -1487,8 +1420,6 @@ class DeliveriesController < ApplicationController
           {order_item_attributes: [:id, :product, :quantity, :notes]}
         ]
       )
-      permitted[:delivery_address_id] = nil if permitted[:delivery_address_id].to_s == "__new__"
-      permitted[:order_id] = nil if permitted[:order_id].to_s == "__new__"
       # "repair_with_return" es un valor de despacho del formulario, no un delivery_type real.
       permitted.delete(:delivery_type) unless Delivery.delivery_types.key?(permitted[:delivery_type].to_s)
       @delivery.assign_attributes(permitted)

@@ -59,12 +59,6 @@ module DeliveriesHelper
     delivery_status_badge_class(delivery.status)
   end
 
-  def warehousing_badge_html
-    content_tag(:span, "📦 En Bodegaje",
-      class: "badge rounded-pill px-2 py-1 small fw-semibold",
-      style: "background-color: #6f42c1; color: white;")
-  end
-
   # ============================================================================
   # WHATSAPP
   # ============================================================================

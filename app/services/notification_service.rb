@@ -59,6 +59,10 @@ class NotificationService
     users << seller_user
     create_for_users(users.compact.uniq, delivery, simple_message, type: "reschedule_delivery", send_email: false)
 
+    # No correo externo para mandados internos (igual que el resto de
+    # notificaciones de reagendamiento en este servicio).
+    return if delivery.internal_delivery?
+
     # Mensaje detallado para correos externos
     detailed_message = <<~MSG.strip
       La entrega del pedido #{delivery.order.number} fue reprogramada:
