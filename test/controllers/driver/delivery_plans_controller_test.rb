@@ -28,5 +28,17 @@ module Driver
       assert_equal 2, json["saved"]
       assert_equal 9.94, @plan.reload.current_lat.to_f
     end
+
+    test "show cuenta las paradas en_route por separado de pendientes" do
+      assignment = delivery_plan_assignments(:assignment_for_driver)
+      assignment.update!(status: :in_route)
+
+      sign_in @driver
+      get driver_delivery_plan_path(@plan)
+
+      assert_response :success
+      assert_select '[data-driver-plan-target="enRouteCount"]', text: "1"
+      assert_select '[data-driver-plan-target="pendingCount"]', text: "0"
+    end
   end
 end

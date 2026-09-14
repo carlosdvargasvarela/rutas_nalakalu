@@ -2,7 +2,8 @@
 <%
   completed_count = @assignments.count(&:completed?)
   failed_count    = @assignments.count(&:cancelled?)
-  pending_count   = @assignments.count { |a| a.pending? || a.in_route? }
+  in_route_count  = @assignments.count(&:in_route?)
+  pending_count   = @assignments.count(&:pending?)
   total_count     = @assignments.size
   pct = total_count > 0 ? (completed_count.to_f / total_count * 100).round : 0
   next_assignment = @assignments.find { |a| a.pending? || a.in_route? }
@@ -52,20 +53,26 @@
       </div>
 
       <%# Progress bar with counters %>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);text-align:center;margin-bottom:12px;">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);text-align:center;margin-bottom:12px;">
         <div>
           <div style="font-size:1.4rem;font-weight:800;color:var(--dk-success);" data-driver-plan-target="completedCount">
             <%= completed_count %>
           </div>
           <div class="dk-label">Entregados</div>
         </div>
-        <div style="border-left:1px solid var(--dk-border);border-right:1px solid var(--dk-border);">
+        <div style="border-left:1px solid var(--dk-border);">
+          <div style="font-size:1.4rem;font-weight:800;color:var(--dk-primary);" data-driver-plan-target="enRouteCount">
+            <%= in_route_count %>
+          </div>
+          <div class="dk-label">En ruta</div>
+        </div>
+        <div style="border-left:1px solid var(--dk-border);">
           <div style="font-size:1.4rem;font-weight:800;color:var(--dk-muted);" data-driver-plan-target="pendingCount">
             <%= pending_count %>
           </div>
           <div class="dk-label">Pendientes</div>
         </div>
-        <div>
+        <div style="border-left:1px solid var(--dk-border);">
           <div style="font-size:1.4rem;font-weight:800;color:var(--dk-danger);">
             <%= failed_count %>
           </div>
@@ -165,7 +172,7 @@
       <h2 style="font-size:1rem;font-weight:800;margin:0;color:var(--dk-text);">
         <i class="bi bi-list-ol me-2" style="color:var(--dk-primary);"></i>Paradas
       </h2>
-      <span class="dk-pill dk-pill-muted"><%= total_count %> en total</span>
+      <span class="dk-pill dk-pill-muted"><span data-driver-plan-target="totalCount"><%= total_count %></span> en total</span>
     </div>
 
     <% if @assignments.any? %>

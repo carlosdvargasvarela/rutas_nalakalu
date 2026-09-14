@@ -25,6 +25,7 @@ export default class extends Controller {
       const data = await response.json()
       if (response.ok) {
         this._markInRoute()
+        this._dispatchProgress(data.progress)
         this._toast("Parada iniciada", "success")
       } else {
         this._toast(data.error || "Error al iniciar", "error")

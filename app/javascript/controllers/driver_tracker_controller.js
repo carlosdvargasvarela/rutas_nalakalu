@@ -118,10 +118,11 @@ export default class extends Controller {
     );
     this.updateLastUpdate();
 
-    // Intentar sincronizar inmediatamente si hay posiciones acumuladas
-    if (this.positions.length >= 1) {
-      this.syncPositions();
-    }
+    // NO sincronizar acá: watchPosition con enableHighAccuracy dispara este
+    // callback cada pocos segundos en muchos dispositivos, y syncPositions
+    // ya corre cada this.intervalValue (15s) via el timer de abajo. Sincronizar
+    // también en cada posición multiplica los POST a update_position_batch
+    // y el consumo de datos/batería sin ganar nada (el timer ya junta el lote).
   }
 
   onPositionError(error) {
@@ -231,7 +232,11 @@ export default class extends Controller {
   updateStatus(message, type = "secondary") {
     if (this.hasStatusTarget) {
       this.statusTarget.textContent = message;
-      this.statusTarget.className = `badge bg-${type}`;
+      // El target arranca con clases dk-pill (sistema de diseño propio de
+      // esta página), no Bootstrap: "badge bg-*" lo dejaba sin estilo desde
+      // el primer connect().
+      const pillType = type === "secondary" ? "muted" : type;
+      this.statusTarget.className = `dk-pill dk-pill-${pillType}`;
     }
   }
 
