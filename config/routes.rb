@@ -270,6 +270,7 @@ Rails.application.routes.draw do
         post :send_reset_password
         patch :unlock
         patch :toggle_notifications
+        patch :regenerate_api_token
       end
     end
 

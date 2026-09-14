@@ -38,3 +38,26 @@
     <%= notif_label %>
   <% end %>
 </div>
+<% if user.driver? %>
+  <div class="mb-3">
+    <label class="form-label small text-muted mb-1">Token de acceso (app móvil de conductor)</label>
+    <div class="input-group">
+      <input type="text" class="form-control form-control-sm" value="<%= user.api_token %>" readonly>
+      <button type="button"
+              class="btn btn-sm btn-outline-secondary"
+              data-controller="clipboard"
+              data-clipboard-text-value="<%= user.api_token %>"
+              data-action="click->clipboard#copy"
+              title="Copiar token">
+        <i class="bi bi-clipboard"></i>
+      </button>
+      <%= button_to regenerate_api_token_admin_user_path(user),
+          method: :patch,
+          class: "btn btn-sm btn-outline-danger",
+          form: { data: { turbo_confirm: "¿Generar un nuevo token para #{user.name}? El token actual dejará de funcionar y la app móvil deberá volver a iniciar sesión." } } do %>
+        <i class="bi bi-arrow-repeat me-1"></i>
+        Regenerar
+      <% end %>
+    </div>
+  </div>
+<% end %>

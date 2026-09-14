@@ -2,7 +2,7 @@
 class Admin::UsersController < ApplicationController
   before_action :authenticate_user!
   before_action :require_admin!
-  before_action :set_user, only: [ :edit, :update, :send_reset_password, :unlock, :toggle_notifications ]
+  before_action :set_user, only: [ :edit, :update, :send_reset_password, :unlock, :toggle_notifications, :regenerate_api_token ]
 
   def index
     authorize User
@@ -74,6 +74,12 @@ class Admin::UsersController < ApplicationController
     @user.update!(send_notifications: !@user.send_notifications)
     status = @user.send_notifications? ? "activadas" : "desactivadas"
     redirect_to admin_users_path, notice: "Notificaciones #{status} para #{@user.name}"
+  end
+
+  def regenerate_api_token
+    authorize @user, :update?
+    @user.regenerate_api_token
+    redirect_to edit_admin_user_path(@user), notice: "Token generado para #{@user.name}. La app móvil deberá volver a iniciar sesión con el nuevo token."
   end
 
   private

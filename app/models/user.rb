@@ -4,6 +4,9 @@ class User < ApplicationRecord
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :recoverable, :rememberable, :validatable, :trackable, :lockable, :registerable
 
+  # Token de acceso para la app móvil de conductores (header X-Driver-Token)
+  has_secure_token :api_token
+
   # Definir los roles como un enum
   enum role: {admin: 0, production_manager: 1, seller: 2, logistics: 3, driver: 4, manager: 5, proveeduria: 6}
 
