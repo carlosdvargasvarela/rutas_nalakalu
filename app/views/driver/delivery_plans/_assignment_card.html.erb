@@ -196,6 +196,16 @@
     <% end %>
 
     <%# ── Botones de acción ── %>
+    <% if assignment.pending? %>
+      <button type="button"
+              class="dk-btn dk-btn-blue"
+              style="font-size:1.05rem;width:100%;margin-bottom:8px;"
+              data-driver-assignment-target="startButton"
+              data-action="click->driver-assignment#start">
+        <i class="bi bi-play-circle-fill" style="font-size:1.2rem;"></i>
+        Iniciar parada
+      </button>
+    <% end %>
     <div data-driver-assignment-target="actionsContainer">
       <% if actionable %>
         <div style="display:grid;gap:8px;">

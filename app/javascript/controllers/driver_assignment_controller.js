@@ -7,10 +7,33 @@ export default class extends Controller {
     url: String,
   }
 
-  static targets = ["statusBadge", "actionsContainer", "notesTextarea", "failReasonTextarea"]
+  static targets = ["statusBadge", "actionsContainer", "startButton", "notesTextarea", "failReasonTextarea"]
 
   connect() {
     this._selectedReason = null
+  }
+
+  // ── Marcar como en ruta ─────────────────────────────────
+  async start(event) {
+    event.preventDefault()
+    this.setLoading(true)
+    try {
+      const response = await fetch(`${this.urlValue}/start`, {
+        method: "PATCH",
+        headers: this._headers(),
+      })
+      const data = await response.json()
+      if (response.ok) {
+        this._markInRoute()
+        this._toast("Parada iniciada", "success")
+      } else {
+        this._toast(data.error || "Error al iniciar", "error")
+      }
+    } catch {
+      this._toast("Sin conexión. Intenta de nuevo.", "warning")
+    } finally {
+      this.setLoading(false)
+    }
   }
 
   // ── Marcar como entregado ───────────────────────────────
@@ -142,6 +165,18 @@ export default class extends Controller {
     this.element.style.pointerEvents = isLoading ? "none" : "auto"
   }
 
+  _markInRoute() {
+    if (this.hasStatusBadgeTarget) {
+      this.statusBadgeTarget.textContent = "En ruta"
+      this.statusBadgeTarget.className = "dk-pill dk-pill-primary"
+    }
+    this.element.dataset.status = "in_route"
+    const stopNum = this.element.querySelector(".dk-stop-num")
+    if (stopNum) stopNum.dataset.status = "in_route"
+
+    if (this.hasStartButtonTarget) this.startButtonTarget.remove()
+  }
+
   _markCompleted() {
     if (this.hasStatusBadgeTarget) {
       this.statusBadgeTarget.textContent = "Completado"
@@ -159,6 +194,7 @@ export default class extends Controller {
           <span>Entrega completada</span>
         </div>`
     }
+    if (this.hasStartButtonTarget) this.startButtonTarget.remove()
   }
 
   _markFailed() {
@@ -177,6 +213,7 @@ export default class extends Controller {
           <span>No se pudo entregar – reagendado en 7 días</span>
         </div>`
     }
+    if (this.hasStartButtonTarget) this.startButtonTarget.remove()
   }
 
   _dispatchProgress(progress) {

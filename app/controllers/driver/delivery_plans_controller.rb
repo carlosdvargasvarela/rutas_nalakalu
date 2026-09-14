@@ -194,13 +194,21 @@ module Driver
       saved_count = 0
 
       positions.each do |pos|
+        # captured_at es NOT NULL a nivel de modelo (presence) y de esquema:
+        # sin este campo location.create fallaba la validación en silencio
+        # (persisted? quedaba en false) y la bitácora de recorrido de las
+        # rutas hechas por el PWA quedaba vacía, aunque current_lat/lng del
+        # plan sí se actualizaba más abajo.
         location = plan.delivery_plan_locations.create(
           latitude: pos[:latitude],
           longitude: pos[:longitude],
           accuracy: pos[:accuracy],
           speed: pos[:speed],
           heading: pos[:heading],
-          recorded_at: pos[:timestamp] || Time.current
+          captured_at: pos[:timestamp] || Time.current,
+          recorded_at: pos[:timestamp] || Time.current,
+          recorded_by_id: current_user.id,
+          source: "batch"
         )
 
         saved_count += 1 if location.persisted?

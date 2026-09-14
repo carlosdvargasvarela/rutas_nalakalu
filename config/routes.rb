@@ -304,6 +304,7 @@ Rails.application.routes.draw do
     # Cambiamos only: [] por only: [:show] para generar el helper _path
     resources :assignments, only: [:show] do
       member do
+        patch :start
         patch :complete
         patch :fail
         patch :add_note

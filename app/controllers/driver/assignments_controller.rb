@@ -8,6 +8,16 @@ module Driver
     before_action :set_assignment
     after_action :verify_authorized
 
+    # PATCH /driver/assignments/:id/start
+    def start
+      authorize [:driver, @assignment]
+
+      handle_optimistic_lock do
+        @assignment.start!
+        render_success("Parada iniciada")
+      end
+    end
+
     # PATCH /driver/assignments/:id/complete
     def complete
       authorize [:driver, @assignment]
