@@ -15,7 +15,8 @@
            data-public-tracking-map-dest-lat-value="<%= @address.latitude %>"
            data-public-tracking-map-dest-lng-value="<%= @address.longitude %>"
            data-public-tracking-map-truck-lat-value="<%= @plan.current_lat || @address.latitude %>"
-           data-public-tracking-map-truck-lng-value="<%= @plan.current_lng || @address.longitude %>">
+           data-public-tracking-map-truck-lng-value="<%= @plan.current_lng || @address.longitude %>"
+           data-public-tracking-map-poll-url-value="<%= public_tracking_path(@delivery.tracking_token, format: :json) %>">
         <div class="alert alert-warning rounded-0 mb-0 py-2 text-center small" data-public-tracking-map-target="connectionBanner" hidden>
           Reconectando...
         </div>

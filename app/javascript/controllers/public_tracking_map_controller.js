@@ -3,6 +3,7 @@ import { Controller } from "@hotwired/stimulus";
 import { subscribeToDeliveryPlan } from "channels/delivery_plan_channel";
 
 const ETA_THROTTLE_MS = 60000; // no recalcular ruta más seguido que esto
+const POLL_INTERVAL_MS = 15000; // respaldo si el WebSocket se cae y no repone el broadcast perdido
 
 export default class extends Controller {
   static values = {
@@ -11,6 +12,7 @@ export default class extends Controller {
     destLng: Number,
     truckLat: Number,
     truckLng: Number,
+    pollUrl: String,
   };
   static targets = ["map", "lastUpdate", "eta", "connectionBanner"];
 
@@ -26,10 +28,28 @@ export default class extends Controller {
       },
       (isConnected) => this.updateConnectionBanner(isConnected),
     );
+
+    if (this.hasPollUrlValue) {
+      this.pollTimer = setInterval(() => this.pollPosition(), POLL_INTERVAL_MS);
+    }
   }
 
   disconnect() {
     if (this.subscription) this.subscription.unsubscribe();
+    if (this.pollTimer) clearInterval(this.pollTimer);
+  }
+
+  async pollPosition() {
+    try {
+      const res = await fetch(this.pollUrlValue, { headers: { Accept: "application/json" } });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.current_lat && data.current_lng) {
+        this.updateTruck(data.current_lat, data.current_lng, data.last_seen_at);
+      }
+    } catch (e) {
+      console.warn("No se pudo refrescar la posición por polling:", e);
+    }
   }
 
   initMap() {

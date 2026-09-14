@@ -68,4 +68,31 @@ class PublicTrackingsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "h3", text: /reagendada/
   end
+
+  test "json poll endpoint returns the truck position while in_route" do
+    assignment = delivery_plan_assignments(:one)
+    assignment.update_columns(status: DeliveryPlanAssignment.statuses[:in_route])
+    plan = assignment.delivery_plan
+    plan.update_columns(current_lat: 9.93, current_lng: -84.08, last_seen_at: Time.current)
+    delivery = assignment.delivery
+
+    get public_tracking_url(token: delivery.tracking_token, format: :json)
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 9.93, body["current_lat"]
+    assert_equal(-84.08, body["current_lng"])
+    assert body["last_seen_at"].present?
+  end
+
+  test "json poll endpoint exposes nothing outside the live stage" do
+    assignment = delivery_plan_assignments(:one)
+    assignment.update_columns(status: DeliveryPlanAssignment.statuses[:pending])
+    delivery = assignment.delivery
+
+    get public_tracking_url(token: delivery.tracking_token, format: :json)
+
+    assert_response :success
+    assert_equal({}, JSON.parse(response.body))
+  end
 end
