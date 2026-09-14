@@ -1,16 +1,25 @@
 <%# app/views/deliveries/show_partials/_map.html.erb %>
 <% if delivery.delivery_address.latitude.present? && delivery.delivery_address.longitude.present? %>
   <%# Metadata de dirección sobre el mapa %>
+  <% gmaps_url = "https://www.google.com/maps?q=#{delivery.delivery_address.latitude},#{delivery.delivery_address.longitude}" %>
   <div class="d-flex align-items-center gap-2 mb-2 px-1">
     <i class="bi bi-geo-alt-fill text-danger" style="font-size: 0.85rem;"></i>
     <span class="small text-muted text-truncate">
       <%= delivery.delivery_address.address %>
     </span>
     <% if delivery.delivery_address.plus_code.present? %>
-      <span class="badge bg-light text-secondary border ms-auto flex-shrink-0" style="font-size: 0.6rem;">
+      <span class="badge bg-light text-secondary border flex-shrink-0" style="font-size: 0.6rem;">
         <%= delivery.delivery_address.plus_code %>
       </span>
     <% end %>
+    <button type="button"
+            class="btn btn-sm btn-outline-secondary flex-shrink-0 ms-auto"
+            data-controller="clipboard"
+            data-clipboard-text-value="<%= gmaps_url %>"
+            data-action="click->clipboard#copy"
+            title="Copiar enlace de Google Maps">
+      <i class="bi bi-share-fill"></i>
+    </button>
   </div>
   <%# Mapa %>
   <div id="delivery-map"
