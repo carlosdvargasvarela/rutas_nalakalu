@@ -15,6 +15,10 @@
                 <i class="bi bi-geo-alt me-1"></i>
                 <%= d.delivery_address.address %>
               </div>
+              <% if d.internal_delivery? && (vendor = d.delivery_address&.matching_vendor) %>
+                <div class="small fw-semibold text-dark"><%= vendor.name %></div>
+                <%= render "deliveries/vendor_business_hours", vendor: vendor %>
+              <% end %>
               <div class="d-flex flex-wrap gap-1">
                 <% d.delivery_items.includes(:order_item).each do |di| %>
                   <span class="badge bg-light text-dark border">

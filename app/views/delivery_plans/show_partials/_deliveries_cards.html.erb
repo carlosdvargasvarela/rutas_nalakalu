@@ -19,6 +19,9 @@
                     - <%= vendor.name %>
                   <% end %>
                 </h6>
+                <% if delivery.internal_delivery? && (vendor = delivery.delivery_address&.matching_vendor) %>
+                  <%= render "deliveries/vendor_business_hours", vendor: vendor %>
+                <% end %>
                 <p><i class="bi bi-person me-1"></i><%= delivery.order.client.name %></p>
                 <p>
                   <% if delivery.delivery_address.latitude.present? && delivery.delivery_address.longitude.present? %>

@@ -3,7 +3,7 @@ class DeliveryPlanAssignmentsController < ApplicationController
   def destroy
     assignment = DeliveryPlanAssignment.find(params[:id])
     delivery_plan = assignment.delivery_plan
-    authorize delivery_plan, :update?
+    authorize assignment
 
     # Eliminar sin callbacks para evitar que acts_as_list haga cosas raras
     assignment.delete

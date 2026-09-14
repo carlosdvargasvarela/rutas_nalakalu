@@ -58,6 +58,10 @@
                 <div class="badge bg-light text-dark border fw-normal px-2 py-1">
                   <i class="bi bi-clock me-1 text-primary"></i> <%= delivery.delivery_time_preference || "Sin preferencia" %>
                 </div>
+                <% if delivery.internal_delivery? && (vendor = delivery.delivery_address&.matching_vendor) %>
+                  <div class="small fw-semibold text-dark mt-2"><%= vendor.name %></div>
+                  <%= render "deliveries/vendor_business_hours", vendor: vendor %>
+                <% end %>
               </td>
               <!-- Productos (Lista Vertical) -->
               <td class="py-4">

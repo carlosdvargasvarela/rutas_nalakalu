@@ -1,0 +1,19 @@
+<%# locals: vendor %>
+<% if vendor&.vendor_business_hours&.any? %>
+  <% today = vendor.today_hours %>
+  <details class="mt-1" style="background:#fff8e6;border-radius:8px;padding:6px 10px;">
+    <summary class="small fw-semibold text-warning-emphasis" style="cursor:pointer;">
+      <i class="bi bi-clock-fill me-1"></i>Horario hoy: <%= today ? today.label : "sin datos" %>
+    </summary>
+    <div class="small text-muted mt-1">
+      <% Vendor::DISPLAY_DAY_ORDER.each do |day| %>
+        <% bh = vendor.hours_for(day) %>
+        <% next unless bh %>
+        <div class="d-flex justify-content-between <%= "fw-bold text-dark" if day == Date.current.wday %>">
+          <span><%= bh.day_name %></span>
+          <span><%= bh.label %></span>
+        </div>
+      <% end %>
+    </div>
+  </details>
+<% end %>
