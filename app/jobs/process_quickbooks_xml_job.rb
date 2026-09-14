@@ -53,7 +53,7 @@ class ProcessQuickbooksXmlJob
       event_action = "created"
     end
 
-    order = Order.find_by(number: order_number)
+    order = existing || Order.find_by(number: order_number)
     if order && qb_txn_id.present?
       order.update_columns(qb_txn_id: qb_txn_id, qb_updated_at: qb_modified_at || Time.current)
       if event_action.present?
@@ -126,7 +126,7 @@ class ProcessQuickbooksXmlJob
         contact: full_contact,
         notes: so["memo"]
       }
-      RouteExcelImportService.new(nil).send(:process_row, row_data)
+      RouteExcelImportService.new.process_row(row_data)
     end
   end
 

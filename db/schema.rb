@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_09_09_192943) do
+ActiveRecord::Schema[7.2].define(version: 2026_09_14_225223) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -66,6 +66,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_09_192943) do
     t.string "email"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_clients_on_name"
   end
 
   create_table "crew_members", force: :cascade do |t|
@@ -337,6 +338,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_09_192943) do
     t.string "qb_txn_id"
     t.datetime "qb_updated_at"
     t.index ["client_id"], name: "index_orders_on_client_id"
+    t.index ["number"], name: "index_orders_on_number"
     t.index ["qb_txn_id"], name: "index_orders_on_qb_txn_id", unique: true
     t.index ["seller_id"], name: "index_orders_on_seller_id"
   end
