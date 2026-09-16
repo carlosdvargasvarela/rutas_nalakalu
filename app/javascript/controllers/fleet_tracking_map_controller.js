@@ -4,6 +4,11 @@ import { subscribeToDeliveryPlan } from "channels/delivery_plan_channel";
 
 const STALE_MINUTES = 5;
 const STOPPED_MINUTES = 10;
+// El celular reporta cada ~10-15s manejando. Un hueco mayor a esto entre dos
+// pings consecutivos significa que se perdieron lecturas de por medio (señal,
+// app en background, etc.) — la Roads API no reconstruye el camino real ahí,
+// solo interpola una línea entre los dos puntos que sí logró ajustar a calle.
+const ROUTE_GAP_SECONDS = 60;
 
 export default class extends Controller {
   static targets = ["map", "list"];
@@ -227,7 +232,7 @@ export default class extends Controller {
     // conectarlos con líneas rectas corta por patios/manzanas. La Roads API
     // los "pega" a la vía real. Si falla (API no habilitada, sin cuota, sin
     // red) se cae de vuelta a la línea recta en vez de dejar el mapa en blanco.
-    const path = await this.snapToRoads(points).catch((err) => {
+    const path = await this.buildRoadPath(points).catch((err) => {
       console.warn("No se pudo pegar la ruta a la calle, usando línea recta:", err);
       return points.map((p) => ({ lat: p.lat, lng: p.lng }));
     });
@@ -246,10 +251,57 @@ export default class extends Controller {
     this.map.fitBounds(bounds);
   }
 
+  // Parte el recorrido crudo en tramos continuos (un hueco de más de
+  // ROUTE_GAP_SECONDS entre dos pings corta el tramo). Cada tramo se ajusta
+  // a la calle con la Roads API (funciona bien con GPS denso y continuo);
+  // entre un tramo y el siguiente, calcula el camino real con la Directions
+  // API — la misma que ya usa la pestaña "Mapa de ruta" entre paradas — en
+  // vez de dejar que la Roads API interpole una línea derecha sobre el hueco.
+  async buildRoadPath(points) {
+    const segments = [[points[0]]];
+    for (let i = 1; i < points.length; i++) {
+      const gapSeconds = (new Date(points[i].captured_at) - new Date(points[i - 1].captured_at)) / 1000;
+      if (gapSeconds > ROUTE_GAP_SECONDS) segments.push([]);
+      segments[segments.length - 1].push(points[i]);
+    }
+
+    let path = [];
+    for (let s = 0; s < segments.length; s++) {
+      const snapped = await this.snapToRoads(segments[s]);
+      if (s > 0 && path.length && snapped.length) {
+        const bridge = await this.routeBetween(path[path.length - 1], snapped[0]);
+        path = path.concat(bridge);
+      }
+      path = path.concat(snapped);
+    }
+    return path;
+  }
+
+  // Camino real entre dos puntos vía Directions API. Si falla (sin ruta
+  // posible, cuota, red) conecta con línea recta solo ESE tramo puntual, en
+  // vez de perder todo el recorrido.
+  async routeBetween(origin, destination) {
+    if (!this.directionsService) this.directionsService = new google.maps.DirectionsService();
+    try {
+      const result = await this.directionsService.route({
+        origin,
+        destination,
+        travelMode: google.maps.TravelMode.DRIVING,
+      });
+      return result.routes[0].overview_path.map((p) => ({ lat: p.lat(), lng: p.lng() }));
+    } catch (err) {
+      console.warn("No se pudo calcular el tramo con Directions API, uniendo con línea recta:", err);
+      return [origin, destination];
+    }
+  }
+
   // La Roads API acepta un máximo de 100 puntos por request, así que un
   // recorrido largo (varias horas de GPS) hay que partirlo en lotes
   // secuenciales y unir los tramos snapeados en orden.
   async snapToRoads(points) {
+    if (points.length === 0) return [];
+    if (points.length === 1) return [{ lat: points[0].lat, lng: points[0].lng }];
+
     const BATCH_SIZE = 100;
     const snapped = [];
 
