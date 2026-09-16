@@ -51,6 +51,17 @@
                         only_repair_services: params[:only_repair_services]
                       ), class: "dropdown-item" %></li>
                   <li>
+                    <%= link_to report_deliveries_in_plan_path(
+                          format: :xlsx,
+                          q: params[:q]&.to_unsafe_h,
+                          show_archived: params[:show_archived],
+                          only_service_cases: params[:only_service_cases],
+                          only_repair_services: params[:only_repair_services]
+                        ), class: "dropdown-item" do %>
+                      <i class="bi bi-file-earmark-excel me-1 text-success"></i>Entregas en plan (Excel)
+                    <% end %>
+                  </li>
+                  <li>
                     <%= link_to report_deliveries_by_client_path(
                           format: :xlsx,
                           from: params.dig(:q, :delivery_date_gteq),

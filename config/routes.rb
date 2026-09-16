@@ -257,6 +257,7 @@ Rails.application.routes.draw do
   # =============================================================================
   scope :reports, as: :report do
     get :deliveries_by_client, to: "reports#deliveries_by_client"
+    get :deliveries_in_plan, to: "reports#deliveries_in_plan"
   end
 
   namespace :admin do

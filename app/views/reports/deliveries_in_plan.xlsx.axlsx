@@ -1,0 +1,85 @@
+wb = xlsx_package.workbook
+
+header_style = wb.styles.add_style(
+  bg_color: "1B3A6B",
+  fg_color: "FFFFFF",
+  b: true,
+  sz: 13,
+  alignment: {horizontal: :center, wrap_text: true, vertical: :center}
+)
+
+row_even_style = wb.styles.add_style(
+  bg_color: "EEF4FB",
+  sz: 12,
+  border: {style: :thin, color: "BDD7EE"},
+  alignment: {wrap_text: true, vertical: :center}
+)
+
+row_odd_style = wb.styles.add_style(
+  bg_color: "FFFFFF",
+  sz: 12,
+  border: {style: :thin, color: "BDD7EE"},
+  alignment: {wrap_text: true, vertical: :center}
+)
+
+note_style = wb.styles.add_style(
+  bg_color: "FFF3CD",
+  sz: 12,
+  b: true,
+  border: {style: :thin, color: "BDD7EE"},
+  alignment: {wrap_text: true, vertical: :center}
+)
+
+headers = [
+  "Fecha de entrega", "Semana", "Camión", "Conductor", "# Parada",
+  "Pedido", "Cliente", "Vendedor", "Producto", "Cantidad",
+  "Dirección", "Contacto", "Teléfono", "Hora preferida",
+  "Tipo de entrega", "Estado", "Nota"
+]
+
+wb.add_worksheet(name: "Entregas en plan") do |sheet|
+  sheet.add_row headers, style: header_style, height: 22
+
+  row_count = 0
+  @deliveries.each do |delivery|
+    plan = delivery.delivery_plan_assignment&.delivery_plan
+    note = plan_note_for(delivery)
+    items = delivery.delivery_items.presence || [nil]
+
+    items.each do |item|
+      style = note.present? ? note_style : (row_count.even? ? row_even_style : row_odd_style)
+
+      sheet.add_row [
+        I18n.l(delivery.delivery_date, format: :long),
+        plan ? "S#{plan.week}-#{plan.year}" : "Sin plan",
+        truck_for(delivery),
+        plan&.driver&.name || "Sin asignar",
+        delivery.delivery_plan_assignment&.stop_order,
+        delivery.order.number,
+        delivery.order.client.name,
+        delivery.order.seller.seller_code,
+        item ? item.order_item.product : "Sin productos",
+        item&.quantity,
+        [delivery.delivery_address.address, delivery.delivery_address.description].compact.join(" - "),
+        delivery.contact_name,
+        delivery.contact_phone,
+        delivery.delivery_time_preference,
+        delivery.delivery_type_humanize,
+        delivery.display_status,
+        note
+      ], style: style
+
+      row_count += 1
+    end
+  end
+
+  sheet.column_widths 16, 10, 12, 18, 10, 12, 22, 12, 30, 10, 30, 18, 14, 16, 16, 18, 40
+
+  sheet.auto_filter = "A1:Q#{row_count + 1}" if row_count.positive?
+
+  sheet.sheet_view.pane do |pane|
+    pane.y_split = 1
+    pane.state = :frozen
+    pane.top_left_cell = "A2"
+  end
+end
