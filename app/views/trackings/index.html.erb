@@ -4,16 +4,25 @@
     <h1 class="h4 mb-0"><i class="bi bi-broadcast text-success me-2"></i>Seguimiento de flota</h1>
 
     <%= form_with url: tracking_path, method: :get, html: {class: "d-flex flex-wrap gap-2 align-items-center"} do %>
+      <%= hidden_field_tag :status, @status_filter %>
       <div class="input-group input-group-sm" style="width: auto;">
         <span class="input-group-text bg-light text-muted"><i class="bi bi-calendar-event"></i></span>
         <%= date_field_tag :date, @date&.iso8601, class: "form-control", disabled: @show_all %>
       </div>
       <div class="btn-group btn-group-sm" role="group">
-        <%= link_to "Hoy", tracking_path, class: "btn #{!@show_all && @date == Date.current ? 'btn-primary' : 'btn-outline-secondary'}" %>
+        <%= link_to "Hoy", tracking_path(status: @status_filter), class: "btn #{!@show_all && @date == Date.current ? 'btn-primary' : 'btn-outline-secondary'}" %>
         <button type="submit" class="btn btn-outline-secondary" <%= "disabled" if @show_all %>>Ver fecha</button>
-        <%= link_to "Todos los activos", tracking_path(show_all: 1), class: "btn #{@show_all ? 'btn-primary' : 'btn-outline-secondary'}" %>
+        <%= link_to "Todos", tracking_path(show_all: 1, status: @status_filter), class: "btn #{@show_all ? 'btn-primary' : 'btn-outline-secondary'}" %>
       </div>
     <% end %>
+
+    <div class="btn-group btn-group-sm" role="group">
+      <% {"active" => "Activas", "completed" => "Completadas", "all" => "Todas"}.each do |value, label| %>
+        <%= link_to label,
+              tracking_path(status: value, show_all: (@show_all ? 1 : nil), date: (@show_all ? nil : @date&.iso8601)),
+              class: "btn #{@status_filter == value ? 'btn-primary' : 'btn-outline-secondary'}" %>
+      <% end %>
+    </div>
   </div>
 
   <div class="row g-3"
@@ -28,16 +37,16 @@
     <div class="col-lg-4">
       <div class="card shadow-sm">
         <div class="card-header bg-white fw-semibold">
-          Camiones <%= @show_all ? "activos" : "de hoy" %> (<%= @plans.size %>)
+          Camiones <%= @show_all ? "" : "de hoy" %> (<%= @plans.size %>)
         </div>
         <ul id="tracking-truck-list" class="list-group list-group-flush" data-fleet-tracking-map-target="list">
           <% if @plans.empty? %>
             <li class="list-group-item text-muted small">
               <% if @show_all %>
-                No hay planes activos en este momento.
+                No hay planes que coincidan con este filtro.
               <% else %>
-                No hay entregas programadas para el <%= l(@date, format: :long) %>.
-                <%= link_to "Ver todos los activos", tracking_path(show_all: 1), class: "d-block mt-1" %>
+                No hay entregas programadas para el <%= l(@date, format: :long) %> con este filtro.
+                <%= link_to "Ver todos", tracking_path(show_all: 1, status: @status_filter), class: "d-block mt-1" %>
               <% end %>
             </li>
           <% end %>

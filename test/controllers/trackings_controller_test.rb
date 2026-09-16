@@ -57,6 +57,41 @@ class TrackingsControllerTest < ActionDispatch::IntegrationTest
     refute_match(/&quot;id&quot;:#{other_day_plan.id}[,}]/, response.body)
   end
 
+  test "index hides completed plans by default but shows them with status=completed or status=all" do
+    admin = users(:one)
+    admin.update!(role: :admin, force_password_change: false)
+    sign_in admin
+
+    completed_plan = delivery_plans(:plan_for_driver)
+    completed_plan.update_columns(status: DeliveryPlan.statuses[:completed])
+
+    get tracking_url(show_all: 1)
+    assert_response :success
+    refute_match(/&quot;id&quot;:#{completed_plan.id}[,}]/, response.body)
+
+    get tracking_url(show_all: 1, status: "completed")
+    assert_response :success
+    assert_match(/&quot;id&quot;:#{completed_plan.id}[,}]/, response.body)
+
+    get tracking_url(show_all: 1, status: "all")
+    assert_response :success
+    assert_match(/&quot;id&quot;:#{completed_plan.id}[,}]/, response.body)
+  end
+
+  test "route works for a completed plan so its history stays visible after finishing" do
+    admin = users(:one)
+    admin.update!(role: :admin, force_password_change: false)
+    sign_in admin
+
+    plan = delivery_plans(:plan_for_driver)
+    plan.update_columns(status: DeliveryPlan.statuses[:completed])
+    plan.delivery_plan_locations.create!(latitude: 9.9, longitude: -84.0, captured_at: 1.hour.ago, source: "batch")
+
+    get tracking_route_url(plan)
+    assert_response :success
+    assert_equal 1, JSON.parse(response.body).size
+  end
+
   test "route returns ordered GPS pings for a plan" do
     admin = users(:one)
     admin.update!(role: :admin, force_password_change: false)

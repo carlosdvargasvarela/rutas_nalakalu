@@ -80,6 +80,9 @@ class DeliveryPlan < ApplicationRecord
 
   scope :for_driver, ->(driver_id) { where(driver_id: driver_id) }
   scope :active, -> { where(status: [:routes_created, :in_progress]) }
+  # Planes con GPS potencialmente útil en /tracking: en curso o ya completados
+  # (el historial de recorrido de un plan completado sigue siendo consultable).
+  scope :trackable, -> { where(status: [:routes_created, :in_progress, :completed]) }
   scope :with_deliveries_on, ->(date) { joins(:deliveries).where(deliveries: {delivery_date: date}).distinct }
 
   def stats

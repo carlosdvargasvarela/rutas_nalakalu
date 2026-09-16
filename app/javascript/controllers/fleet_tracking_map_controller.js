@@ -77,14 +77,20 @@ export default class extends Controller {
 
     let marker = null;
     if (this._validCoord(plan.current_lat) && this._validCoord(plan.current_lng)) {
-      marker = this._buildMarker(plan.id, { lat: plan.current_lat, lng: plan.current_lng }, plan.driver_name);
+      const position = this._dedupePosition(plan.id, plan.current_lat, plan.current_lng);
+      marker = this._buildMarker(plan.id, position, plan.driver_name, plan.status);
     }
 
-    const subscription = subscribeToDeliveryPlan(plan.id, (data) => {
-      if (data.type !== "position_update") return;
-      this.updateTruckPosition(plan.id, data);
-    });
-    this.subscriptions.push(subscription);
+    // Un plan completado ya no recibe posiciones nuevas: suscribirse al canal
+    // solo abre una conexión que jamás va a emitir nada.
+    let subscription = null;
+    if (plan.status !== "completed") {
+      subscription = subscribeToDeliveryPlan(plan.id, (data) => {
+        if (data.type !== "position_update") return;
+        this.updateTruckPosition(plan.id, data);
+      });
+      this.subscriptions.push(subscription);
+    }
 
     this.trucks.set(plan.id, {
       data: { ...plan },
@@ -95,16 +101,41 @@ export default class extends Controller {
     });
   }
 
+  // Dos planes con el mismo conductor/camión (ruta vieja que quedó activa,
+  // o mañana + tarde el mismo día) pueden compartir casi la misma posición
+  // GPS: sin esto, sus pines quedan exactamente encimados y parecen uno solo.
+  // Aplica un pequeño desplazamiento en espiral por cada plan ya ubicado ahí.
+  _dedupePosition(planId, lat, lng) {
+    const THRESHOLD = 0.0001; // ~11m
+    let collisions = 0;
+    this.trucks.forEach((truck, id) => {
+      if (id === planId) return;
+      const { current_lat: tLat, current_lng: tLng } = truck.data;
+      if (!this._validCoord(tLat) || !this._validCoord(tLng)) return;
+      if (Math.abs(tLat - lat) < THRESHOLD && Math.abs(tLng - lng) < THRESHOLD) collisions++;
+    });
+
+    if (!collisions) return { lat, lng };
+
+    const angle = (collisions * 137.5 * Math.PI) / 180; // ángulo dorado: reparte los pines sin que se vuelvan a encimar
+    const radius = 0.00015 * collisions;
+    return { lat: lat + radius * Math.cos(angle), lng: lng + radius * Math.sin(angle) };
+  }
+
   buildRow(plan) {
     const row = document.createElement("li");
     row.className = "list-group-item";
     row.dataset.planId = plan.id;
     row.style.cursor = "pointer";
+    const dateLabel = plan.date_label ? ` · ${this._escapeHtml(plan.date_label)}` : "";
+    const completedBadge = plan.status === "completed"
+      ? '<span class="badge bg-secondary ms-1">Completada</span>'
+      : "";
     row.innerHTML = `
       <div class="d-flex justify-content-between align-items-start">
         <div>
-          <strong>${this._escapeHtml(plan.driver_name)}</strong>
-          <div class="small text-muted">${this._escapeHtml(plan.truck)} — ${plan.completed_stops}/${plan.total_stops} paradas</div>
+          <strong>${this._escapeHtml(plan.driver_name)}</strong>${completedBadge}
+          <div class="small text-muted">${this._escapeHtml(plan.truck)} — ${plan.completed_stops}/${plan.total_stops} paradas${dateLabel}</div>
           <div class="small text-muted" data-role="last-seen"></div>
         </div>
         <span class="badge" data-role="alert-badge"></span>
@@ -121,15 +152,16 @@ export default class extends Controller {
     return row;
   }
 
-  _buildMarker(planId, position, title) {
+  _buildMarker(planId, position, title, status) {
+    const completed = status === "completed";
     const marker = new google.maps.Marker({
       position,
       map: this.map,
       icon: {
         path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
         scale: 6,
-        fillColor: "#0d6efd",
-        fillOpacity: 1,
+        fillColor: completed ? "#6c757d" : "#0d6efd",
+        fillOpacity: completed ? 0.7 : 1,
         strokeColor: "#ffffff",
         strokeWeight: 2,
       },
@@ -172,11 +204,11 @@ export default class extends Controller {
     truck.data.last_seen_at = last_seen_at;
     truck.data.recorded_by_name = recorded_by_name;
 
-    const position = { lat, lng };
+    const position = this._dedupePosition(planId, lat, lng);
     if (truck.marker) {
       truck.marker.setPosition(position);
     } else {
-      truck.marker = this._buildMarker(planId, position, truck.data.driver_name);
+      truck.marker = this._buildMarker(planId, position, truck.data.driver_name, truck.data.status);
     }
 
     this.refreshAlerts();
@@ -188,6 +220,15 @@ export default class extends Controller {
     this.trucks.forEach((truck) => {
       const lastSeenEl = truck.row.querySelector('[data-role="last-seen"]');
       const badgeEl = truck.row.querySelector('[data-role="alert-badge"]');
+
+      if (truck.data.status === "completed") {
+        lastSeenEl.textContent = truck.data.last_seen_at
+          ? `Última posición: ${new Date(truck.data.last_seen_at).toLocaleString()}`
+          : "Sin datos GPS";
+        badgeEl.textContent = "";
+        badgeEl.className = "badge";
+        return;
+      }
 
       if (!truck.data.last_seen_at) {
         lastSeenEl.textContent = "Sin datos GPS";
