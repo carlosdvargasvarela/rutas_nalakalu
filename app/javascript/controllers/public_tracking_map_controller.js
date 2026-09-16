@@ -103,6 +103,24 @@ export default class extends Controller {
     });
 
     this.directionsService = new google.maps.DirectionsService();
+    // Dibuja el camino real por calle (pegado a la vía, como Uber/Waze) en
+    // vez de solo mostrar el texto de duración/distancia. suppressMarkers
+    // porque ya tenemos los pines de camión/destino propios.
+    this.directionsRenderer = new google.maps.DirectionsRenderer({
+      map: this.map,
+      suppressMarkers: true,
+      preserveViewport: true,
+      polylineOptions: {
+        strokeColor: "#0d6efd",
+        strokeOpacity: 0.85,
+        strokeWeight: 5,
+      },
+    });
+    // Capa de tráfico en vivo de Google (congestión por color en las calles),
+    // igual que Google Maps — no requiere nada más que activarla.
+    this.trafficLayer = new google.maps.TrafficLayer();
+    this.trafficLayer.setMap(this.map);
+
     this.fitBounds();
     this.updateEta();
   }
@@ -138,12 +156,30 @@ export default class extends Controller {
         origin: this.truckMarker.getPosition(),
         destination: { lat: this.destLatValue, lng: this.destLngValue },
         travelMode: google.maps.TravelMode.DRIVING,
+        // Con departureTime "ahora", Directions devuelve duration_in_traffic
+        // usando el tráfico en vivo (las "presas") en vez de solo el tiempo
+        // en calle vacía.
+        drivingOptions: {
+          departureTime: new Date(),
+          trafficModel: google.maps.TrafficModel.BEST_GUESS,
+        },
       },
       (result, status) => {
         if (status !== google.maps.DirectionsStatus.OK) return;
 
+        this.directionsRenderer.setDirections(result);
+
+        // Encuadra la ruta completa solo la primera vez que la calculamos —
+        // en los refrescos siguientes no queremos que el mapa salte/zoom
+        // mientras el cliente lo está viendo.
+        if (!this.routeBoundsFitted) {
+          this.map.fitBounds(result.routes[0].bounds, 50);
+          this.routeBoundsFitted = true;
+        }
+
         const leg = result.routes[0].legs[0];
-        this.etaTarget.textContent = `Llega en aprox. ${leg.duration.text} (${leg.distance.text})`;
+        const duration = leg.duration_in_traffic || leg.duration;
+        this.etaTarget.textContent = `Llega en aprox. ${duration.text} (${leg.distance.text})`;
       },
     );
   }
