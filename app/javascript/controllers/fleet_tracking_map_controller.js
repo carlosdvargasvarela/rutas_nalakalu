@@ -223,8 +223,17 @@ export default class extends Controller {
     const points = await response.json();
     if (!points.length) return;
 
+    // Los puntos crudos del GPS (cada ~10-15s) no coinciden con la calle:
+    // conectarlos con líneas rectas corta por patios/manzanas. La Roads API
+    // los "pega" a la vía real. Si falla (API no habilitada, sin cuota, sin
+    // red) se cae de vuelta a la línea recta en vez de dejar el mapa en blanco.
+    const path = await this.snapToRoads(points).catch((err) => {
+      console.warn("No se pudo pegar la ruta a la calle, usando línea recta:", err);
+      return points.map((p) => ({ lat: p.lat, lng: p.lng }));
+    });
+
     truck.routePolyline = new google.maps.Polyline({
-      path: points.map((p) => ({ lat: p.lat, lng: p.lng })),
+      path,
       geodesic: true,
       strokeColor: "#6f42c1",
       strokeOpacity: 0.8,
@@ -233,7 +242,32 @@ export default class extends Controller {
     });
 
     const bounds = new google.maps.LatLngBounds();
-    points.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+    path.forEach((p) => bounds.extend(p));
     this.map.fitBounds(bounds);
+  }
+
+  // La Roads API acepta un máximo de 100 puntos por request, así que un
+  // recorrido largo (varias horas de GPS) hay que partirlo en lotes
+  // secuenciales y unir los tramos snapeados en orden.
+  async snapToRoads(points) {
+    const BATCH_SIZE = 100;
+    const snapped = [];
+
+    for (let i = 0; i < points.length; i += BATCH_SIZE) {
+      const batch = points.slice(i, i + BATCH_SIZE);
+      const path = batch.map((p) => `${p.lat},${p.lng}`).join("|");
+      const url = `https://roads.googleapis.com/v1/snapToRoads?path=${path}&interpolate=true&key=${this.apiKeyValue}`;
+
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Roads API respondió ${response.status}`);
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message || "Roads API error");
+
+      (data.snappedPoints || []).forEach((sp) => {
+        snapped.push({ lat: sp.location.latitude, lng: sp.location.longitude });
+      });
+    }
+
+    return snapped;
   }
 }
