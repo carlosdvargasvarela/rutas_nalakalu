@@ -127,12 +127,13 @@ if is_ops_user
 
     sheet.column_widths 20, 14, 17, 32, 14, 17, 22, 28, 13, 15, 48
 
-    if @delivery_plans.any?
-      total_rows = 1 + @delivery_plans.sum do |plan|
-        plan.delivery_plan_assignments.sum { |a| [a.delivery.items_visible_in_plan.count, 1].max }
-      end
-      sheet.auto_filter = "A1:K#{total_rows}" if total_rows > 1
-    end
+    # total_rows viene de row_index (filas realmente escritas), no de
+    # plan.delivery_plan_assignments.count: ese incluye entregas ocultas
+    # (canceladas/reagendadas/archivadas) que el filtro de arriba excluye,
+    # así que un auto_filter calculado con el total sin filtrar apunta a
+    # celdas que nunca se escribieron y truena con "undefined method 'pos'
+    # for nil" al exportar.
+    sheet.auto_filter = "A1:K#{row_index + 1}" if row_index > 0
 
     sheet.sheet_view.pane do |pane|
       pane.y_split = 1
@@ -209,6 +210,8 @@ else
       "Notas"
     ], style: header_style
 
+    row_index = 0
+
     @delivery_plans.each do |delivery_plan|
       assignments = delivery_plan.delivery_plan_assignments.includes(
         delivery: [
@@ -255,6 +258,7 @@ else
             "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
             all_notes.join("\n")
           ], style: row_style
+          row_index += 1
 
         else
           delivery.items_visible_in_plan.each do |delivery_item|
@@ -283,6 +287,7 @@ else
               "#{delivery.contact_name}#{delivery.contact_phone.present? ? " - #{delivery.contact_phone}" : ""}",
               all_notes.join("\n")
             ], style: row_style
+            row_index += 1
           end
         end
       end
@@ -290,12 +295,10 @@ else
 
     sheet.column_widths 8, 8, 12, 15, 25, 10, 12, 20, 30, 8, 15, 10, 15, 15, 15, 25, 50
 
-    if @delivery_plans.any?
-      total_rows = 1 + @delivery_plans.sum do |plan|
-        plan.delivery_plan_assignments.sum { |a| [a.delivery.items_visible_in_plan.count, 1].max }
-      end
-      sheet.auto_filter = "A1:Q#{total_rows}" if total_rows > 1
-    end
+    # Ver comentario en la hoja "Planes de Entrega" más arriba: usar
+    # row_index (filas realmente escritas) en vez de recomputar sobre
+    # plan.delivery_plan_assignments sin filtrar.
+    sheet.auto_filter = "A1:Q#{row_index + 1}" if row_index > 0
 
     sheet.sheet_view.pane do |pane|
       pane.y_split = 1

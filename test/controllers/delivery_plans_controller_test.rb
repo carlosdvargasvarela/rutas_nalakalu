@@ -14,6 +14,19 @@ class DeliveryPlansControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "index xlsx no truena cuando un plan tiene entregas con estado oculto" do
+    # Regresión: el auto_filter se calculaba sobre TODAS las asignaciones del
+    # plan, pero las filas solo se escriben para las visibles (VISIBLE_TO_ALL_
+    # STATUSES) — con una entrega cancelada/reagendada de más, el rango del
+    # auto_filter apuntaba a celdas que nunca existieron y Axlsx tronaba con
+    # "undefined method 'pos' for nil" al serializar el .xlsx.
+    deliveries(:two).update!(status: :cancelled)
+
+    get delivery_plans_url(format: :xlsx)
+
+    assert_response :success
+  end
+
   test "should get create" do
     post delivery_plans_url, params: {
       delivery_plan: {status: :draft},
