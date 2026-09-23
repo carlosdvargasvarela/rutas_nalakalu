@@ -20,7 +20,7 @@
               <% type_color = case delivery.delivery_type
                    when 'normal' then 'success'
                    when 'internal_delivery' then 'warning'
-                   when 'only_pickup' then 'info'
+                   when 'only_pickup', 'sala_pickup' then 'info'
                    else 'secondary'
                    end %>
               <div class="mt-1">

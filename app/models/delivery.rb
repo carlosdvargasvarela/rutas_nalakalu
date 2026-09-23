@@ -82,7 +82,8 @@ class Delivery < ApplicationRecord
     only_pickup: 5,
     showroom: 6,
     repair_pickup: 7,
-    repair_return: 8
+    repair_return: 8,
+    sala_pickup: 9
   }
 
   enum :load_status, {
@@ -306,6 +307,7 @@ class Delivery < ApplicationRecord
     when "return_delivery" then "#{Deliveries::Vocabulary.service_type_label("devolucion")} de producto"
     when "onsite_repair" then Deliveries::Vocabulary.service_type_label("reparacion")
     when "only_pickup" then "Solo retiro del producto (sin entrega posterior)"
+    when "sala_pickup" then "Retiro en Sala"
     when "internal_delivery" then "Mandado Interno"
     when "showroom" then "Movimiento de Showroom"
     when "repair_pickup" then "Servicio de Reparación — #{Deliveries::Vocabulary.service_type_label("recoleccion")}"

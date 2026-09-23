@@ -137,6 +137,7 @@ module DeliveryEventsHelper
       "return_delivery" => Deliveries::Vocabulary.service_type_label("devolucion"),
       "onsite_repair" => Deliveries::Vocabulary.service_type_label("reparacion"),
       "only_pickup" => "Solo retiro del producto",
+      "sala_pickup" => "Retiro en Sala",
       "internal_delivery" => "Mandado interno",
       "repair_pickup" => "Servicio de Reparación — #{Deliveries::Vocabulary.service_type_label("recoleccion")}",
       "repair_return" => "Servicio de Reparación — #{Deliveries::Vocabulary.service_type_label("devolucion")}"

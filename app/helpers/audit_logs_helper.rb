@@ -72,7 +72,8 @@ module AuditLogsHelper
       2 => "#{Deliveries::Vocabulary.service_type_label("devolucion")} de producto",
       3 => Deliveries::Vocabulary.service_type_label("reparacion"),
       4 => "Mandado interno",
-      5 => "Solo retiro (sin entrega posterior)"
+      5 => "Solo retiro (sin entrega posterior)",
+      9 => "Retiro en Sala"
     },
     "Delivery.load_status" => {
       0 => "Sin cargar",

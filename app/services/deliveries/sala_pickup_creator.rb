@@ -74,7 +74,7 @@ module Deliveries
         delivery_date: params.dig(:delivery, :delivery_date),
         contact_name: params.dig(:delivery, :contact_name).presence || "Encargado de Sala",
         contact_phone: params.dig(:delivery, :contact_phone),
-        delivery_type: :only_pickup,
+        delivery_type: :sala_pickup,
         status: :scheduled,
         delivery_notes: params[:delivery_notes]
       )
