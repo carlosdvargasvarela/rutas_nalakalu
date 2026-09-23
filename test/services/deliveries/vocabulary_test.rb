@@ -33,6 +33,12 @@ module Deliveries
       assert_equal ["palabra custom"], Vocabulary.detector_keywords("service_case").fetch("keywords")
     end
 
+    test "detector_keywords normalizes stored keywords (case and accents) and dedupes" do
+      DetectorKeywordList.create!(detector: "repair_service", list_name: "keywords", values_list: ["Reparación", "reparacion"])
+
+      assert_equal ["reparacion"], Vocabulary.detector_keywords("repair_service").fetch("keywords")
+    end
+
     test "detector_keywords for sala_pickup merges DB overrides with the technical code_pattern/sala_map" do
       DetectorKeywordList.create!(detector: "sala_pickup", list_name: "phrase_keywords", values_list: ["custom"])
 

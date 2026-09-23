@@ -30,7 +30,8 @@
         Palabras y prefijos que usan los formularios de Recolección/Devolución/Reparación,
         y las listas de palabras clave que usan los detectores automáticos
         (<code>app/services/deliveries/*_detector.rb</code>) para clasificar texto libre.
-        Separar valores con comas. La detección es case-insensitive.
+        En las palabras clave escribe una por línea: se comparan sin tildes ni
+        mayúsculas (se guardan así), y basta con que el nombre del producto contenga la frase.
       </p>
 
       <%= form_with url: admin_deliveries_vocabulary_path, method: :patch, local: true do %>
@@ -40,7 +41,7 @@
           <% @service_types.each do |key, attrs| %>
             <div class="col-md-6">
               <div class="border rounded-3 p-3">
-                <label class="form-label small fw-bold text-uppercase text-muted"><%= key %></label>
+                <label class="form-label small fw-bold text-muted"><%= key.humanize %></label>
                 <input type="text" name="service_types[<%= key %>][label]"
                        class="form-control mb-2"
                        value="<%= attrs["label"] %>"
@@ -62,10 +63,9 @@
           <% @keyword_lists.each do |entry| %>
             <div class="col-md-6">
               <label class="form-label fw-bold"><%= entry[:title] %></label>
-              <input type="text" name="keyword_lists[<%= entry[:detector] %>][<%= entry[:list_name] %>]"
-                     class="form-control"
-                     value="<%= entry[:values].join(', ') %>">
-              <div class="form-text"><%= entry[:detector] %> / <%= entry[:list_name] %></div>
+              <textarea name="keyword_lists[<%= entry[:detector] %>][<%= entry[:list_name] %>]"
+                        class="form-control font-monospace" rows="<%= [entry[:values].size + 1, 3].max %>"><%= entry[:values].join("\n") %></textarea>
+              <div class="form-text"><%= entry[:hint] %></div>
             </div>
           <% end %>
         </div>

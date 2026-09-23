@@ -58,8 +58,14 @@ module Deliveries
         overrides = DetectorKeywordList.where(detector: detector.to_s)
           .each_with_object({}) { |row, hash| hash[row.list_name] = row.values_list }
 
-        lists = defaults.merge(overrides)
+        lists = defaults.merge(overrides).transform_values { |list| list.map { |kw| normalize(kw) }.uniq }
         detector.to_s == "sala_pickup" ? lists.merge("code_pattern" => CODE_PATTERN, "sala_map" => SALA_MAP) : lists
+      end
+
+      # Los detectores comparan contra texto sin tildes y en minúsculas, así que
+      # las palabras clave se guardan/leen en esa misma forma.
+      def normalize(text)
+        text.to_s.downcase.unicode_normalize(:nfd).gsub(/\p{Mn}/, "").strip
       end
 
       private

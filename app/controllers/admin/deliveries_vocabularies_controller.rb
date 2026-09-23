@@ -2,11 +2,16 @@ class Admin::DeliveriesVocabulariesController < ApplicationController
   SERVICE_TYPE_KEYS = Deliveries::Vocabulary::DEFAULT_SERVICE_TYPES.keys.freeze
 
   KEYWORD_LISTS = [
-    {detector: "sala_pickup", list_name: "phrase_keywords", title: "Retiro en sala/tienda — frases que activan la detección"},
-    {detector: "sala_pickup", list_name: "exclusions", title: "Retiro en sala/tienda — frases que excluyen (ya entregado)"},
-    {detector: "service_case", list_name: "keywords", title: "Caso de servicio"},
-    {detector: "repair_service", list_name: "keywords", title: "Servicio de reparación"},
-    {detector: "showroom", list_name: "inter_sala_fallback_keywords", title: "Movimiento entre showrooms (fallback)"}
+    {detector: "sala_pickup", list_name: "phrase_keywords", title: "Retiro en sala/tienda — frases que activan la detección",
+     hint: "Un producto con alguna de estas frases (o un código SP/SE/SG) queda Pendiente de retiro en Sala."},
+    {detector: "sala_pickup", list_name: "exclusions", title: "Retiro en sala/tienda — frases que excluyen (ya entregado)",
+     hint: "Si el producto contiene alguna de estas frases se ignora (ya se entregó en sala)."},
+    {detector: "service_case", list_name: "keywords", title: "Caso de servicio",
+     hint: "Un producto con alguna de estas frases se marca como Caso de servicio. Evita palabras genéricas como \"error\"."},
+    {detector: "repair_service", list_name: "keywords", title: "Servicio de reparación",
+     hint: "Un producto con alguna de estas frases se marca como Servicio de reparación."},
+    {detector: "showroom", list_name: "inter_sala_fallback_keywords", title: "Movimiento entre showrooms (fallback)",
+     hint: "Frases que identifican un movimiento entre salas cuando no hay otra señal."}
   ].freeze
 
   def show
@@ -51,6 +56,6 @@ class Admin::DeliveriesVocabulariesController < ApplicationController
 
   def parse_keywords(raw)
     return [] if raw.blank?
-    raw.split(",").map(&:strip).reject(&:blank?)
+    raw.split(/[\n,]/).map { |kw| Deliveries::Vocabulary.normalize(kw) }.reject(&:blank?).uniq
   end
 end
