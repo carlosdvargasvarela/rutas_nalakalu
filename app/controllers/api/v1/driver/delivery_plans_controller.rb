@@ -10,7 +10,7 @@ module Api
           delivered_status = Delivery.statuses[:delivered]
           plans = DeliveryPlan
             .active
-            .preload(:last_recorded_by)
+            .preload(:last_recorded_by, :driver)
             .left_joins(:deliveries)
             .select(<<~SQL)
               delivery_plans.*,
@@ -172,6 +172,7 @@ module Api
             deliveries_count: plan.deliveries_count.to_i,
             delivered_count: plan.delivered_count.to_i,
             first_delivery_date: plan.attributes["first_delivery_date_val"]&.to_s,
+            driver_name: plan.driver&.name,
             updated_at: plan.updated_at.iso8601,
             active_tracker: active_tracker_for(plan)
           }
