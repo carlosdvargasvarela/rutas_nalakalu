@@ -9,7 +9,7 @@ module Deliveries
     end
 
     def actionable_items
-      return [] if @delivery.status.in?(%w[delivered rescheduled cancelled archived])
+      return [] if @delivery.sala_pickup? || @delivery.status.in?(%w[delivered rescheduled cancelled archived])
 
       @delivery.delivery_items.reject { |item|
         item.status.in?(%w[delivered rescheduled cancelled archived]) ||
