@@ -633,10 +633,10 @@
 .pd-actions .pd-btn-ok, .pd-actions .pd-btn-undo, .pd-actions .pd-btn-miss, .pd-actions .pd-btn-note { min-height: 52px; font-size: 0.95rem; }
 
 .pd-miss { flex: 3; position: relative; }
-.pd-miss > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.pd-miss > summary { list-style: none; cursor: pointer; user-select: none; -webkit-user-select: none; display: flex; align-items: center; justify-content: center; }
 .pd-miss > summary::-webkit-details-marker { display: none; }
 .pd-miss-menu {
-  position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 220px;
+  position: absolute; right: 0; bottom: calc(100% + 6px); z-index: 20; min-width: 220px;
   display: flex; flex-direction: column; gap: 6px; padding: 8px;
   background: var(--pd-card); border: 1px solid var(--pd-border); border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.18);
 }
@@ -659,3 +659,8 @@
 }
 .pd-card-footer .pd-btn-all { min-height: 48px; font-size: 0.9rem; }
 .pd-card-footer .pd-act-form { flex: 1; }
+
+/* El popover de motivos sale de la tarjeta: no puede recortarse. */
+#stop_detail.pd-card { overflow: visible; }
+#stop_detail .pd-detail-head { border-radius: 16px 16px 0 0; }
+#stop_detail .pd-card-footer { border-radius: 0 0 16px 16px; }
