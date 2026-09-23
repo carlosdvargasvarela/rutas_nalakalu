@@ -17,7 +17,7 @@ export default class extends Controller {
     truckLng: Number,
     pollUrl: String,
   };
-  static targets = ["map", "lastUpdate", "eta", "connectionBanner"];
+  static targets = ["map", "lastUpdate", "connectionBanner"];
 
   connect() {
     this.lastEtaAt = 0;
@@ -143,7 +143,7 @@ export default class extends Controller {
   }
 
   updateEta() {
-    if (!this.hasEtaTarget || !this.directionsService) return;
+    if (!this.directionsService) return;
 
     // La posición no cambia perceptiblemente en pocos segundos — evita
     // pegarle a la Directions API en cada position_update (cada ~15s).
@@ -176,10 +176,6 @@ export default class extends Controller {
           this.map.fitBounds(result.routes[0].bounds, 50);
           this.routeBoundsFitted = true;
         }
-
-        const leg = result.routes[0].legs[0];
-        const duration = leg.duration_in_traffic || leg.duration;
-        this.etaTarget.textContent = `Llega en aprox. ${duration.text} (${leg.distance.text})`;
       },
     );
   }
