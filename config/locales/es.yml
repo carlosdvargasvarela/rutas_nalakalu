@@ -1,21 +1,113 @@
 es:
   activerecord:
+    models:
+      app_setting: Configuración
+      client: Cliente
+      client_note: Nota de cliente
+      crew_member: Ayudante
+      delivery: Entrega
+      delivery_address: Dirección de entrega
+      delivery_event: Evento de entrega
+      delivery_group: Grupo de entregas
+      delivery_group_membership: Miembro de grupo de entregas
+      delivery_import: Importación de entregas
+      delivery_import_row: Fila de importación
+      delivery_item: Producto de entrega
+      delivery_item_note: Nota de producto
+      delivery_plan: Plan de entrega
+      delivery_plan_assignment: Parada del plan
+      delivery_plan_location: Ubicación del plan
+      detector_keyword_list: Lista de palabras clave
+      maintenance_window: Ventana de mantenimiento
+      notification: Notificación
+      order: Pedido
+      order_contact: Contacto del pedido
+      order_item: Producto del pedido
+      plan_event: Evento del plan
+      seller: Vendedor
+      service_type_word: Palabra de servicio
+      showroom: Sala
+      user: Usuario
+      vendor: Proveedor
+      vendor_address: Dirección del proveedor
+      vendor_business_hour: Horario del proveedor
+      vendor_contact: Contacto del proveedor
     attributes:
+      app_setting: {key: Clave, value: Valor}
+      client: {name: Nombre, email: Correo electrónico, phone: Teléfono}
+      client_note: {body: Nota, category: Categoría, pinned: Fijada}
+      crew_member: {name: Nombre, id_number: Cédula}
+      delivery:
+        approved: Aprobada
+        condominio_number: Condominio
+        casa_number: Casa
+        contact_name: Nombre de contacto
+        contact_phone: Teléfono de contacto
+        delivery_address: Dirección de entrega
+        delivery_date: Fecha de entrega
+        delivery_notes: Notas de entrega
+        delivery_time_preference: Preferencia horaria
+        delivery_type: Tipo de entrega
+        order: Pedido
+        reschedule_reason: Motivo de reprogramación
+        status: Estado
+        warehousing_until: Bodegaje hasta
+      delivery_address: {address: Dirección, description: Descripción, latitude: Latitud, longitude: Longitud, plus_code: Plus code}
+      delivery_group: {label: Nombre}
+      delivery_group_membership: {delivery: Entrega, delivery_id: Entrega}
+      delivery_item:
+        delivery: Entrega
+        order_item: Producto del pedido
+        order_item_id: Producto del pedido
+        quantity_delivered: Cantidad a entregar
+        loaded_quantity: Cantidad cargada
+        service_case: Caso de servicio
+        status: Estado
+        notes: Notas
+      delivery_item_note: {body: Nota}
+      delivery_plan:
+        driver: Conductor
+        status: Estado
+        truck: Camión
+        week: Semana
+        year: Año
+      delivery_plan_assignment: {delivery: Entrega, delivery_plan: Plan de entrega, stop_order: Orden de parada, status: Estado, driver_notes: Notas del conductor}
+      delivery_plan_location: {latitude: Latitud, longitude: Longitud, captured_at: Fecha de captura, source: Origen}
+      detector_keyword_list: {detector: Detector, list_name: Lista, values_list: Palabras clave}
+      maintenance_window: {message: Mensaje, active: Activa, ends_at: Finaliza}
+      notification: {message: Mensaje}
       order:
+        client: Cliente
+        number: Número
+        seller: Vendedor
+        status: Estado
         statuses:
-          pending: "Pendiente"
-          in_production: "En producción"
-          ready_for_delivery: "Listo para entrega"
-          delivered: "Entregado"
-        delivery_item:
-          status:
-            pending: "Pendiente"
-            confirmed: "Confirmado"
-            in_plan: "En plan de entregas"
-            in_route: "En ruta"
-            delivered: "Entregado"
-            rescheduled: "Reprogramado"
-            cancelled: "Cancelado"
+          pending: Pendiente
+          in_production: En producción
+          ready_for_delivery: Listo para entrega
+          delivered: Entregado
+          rescheduled: Reprogramado
+          cancelled: Cancelado
+      order_contact: {name: Nombre, phone: Teléfono, is_primary: Principal}
+      order_item: {order: Pedido, product: Producto, quantity: Cantidad, status: Estado, notes: Notas}
+      plan_event: {delivery_plan_id: Plan, action: Acción}
+      seller: {name: Nombre, seller_code: Código de vendedor, user: Usuario}
+      service_type_word: {key: Clave, label: Palabra, prefix: Prefijo}
+      showroom: {name: Nombre, code: Código, is_main: Sala principal, delivery_address: Dirección}
+      user:
+        email: Correo electrónico
+        name: Nombre
+        role: Rol
+        password: Contraseña
+        password_confirmation: Confirmación de contraseña
+        current_password: Contraseña actual
+        remember_me: Recordarme
+        force_password_change: Cambiar contraseña al ingresar
+        send_notifications: Recibir notificaciones
+        seller_code: Código de vendedor
+      vendor: {name: Nombre, vendor_addresses: Direcciones}
+      vendor_business_hour: {day_of_week: Día, opens_at: Abre, closes_at: Cierra, closed: Cerrado}
+      vendor_contact: {name: Nombre, phone: Teléfono, is_primary: Principal}
     errors:
       messages:
         record_invalid: "La validación falló: %{errors}"
@@ -160,6 +252,13 @@ es:
       header:
         one: No se pudo guardar este/a %{model} porque se encontró %{count} error
         other: No se pudo guardar este/a %{model} porque se encontraron %{count} errores
+  views:
+    pagination:
+      first: "&laquo; Primera"
+      last: "Última &raquo;"
+      previous: "&lsaquo; Anterior"
+      next: "Siguiente &rsaquo;"
+      truncate: "&hellip;"
   helpers:
     select:
       prompt: Por favor seleccione
