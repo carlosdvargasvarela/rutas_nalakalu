@@ -1,8 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm" id="mainNavbar">
   <div class="container-fluid">
     <%= link_to root_path, class: "navbar-brand d-flex align-items-center gap-2" do %>
-      <i class="bi bi-truck fs-3"></i>
-      <span>NaLakalú</span>
+      <%= image_tag "logo-white.png", alt: "Na Lakalú", style: "height: 28px; width: auto;" %>
     <% end %>
     <% if user_signed_in? %>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 

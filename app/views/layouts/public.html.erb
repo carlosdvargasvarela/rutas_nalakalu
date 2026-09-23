@@ -15,21 +15,10 @@
   <body class="public-tracking-layout">
     <div class="container py-4">
       <div class="text-center mb-4">
-        <h2 class="brand-wordmark mb-1">Na Lakalú</h2>
+        <%= image_tag "logo.png", alt: "Na Lakalú", class: "mb-2", style: "height: 40px; width: auto;" %>
         <p class="text-muted">Seguimiento de tu entrega</p>
       </div>
       <%= yield %>
     </div>
   </body>
 </html>
-<style>
-  /* Tratamiento del wordmark según brandkit-nalakalu.pdf (pág. 8-9): mayúsculas
-     con tracking amplio, sin ícono — la marca es puramente tipográfica. */
-  .brand-wordmark {
-    font-family: var(--font-body);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--color-brand-primary);
-  }
-</style>
