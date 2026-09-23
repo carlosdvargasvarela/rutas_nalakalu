@@ -332,6 +332,9 @@ Rails.application.routes.draw do
       member do
         get :loading # Vista de bitácora de carga
         post :mark_all_loaded # Marcar todo el plan como cargado
+        post :close_load
+        post :reopen_load
+        get :checklist # Hoja imprimible
       end
     end
 

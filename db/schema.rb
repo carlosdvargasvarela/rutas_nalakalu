@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_09_23_200000) do
+ActiveRecord::Schema[7.2].define(version: 2026_09_23_210000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -204,6 +204,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_23_200000) do
     t.integer "load_status", default: 0, null: false
     t.integer "loaded_quantity"
     t.boolean "sala_pickup_requested", default: false, null: false
+    t.string "missing_reason"
     t.index ["delivery_id", "order_item_id"], name: "index_delivery_items_on_delivery_and_order_item_unique", unique: true
     t.index ["delivery_id"], name: "index_delivery_items_on_delivery_id"
     t.index ["load_status"], name: "index_delivery_items_on_load_status"
@@ -262,9 +263,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_23_200000) do
     t.integer "lock_version", default: 0, null: false
     t.integer "load_status", default: 0, null: false
     t.integer "last_recorded_by_id"
+    t.datetime "load_closed_at"
+    t.integer "load_closed_by_id"
     t.index ["driver_id"], name: "index_delivery_plans_on_driver_id"
     t.index ["last_recorded_by_id"], name: "index_delivery_plans_on_last_recorded_by_id"
     t.index ["last_seen_at"], name: "index_delivery_plans_on_last_seen_at"
+    t.index ["load_closed_by_id"], name: "index_delivery_plans_on_load_closed_by_id"
     t.index ["load_status"], name: "index_delivery_plans_on_load_status"
   end
 

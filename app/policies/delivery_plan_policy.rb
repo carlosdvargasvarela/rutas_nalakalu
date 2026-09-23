@@ -53,6 +53,18 @@ class DeliveryPlanPolicy < ApplicationPolicy
     admin_or_manager_or_logistic?
   end
 
+  def close_load?
+    admin_or_manager_or_logistic?
+  end
+
+  def reopen_load?
+    user.admin? || user.manager? || user.production_manager?
+  end
+
+  def checklist?
+    show?
+  end
+
   class Scope < Scope
     def resolve
       # Admin, logística y producción ven todo

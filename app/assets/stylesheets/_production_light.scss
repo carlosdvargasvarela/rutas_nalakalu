@@ -200,9 +200,6 @@
 .pd-item-row--loaded  { background: #f0fdf4; }
 .pd-item-row--missing { background: #fff5f5; }
 
-.pd-act-form { display: flex; margin: 0; flex: 3; }
-.pd-act-form--2 { flex: 2; }
-.pd-act-form > button { flex: 1; width: 100%; }
 .pd-btn-ok {
   flex: 3;
   background: var(--color-success);
@@ -596,3 +593,69 @@
   color: #64748b;
   font-size: 0.72rem;
 }
+
+/* ============================================================
+   BITÁCORA DE CARGA — layout de dos paneles (tablet / PC)
+   Celular: una columna (lista → detalle). Objetivos táctiles ≥ 52px.
+   ============================================================ */
+.pd-loading { padding-bottom: 3rem; }
+
+.pd-split { display: block; padding: 12px; }
+@media (min-width: 992px) {
+  .pd-split { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 16px; align-items: start; padding: 16px; }
+  .pd-split-list { position: sticky; overflow-y: auto; }
+}
+
+.pd-list-tools { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.pd-list-hint { font-size: 0.72rem; color: var(--pd-muted); }
+
+.pd-stop {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px; min-height: 60px;
+  background: var(--pd-card); border: 1px solid var(--pd-border); border-left: 5px solid var(--pd-border);
+  border-radius: 12px; color: inherit; text-decoration: none;
+}
+.pd-stop--ok      { border-left-color: var(--color-success); }
+.pd-stop--partial { border-left-color: var(--color-warning); }
+.pd-stop--missing { border-left-color: var(--color-danger); }
+.pd-stop--selected { background: var(--pd-card-inner); box-shadow: 0 0 0 2px var(--pd-accent); }
+
+.pd-detail-head {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  border-bottom: 1px solid var(--pd-border); background: var(--pd-card-inner);
+}
+.pd-item-name { font-size: 1rem; color: #1e293b; overflow-wrap: anywhere; }
+.pd-qty { font-weight: 800; font-size: 1rem; color: var(--pd-text); }
+
+.pd-act-form { display: flex; margin: 0; flex: 3; }
+.pd-act-form--2 { flex: 2; }
+.pd-act-form > button { flex: 1; width: 100%; }
+.pd-actions .pd-btn-ok, .pd-actions .pd-btn-undo, .pd-actions .pd-btn-miss, .pd-actions .pd-btn-note { min-height: 52px; font-size: 0.95rem; }
+
+.pd-miss { flex: 3; position: relative; }
+.pd-miss > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.pd-miss > summary::-webkit-details-marker { display: none; }
+.pd-miss-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 220px;
+  display: flex; flex-direction: column; gap: 6px; padding: 8px;
+  background: var(--pd-card); border: 1px solid var(--pd-border); border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.18);
+}
+.pd-btn-miss--reason { font-size: 0.95rem; min-height: 52px; }
+
+.pd-btn-next {
+  flex: 1; display: flex; align-items: center; justify-content: center; min-height: 48px;
+  background: var(--pd-accent); color: #fff; border-radius: 10px; font-weight: 700; text-decoration: none; padding: 8px 12px;
+}
+.pd-card-footer { flex-wrap: wrap; }
+
+.pd-head-btn {
+  background: rgba(255, 255, 255, 0.15); color: #fff; border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 10px; padding: 8px 14px; min-height: 44px; font-size: 0.85rem; font-weight: 700;
+}
+.pd-head-btn--primary { background: #fff; color: var(--color-text); }
+
+@media (min-width: 992px) {
+  .pd-split-list { top: 12px; max-height: calc(100vh - 24px); }
+}
+.pd-card-footer .pd-btn-all { min-height: 48px; font-size: 0.9rem; }
+.pd-card-footer .pd-act-form { flex: 1; }

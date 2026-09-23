@@ -1,6 +1,7 @@
 # app/controllers/production/deliveries_controller.rb
 
 class Production::DeliveriesController < ApplicationController
+  include LoadingStreams
   before_action :authenticate_user!
   include Pundit::Authorization
 
@@ -315,14 +316,6 @@ class Production::DeliveriesController < ApplicationController
   end
 
   def render_delivery_update_streams
-    @delivery_plan = @delivery.delivery_plan
-    @load_stats = @delivery_plan.load_stats if @delivery_plan
-    @assignment = @delivery.delivery_plan_assignment
-    streams = [turbo_stream.replace("delivery_#{@delivery.id}", partial: "production/deliveries/delivery_card", locals: {delivery: @delivery, assignment: @assignment})]
-    if @delivery_plan
-      streams << turbo_stream.replace("plan_header", partial: "production/delivery_plans/plan_header", locals: {delivery_plan: @delivery_plan, load_stats: @load_stats})
-      streams << turbo_stream.replace("load_summary", partial: "production/delivery_plans/load_summary", locals: {delivery_plan: @delivery_plan, load_stats: @load_stats})
-    end
-    render turbo_stream: streams
+    render turbo_stream: loading_streams(@delivery)
   end
 end

@@ -15,6 +15,8 @@ class PlanEvent < ApplicationRecord
     aborted
     stop_added
     stop_removed
+    load_closed
+    load_reopened
   ].freeze
 
   ACTION_LABELS = {
@@ -25,7 +27,9 @@ class PlanEvent < ApplicationRecord
     "finished" => "Finalizado",
     "aborted" => "Abortado",
     "stop_added" => "Parada agregada",
-    "stop_removed" => "Parada quitada"
+    "stop_removed" => "Parada quitada",
+    "load_closed" => "Carga cerrada",
+    "load_reopened" => "Carga reabierta"
   }.freeze
 
   ACTION_COLORS = {
@@ -36,7 +40,9 @@ class PlanEvent < ApplicationRecord
     "finished" => "success",
     "aborted" => "danger",
     "stop_added" => "secondary",
-    "stop_removed" => "warning"
+    "stop_removed" => "warning",
+    "load_closed" => "success",
+    "load_reopened" => "warning"
   }.freeze
 
   ACTION_ICONS = {
@@ -47,7 +53,9 @@ class PlanEvent < ApplicationRecord
     "finished" => "bi-check-circle",
     "aborted" => "bi-x-circle",
     "stop_added" => "bi-pin-map",
-    "stop_removed" => "bi-pin-map-fill"
+    "stop_removed" => "bi-pin-map-fill",
+    "load_closed" => "bi-lock",
+    "load_reopened" => "bi-unlock"
   }.freeze
 
   def self.record(delivery_plan:, action:, actor: nil, payload: {})

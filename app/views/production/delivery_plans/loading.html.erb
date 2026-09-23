@@ -1,107 +1,74 @@
 <%# app/views/production/delivery_plans/loading.html.erb %>
-<div class="production-light"
-     data-controller="loading"
-     data-loading-plan-id-value="<%= @delivery_plan.id %>">
+<% content_for :head do %>
+  <meta name="turbo-refresh-method" content="morph">
+  <meta name="turbo-refresh-scroll" content="preserve">
+<% end %>
+<%= turbo_stream_from @delivery_plan %>
 
-  <%# ── Header sticky (Turbo Stream target: plan_header) ── %>
-  <div id="plan_header" class="sticky-top" style="top:56px;z-index:100;">
+<div class="production-light pd-loading" data-controller="loading">
+
+  <div id="plan_header">
     <%= render "plan_header", delivery_plan: @delivery_plan, load_stats: @load_stats %>
   </div>
 
-  <%# ── Resumen de productos (Turbo Stream target: load_summary) ── %>
-  <div id="load_summary">
-    <%= render "load_summary", delivery_plan: @delivery_plan, load_stats: @load_stats %>
-  </div>
-
-  <%# ── Barra de búsqueda ── %>
-  <div class="pd-search-wrap">
-    <i class="bi bi-search pd-search-icon"></i>
-    <input type="text"
-           class="pd-search-input"
-           placeholder="Buscar cliente o pedido..."
-           data-action="input->loading#filterDeliveries"
-           data-loading-target="searchInput"
-           value="<%= @filter_search %>">
-  </div>
-
-  <%# ── Chips de filtro ── %>
-  <div class="pd-filter-bar">
-    <%
-      chip_filters = [
-        { value: "",             label: "Todos",      css: "pd-chip--all"     },
-        { value: "empty",        label: "Sin cargar", css: "pd-chip--unloaded"},
-        { value: "partial",      label: "Parcial",    css: "pd-chip--partial" },
-        { value: "all_loaded",   label: "Cargado",    css: "pd-chip--loaded"  },
-        { value: "some_missing", label: "Faltantes",  css: "pd-chip--missing" },
-      ]
-    %>
-    <% chip_filters.each do |chip| %>
-      <% active = @filter_load_status.to_s == chip[:value] %>
-      <%= link_to loading_production_delivery_plan_path(@delivery_plan,
-                    load_status: chip[:value], search: @filter_search),
-          class: "pd-chip #{active ? chip[:css] : 'pd-chip--unloaded'}",
-          data: { turbo_action: "replace" } do %>
-        <%= chip[:label] %>
-      <% end %>
-    <% end %>
-  </div>
-
-  <%# ── Lista de entregas ── %>
-  <div id="delivery_cards_list"
-       class="px-2 pb-5 pt-2 d-flex flex-column gap-3"
-       data-loading-target="deliveryList">
-    <% if @assignments.empty? %>
-      <div class="text-center py-5">
-        <i class="bi bi-inbox pd-empty-icon"></i>
-        <p class="mt-3 pd-empty-subtitle">No hay entregas que coincidan.</p>
-        <%= link_to "Ver todas", loading_production_delivery_plan_path(@delivery_plan),
-            class: "btn btn-sm mt-1 pd-empty-link" %>
+  <div class="pd-split">
+    <%# ── Paradas (orden de carga: la última parada se carga primero) ── %>
+    <aside class="pd-split-list <%= "d-none d-lg-block" if @stop_chosen %>">
+      <div class="pd-list-tools">
+        <div class="pd-search-wrap">
+          <i class="bi bi-search pd-search-icon"></i>
+          <input type="search" class="pd-search-input" placeholder="Buscar cliente o pedido..."
+                 data-action="input->loading#filterDeliveries" data-loading-target="searchInput">
+        </div>
+        <div class="pd-filter-bar">
+          <%= link_to "Todas", loading_production_delivery_plan_path(@delivery_plan, stop: @selected&.delivery_id),
+                class: "pd-chip #{@filter == "all" ? "pd-chip--all" : "pd-chip--unloaded"}", data: {turbo_action: "replace"} %>
+          <%= link_to "Pendientes", loading_production_delivery_plan_path(@delivery_plan, stop: @selected&.delivery_id, filter: "pending"),
+                class: "pd-chip #{@filter == "pending" ? "pd-chip--all" : "pd-chip--unloaded"}", data: {turbo_action: "replace"} %>
+        </div>
+        <div class="pd-list-hint"><i class="bi bi-info-circle me-1"></i>Se carga de arriba hacia abajo: la última parada entra primero.</div>
       </div>
-    <% else %>
-      <% @assignments.each do |assignment| %>
-        <%= render "production/deliveries/delivery_card",
-            delivery: assignment.delivery,
-            assignment: assignment %>
+
+      <div data-loading-target="deliveryList" class="d-flex flex-column gap-2">
+        <% if @assignments.empty? %>
+          <div class="text-center py-4 pd-empty-subtitle">
+            <i class="bi bi-check-circle pd-empty-icon"></i>
+            <p class="mt-2 mb-0">No hay paradas pendientes.</p>
+          </div>
+        <% end %>
+        <% @assignments.each do |assignment| %>
+          <%= render "stop_row", delivery: assignment.delivery, assignment: assignment, plan: @delivery_plan,
+                selected: assignment.delivery_id == @selected&.delivery_id %>
+        <% end %>
+      </div>
+    </aside>
+
+    <%# ── Productos de la parada abierta ── %>
+    <section class="pd-split-detail <%= "d-none d-lg-block" unless @stop_chosen %>">
+      <% if @selected %>
+        <%= render "stop_detail", delivery: @selected.delivery, assignment: @selected, plan: @delivery_plan %>
+      <% else %>
+        <div id="stop_detail" class="pd-card p-4 text-center pd-empty-subtitle">Elige una parada.</div>
       <% end %>
-    <% end %>
+    </section>
   </div>
 
-  <%# ── Bottom sheet de notas (gestionado por note-sheet controller) ── %>
-  <div id="pd-note-sheet-container"
-       data-controller="note-sheet"
-       data-note-sheet-save-url-value="">
-    <div class="pd-sheet-overlay"
-         data-action="click->note-sheet#close"></div>
+  <%# ── Hoja inferior de notas (note-sheet controller) ── %>
+  <div id="pd-note-sheet-container" data-controller="note-sheet" data-note-sheet-save-url-value="">
+    <div class="pd-sheet-overlay" data-action="click->note-sheet#close"></div>
     <div class="pd-sheet">
       <div class="pd-sheet-handle"></div>
       <div class="d-flex justify-content-between align-items-start mb-2">
-        <h6 class="fw-bold mb-0 text-white">
-          <i class="bi bi-chat-left-text me-2"></i>Nota del producto
-        </h6>
-        <button class="btn p-0 pd-sheet-close"
-                data-action="click->note-sheet#close">
-          <i class="bi bi-x-lg"></i>
-        </button>
+        <h6 class="fw-bold mb-0 text-white"><i class="bi bi-chat-left-text me-2"></i>Nota del producto</h6>
+        <button type="button" class="btn p-0 pd-sheet-close" data-action="click->note-sheet#close"><i class="bi bi-x-lg"></i></button>
       </div>
-      <div class="pd-sheet-product mb-3"
-           data-note-sheet-target="productLabel">
-        Producto
-      </div>
-      <label class="d-block mb-1 pd-summary-title">
-        Observación
-      </label>
-      <textarea class="pd-sheet-textarea"
-                data-note-sheet-target="textarea"
-                placeholder="Escribe una nota..."></textarea>
+      <div class="pd-sheet-product mb-3" data-note-sheet-target="productLabel">Producto</div>
+      <label class="d-block mb-1 pd-summary-title">Observación</label>
+      <textarea class="pd-sheet-textarea" data-note-sheet-target="textarea" placeholder="Escribe una nota..."></textarea>
       <div class="d-flex gap-2 mt-3">
-        <button class="pd-sheet-cancel"
-                data-action="click->note-sheet#close">Cancelar</button>
-        <button class="pd-sheet-save"
-                data-action="click->note-sheet#save">
-          <i class="bi bi-floppy me-1"></i>Guardar nota
-        </button>
+        <button type="button" class="pd-sheet-cancel" data-action="click->note-sheet#close">Cancelar</button>
+        <button type="button" class="pd-sheet-save" data-action="click->note-sheet#save"><i class="bi bi-floppy me-1"></i>Guardar nota</button>
       </div>
     </div>
   </div>
-
 </div>

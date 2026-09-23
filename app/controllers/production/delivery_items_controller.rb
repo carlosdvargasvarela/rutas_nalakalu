@@ -1,63 +1,37 @@
 class Production::DeliveryItemsController < ApplicationController
+  include LoadingStreams
+
   before_action :authenticate_user!
   include Pundit::Authorization
 
   before_action :set_delivery_item
+  before_action :reject_if_load_closed, only: %i[mark_loaded mark_unloaded mark_missing]
 
   def mark_loaded
     authorize @delivery_item, :mark_loaded?
     @delivery_item.mark_loaded!
-
-    respond_to do |format|
-      format.html { redirect_back fallback_location: root_path, notice: "✅ Producto marcado como cargado." }
-      format.turbo_stream { render_item_update_streams }
-      format.json { render json: {success: true, item: @delivery_item} }
-    end
+    respond_with_streams
   rescue StandardError => e
-    respond_to do |format|
-      format.html { redirect_back fallback_location: root_path, alert: e.message }
-      format.turbo_stream { render turbo_stream: turbo_stream.replace("delivery_item_#{@delivery_item.id}", partial: "production/delivery_items/delivery_item_row", locals: {item: @delivery_item}) }
-      format.json { render json: {success: false, error: e.message}, status: :unprocessable_entity }
-    end
+    flash.now[:alert] = e.message
+    respond_with_streams
   end
 
   def mark_unloaded
     authorize @delivery_item, :mark_unloaded?
     @delivery_item.mark_unloaded!
-
-    respond_to do |format|
-      format.html { redirect_back fallback_location: root_path, notice: "🔄 Producto marcado como no cargado." }
-      format.turbo_stream { render_item_update_streams }
-      format.json { render json: {success: true, item: @delivery_item} }
-    end
+    respond_with_streams
   end
 
   def mark_missing
     authorize @delivery_item, :mark_missing?
-    @delivery_item.mark_missing!
-
-    respond_to do |format|
-      format.html { redirect_back fallback_location: root_path, alert: "⚠️ Producto marcado como faltante." }
-      format.turbo_stream { render_item_update_streams }
-      format.json { render json: {success: true, item: @delivery_item} }
-    end
+    @delivery_item.mark_missing!(reason: params[:reason], actor: current_user)
+    respond_with_streams
   end
 
   def add_note
     authorize @delivery_item, :add_note?
     @delivery_item.update!(notes: params[:note].to_s.strip)
-
-    respond_to do |format|
-      format.html { redirect_back fallback_location: root_path }
-      format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          "delivery_item_#{@delivery_item.id}",
-          partial: "production/delivery_items/delivery_item_row",
-          locals: { item: @delivery_item }
-        )
-      end
-      format.json { render json: { success: true, notes: @delivery_item.notes } }
-    end
+    respond_with_streams
   end
 
   private
@@ -66,44 +40,18 @@ class Production::DeliveryItemsController < ApplicationController
     @delivery_item = DeliveryItem.find(params[:id])
   end
 
-  def render_item_update_streams
-    @delivery = @delivery_item.delivery
-    @delivery_plan = @delivery.delivery_plan
-    @load_stats = @delivery_plan.load_stats if @delivery_plan
-    @assignment = @delivery.delivery_plan_assignment
+  def reject_if_load_closed
+    return unless @delivery_item.delivery.delivery_plan&.load_closed?
 
-    streams = []
+    redirect_back fallback_location: root_path, alert: "La carga de este camión ya está cerrada."
+  end
 
-    # Fila del item
-    streams << turbo_stream.replace(
-      "delivery_item_#{@delivery_item.id}",
-      partial: "production/delivery_items/delivery_item_row",
-      locals: {item: @delivery_item}
-    )
-
-    # Tarjeta de la entrega (incluye su %)
-    streams << turbo_stream.replace(
-      "delivery_#{@delivery.id}",
-      partial: "production/deliveries/delivery_card",
-      locals: {delivery: @delivery, assignment: @assignment}
-    )
-
-    if @delivery_plan
-      # Header del plan (barra de progreso grande)
-      streams << turbo_stream.replace(
-        "plan_header",
-        partial: "production/delivery_plans/plan_header",
-        locals: {delivery_plan: @delivery_plan, load_stats: @load_stats}
-      )
-
-      # Resumen de carga (totales cargados, sin cargar, faltantes)
-      streams << turbo_stream.replace(
-        "load_summary",
-        partial: "production/delivery_plans/load_summary",
-        locals: {delivery_plan: @delivery_plan, load_stats: @load_stats}
-      )
+  def respond_with_streams
+    delivery = @delivery_item.reload.delivery
+    respond_to do |format|
+      format.turbo_stream { render turbo_stream: loading_streams(delivery) }
+      format.html { redirect_back fallback_location: root_path }
+      format.json { render json: {success: true, item: @delivery_item} }
     end
-
-    render turbo_stream: streams
   end
 end

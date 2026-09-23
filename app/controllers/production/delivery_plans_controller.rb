@@ -23,64 +23,63 @@ class Production::DeliveryPlansController < ApplicationController
     end
   end
 
-  # Bitácora de carga de un plan específico
+  # Bitácora de carga: paradas del camión en orden de carga (izquierda) y
+  # productos de la parada abierta (derecha).
   def loading
     @delivery_plan = DeliveryPlan.find(params[:id])
     authorize @delivery_plan, :loading?
 
-    @assignments = @delivery_plan.delivery_plan_assignments
-      .includes(
-        delivery: [
-          :delivery_address,
-          {order: [:client, :seller]},
-          {delivery_items: :order_item}
-        ]
-      )
-      .order(:stop_order)
+    @filter = (params[:filter] == "pending") ? "pending" : "all"
+    @assignments = @delivery_plan.loading_assignments.includes(stop_includes)
+    @assignments = @assignments.joins(:delivery).where.not(deliveries: {load_status: Delivery.load_statuses[:all_loaded]}) if @filter == "pending"
+    @assignments = @assignments.to_a
 
-    # Filtros
-    @filter_load_status = params[:load_status]
-    @filter_search = params[:search]
-    @view_mode = params[:view_mode] || "by_delivery" # by_delivery o by_product
-
-    # Aplicar filtros si existen
-    if @filter_load_status.present?
-      @assignments = @assignments.joins(:delivery).where(deliveries: {load_status: @filter_load_status})
-    end
-
-    if @filter_search.present?
-      @assignments = @assignments.joins(delivery: {order: :client})
-        .where("clients.name ILIKE ? OR orders.number ILIKE ?", "%#{@filter_search}%", "%#{@filter_search}%")
-    end
-
+    # En celular solo se ve la lista hasta que se elige una parada (params[:stop]);
+    # en tablet/PC siempre hay una abierta: la elegida o la primera pendiente.
+    @stop_chosen = params[:stop].present?
+    @selected = @assignments.find { |a| a.delivery_id == params[:stop].to_i } ||
+      @assignments.find { |a| !a.delivery.load_all_loaded? } || @assignments.first
     @load_stats = @delivery_plan.load_stats
+  end
 
-    respond_to do |format|
-      format.html
-      format.json { render json: {plan: @delivery_plan, assignments: @assignments, stats: @load_stats} }
-    end
+  # Hoja imprimible del camión: paradas en orden de carga con sus productos.
+  def checklist
+    @delivery_plan = DeliveryPlan.find(params[:id])
+    authorize @delivery_plan, :checklist?
+    @assignments = @delivery_plan.loading_assignments.includes(stop_includes)
   end
 
   # Marcar todo el plan como cargado
   def mark_all_loaded
     @delivery_plan = DeliveryPlan.find(params[:id])
     authorize @delivery_plan, :mark_all_loaded?
+    return redirect_to(loading_path_for(@delivery_plan), alert: "La carga ya está cerrada.") if @delivery_plan.load_closed?
 
     @delivery_plan.mark_all_loaded!
-    @load_stats = @delivery_plan.load_stats
+    redirect_to loading_path_for(@delivery_plan), notice: "Todos los productos del plan fueron marcados como cargados."
+  end
 
-    respond_to do |format|
-      format.html do
-        redirect_to loading_production_delivery_plan_path(@delivery_plan),
-          notice: "✅ Todos los productos del plan han sido marcados como cargados."
-      end
-      format.turbo_stream do
-        render turbo_stream: [
-          turbo_stream.replace("plan_header", partial: "production/delivery_plans/plan_header", locals: {delivery_plan: @delivery_plan, load_stats: @load_stats}),
-          turbo_stream.replace("load_summary", partial: "production/delivery_plans/load_summary", locals: {delivery_plan: @delivery_plan, load_stats: @load_stats})
-        ]
-      end
-      format.json { render json: {success: true, stats: @load_stats} }
-    end
+  def close_load
+    @delivery_plan = DeliveryPlan.find(params[:id])
+    authorize @delivery_plan, :close_load?
+    @delivery_plan.close_load!(current_user) unless @delivery_plan.load_closed?
+    redirect_to loading_path_for(@delivery_plan), notice: "Carga cerrada."
+  end
+
+  def reopen_load
+    @delivery_plan = DeliveryPlan.find(params[:id])
+    authorize @delivery_plan, :reopen_load?
+    @delivery_plan.reopen_load!(current_user) if @delivery_plan.load_closed?
+    redirect_to loading_path_for(@delivery_plan), notice: "Carga reabierta."
+  end
+
+  private
+
+  def stop_includes
+    {delivery: [:delivery_address, {order: [:client, :seller]}, {delivery_items: :order_item}]}
+  end
+
+  def loading_path_for(plan)
+    loading_production_delivery_plan_path(plan, stop: params[:stop].presence)
   end
 end

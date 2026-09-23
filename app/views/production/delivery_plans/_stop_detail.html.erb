@@ -1,0 +1,52 @@
+<%# Panel derecho: productos de la parada abierta. locals: delivery, assignment, plan %>
+<%
+  locked  = plan.load_closed?
+  items   = delivery.delivery_items.sort_by(&:id)
+  pending = plan.loading_assignments.includes(delivery: :delivery_items).map(&:delivery).reject { |d| d.id == delivery.id || d.load_all_loaded? }
+  next_stop = pending.first
+%>
+<div id="stop_detail" class="pd-card">
+  <div class="pd-detail-head">
+    <%= link_to loading_production_delivery_plan_path(plan, filter: params[:filter].presence),
+          class: "pd-nav-btn d-lg-none text-decoration-none", "aria-label": "Volver a las paradas" do %>
+      <i class="bi bi-chevron-left"></i>
+    <% end %>
+    <div class="pd-stop-badge"><%= assignment&.stop_order || "?" %></div>
+    <div class="flex-grow-1 min-width-0">
+      <div class="fw-bold pd-client-name"><%= delivery.client&.name %></div>
+      <div class="pd-client-address"><i class="bi bi-geo-alt me-1"></i><%= delivery.delivery_address&.address %></div>
+      <div class="pd-client-address">Pedido <%= delivery.order&.number %></div>
+    </div>
+    <div class="text-end flex-shrink-0">
+      <div class="fw-bold fs-5"><%= delivery.load_percentage %>%</div>
+      <div class="pd-client-address">de la parada</div>
+    </div>
+  </div>
+
+  <% if delivery.internal_delivery? && items.empty? %>
+    <div class="p-3 pd-task-note">
+      <i class="bi bi-clipboard-check me-1 text-success"></i>
+      <%= delivery.delivery_notes.presence || "Sin descripción de tarea" %>
+    </div>
+  <% else %>
+    <% items.each do |item| %>
+      <%= render "production/delivery_items/delivery_item_row", item: item, locked: locked %>
+    <% end %>
+  <% end %>
+
+  <div class="pd-card-footer">
+    <% if !locked && policy(delivery).mark_all_loaded? && items.any? %>
+      <%= button_to mark_all_loaded_production_delivery_path(delivery), method: :post,
+            form: {class: "pd-act-form"}, class: "pd-btn-all",
+            data: {turbo_confirm: "¿Marcar todos los productos de esta parada como cargados?"} do %>
+        <i class="bi bi-check-all me-1"></i>Marcar toda la parada
+      <% end %>
+    <% end %>
+    <% if next_stop %>
+      <%= link_to loading_production_delivery_plan_path(plan, stop: next_stop.id, filter: params[:filter].presence),
+            class: "pd-btn-next", data: {turbo_action: "replace"} do %>
+        Siguiente parada <i class="bi bi-arrow-right ms-1"></i>
+      <% end %>
+    <% end %>
+  </div>
+</div>

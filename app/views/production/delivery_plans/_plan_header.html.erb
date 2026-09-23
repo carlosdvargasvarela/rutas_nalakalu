@@ -59,30 +59,54 @@
   </div>
 
   <%# Stats row: 4 celdas %>
-  <div class="row g-2">
-    <div class="col-3">
-      <div class="pd-header-stat-cell">
-        <div class="fw-bold fs-6 pd-stat-value"><%= load_stats[:total_items] %></div>
-        <div class="pd-header-stat-label">Total</div>
+  <div class="row g-2 mb-3">
+    <% [["Total", load_stats[:total_items], "pd-stat-value"], ["Cargados", load_stats[:loaded_items], "pd-stat-value--ok"],
+        ["Pendientes", load_stats[:unloaded_items], "pd-stat-value--warn"], ["Faltantes", load_stats[:missing_items], "pd-stat-value--error"]].each do |label, value, css| %>
+      <div class="col-3">
+        <div class="pd-header-stat-cell">
+          <div class="fw-bold fs-6 <%= css %>"><%= value %></div>
+          <div class="pd-header-stat-label"><%= label %></div>
+        </div>
       </div>
-    </div>
-    <div class="col-3">
-      <div class="pd-header-stat-cell">
-        <div class="fw-bold fs-6 pd-stat-value--ok"><%= load_stats[:loaded_items] %></div>
-        <div class="pd-header-stat-label">Cargados</div>
-      </div>
-    </div>
-    <div class="col-3">
-      <div class="pd-header-stat-cell">
-        <div class="fw-bold fs-6 pd-stat-value--warn"><%= load_stats[:unloaded_items] %></div>
-        <div class="pd-header-stat-label">Pendientes</div>
-      </div>
-    </div>
-    <div class="col-3">
-      <div class="pd-header-stat-cell">
-        <div class="fw-bold fs-6 pd-stat-value--error"><%= load_stats[:missing_items] %></div>
-        <div class="pd-header-stat-label">Faltantes</div>
-      </div>
-    </div>
+    <% end %>
+  </div>
+
+  <%# Acciones del plan %>
+  <div class="d-flex flex-wrap gap-2 align-items-center">
+    <% if delivery_plan.load_closed? %>
+      <span class="pd-badge pd-badge--ok">
+        <i class="bi bi-lock-fill me-1"></i>Carga cerrada
+        <%= l delivery_plan.load_closed_at, format: :short %>
+        <%= "por #{delivery_plan.load_closed_by.name}" if delivery_plan.load_closed_by %>
+      </span>
+      <% if policy(delivery_plan).reopen_load? %>
+        <%= button_to "Reabrir", reopen_load_production_delivery_plan_path(delivery_plan), method: :post,
+              form: {class: "d-inline"}, class: "pd-head-btn",
+              data: {turbo_confirm: "¿Reabrir la carga de este camión?"} %>
+      <% end %>
+    <% else %>
+      <% if policy(delivery_plan).close_load? %>
+        <%
+          open_count = load_stats[:unloaded_items] + load_stats[:missing_items]
+          confirm = open_count.zero? ? "¿Cerrar la carga del camión?" :
+            "Aún hay #{load_stats[:unloaded_items]} producto(s) sin cargar y #{load_stats[:missing_items]} faltante(s). ¿Cerrar la carga de todos modos?"
+        %>
+        <%= button_to close_load_production_delivery_plan_path(delivery_plan), method: :post,
+              form: {class: "d-inline"}, class: "pd-head-btn pd-head-btn--primary",
+              data: {turbo_confirm: confirm} do %>
+          <i class="bi bi-lock me-1"></i>Cerrar carga
+        <% end %>
+      <% end %>
+      <% if policy(delivery_plan).mark_all_loaded? %>
+        <%= button_to mark_all_loaded_production_delivery_plan_path(delivery_plan), method: :post,
+              form: {class: "d-inline"}, class: "pd-head-btn",
+              data: {turbo_confirm: "¿Marcar TODOS los productos del plan como cargados?"} do %>
+          <i class="bi bi-check-all me-1"></i>Marcar todo el plan
+        <% end %>
+      <% end %>
+    <% end %>
+    <%= link_to checklist_production_delivery_plan_path(delivery_plan), target: "_blank", rel: "noopener", class: "pd-head-btn text-decoration-none" do %>
+      <i class="bi bi-printer me-1"></i>Imprimir
+    <% end %>
   </div>
 </div>

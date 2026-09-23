@@ -50,6 +50,12 @@ class DeliveryItem < ApplicationRecord
     missing: 2
   }, _prefix: :load
 
+  MISSING_REASONS = {
+    "no_stock" => "No hay en bodega",
+    "damaged" => "Dañado",
+    "other" => "Otro"
+  }.freeze
+
   # ============================================================================
   # SCOPES
   # ============================================================================
@@ -88,6 +94,7 @@ class DeliveryItem < ApplicationRecord
   after_commit :recalculate_delivery_status, on: [:create, :update]
   after_update :trigger_delivery_recalculation, if: :saved_change_to_load_status?
   after_update_commit :broadcast_item_row_update
+  after_update_commit :broadcast_loading_refresh, if: :saved_change_to_load_status?
 
   # ============================================================================
   # MÉTODOS PÚBLICOS
@@ -101,7 +108,7 @@ class DeliveryItem < ApplicationRecord
     raise StandardError, "No se puede cargar un producto en estado #{status}." unless bulk_actionable?
 
     transaction do
-      update!(load_status: :loaded, status: :loaded_on_truck)
+      update!(load_status: :loaded, status: :loaded_on_truck, missing_reason: nil)
       delivery.recalculate_load_status!
     end
   end
@@ -111,7 +118,7 @@ class DeliveryItem < ApplicationRecord
   # @return [void]
   def mark_unloaded!
     transaction do
-      update!(load_status: :unloaded, status: :pending)
+      update!(load_status: :unloaded, status: :pending, missing_reason: nil)
       delivery.recalculate_load_status!
     end
   end
@@ -119,11 +126,17 @@ class DeliveryItem < ApplicationRecord
   # Marca el item como faltante al momento de cargar el camión.
   #
   # @return [void]
-  def mark_missing!
+  def mark_missing!(reason: nil, actor: nil)
     transaction do
-      update!(load_status: :missing)
+      update!(load_status: :missing, missing_reason: MISSING_REASONS.key?(reason.to_s) ? reason.to_s : nil)
       delivery.recalculate_load_status!
     end
+    notify_missing(actor)
+  end
+
+  # @return [String, nil] motivo legible del faltante
+  def missing_reason_label
+    MISSING_REASONS[missing_reason]
   end
 
   # @return [String] etiqueta legible del load_status
@@ -195,6 +208,15 @@ class DeliveryItem < ApplicationRecord
     NotificationService.create_for_users(users.compact.uniq, self, message)
   end
 
+  # Avisa a logística/admin que un producto quedó faltante al cargar.
+  # @return [void]
+  def notify_missing(actor)
+    users = User.where(role: [:logistics, :admin]).where.not(id: actor&.id).to_a
+    message = "Faltante al cargar: '#{order_item.product}' del pedido #{order_item.order.number}" \
+      "#{" (#{missing_reason_label})" if missing_reason_label}."
+    NotificationService.create_for_users(users, self, message)
+  end
+
   # @return [void]
   def trigger_delivery_recalculation
     delivery&.recalculate_load_status!
@@ -206,6 +228,12 @@ class DeliveryItem < ApplicationRecord
   end
 
   # @return [void]
+  # Sincroniza en vivo la bitácora de carga abierta por otros operarios.
+  def broadcast_loading_refresh
+    plan = delivery&.delivery_plan
+    Turbo::StreamsChannel.broadcast_refresh_later_to(plan) if plan
+  end
+
   def broadcast_item_row_update
     broadcast_replace_to(
       "delivery_#{delivery_id}_items",

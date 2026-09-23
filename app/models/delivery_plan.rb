@@ -12,6 +12,7 @@ class DeliveryPlan < ApplicationRecord
   }.freeze
 
   has_paper_trail
+  belongs_to :load_closed_by, class_name: "User", optional: true
   has_many :delivery_plan_assignments, -> { order(:stop_order) }, dependent: :destroy
   has_many :deliveries, through: :delivery_plan_assignments
   has_many :delivery_plan_locations, dependent: :destroy
@@ -116,10 +117,28 @@ class DeliveryPlan < ApplicationRecord
     end
 
     update!(load_status: new_status)
+  end
 
-    if new_status == :all_loaded && !status_completed?
-      status_completed!
-    end
+  # @return [Boolean] true si la carga ya fue cerrada por un operario
+  def load_closed?
+    load_closed_at.present?
+  end
+
+  # Cierra la carga del camión y deja registro de quién y cuándo.
+  def close_load!(user)
+    update!(load_closed_at: Time.current, load_closed_by_id: user.id)
+    PlanEvent.record(delivery_plan: self, action: "load_closed", actor: user, payload: load_stats)
+  end
+
+  def reopen_load!(user)
+    update!(load_closed_at: nil, load_closed_by_id: nil)
+    PlanEvent.record(delivery_plan: self, action: "load_reopened", actor: user)
+  end
+
+  # Paradas en orden de carga: la última parada se carga primero para que
+  # la primera quede a la mano al descargar.
+  def loading_assignments
+    delivery_plan_assignments.reorder(stop_order: :desc)
   end
 
   # Marcar todo el plan como cargado

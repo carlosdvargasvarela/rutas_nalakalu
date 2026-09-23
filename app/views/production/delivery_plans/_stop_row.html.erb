@@ -1,0 +1,23 @@
+<%# Parada en la lista de la izquierda. locals: delivery, assignment, plan, selected %>
+<%
+  selected = local_assigns.fetch(:selected, false)
+  loaded   = delivery.delivery_items.count { |i| i.load_status == "loaded" }
+  total    = delivery.delivery_items.size
+  tone     = {"all_loaded" => "ok", "partial" => "partial", "some_missing" => "missing"}[delivery.load_status] || "pending"
+%>
+<%= link_to loading_production_delivery_plan_path(plan, stop: delivery.id, filter: params[:filter].presence),
+      id: "stop_#{delivery.id}",
+      class: "pd-stop #{"pd-stop--selected" if selected} pd-stop--#{tone}",
+      data: {loading_target: "deliveryCard", turbo_action: "replace",
+             client_name: delivery.client&.name.to_s.downcase, order_number: delivery.order&.number.to_s.downcase} do %>
+  <span class="pd-stop-badge <%= "pd-stop-badge--done" if delivery.load_status == "all_loaded" %>"><%= assignment&.stop_order || "?" %></span>
+  <span class="flex-grow-1 min-width-0">
+    <span class="d-block fw-bold text-truncate pd-client-name"><%= delivery.client&.name %></span>
+    <span class="d-block text-truncate pd-client-address"><%= delivery.delivery_address&.address %></span>
+  </span>
+  <% if total.positive? %>
+    <span class="pd-badge pd-badge--<%= tone %> flex-shrink-0"><%= loaded %>/<%= total %></span>
+  <% else %>
+    <span class="pd-badge pd-badge--info flex-shrink-0">Mandado</span>
+  <% end %>
+<% end %>
