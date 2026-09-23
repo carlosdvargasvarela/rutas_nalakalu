@@ -31,9 +31,23 @@ export default class extends Controller {
 
     // ← Exponer el controller en el elemento <select> para acceso externo
     this.selectElement.searchableSelectController = this;
+
+    // Turbo morph (refresh por broadcast tras una edición) reemplaza el DOM con
+    // el HTML del servidor: borra el wrapper y destapa el <select> nativo, pero
+    // Stimulus no reconecta el controller. Reconstruimos el widget.
+    this.onMorph = () => {
+      if (this.wrapper?.isConnected && this.selectElement.style.display === "none") return;
+      this.unbindEvents();
+      this.destroy();
+      this.build();
+      this.bindEvents();
+      this.syncFromSelect();
+    };
+    document.addEventListener("turbo:morph", this.onMorph);
   }
 
   disconnect() {
+    document.removeEventListener("turbo:morph", this.onMorph);
     this.unbindEvents();
     this.destroy();
     this.initialized = false;
