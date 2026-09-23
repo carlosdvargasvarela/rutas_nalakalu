@@ -200,6 +200,9 @@
 .pd-item-row--loaded  { background: #f0fdf4; }
 .pd-item-row--missing { background: #fff5f5; }
 
+.pd-act-form { display: flex; margin: 0; flex: 3; }
+.pd-act-form--2 { flex: 2; }
+.pd-act-form > button { flex: 1; width: 100%; }
 .pd-btn-ok {
   flex: 3;
   background: var(--color-success);

@@ -356,9 +356,9 @@ Rails.application.routes.draw do
 
     resources :delivery_items do
       member do
-        match :mark_loaded, via: [:get, :post]
-        match :mark_unloaded, via: [:get, :post]
-        match :mark_missing, via: [:get, :post]
+        post :mark_loaded
+        post :mark_unloaded
+        post :mark_missing
         get   :reschedule_form
         patch :reschedule
         patch :add_note
