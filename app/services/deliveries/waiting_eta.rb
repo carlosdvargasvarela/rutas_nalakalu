@@ -32,6 +32,15 @@ module Deliveries
       ((total / ROUND_TO.to_f).ceil * ROUND_TO).clamp(ROUND_TO, nil)
     end
 
+    # 45 -> "45 minutos", 60 -> "1 hora", 90 -> "1 hora y 30 minutos"
+    def self.humanize(mins)
+      return "#{mins} minutos" if mins < 60
+
+      h, m = mins.divmod(60)
+      out = "#{h} #{(h == 1) ? "hora" : "horas"}"
+      m.zero? ? out : "#{out} y #{m} minutos"
+    end
+
     # Minutos extra por productos con palabra clave (p. ej. "armado=30"): por
     # producto, la mayor coincidencia.
     def buffer_minutes(delivery)

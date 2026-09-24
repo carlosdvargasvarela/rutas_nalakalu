@@ -22,7 +22,7 @@
           <% if eta %>
             <div class="alert alert-info py-2 mb-3">
               <i class="bi bi-truck me-1"></i>Nuestro equipo de transportistas está a aproximadamente
-              <strong><%= eta %> minutos</strong> de tu dirección.
+              <strong><%= Deliveries::WaitingEta.humanize(eta) %></strong> de tu dirección.
             </div>
           <% end %>
           <p class="small text-muted mb-0">

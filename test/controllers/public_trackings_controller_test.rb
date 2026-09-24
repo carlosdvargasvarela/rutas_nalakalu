@@ -123,4 +123,11 @@ class PublicTrackingsControllerTest < ActionDispatch::IntegrationTest
       assert_select "strong", text: /(4[05]) minutos/
     end
   end
+
+  test "WaitingEta.humanize switches to hours from 60 minutes" do
+    assert_equal "45 minutos", Deliveries::WaitingEta.humanize(45)
+    assert_equal "1 hora", Deliveries::WaitingEta.humanize(60)
+    assert_equal "1 hora y 30 minutos", Deliveries::WaitingEta.humanize(90)
+    assert_equal "2 horas", Deliveries::WaitingEta.humanize(120)
+  end
 end
