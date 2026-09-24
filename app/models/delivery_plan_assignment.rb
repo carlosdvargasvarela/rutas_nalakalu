@@ -89,6 +89,8 @@ class DeliveryPlanAssignment < ApplicationRecord
         actor: AuditActor.current,
         payload: {via: "plan_assignment"}
       )
+
+      finish_plan_if_done
     end
 
     true
@@ -108,6 +110,8 @@ class DeliveryPlanAssignment < ApplicationRecord
 
       # Recalcular estado del delivery tras el fallo
       delivery.reload.update_status_based_on_items
+
+      finish_plan_if_done
     end
 
     true
@@ -135,6 +139,11 @@ class DeliveryPlanAssignment < ApplicationRecord
   # ============================================================================
 
   private
+
+  # Al cerrar la última parada el plan se completa solo (apaga el seguimiento GPS)
+  def finish_plan_if_done
+    delivery_plan.reload.finish! if delivery_plan.status_in_progress?
+  end
 
   # Callback al crear el assignment: cambia los items confirmados a in_plan
   def change_deliveries_statuses

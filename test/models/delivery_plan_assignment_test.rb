@@ -77,6 +77,29 @@ class DeliveryPlanAssignmentTest < ActiveSupport::TestCase
     assert_equal "plan_assignment", event.payload_data["via"]
   end
 
+  test "complete! on the last open stop finishes an in_progress plan" do
+    assignment = delivery_plan_assignments(:one)
+    plan = assignment.delivery_plan
+    plan.delivery_plan_assignments.where.not(id: assignment.id).destroy_all
+    plan.update_columns(status: DeliveryPlan.statuses[:in_progress])
+
+    assignment.complete!
+
+    assert_equal "completed", plan.reload.status
+  end
+
+  test "complete! keeps the plan in_progress while another stop is still pending" do
+    assignment = delivery_plan_assignments(:one)
+    plan = assignment.delivery_plan
+    plan.delivery_plan_assignments.where.not(id: assignment.id).destroy_all
+    plan.delivery_plan_assignments.create!(delivery: deliveries(:two), stop_order: 99)
+    plan.update_columns(status: DeliveryPlan.statuses[:in_progress])
+
+    assignment.complete!
+
+    assert_equal "in_progress", plan.reload.status
+  end
+
   test "change_deliveries_statuses leaves a PaperTrail version on each confirmed item it moves to in_plan" do
     plan = DeliveryPlan.create!(week: "31", year: 2026, status: :sent_to_logistics)
     delivery = deliveries(:one)
