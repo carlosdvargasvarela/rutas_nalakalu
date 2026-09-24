@@ -1,0 +1,8 @@
+<%# Contador de productos pendientes de confirmar en la pestaña Productos. %>
+<span id="<%= dom_id(delivery, :products_tab_badge) %>">
+  <% pending = delivery.delivery_items.pending.count %>
+  <% if pending > 0 %>
+    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+          style="font-size: 0.6rem;"><%= pending %></span>
+  <% end %>
+</span>

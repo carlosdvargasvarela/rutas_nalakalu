@@ -375,6 +375,11 @@ class DeliveryItemsController < ApplicationController
             locals: {delivery: delivery}
           ),
           turbo_stream.replace(
+            dom_id(delivery, :products_tab_badge),
+            partial: "deliveries/show_partials/products_tab_badge",
+            locals: {delivery: delivery}
+          ),
+          turbo_stream.replace(
             dom_id(delivery, :card_content),
             partial: "deliveries/index_partials/delivery_card_content",
             locals: {delivery: delivery}

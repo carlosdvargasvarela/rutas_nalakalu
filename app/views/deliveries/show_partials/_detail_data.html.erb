@@ -21,12 +21,7 @@
       <li class="nav-item">
         <button class="nav-link small py-1 position-relative" data-bs-toggle="tab" data-bs-target="#products-pane" type="button">
           Productos
-          <% if delivery.delivery_items.pending.any? %>
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                  style="font-size: 0.6rem;">
-              <%= delivery.delivery_items.pending.count %>
-            </span>
-          <% end %>
+          <%= render "deliveries/show_partials/products_tab_badge", delivery: delivery %>
         </button>
       </li>
       <li class="nav-item">
