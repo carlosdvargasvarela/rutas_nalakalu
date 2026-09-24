@@ -93,4 +93,25 @@ class DeliveryPlansControllerTest < ActionDispatch::IntegrationTest
     assert_match "PRODUCTO-UNICO-TEST-123", response.body
     assert_match "Cancelad", response.body
   end
+
+  test "show muestra ETA solo en paradas pendientes o en ruta con GPS reciente" do
+    plan = delivery_plans(:one)
+    assignment = delivery_plan_assignments(:one)
+    assignment.update_columns(status: DeliveryPlanAssignment.statuses[:pending], stop_order: 1)
+    assignment.delivery.delivery_address.update_columns(latitude: 9.93, longitude: -84.08)
+    plan.update_columns(current_lat: 9.93, current_lng: -84.08, last_seen_at: Time.current)
+
+    get delivery_plan_url(plan)
+    assert_response :success
+    assert_match "en ~5 minutos", response.body
+
+    assignment.update_columns(status: DeliveryPlanAssignment.statuses[:completed])
+    get delivery_plan_url(plan)
+    refute_match "en ~5 minutos", response.body
+
+    assignment.update_columns(status: DeliveryPlanAssignment.statuses[:pending])
+    assignment.delivery.update_columns(status: Delivery.statuses[:rescheduled])
+    get delivery_plan_url(plan)
+    refute_match "en ~5 minutos", response.body
+  end
 end

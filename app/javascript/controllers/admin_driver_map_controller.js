@@ -2,6 +2,8 @@
 import { Controller } from "@hotwired/stimulus";
 import { subscribeToDeliveryPlan } from "channels/delivery_plan_channel";
 
+const ROUTE_REFRESH_MS = 30000;
+
 export default class extends Controller {
   static values = {
     deliveryPlanId: Number,
@@ -33,10 +35,24 @@ export default class extends Controller {
       },
     );
 
+    // El mapa se crea con su pestaña oculta (tamaño 0): al mostrarla hay que
+    // recalcular el tamaño y encuadrar una sola vez, no en cada resize.
+    this.onTabShown = (e) => {
+      const target = e.target.dataset?.bsTarget;
+      if (!this.map || !target || !this.element.closest(target)) return;
+      google.maps.event.trigger(this.map, "resize");
+      if (!this.fittedOnShow && this.deliveryMarkers?.length) {
+        this.map.fitBounds(this.bounds);
+        this.fittedOnShow = true;
+      }
+    };
+    document.addEventListener("shown.bs.tab", this.onTabShown);
+
     this.initMap();
   }
 
   disconnect() {
+    document.removeEventListener("shown.bs.tab", this.onTabShown);
     if (this.subscription) {
       this.subscription.unsubscribe();
     }
@@ -195,6 +211,12 @@ export default class extends Controller {
   }
 
   drawRoute() {
+    // El GPS llega cada ~10-15s; recalcular la ruta en cada ping gasta cuota
+    // de Directions y redibuja la línea sin necesidad.
+    const now = Date.now();
+    if (this.lastRouteAt && now - this.lastRouteAt < ROUTE_REFRESH_MS) return;
+    this.lastRouteAt = now;
+
     const validCoord = (v) => v !== 0 && Number.isFinite(v) && !Number.isNaN(v);
     if (!validCoord(this.currentLatValue) || !validCoord(this.currentLngValue)) {
       console.warn("⚠️ No hay posición válida del conductor");
@@ -235,22 +257,22 @@ export default class extends Controller {
     const destination = waypoints[waypoints.length - 1].location;
     const intermediateWaypoints = waypoints.slice(0, -1);
 
-    // Limpiar renderer anterior si existe
-    if (this.directionsRenderer) {
-      this.directionsRenderer.setMap(null);
+    // Un solo renderer con preserveViewport: crear uno nuevo en cada ping (o
+    // dejar preserveViewport en false) reencuadra el mapa a la ruta cada vez
+    // y es lo que hacía "brincar" la vista.
+    if (!this.directionsService) {
+      this.directionsService = new google.maps.DirectionsService();
+      this.directionsRenderer = new google.maps.DirectionsRenderer({
+        suppressMarkers: true, // ✅ mantenemos tus marcadores personalizados
+        preserveViewport: true,
+        map: this.map,
+        polylineOptions: {
+          strokeColor: "#0d6efd",
+          strokeOpacity: 0.8,
+          strokeWeight: 5,
+        },
+      });
     }
-
-    this.directionsService = new google.maps.DirectionsService();
-    this.directionsRenderer = new google.maps.DirectionsRenderer({
-      suppressMarkers: true, // ✅ mantenemos tus marcadores personalizados
-      polylineOptions: {
-        strokeColor: "#0d6efd",
-        strokeOpacity: 0.8,
-        strokeWeight: 5,
-      },
-    });
-
-    this.directionsRenderer.setMap(this.map);
 
     this.directionsService.route(
       {
@@ -321,7 +343,10 @@ export default class extends Controller {
     const newPosition = { lat: latNum, lng: lngNum };
 
     this.driverMarker.setPosition(newPosition);
-    this.map.panTo(newPosition);
+    // Solo seguimos al camión si sale de la vista: un panTo en cada ping
+    // pelea con el usuario que está moviendo o haciendo zoom en el mapa.
+    const visible = this.map.getBounds();
+    if (visible && !visible.contains(newPosition)) this.map.panTo(newPosition);
 
     this.drawRoute();
   }

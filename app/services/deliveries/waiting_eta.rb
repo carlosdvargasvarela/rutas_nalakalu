@@ -1,6 +1,6 @@
 module Deliveries
-  # Minutos aproximados que le faltan al camión para llegar a una parada que
-  # aún no inicia, SIN exponer posición ni direcciones al cliente.
+  # Minutos aproximados que le faltan al camión para llegar a cada parada
+  # pendiente o en ruta de un plan, SIN exponer posición ni direcciones.
   # ponytail: distancia en línea recta × factor de calle / velocidad fija, sin
   # API de rutas. Si se necesita precisión, cambiar `travel_minutes` por Directions.
   class WaitingEta
@@ -12,24 +12,37 @@ module Deliveries
 
     def initialize(assignment)
       @assignment = assignment
-      @plan = assignment.delivery_plan
     end
 
     # @return [Integer, nil] nil si no hay GPS reciente o falta alguna coordenada
     def minutes
-      return unless @plan.current_lat && @plan.last_seen_at && @plan.last_seen_at > MAX_GPS_AGE.ago
+      self.class.for_plan(@assignment.delivery_plan)[@assignment.stop_order]
+    end
 
-      ahead = @plan.delivery_plan_assignments.where(status: %i[pending in_route])
-        .where("stop_order < ?", @assignment.stop_order).order(:stop_order)
+    # @return [Hash{Integer=>Integer}] stop_order => minutos hasta llegar. Cada
+    #   parada anterior suma su tiempo de servicio y el buffer de sus productos
+    #   con palabra clave; las canceladas/reagendadas/archivadas/completadas no
+    #   cuentan ni reciben ETA. Vacío si no hay GPS reciente.
+    def self.for_plan(plan)
+      return {} unless plan.current_lat && plan.last_seen_at && plan.last_seen_at > MAX_GPS_AGE.ago
+
+      stops = plan.delivery_plan_assignments.where(status: %i[pending in_route]).where.not(stop_order: nil)
         .includes(delivery: [:delivery_address, {delivery_items: :order_item}]).to_a
-      points = [[@plan.current_lat, @plan.current_lng]] +
-        (ahead.map { |a| a.delivery.delivery_address } + [@assignment.delivery.delivery_address])
-          .map { |addr| [addr.latitude, addr.longitude] }
-      return if points.flatten.any?(&:nil?)
+        .reject { |a| a.delivery.hidden_from_route_map? }.group_by(&:stop_order).sort
+      rules = buffer_rules
+      from = [plan.current_lat.to_f, plan.current_lng.to_f]
+      elapsed = 0.0
+      stops.each_with_object({}) do |(order, group), result|
+        addr = group.first.delivery.delivery_address
+        to = [addr.latitude, addr.longitude]
+        next if to.any?(&:nil?)
 
-      total = points.each_cons(2).sum { |a, b| travel_minutes(a, b) } +
-        ahead.map(&:stop_order).uniq.size * STOP_MINUTES + ahead.sum { |a| buffer_minutes(a.delivery) }
-      ((total / ROUND_TO.to_f).ceil * ROUND_TO).clamp(ROUND_TO, nil)
+        to = to.map(&:to_f)
+        elapsed += travel_minutes(from, to)
+        result[order] = ((elapsed / ROUND_TO).ceil * ROUND_TO).clamp(ROUND_TO, nil)
+        elapsed += STOP_MINUTES + group.sum { |a| buffer_minutes(a.delivery, rules) }
+        from = to
+      end
     end
 
     # 45 -> "45 minutos", 60 -> "1 hora", 90 -> "1 hora y 30 minutos"
@@ -43,8 +56,7 @@ module Deliveries
 
     # Minutos extra por productos con palabra clave (p. ej. "armado=30"): por
     # producto, la mayor coincidencia.
-    def buffer_minutes(delivery)
-      rules = self.class.buffer_rules
+    def self.buffer_minutes(delivery, rules = buffer_rules)
       delivery.delivery_items.sum do |item|
         text = Vocabulary.normalize(item.order_item.product)
         rules.filter_map { |kw, mins| mins if text.include?(kw) }.max.to_i
@@ -58,9 +70,7 @@ module Deliveries
       end
     end
 
-    private
-
-    def travel_minutes(a, b)
+    def self.travel_minutes(a, b)
       rad = Math::PI / 180
       dlat = (b[0] - a[0]) * rad
       dlng = (b[1] - a[1]) * rad
@@ -68,5 +78,6 @@ module Deliveries
       km = 2 * 6371 * Math.asin(Math.sqrt(h))
       km * ROAD_FACTOR / AVG_SPEED_KMH * 60
     end
+    private_class_method :travel_minutes
   end
 end

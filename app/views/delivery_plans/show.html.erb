@@ -38,11 +38,6 @@
       </div>
     </div>
   </div>
-  <script>
-    document.getElementById("planMapTabs")?.addEventListener("shown.bs.tab", () => {
-      window.dispatchEvent(new Event("resize"))
-    })
-  </script>
 
   <%= render "delivery_plans/show_partials/progress_section",
         delivery_plan: @delivery_plan,
