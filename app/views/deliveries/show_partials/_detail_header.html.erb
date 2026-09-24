@@ -9,8 +9,8 @@
 <% is_admin             = local_assigns.fetch(:is_admin, false) %>
 <header id="delivery_detail_header_<%= delivery.id %>" class="bg-white border-bottom p-4" style="position: relative;">
   <% age_days = (Date.current - delivery.created_at.to_date).to_i %>
-  <span class="badge bg-light text-muted border rounded-pill badge-xxs"
-        style="position: absolute; top: 12px; right: 16px; font-weight: 500;"
+  <span class="badge bg-light text-muted border rounded-pill"
+        style="position: absolute; top: 12px; right: 16px; font-weight: 600; font-size: 1rem; padding: 0.4em 0.8em;"
         title="Creado hace <%= age_days %> día<%= 's' unless age_days == 1 %> (<%= l(delivery.created_at.to_date, format: :short) %>)">
     <i class="bi bi-clock-history me-1"></i><%= age_days %>d
   </span>

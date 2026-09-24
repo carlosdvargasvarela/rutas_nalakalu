@@ -14,8 +14,8 @@
   <div class="card card-hover border-0 shadow-sm mb-2 <%= border_class %> <%= 'warehousing-accent' if delivery.warehousing? %>"
        style="border-radius: 10px; cursor: pointer; position: relative;">
     <% age_days = (Date.current - delivery.created_at.to_date).to_i %>
-    <span class="badge bg-light text-muted border rounded-pill badge-xxs"
-          style="position: absolute; top: -8px; right: 8px; font-weight: 500;"
+    <span class="badge bg-light text-muted border rounded-pill"
+          style="position: absolute; top: -10px; right: 8px; font-weight: 600; font-size: 0.8rem; padding: 0.35em 0.7em;"
           title="Creado hace <%= age_days %> día<%= 's' unless age_days == 1 %> (<%= l(delivery.created_at.to_date, format: :short) %>)">
       <i class="bi bi-clock-history me-1"></i><%= age_days %>d
     </span>
