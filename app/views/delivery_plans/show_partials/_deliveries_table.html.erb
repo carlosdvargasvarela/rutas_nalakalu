@@ -106,6 +106,12 @@
                               data-bs-target="#notaEntregaModal<%= delivery.id %>">
                         <i class="bi bi-sticky"></i> Agregar nota
                       </button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary"
+                              data-controller="clipboard"
+                              data-clipboard-text-value="<%= delivery.public_tracking_url %>"
+                              data-action="click->clipboard#copy">
+                        <i class="bi bi-link-45deg"></i> Copiar seguimiento
+                      </button>
                     </div>
                   <% elsif delivery.rescheduled? %>
                     <% next_del = delivery.next_rescheduled_delivery %>
