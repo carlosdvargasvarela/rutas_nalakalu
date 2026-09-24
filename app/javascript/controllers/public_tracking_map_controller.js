@@ -16,6 +16,7 @@ export default class extends Controller {
     truckLat: Number,
     truckLng: Number,
     pollUrl: String,
+    deliveryIds: Array,
   };
   static targets = ["map", "lastUpdate", "connectionBanner"];
 
@@ -27,6 +28,13 @@ export default class extends Controller {
       (data) => {
         if (data.type === "position_update") {
           this.updateTruck(data.current_lat, data.current_lng, data.last_seen_at);
+        } else if (
+          data.type === "assignment_update" &&
+          this.deliveryIdsValue.includes(data.delivery_id)
+        ) {
+          // Entregada/fallida/reprogramada: el servidor decide qué vista
+          // corresponde, recargamos para mostrarla.
+          window.location.reload();
         }
       },
       (isConnected) => this.updateConnectionBanner(isConnected),
@@ -47,6 +55,8 @@ export default class extends Controller {
       const res = await fetch(this.pollUrlValue, { headers: { Accept: "application/json" } });
       if (!res.ok) return;
       const data = await res.json();
+      // Respaldo si el WebSocket perdió el aviso de cambio de estado.
+      if (data.stage && data.stage !== "live") return window.location.reload();
       if (data.current_lat && data.current_lng) {
         this.updateTruck(data.current_lat, data.current_lng, data.last_seen_at);
       }

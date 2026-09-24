@@ -12,10 +12,10 @@ export default class extends Controller {
       (data) => {
         if (data.type !== "assignment_update") return;
         if (!this.deliveryIdsValue.includes(data.delivery_id)) return;
-        if (data.status !== "in_route") return;
 
-        // El conductor arrancó esta parada: recargamos para pasar al mapa en
-        // vivo (el servidor decide el stage — no duplicamos esa lógica aquí).
+        // Cualquier cambio de estado de la parada (arrancó, se canceló...):
+        // recargamos y el servidor decide el stage — no duplicamos esa
+        // lógica aquí.
         window.location.reload();
       },
       (isConnected) => this.updateConnectionBanner(isConnected),

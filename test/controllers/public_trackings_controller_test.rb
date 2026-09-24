@@ -83,6 +83,7 @@ class PublicTrackingsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 9.93, body["current_lat"]
     assert_equal(-84.08, body["current_lng"])
     assert body["last_seen_at"].present?
+    assert_equal "live", body["stage"]
   end
 
   test "json poll endpoint exposes nothing outside the live stage" do
@@ -93,7 +94,7 @@ class PublicTrackingsControllerTest < ActionDispatch::IntegrationTest
     get public_tracking_url(token: delivery.tracking_token, format: :json)
 
     assert_response :success
-    assert_equal({}, JSON.parse(response.body))
+    assert_equal({"stage" => "waiting"}, JSON.parse(response.body))
   end
 
   test "waiting stage shows client name, delay note and ETA with assembly buffer, no address of other stops" do

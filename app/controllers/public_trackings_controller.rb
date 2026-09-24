@@ -65,9 +65,10 @@ class PublicTrackingsController < ApplicationController
   end
 
   def live_position_json
-    return {} unless @stage == :live
+    return {stage: @stage} unless @stage == :live
 
     {
+      stage: @stage,
       current_lat: @plan.current_lat&.to_f,
       current_lng: @plan.current_lng&.to_f,
       last_seen_at: @plan.last_seen_at&.iso8601
