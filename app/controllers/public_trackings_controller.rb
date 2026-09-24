@@ -26,6 +26,8 @@ class PublicTrackingsController < ApplicationController
     # el conductor arranque ESTA parada, el cliente no debe poder ver por
     # dónde anda el camión (revelaría otras paradas de la ruta) ni asumir
     # que "ya viene" cuando aún no le toca.
+    @stop_assignments = stop_assignments
+    @stop_orders = @stop_assignments.map { |a| a.delivery.order }.uniq.sort_by(&:number)
     @stage = client_stage
 
     # El mapa se actualiza por ActionCable en cuanto el celular del conductor
@@ -42,11 +44,23 @@ class PublicTrackingsController < ApplicationController
 
   private
 
+  # Asignaciones del MISMO cliente en esta misma parada (el grouper les da el
+  # mismo stop_order): el cliente ve un solo seguimiento aunque haya varios
+  # pedidos. Se filtra por cliente para no mostrar pedidos de otras personas
+  # que comparten edificio.
+  def stop_assignments
+    @plan.delivery_plan_assignments.where(stop_order: @assignment.stop_order)
+      .includes(delivery: :order)
+      .select { |a| a.delivery.order.client_id == @delivery.order.client_id }
+  end
+
   def client_stage
     return :issue if @delivery.rescheduled?
     return :issue if @assignment.cancelled?
     return :delivered if @assignment.completed?
-    return :live if @assignment.in_route?
+    # Asociación blanda: si el conductor ya arrancó cualquier pedido de esta
+    # parada, el camión ya está yendo al lugar de todos.
+    return :live if @stop_assignments.any?(&:in_route?)
     :waiting
   end
 

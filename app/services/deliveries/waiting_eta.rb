@@ -28,7 +28,7 @@ module Deliveries
       return if points.flatten.any?(&:nil?)
 
       total = points.each_cons(2).sum { |a, b| travel_minutes(a, b) } +
-        ahead.sum { |a| STOP_MINUTES + buffer_minutes(a.delivery) }
+        ahead.map(&:stop_order).uniq.size * STOP_MINUTES + ahead.sum { |a| buffer_minutes(a.delivery) }
       ((total / ROUND_TO.to_f).ceil * ROUND_TO).clamp(ROUND_TO, nil)
     end
 

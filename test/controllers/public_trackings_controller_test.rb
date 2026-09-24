@@ -130,4 +130,32 @@ class PublicTrackingsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "1 hora y 30 minutos", Deliveries::WaitingEta.humanize(90)
     assert_equal "2 horas", Deliveries::WaitingEta.humanize(120)
   end
+
+  test "waiting stage lists every order of the same client in the same stop" do
+    assignment = delivery_plan_assignments(:one)
+    assignment.update_columns(status: DeliveryPlanAssignment.statuses[:pending], stop_order: 1)
+    other = deliveries(:two)
+    assert_not_equal assignment.delivery.order_id, other.order_id
+    other.order.update_columns(client_id: assignment.delivery.order.client_id, number: "OTRO-1")
+    DeliveryPlanAssignment.create!(delivery: other, delivery_plan: assignment.delivery_plan).update_columns(stop_order: 1)
+
+    get public_tracking_url(token: assignment.delivery.tracking_token)
+
+    assert_response :success
+    assert_match "Pedidos", response.body
+    assert_match "##{other.order.number}", response.body
+  end
+
+  test "a sibling order in route puts every order of the stop on the live stage" do
+    assignment = delivery_plan_assignments(:one)
+    assignment.update_columns(status: DeliveryPlanAssignment.statuses[:pending], stop_order: 1)
+    other = deliveries(:two)
+    other.order.update_columns(client_id: assignment.delivery.order.client_id, number: "OTRO-1")
+    sibling = DeliveryPlanAssignment.create!(delivery: other, delivery_plan: assignment.delivery_plan)
+    sibling.update_columns(stop_order: 1, status: DeliveryPlanAssignment.statuses[:in_route])
+
+    get public_tracking_url(token: assignment.delivery.tracking_token)
+
+    assert_match "public-tracking-map", response.body
+  end
 end

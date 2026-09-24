@@ -1,7 +1,7 @@
 <div class="container py-4"
      data-controller="public-tracking-waiting"
      data-public-tracking-waiting-plan-id-value="<%= @plan.id %>"
-     data-public-tracking-waiting-delivery-id-value="<%= @delivery.id %>">
+     data-public-tracking-waiting-delivery-ids-value="<%= @stop_assignments.map(&:delivery_id).to_json %>">
   <div class="row">
     <div class="col-lg-8 mx-auto">
       <div class="alert alert-warning py-2 text-center small" data-public-tracking-waiting-target="connectionBanner" hidden>
@@ -15,7 +15,7 @@
           <h3 class="fw-bold mb-1">Tu pedido está confirmado</h3>
           <p class="mb-3"><%= @delivery.order.client.name %></p>
           <p class="text-muted mb-4">
-            Pedido <strong>#<%= @delivery.order.number %></strong> — en cuanto el conductor
+            <%= @stop_orders.size > 1 ? "Pedidos" : "Pedido" %> <strong><%= @stop_orders.map { |o| "##{o.number}" }.to_sentence(two_words_connector: " y ", last_word_connector: " y ") %></strong> — en cuanto el conductor
             salga hacia tu dirección, vas a ver el mapa en vivo aquí mismo, sin recargar la página.
           </p>
           <% eta = Deliveries::WaitingEta.new(@assignment).minutes %>

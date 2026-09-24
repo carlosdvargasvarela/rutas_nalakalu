@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus";
 import { subscribeToDeliveryPlan } from "channels/delivery_plan_channel";
 
 export default class extends Controller {
-  static values = { planId: Number, deliveryId: Number };
+  static values = { planId: Number, deliveryIds: Array };
   static targets = ["connectionBanner"];
 
   connect() {
@@ -11,7 +11,7 @@ export default class extends Controller {
       this.planIdValue,
       (data) => {
         if (data.type !== "assignment_update") return;
-        if (data.delivery_id !== this.deliveryIdValue) return;
+        if (!this.deliveryIdsValue.includes(data.delivery_id)) return;
         if (data.status !== "in_route") return;
 
         // El conductor arrancó esta parada: recargamos para pasar al mapa en
