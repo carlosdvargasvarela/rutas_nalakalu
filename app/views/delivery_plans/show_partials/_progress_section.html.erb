@@ -1,9 +1,11 @@
 <% visible = assignments.reject { |a| a.delivery.hidden_from_route_map? } %>
 <div id="delivery_progress">
   <%# ── Progreso de entregas ── %>
-  <% total = visible.size %>
+  <%# Una parada = un lugar: varios pedidos con el mismo stop_order cuentan como una. %>
+  <% stops = visible.group_by(&:stop_order).values %>
+  <% total = stops.size %>
   <% if total > 0 %>
-    <% completed = visible.count { |a| a.status.to_s == "completed" } %>
+    <% completed = stops.count { |group| group.all? { |a| a.status.to_s == "completed" } } %>
     <% pct = (completed * 100.0 / total).round %>
     <div class="d-flex align-items-center gap-3 mb-3">
       <span class="text-muted small fw-semibold text-uppercase">Progreso</span>
