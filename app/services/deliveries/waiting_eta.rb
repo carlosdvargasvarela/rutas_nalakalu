@@ -1,11 +1,17 @@
 module Deliveries
   # Minutos aproximados que le faltan al camión para llegar a cada parada
   # pendiente o en ruta de un plan, SIN exponer posición ni direcciones.
-  # ponytail: distancia en línea recta × factor de calle / velocidad fija, sin
-  # API de rutas. Si se necesita precisión, cambiar `travel_minutes` por Directions.
+  # ponytail: distancia en línea recta × factor de calle / velocidad según la
+  # distancia (ciudad lento, carretera rápido), sin API de rutas. Si se necesita
+  # precisión (tráfico, rutas reales), cambiar `travel_minutes` por Directions.
   class WaitingEta
     ROAD_FACTOR = 1.4
-    AVG_SPEED_KMH = 30.0
+    # Velocidad media por tramo: 25 km/h en trayectos cortos (ciudad), sube
+    # linealmente hasta 60 km/h en trayectos de 40 km o más (carretera).
+    CITY_SPEED_KMH = 25.0
+    HIGHWAY_SPEED_KMH = 60.0
+    CITY_KM = 5.0
+    HIGHWAY_KM = 40.0
     STOP_MINUTES = 10
     ROUND_TO = 5
     MAX_GPS_AGE = 15.minutes
@@ -76,7 +82,9 @@ module Deliveries
       dlng = (b[1] - a[1]) * rad
       h = Math.sin(dlat / 2)**2 + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dlng / 2)**2
       km = 2 * 6371 * Math.asin(Math.sqrt(h))
-      km * ROAD_FACTOR / AVG_SPEED_KMH * 60
+      road_km = km * ROAD_FACTOR
+      share = ((road_km - CITY_KM) / (HIGHWAY_KM - CITY_KM)).clamp(0, 1)
+      road_km / (CITY_SPEED_KMH + share * (HIGHWAY_SPEED_KMH - CITY_SPEED_KMH)) * 60
     end
     private_class_method :travel_minutes
   end

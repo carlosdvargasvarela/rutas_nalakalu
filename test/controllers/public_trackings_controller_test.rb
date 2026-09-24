@@ -159,4 +159,12 @@ class PublicTrackingsControllerTest < ActionDispatch::IntegrationTest
 
     assert_match "public-tracking-map", response.body
   end
+
+  test "WaitingEta usa velocidad de carretera en tramos largos" do
+    tramo = ->(a, b) { Deliveries::WaitingEta.send(:travel_minutes, a, b) }
+    # Palmares -> Tamarindo (~150 km en línea recta): horas, no medio día
+    assert_in_delta 3.5 * 60, tramo.([9.94, -84.44], [10.30, -85.84]), 45
+    # tramo urbano de ~2 km en línea recta: unos minutos
+    assert_operator tramo.([9.93, -84.08], [9.945, -84.08]), :<, 10
+  end
 end
