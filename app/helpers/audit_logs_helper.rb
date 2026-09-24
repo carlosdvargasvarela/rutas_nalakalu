@@ -274,11 +274,6 @@ module AuditLogsHelper
     end
   end
 
-  def format_datetime_cr(time)
-    return "—" unless time
-    time.in_time_zone("America/Costa_Rica").strftime("%d/%m/%Y %H:%M")
-  end
-
   def safe_find_item(version)
     version.item_type.constantize.find_by(id: version.item_id)
   rescue NameError, StandardError

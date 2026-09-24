@@ -29,34 +29,6 @@ module ApplicationHelper
     end
   end
 
-  # Delivery: usa EXACTAMENTE tus enums
-  DELIVERY_STATUS_COLORS = {
-    "scheduled" => "warning",
-    "ready_to_deliver" => "status-blue",
-    "in_plan" => "status-blue",
-    "in_route" => "dark",
-    "delivered" => "success",
-    "rescheduled" => "status-teal",
-    "cancelled" => "danger",
-    "archived" => "light",
-    "failed" => "danger",
-    "loaded_on_truck" => "dark"      # 👈 CAMBIO: Ahora es 'dark'
-  }.freeze
-
-  # DeliveryItem: estados típicos en tu app
-  DELIVERY_ITEM_STATUS_COLORS = {
-    "pending" => "warning",
-    "confirmed" => "status-blue",
-    "in_plan" => "status-blue",
-    "in_route" => "dark",
-    "delivered" => "success",
-    "rescheduled" => "status-teal",
-    "cancelled" => "danger",
-    "failed" => "danger",
-    "loaded_on_truck" => "dark",      # 👈 CAMBIO: Ahora es 'dark'
-    "warehousing" => "dark"
-  }.freeze
-
   ORDER_STATUS_COLORS = {
     "in_production" => "status-taupe",
     "ready_for_delivery" => "status-teal",
@@ -71,15 +43,6 @@ module ApplicationHelper
     "delivered" => "success",
     "cancelled" => "danger",
     "missing" => "warning"
-  }.freeze
-
-  DELIVERY_PLAN_STATUS_COLORS = {
-    "draft" => "status-taupe",
-    "sent_to_logistics" => "status-teal",
-    "routes_created" => "status-blue",
-    "in_progress" => "warning",
-    "completed" => "success",
-    "aborted" => "danger"
   }.freeze
 
   STATUS_ICONS = {
@@ -116,21 +79,13 @@ module ApplicationHelper
     date.strftime("%d/%m/%Y")
   end
 
-  # Métodos de color por entidad
-  def delivery_status_color(status) =
-    normalize_badge_color(DELIVERY_STATUS_COLORS[status.to_s] || "secondary")
-
-  def delivery_item_status_color(status) =
-    normalize_badge_color(DELIVERY_ITEM_STATUS_COLORS[status.to_s] || "secondary")
-
+  # Métodos de color por entidad. Los de Delivery/DeliveryItem/DeliveryPlan
+  # viven en DeliveriesHelper/DeliveryItemsHelper/DeliveryPlansHelper.
   def order_status_color(status) =
     normalize_badge_color(ORDER_STATUS_COLORS[status.to_s] || "secondary")
 
   def order_item_status_color(status) =
     normalize_badge_color(ORDER_ITEM_STATUS_COLORS[status.to_s] || "secondary")
-
-  def delivery_plan_status_color(status) =
-    normalize_badge_color(DELIVERY_PLAN_STATUS_COLORS[status.to_s] || "secondary")
 
   # Deducción automática de tipo según objeto AR o símbolo
   def infer_status_type(record_or_type)
@@ -210,7 +165,7 @@ module ApplicationHelper
 
   # Formato de fecha/hora estándar para Costa Rica
   def format_datetime_cr(datetime)
-    return "" if datetime.blank?
+    return "—" if datetime.blank?
     datetime.in_time_zone("America/Costa_Rica").strftime("%d/%m/%Y %H:%M")
   end
 end
