@@ -37,7 +37,8 @@ module Deliveries
       },
       "service_case" => {"keywords" => ["caso de servicio", "caso servicio"]},
       "repair_service" => {"keywords" => ["servicio de reparacion", "servicio reparacion"]},
-      "showroom" => {"inter_sala_fallback_keywords" => ["entre salas"]}
+      "showroom" => {"inter_sala_fallback_keywords" => ["entre salas"]},
+      "assembly_buffer" => {"minutes" => []}
     }.freeze
 
     class << self

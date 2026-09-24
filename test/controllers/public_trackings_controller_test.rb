@@ -95,4 +95,32 @@ class PublicTrackingsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal({}, JSON.parse(response.body))
   end
+
+  test "waiting stage shows client name, delay note and ETA with assembly buffer, no address of other stops" do
+    assignment = delivery_plan_assignments(:one)
+    assignment.update_columns(status: DeliveryPlanAssignment.statuses[:pending], stop_order: 1)
+    plan = assignment.delivery_plan
+    addr = assignment.delivery.delivery_address
+    addr.update_columns(latitude: 9.93, longitude: -84.08)
+    plan.update_columns(current_lat: 9.93, current_lng: -84.08, last_seen_at: Time.current)
+
+    get public_tracking_url(token: assignment.delivery.tracking_token)
+
+    assert_response :success
+    assert_match assignment.delivery.order.client.name, response.body
+    assert_match "presas", response.body
+    assert_select "strong", text: /5 minutos/
+
+    # buffer de una parada anterior con producto "armado"
+    assignment.update_columns(stop_order: 2)
+    other = plan.delivery_plan_assignments.where.not(id: assignment.id).first
+    if other
+      other.update_columns(stop_order: 1, status: DeliveryPlanAssignment.statuses[:pending])
+      other.delivery.delivery_address.update_columns(latitude: 9.93, longitude: -84.08)
+      other.delivery.delivery_items.first.order_item.update_columns(product: "Cama con armado")
+      DetectorKeywordList.create!(detector: "assembly_buffer", list_name: "minutes", values_list: ["armado=30"])
+      get public_tracking_url(token: assignment.delivery.tracking_token)
+      assert_select "strong", text: /(4[05]) minutos/
+    end
+  end
 end

@@ -11,7 +11,9 @@ class Admin::DeliveriesVocabulariesController < ApplicationController
     {detector: "repair_service", list_name: "keywords", title: "Servicio de reparación",
      hint: "Un producto con alguna de estas frases se marca como Servicio de reparación."},
     {detector: "showroom", list_name: "inter_sala_fallback_keywords", title: "Movimiento entre showrooms (fallback)",
-     hint: "Frases que identifican un movimiento entre salas cuando no hay otra señal."}
+     hint: "Frases que identifican un movimiento entre salas cuando no hay otra señal."},
+    {detector: "assembly_buffer", list_name: "minutes", title: "Tiempo extra por armado (ETA al cliente)",
+     hint: "Una por línea con formato palabra=minutos (ej: armado=30). Si un producto de una parada anterior la contiene, esos minutos se suman al tiempo estimado que ve el cliente."}
   ].freeze
 
   def show

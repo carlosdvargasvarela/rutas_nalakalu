@@ -12,10 +12,22 @@
           <div class="mb-4">
             <i class="bi bi-clock-history" style="font-size: 3rem; color: var(--color-brand-accent)"></i>
           </div>
-          <h3 class="fw-bold mb-3">Tu pedido está confirmado</h3>
+          <h3 class="fw-bold mb-1">Tu pedido está confirmado</h3>
+          <p class="mb-3"><%= @delivery.order.client.name %></p>
           <p class="text-muted mb-4">
             Pedido <strong>#<%= @delivery.order.number %></strong> — en cuanto el conductor
             salga hacia tu dirección, vas a ver el mapa en vivo aquí mismo, sin recargar la página.
+          </p>
+          <% eta = Deliveries::WaitingEta.new(@assignment).minutes %>
+          <% if eta %>
+            <div class="alert alert-info py-2 mb-3">
+              <i class="bi bi-truck me-1"></i>Nuestro equipo de transportistas está a aproximadamente
+              <strong><%= eta %> minutos</strong> de tu dirección.
+            </div>
+          <% end %>
+          <p class="small text-muted mb-0">
+            Este tiempo es una estimación: las entregas pueden retrasarse por presas u otras
+            situaciones externas fuera de nuestro control.
           </p>
           <hr class="my-4">
           <div class="row text-start">
