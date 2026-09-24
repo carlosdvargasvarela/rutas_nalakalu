@@ -93,8 +93,8 @@ module DeliveryPlansHelper
       end
     end
 
-    total_count = plan.deliveries_count.to_i
-    delivered_count = plan.delivered_count.to_i
+    total_count = plan.stops_count.to_i
+    delivered_count = plan.stops_delivered_count.to_i
     progress = (total_count > 0) ? (delivered_count.to_f / total_count * 100).round : 0
 
     {

@@ -21,6 +21,10 @@ class DeliveryPlansController < ApplicationController
     # canceladas/reagendadas/archivadas no cuentan como paradas del plan.
     hidden_statuses = Delivery.statuses.values_at(*Delivery::HIDDEN_FROM_ROUTE_MAP_STATUSES).join(",")
 
+    visible_stops_sql = "SELECT COUNT(DISTINCT dpa.stop_order) FROM delivery_plan_assignments dpa " \
+      "INNER JOIN deliveries d ON d.id = dpa.delivery_id WHERE dpa.delivery_plan_id = delivery_plans.id " \
+      "AND d.status NOT IN (#{hidden_statuses})"
+
     base_result = @q.result
       .left_joins(:deliveries)
       .select(
@@ -28,7 +32,13 @@ class DeliveryPlansController < ApplicationController
         "MIN(deliveries.delivery_date) AS first_delivery_date",
         "MAX(deliveries.delivery_date) AS last_delivery_date",
         "COUNT(CASE WHEN deliveries.id IS NOT NULL AND deliveries.status NOT IN (#{hidden_statuses}) THEN 1 END) AS deliveries_count",
-        "COUNT(CASE WHEN deliveries.status = #{delivered_status} THEN 1 END) AS delivered_count"
+        "COUNT(CASE WHEN deliveries.status = #{delivered_status} THEN 1 END) AS delivered_count",
+        # Progreso por paradas: varias entregas con el mismo stop_order (mismo
+        # lugar) cuentan como una; la parada está entregada si todas lo están.
+        "(#{visible_stops_sql}) AS stops_count",
+        "(#{visible_stops_sql} AND dpa.stop_order NOT IN (SELECT dpa2.stop_order FROM delivery_plan_assignments dpa2 " \
+          "INNER JOIN deliveries d2 ON d2.id = dpa2.delivery_id WHERE dpa2.delivery_plan_id = delivery_plans.id " \
+          "AND d2.status NOT IN (#{hidden_statuses}) AND d2.status != #{delivered_status} AND dpa2.stop_order IS NOT NULL)) AS stops_delivered_count"
       )
       .group("delivery_plans.id")
       .order(
