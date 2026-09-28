@@ -23,6 +23,7 @@ class AuditLogsControllerTest < ActionDispatch::IntegrationTest
   test "resource_history for a Delivery includes PlanEvent entries from its current plan" do
     assignment = delivery_plan_assignments(:one)
     plan = assignment.delivery_plan
+    plan.deliveries.update_all(delivery_date: Date.current)
     plan.start!
 
     get resource_history_audit_logs_path(item_type: "Delivery", item_id: assignment.delivery_id)

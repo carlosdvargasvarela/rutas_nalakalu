@@ -257,7 +257,19 @@ class DeliveryPlan < ApplicationRecord
   def start!
     return if status_in_progress? || status_completed?
     return false if delivery_plan_assignments.none?
+    return false unless startable_today?
     update!(status: :in_progress)
+  end
+
+  # Por seguridad, la ruta solo debe poder arrancar el día que le corresponde:
+  # arrancar antes ("me adelanté") o después ("se quedó pendiente de ayer")
+  # es el típico error de campo que queremos bloquear.
+  def startable_today?
+    first_delivery_date.blank? || first_delivery_date == Date.current
+  end
+
+  def not_startable_today_message
+    "Esta ruta es para el #{first_delivery_date.strftime('%d/%m/%Y')}, no podés iniciarla hoy."
   end
 
   def finish!

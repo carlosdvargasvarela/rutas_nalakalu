@@ -10,6 +10,7 @@ class DeliveryPlanTest < ActiveSupport::TestCase
   test "start! records a started PlanEvent" do
     plan = delivery_plans(:one)
     plan.update!(status: :routes_created)
+    plan.deliveries.update_all(delivery_date: Date.current)
 
     assert_difference -> { plan.plan_events.count }, 1 do
       plan.start!
@@ -25,6 +26,26 @@ class DeliveryPlanTest < ActiveSupport::TestCase
 
     assert_equal false, plan.start!
     assert_equal "routes_created", plan.reload.status
+  end
+
+  test "start! rechaza un plan cuya fecha de entrega no es hoy" do
+    plan = delivery_plans(:one)
+    plan.update!(status: :routes_created)
+    assert_not_equal Date.current, plan.first_delivery_date
+
+    refute plan.startable_today?
+    assert_equal false, plan.start!
+    assert_equal "routes_created", plan.reload.status
+  end
+
+  test "start! sí procede cuando la fecha de entrega es hoy" do
+    plan = delivery_plans(:one)
+    plan.update!(status: :routes_created)
+    plan.deliveries.update_all(delivery_date: Date.current)
+
+    assert plan.startable_today?
+    assert plan.start!
+    assert_equal "in_progress", plan.reload.status
   end
 
   test "finish! records a finished PlanEvent" do

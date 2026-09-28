@@ -65,6 +65,7 @@ module Api
 
         test "start transiciona a in_progress" do
           @plan.update!(status: :routes_created)
+          @plan.deliveries.update_all(delivery_date: Date.current)
           patch start_api_v1_driver_delivery_plan_path(@plan), headers: auth
           assert_response :success
           assert_equal "in_progress", @plan.reload.status

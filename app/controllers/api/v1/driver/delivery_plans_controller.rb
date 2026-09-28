@@ -42,7 +42,9 @@ module Api
         end
 
         def start
-          if @plan.start!
+          if !@plan.startable_today?
+            render json: {ok: false, error: @plan.not_startable_today_message}, status: :unprocessable_entity
+          elsif @plan.start!
             render json: {ok: true, status: @plan.status}
           else
             render json: {ok: false, error: "No se pudo iniciar el plan"}, status: :unprocessable_entity

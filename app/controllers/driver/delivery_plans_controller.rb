@@ -127,7 +127,12 @@ module Driver
 
     def start
       authorize @delivery_plan, policy_class: Driver::DeliveryPlanPolicy
-      if @delivery_plan.start!
+      if !@delivery_plan.startable_today?
+        respond_to do |format|
+          format.html { redirect_to driver_delivery_plan_path(@delivery_plan), alert: @delivery_plan.not_startable_today_message }
+          format.json { render json: {ok: false, error: @delivery_plan.not_startable_today_message}, status: :unprocessable_entity }
+        end
+      elsif @delivery_plan.start!
         respond_to do |format|
           format.html { redirect_to driver_delivery_plan_path(@delivery_plan), notice: "Plan iniciado" }
           format.json { render json: {ok: true, status: @delivery_plan.status}, status: :ok }
