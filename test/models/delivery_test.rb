@@ -25,6 +25,43 @@ class DeliveryTest < ActiveSupport::TestCase
     assert_equal "unloaded", item.reload.load_status
   end
 
+  test "reopen! resets to scheduled/pending when never confirmed by vendor" do
+    delivery = deliveries(:one)
+    delivery.update!(status: :cancelled, confirmed_by_vendor: false, confirmed_by_vendor_at: nil)
+
+    delivery.reopen!
+
+    assert delivery.scheduled?
+    assert_not delivery.confirmed_by_vendor?
+    assert delivery.delivery_items.all? { |item| item.status == "pending" }
+  end
+
+  test "reopen! resets to ready_to_deliver/confirmed when previously confirmed by vendor" do
+    delivery = deliveries(:one)
+    delivery.delivery_plan_assignment&.destroy
+    delivery.update!(status: :cancelled, confirmed_by_vendor: true, confirmed_by_vendor_at: 1.day.ago)
+
+    delivery.reopen!
+
+    assert delivery.ready_to_deliver?
+    assert delivery.confirmed_by_vendor?
+    assert delivery.delivery_items.all? { |item| item.status == "confirmed" }
+  end
+
+  test "reopenable? includes delivered/cancelled/archived and mid-route statuses" do
+    delivery = deliveries(:one)
+
+    %w[delivered cancelled archived in_route loaded_on_truck warehousing].each do |status|
+      delivery.status = status
+      assert delivery.reopenable?, "#{status} should be reopenable"
+    end
+
+    %w[scheduled ready_to_deliver in_plan rescheduled failed].each do |status|
+      delivery.status = status
+      refute delivery.reopenable?, "#{status} should not be reopenable"
+    end
+  end
+
   test "hidden_from_route_map? is true only for cancelled, rescheduled or archived deliveries" do
     delivery = deliveries(:one)
 
@@ -87,6 +124,31 @@ class DeliveryTest < ActiveSupport::TestCase
     assert_equal :scheduled, delivery.send(:calculate_delivery_status, %w[delivered pending])
     assert_equal :in_route, delivery.send(:calculate_delivery_status, %w[delivered in_route])
     assert_equal :ready_to_deliver, delivery.send(:calculate_delivery_status, %w[cancelled confirmed])
+  end
+
+  test "update_status_based_on_items cancels the delivery_plan_assignment when the delivery becomes rescheduled" do
+    delivery = deliveries(:one)
+    assignment = delivery.delivery_plan_assignment
+    assignment.update!(status: :pending)
+    delivery.delivery_items.update_all(status: DeliveryItem.statuses[:rescheduled])
+
+    delivery.update_status_based_on_items
+
+    assert delivery.rescheduled?
+    assert assignment.reload.cancelled?
+  end
+
+  test "update_status_based_on_items finishes the plan once the rescheduled delivery was its last open stop" do
+    delivery = deliveries(:one)
+    assignment = delivery.delivery_plan_assignment
+    plan = assignment.delivery_plan
+    plan.update!(status: :in_progress)
+    assignment.update!(status: :pending)
+    delivery.delivery_items.update_all(status: DeliveryItem.statuses[:rescheduled])
+
+    delivery.update_status_based_on_items
+
+    assert plan.reload.status_completed?
   end
 
   test "default_item_status maps the delivery's current level to the matching item status" do

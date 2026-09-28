@@ -100,7 +100,7 @@ class Delivery < ApplicationRecord
   SERVICE_CASE_TYPES = %w[pickup_with_return return_delivery onsite_repair only_pickup].freeze
   REPAIR_SERVICE_TYPES = %w[repair_pickup repair_return].freeze
   BULK_LOCKED_STATUSES = %w[delivered rescheduled cancelled archived failed warehousing].freeze
-  REOPENABLE_STATUSES = %w[delivered cancelled archived].freeze
+  REOPENABLE_STATUSES = %w[delivered cancelled archived in_route loaded_on_truck warehousing].freeze
   HIDDEN_FROM_ROUTE_MAP_STATUSES = %w[cancelled rescheduled archived].freeze
 
   # Estados que cualquier rol (no solo admin) puede ver al mirar un plan ya
@@ -199,21 +199,25 @@ class Delivery < ApplicationRecord
     user&.admin? || status.in?(VISIBLE_TO_ALL_STATUSES)
   end
 
-  # Reabre una entrega bloqueada (delivered/cancelled/archived): vuelve la
-  # entrega y todos sus items a su estado inicial (scheduled/pending).
+  # Reabre una entrega bloqueada (ver REOPENABLE_STATUSES: delivered/
+  # cancelled/archived/in_route/loaded_on_truck/warehousing) vuelve la
+  # entrega y todos sus items al inicio de su flujo. Si el vendedor ya la
+  # había confirmado alguna vez, queda en "confirmada" (ready_to_deliver);
+  # si no, queda "sin confirmar" (scheduled).
   #
   # @return [void]
   def reopen!
+    was_confirmed = confirmed_by_vendor?
+    new_status = was_confirmed ? :ready_to_deliver : :scheduled
+    item_status = DELIVERY_STATUS_TO_ITEM_STATUS.fetch(new_status.to_s)
+
     transaction do
       delivery_items.find_each do |item|
-        item.update!(status: :pending, load_status: :unloaded)
+        item.update!(status: item_status, load_status: :unloaded)
       end
-      update!(
-        status: :scheduled,
-        load_status: :empty,
-        confirmed_by_vendor: false,
-        confirmed_by_vendor_at: nil
-      )
+      attrs = {status: new_status, load_status: :empty, warehousing_until: nil}
+      attrs.merge!(confirmed_by_vendor: false, confirmed_by_vendor_at: nil) unless was_confirmed
+      update!(attrs)
     end
   end
 
@@ -467,6 +471,21 @@ class Delivery < ApplicationRecord
     else
       update!(status: new_status)
     end
+
+    cancel_stale_assignment! if new_status == :rescheduled
+  end
+
+  # Una entrega reagendada ya no debe ocupar una parada activa: si el
+  # delivery_plan_assignment se queda pending/in_route, DeliveryPlan#finish!
+  # nunca puede cerrar la ruta porque esa parada nunca llega a un estado
+  # terminal, y el conductor tampoco la ve (está oculta del route map).
+  def cancel_stale_assignment!
+    assignment = delivery_plan_assignment
+    return unless assignment && !assignment.completed? && !assignment.cancelled?
+
+    assignment.update!(status: :cancelled, completed_at: Time.current)
+    plan = assignment.delivery_plan
+    plan.finish! if plan.status_in_progress?
   end
 
   # @return [ActiveRecord::Relation<DeliveryItem>] items elegibles para armar un plan nuevo

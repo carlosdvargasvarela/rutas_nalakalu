@@ -1030,7 +1030,7 @@ class DeliveriesController < ApplicationController
         load_delivery_for_panel
         set_delivery_panel_data
 
-        flash.now[:notice] = "Entrega reabierta. Volvió a estado 'Pendiente de confirmar'."
+        flash.now[:notice] = "Entrega reabierta. Volvió a estado '#{@delivery.display_status}'."
 
         render turbo_stream: [
           turbo_stream.replace("flash_messages", partial: "layouts/flashes"),

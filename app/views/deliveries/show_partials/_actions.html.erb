@@ -34,7 +34,7 @@
             method: :patch,
             form: { data: { turbo_stream: true } },
             class: "btn btn-sm btn-outline-warning d-inline-flex align-items-center gap-2 px-3",
-            data: { turbo_confirm: "¿Reabrir esta entrega? Volverá a 'Pendiente de confirmar' y todos los productos se resetearán a pendiente." } do %>
+            data: { turbo_confirm: "¿Reabrir esta entrega? Volverá a '#{delivery.confirmed_by_vendor? ? "Confirmada para entregar" : "Pendiente de confirmar"}' y sus productos se resetearán." } do %>
         <i class="bi bi-arrow-counterclockwise"></i>
         <span>Reabrir Entrega</span>
       <% end %>
