@@ -14,7 +14,13 @@ module Driver
 
       handle_optimistic_lock do
         @assignment.start!
-        render_success("Parada iniciada")
+
+        # Mismo lugar (mismo stop_order): iniciarlas también, para no pedirle
+        # al conductor que repita "iniciar" por cada pedido en la misma parada.
+        started_siblings = @assignment.same_stop_siblings.where(status: :pending).to_a
+        started_siblings.each(&:start!)
+
+        render_success("Parada iniciada", group_siblings: started_siblings.presence&.map { |s| {id: s.id} })
       end
     end
 
@@ -24,7 +30,7 @@ module Driver
 
       handle_optimistic_lock do
         @assignment.complete!
-        render_success("Entrega completada")
+        render_success("Entrega completada", group_siblings: same_stop_group_siblings)
       end
     end
 
@@ -36,7 +42,7 @@ module Driver
 
       handle_optimistic_lock do
         @assignment.mark_as_failed!(reason: reason, failed_by: current_user)
-        render_success("Entrega marcada como fallida")
+        render_success("Entrega marcada como fallida", group_siblings: same_stop_group_siblings)
       end
     end
 
@@ -91,13 +97,24 @@ module Driver
       }, status: :unprocessable_entity
     end
 
-    def render_success(message)
+    def render_success(message, group_siblings: nil)
       render json: {
         success: true,
         message: message,
         assignment: assignment_json(@assignment),
-        progress: progress_json
-      }, status: :ok
+        progress: progress_json,
+        group_siblings: group_siblings
+      }.compact, status: :ok
+    end
+
+    # Otras paradas del mismo lugar que todavía siguen activas: se ofrecen
+    # al conductor para aplicarles el mismo resultado (entregado/fallido) y
+    # evitar que las marque una por una si de verdad son la misma entrega física.
+    def same_stop_group_siblings
+      siblings = @assignment.same_stop_siblings.where(status: [:pending, :in_route]).includes(delivery: {order: :client})
+      return nil if siblings.none?
+
+      siblings.map { |s| {id: s.id, client_name: s.delivery.order&.client&.name} }
     end
 
     def assignment_json(assignment)

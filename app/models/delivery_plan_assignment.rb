@@ -45,6 +45,18 @@ class DeliveryPlanAssignment < ApplicationRecord
   # MÉTODOS PÚBLICOS
   # ============================================================================
 
+  # Otras paradas del mismo plan en el mismo lugar físico: comparten
+  # stop_order porque DeliveryPlanStopGrouper ya las agrupó por proximidad
+  # GPS al armar la ruta. Es la señal de "mismo lugar" confiable (por ID,
+  # no por texto de dirección).
+  def same_stop_siblings
+    return DeliveryPlanAssignment.none if stop_order.nil?
+
+    delivery_plan.delivery_plan_assignments
+      .where(stop_order: stop_order)
+      .where.not(id: id)
+  end
+
   # Inicia la parada: marca el assignment y la entrega como "en ruta"
   # IDEMPOTENTE: retorna true si ya está in_route o completed
   def start!

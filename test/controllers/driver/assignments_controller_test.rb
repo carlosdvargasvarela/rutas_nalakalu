@@ -40,5 +40,46 @@ module Driver
       assert_redirected_to root_path
       assert_equal "pending", @assignment.reload.status
     end
+
+    test "start también inicia las paradas pendientes del mismo lugar (mismo stop_order)" do
+      sibling = same_stop_sibling_for(@assignment)
+      sign_in @driver
+
+      patch start_driver_assignment_path(@assignment)
+
+      assert_response :success
+      json = JSON.parse(response.body)
+      assert_equal [{"id" => sibling.id}], json["group_siblings"]
+      assert_equal "in_route", sibling.reload.status
+    end
+
+    test "complete reporta las otras paradas activas del mismo lugar sin tocarlas" do
+      sibling = same_stop_sibling_for(@assignment)
+      @assignment.update!(status: :in_route)
+      sign_in @driver
+
+      patch complete_driver_assignment_path(@assignment)
+
+      assert_response :success
+      json = JSON.parse(response.body)
+      assert_equal [sibling.id], json["group_siblings"].map { |s| s["id"] }
+      assert_equal "pending", sibling.reload.status
+    end
+
+    private
+
+    def same_stop_sibling_for(assignment)
+      other_delivery = Delivery.create!(
+        order: orders(:two),
+        delivery_address: assignment.delivery.delivery_address,
+        delivery_date: assignment.delivery.delivery_date,
+        status: :in_plan
+      )
+      sibling = assignment.delivery_plan.delivery_plan_assignments.create!(delivery: other_delivery, status: :pending)
+      # acts_as_list reordena al crear; forzamos el mismo stop_order que el
+      # original con update_column, igual que hace DeliveryPlanStopGrouper.
+      sibling.update_column(:stop_order, assignment.stop_order)
+      sibling
+    end
   end
 end

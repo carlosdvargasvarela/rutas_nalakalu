@@ -1,5 +1,6 @@
 // app/javascript/controllers/driver_assignment_controller.js
 import { Controller } from "@hotwired/stimulus"
+import { Turbo } from "@hotwired/turbo-rails"
 
 export default class extends Controller {
   static values = {
@@ -27,6 +28,11 @@ export default class extends Controller {
         this._markInRoute()
         this._dispatchProgress(data.progress)
         this._toast("Parada iniciada", "success")
+        if (data.group_siblings?.length) {
+          // El backend ya inició también las paradas del mismo lugar; refrescamos
+          // esas tarjetas para que dejen de mostrar el botón "Iniciar".
+          Turbo.visit(window.location.href, { action: "replace" })
+        }
       } else {
         this._toast(data.error || "Error al iniciar", "error")
       }
@@ -51,6 +57,7 @@ export default class extends Controller {
         this._markCompleted()
         this._dispatchProgress(data.progress)
         this._toast("Entrega completada ✓", "success")
+        await this._maybeApplyToGroup(data.group_siblings, "complete")
       } else {
         this._toast(data.error || "Error al completar", "error")
       }
@@ -128,6 +135,7 @@ export default class extends Controller {
         this._markFailed()
         this._dispatchProgress(data.progress)
         this._toast("Marcado como no entregado. Se reagendará en 7 días.", "warning")
+        await this._maybeApplyToGroup(data.group_siblings, "fail", { reason })
       } else {
         this._toast(data.error || "Error al procesar", "error")
       }
@@ -158,6 +166,29 @@ export default class extends Controller {
     } catch {
       this._toast("Sin conexión", "warning")
     }
+  }
+
+  // ── Preguntar si aplicar el mismo resultado a otras entregas del lugar ──
+  async _maybeApplyToGroup(siblings, action, extraBody = {}) {
+    if (!siblings?.length) return
+
+    const names = siblings.map(s => s.client_name).filter(Boolean).join(", ")
+    const verb = action === "complete" ? "como entregadas" : "con el mismo motivo"
+    const ok = confirm(
+      `También hay ${siblings.length} entrega(s) más en este mismo lugar (${names || "sin nombre"}). ` +
+      `¿Marcarlas ${verb}?`
+    )
+    if (!ok) return
+
+    await Promise.all(siblings.map(s =>
+      fetch(`/driver/assignments/${s.id}/${action}`, {
+        method: "PATCH",
+        headers: this._headers(),
+        body: JSON.stringify(extraBody),
+      }).catch(() => null)
+    ))
+
+    Turbo.visit(window.location.href, { action: "replace" })
   }
 
   // ── Helpers ─────────────────────────────────────────────
