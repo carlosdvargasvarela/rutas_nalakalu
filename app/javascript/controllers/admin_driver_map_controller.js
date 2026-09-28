@@ -1,6 +1,7 @@
 // app/javascript/controllers/admin_driver_map_controller.js
 import { Controller } from "@hotwired/stimulus";
 import { subscribeToDeliveryPlan } from "channels/delivery_plan_channel";
+import { truckIcon } from "maps/truck_icon";
 
 const ROUTE_REFRESH_MS = 30000;
 
@@ -81,15 +82,7 @@ export default class extends Controller {
     this.driverMarker = new google.maps.Marker({
       position: { lat: defaultLat, lng: defaultLng },
       map: this.map,
-      icon: {
-        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-        scale: 7,
-        fillColor: "#0d6efd",
-        fillOpacity: 1,
-        strokeColor: "#ffffff",
-        strokeWeight: 2,
-        rotation: 0,
-      },
+      icon: truckIcon(40),
       title: "Posición del conductor",
       zIndex: 1000,
     });

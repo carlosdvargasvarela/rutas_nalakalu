@@ -41,6 +41,16 @@ class TrackingsController < ApplicationController
     # quedó activa): sin esto se ven como una sola fila/pin duplicado.
     dates = visible_assignments.filter_map { |a| a.delivery.delivery_date }.uniq.sort
 
+    stops = visible_assignments.sort_by(&:stop_order).map do |a|
+      {
+        stop_order: a.stop_order,
+        status: a.status,
+        lat: a.delivery.latitude&.to_f,
+        lng: a.delivery.longitude&.to_f,
+        customer_name: a.delivery.client&.name
+      }
+    end
+
     {
       id: plan.id,
       status: plan.status,
@@ -53,7 +63,8 @@ class TrackingsController < ApplicationController
       recorded_by_name: plan.last_recorded_by&.name,
       total_stops: visible_assignments.size,
       completed_stops: visible_assignments.count { |a| a.status == "completed" },
-      date_label: dates.any? ? dates.map { |d| d.strftime("%d/%m") }.join(" - ") : nil
+      date_label: dates.any? ? dates.map { |d| d.strftime("%d/%m") }.join(" - ") : nil,
+      stops: stops
     }
   end
 end

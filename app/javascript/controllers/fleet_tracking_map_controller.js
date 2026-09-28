@@ -1,9 +1,13 @@
 // app/javascript/controllers/fleet_tracking_map_controller.js
 import { Controller } from "@hotwired/stimulus";
 import { subscribeToDeliveryPlan } from "channels/delivery_plan_channel";
+import { truckIcon } from "maps/truck_icon";
 
 const STALE_MINUTES = 5;
 const STOPPED_MINUTES = 10;
+// Al redibujar la ruta planeada del camión seleccionado en cada position_update
+// (~15s) gastaríamos cuota de Directions sin necesidad — igual que admin-driver-map.
+const SELECTED_ROUTE_REFRESH_MS = 30000;
 // El celular reporta cada ~10-15s manejando. Un hueco mayor a esto entre dos
 // pings consecutivos significa que se perdieron lecturas de por medio (señal,
 // app en background, etc.) — la Roads API no reconstruye el camino real ahí,
@@ -23,6 +27,7 @@ export default class extends Controller {
   disconnect() {
     this.subscriptions.forEach((s) => s.unsubscribe());
     if (this.alertInterval) clearInterval(this.alertInterval);
+    this.clearSelectedRoute();
   }
 
   async initMap() {
@@ -157,14 +162,8 @@ export default class extends Controller {
     const marker = new google.maps.Marker({
       position,
       map: this.map,
-      icon: {
-        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-        scale: 6,
-        fillColor: completed ? "#6c757d" : "#0d6efd",
-        fillOpacity: completed ? 0.7 : 1,
-        strokeColor: "#ffffff",
-        strokeWeight: 2,
-      },
+      icon: truckIcon(36),
+      opacity: completed ? 0.6 : 1,
       title,
     });
     marker.addListener("click", () => this.selectTruck(planId));
@@ -178,8 +177,74 @@ export default class extends Controller {
     if (this.selectedRow) this.selectedRow.classList.remove("active");
     truck.row.classList.add("active");
     this.selectedRow = truck.row;
+    this.selectedPlanId = planId;
 
     if (truck.marker) this.map.panTo(truck.marker.getPosition());
+
+    this.showSelectedRoute(truck);
+  }
+
+  // Ruta planeada (azul) + paradas pendientes del camión seleccionado, igual
+  // que la pestaña "Seguimiento en vivo" de un plan — solo del seleccionado
+  // para no saturar el mapa con las rutas de toda la flota a la vez.
+  showSelectedRoute(truck) {
+    this.clearSelectedRoute();
+    this.lastSelectedRouteAt = Date.now();
+
+    const stops = (truck.data.stops || [])
+      .filter((s) => (s.status === "pending" || s.status === "in_route") && this._validCoord(s.lat) && this._validCoord(s.lng))
+      .sort((a, b) => a.stop_order - b.stop_order);
+
+    this.selectedStopMarkers = stops.map((s) => new google.maps.Marker({
+      position: { lat: s.lat, lng: s.lng },
+      map: this.map,
+      label: { text: String(s.stop_order), color: "#ffffff", fontSize: "12px", fontWeight: "bold" },
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 11,
+        fillColor: s.status === "in_route" ? "#ffc107" : "#6c757d",
+        fillOpacity: 1,
+        strokeColor: "#ffffff",
+        strokeWeight: 2,
+      },
+      title: `Parada #${s.stop_order} — ${s.customer_name || "Sin nombre"}`,
+    }));
+
+    if (!stops.length || !this._validCoord(truck.data.current_lat) || !this._validCoord(truck.data.current_lng)) return;
+
+    if (!this.selectedDirectionsService) this.selectedDirectionsService = new google.maps.DirectionsService();
+    if (!this.selectedDirectionsRenderer) {
+      this.selectedDirectionsRenderer = new google.maps.DirectionsRenderer({
+        map: this.map,
+        suppressMarkers: true,
+        preserveViewport: true,
+        polylineOptions: { strokeColor: "#0d6efd", strokeOpacity: 0.8, strokeWeight: 5 },
+      });
+    } else {
+      this.selectedDirectionsRenderer.setMap(this.map);
+    }
+
+    const destination = { lat: stops[stops.length - 1].lat, lng: stops[stops.length - 1].lng };
+    const waypoints = stops.slice(0, -1).map((s) => ({ location: { lat: s.lat, lng: s.lng }, stopover: true }));
+
+    this.selectedDirectionsService.route(
+      {
+        origin: { lat: truck.data.current_lat, lng: truck.data.current_lng },
+        destination,
+        waypoints,
+        travelMode: google.maps.TravelMode.DRIVING,
+        optimizeWaypoints: false,
+      },
+      (result, status) => {
+        if (status === "OK") this.selectedDirectionsRenderer.setDirections(result);
+      },
+    );
+  }
+
+  clearSelectedRoute() {
+    (this.selectedStopMarkers || []).forEach((m) => m.setMap(null));
+    this.selectedStopMarkers = [];
+    if (this.selectedDirectionsRenderer) this.selectedDirectionsRenderer.setMap(null);
   }
 
   _escapeHtml(str) {
@@ -209,6 +274,13 @@ export default class extends Controller {
       truck.marker.setPosition(position);
     } else {
       truck.marker = this._buildMarker(planId, position, truck.data.driver_name, truck.data.status);
+    }
+
+    if (
+      planId === this.selectedPlanId &&
+      (!this.lastSelectedRouteAt || Date.now() - this.lastSelectedRouteAt > SELECTED_ROUTE_REFRESH_MS)
+    ) {
+      this.showSelectedRoute(truck);
     }
 
     this.refreshAlerts();

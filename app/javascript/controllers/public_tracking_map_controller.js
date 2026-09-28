@@ -1,10 +1,9 @@
 // app/javascript/controllers/public_tracking_map_controller.js
 import { Controller } from "@hotwired/stimulus";
 import { subscribeToDeliveryPlan } from "channels/delivery_plan_channel";
+import { truckIcon } from "maps/truck_icon";
 
 const ETA_THROTTLE_MS = 60000; // no recalcular ruta más seguido que esto
-// Camioncito (vista lateral) en círculo de marca, reemplaza la flecha de Google
-const TRUCK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44"><circle cx="22" cy="22" r="20" fill="#43322a" stroke="#fff" stroke-width="3"/><path fill="#fdf5ea" d="M10 15h14v11H10zM25 19h5l3 4v3h-8z"/><circle cx="15" cy="27" r="2.5" fill="#fdf5ea" stroke="#43322a"/><circle cx="29" cy="27" r="2.5" fill="#fdf5ea" stroke="#43322a"/></svg>`;
 
 const POLL_INTERVAL_MS = 15000; // respaldo si el WebSocket se cae y no repone el broadcast perdido
 
@@ -97,11 +96,7 @@ export default class extends Controller {
     this.truckMarker = new google.maps.Marker({
       position: truckPos,
       map: this.map,
-      icon: {
-        url: "data:image/svg+xml;utf8," + encodeURIComponent(TRUCK_SVG),
-        scaledSize: new google.maps.Size(44, 44),
-        anchor: new google.maps.Point(22, 22),
-      },
+      icon: truckIcon(44),
     });
 
     // Marcador Destino
