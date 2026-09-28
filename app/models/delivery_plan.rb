@@ -23,7 +23,8 @@ class DeliveryPlan < ApplicationRecord
 
   after_create :record_created_event
   after_update :notify_driver_assignment, if: :saved_change_to_driver_id?
-  after_update :update_status_on_driver_change, if: :saved_change_to_driver_id?
+  after_update :update_status_on_driver_or_truck_change,
+    if: -> { saved_change_to_driver_id? || saved_change_to_truck? }
   after_update :record_status_change_event, if: :saved_change_to_status?
   before_destroy :flush_assignments
 
@@ -334,16 +335,17 @@ class DeliveryPlan < ApplicationRecord
     NotificationService.notify_route_assigned(self) if driver_id.present?
   end
 
-  def update_status_on_driver_change
-    if driver_id.present?
-      if all_deliveries_confirmed?
+  # Al asignar camión Y conductor, el plan sale de borrador solo (equivalente
+  # a "Enviar a logística"), siempre que ya tenga paradas y las entregas
+  # estén confirmadas — mismo criterio que el botón manual.
+  def update_status_on_driver_or_truck_change
+    if driver_id.present? && truck.present?
+      if delivery_plan_assignments.any? && all_deliveries_confirmed?
         update!(status: :routes_created) if status_draft?
       else
         errors.add(:base, "No puedes asignar a logística mientras existan entregas sin confirmar")
       end
-
-      self.status = :draft unless all_deliveries_confirmed?
-    elsif status_sent_to_logistics?
+    elsif status_routes_created?
       update!(status: :draft)
     end
   end

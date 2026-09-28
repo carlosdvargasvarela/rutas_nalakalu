@@ -88,14 +88,34 @@ class DeliveryPlanTest < ActiveSupport::TestCase
     end
   end
 
-  test "assigning a driver to a confirmed draft plan records routes_created exactly once (nested-save de-dup guard)" do
+  test "assigning a driver to a confirmed draft plan with truck already set records routes_created exactly once (nested-save de-dup guard)" do
     plan = delivery_plans(:one)
-    plan.update!(status: :draft)
+    plan.update!(status: :draft, truck: :PRI)
     plan.deliveries.each { |d| d.update_columns(status: Delivery.statuses[:in_plan]) }
 
     assert_difference -> { plan.plan_events.where(action: "routes_created").count }, 1 do
       plan.update!(driver: users(:one))
     end
+  end
+
+  test "assigning only a driver (sin camión) no saca el plan de borrador" do
+    plan = delivery_plans(:one)
+    plan.update!(status: :draft, truck: nil)
+    plan.deliveries.each { |d| d.update_columns(status: Delivery.statuses[:in_plan]) }
+
+    plan.update!(driver: users(:one))
+
+    assert plan.reload.status_draft?
+  end
+
+  test "asignar camión y conductor a un plan confirmado lo saca de borrador automáticamente" do
+    plan = delivery_plans(:one)
+    plan.update!(status: :draft, truck: nil, driver_id: nil)
+    plan.deliveries.each { |d| d.update_columns(status: Delivery.statuses[:in_plan]) }
+
+    plan.update!(driver: users(:one), truck: :PRI)
+
+    assert plan.reload.status_routes_created?
   end
 
   test "removing a driver from a sent_to_logistics plan does not record a PlanEvent (draft is unmapped, and the nested-save guard would also prevent a double record if it were mapped)" do
@@ -132,7 +152,7 @@ class DeliveryPlanTest < ActiveSupport::TestCase
 
   test "assigning a driver while all deliveries are confirmed updates status via update! and is visible in PaperTrail" do
     plan = delivery_plans(:one)
-    plan.update_columns(status: DeliveryPlan.statuses[:draft])
+    plan.update_columns(status: DeliveryPlan.statuses[:draft], truck: DeliveryPlan.trucks[:PRI])
     plan.deliveries.update_all(status: Delivery.statuses[:in_plan])
     versions_before = PaperTrail::Version.where(item_type: "DeliveryPlan", item_id: plan.id).count
 
