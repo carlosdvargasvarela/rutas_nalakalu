@@ -187,7 +187,10 @@ class DeliveryPlansController < ApplicationController
 
       stop_orders.each do |assignment_id, stop_order|
         if (assignment = assignments[assignment_id.to_s])
-          assignment.update!(stop_order: stop_order.to_i)
+          # update_column evita que acts_as_list reinterprete el nuevo valor
+          # como un insert_at() y desplace en cascada las demás paradas ya
+          # reordenadas por este mismo loop.
+          assignment.update_column(:stop_order, stop_order.to_i)
         end
       end
 

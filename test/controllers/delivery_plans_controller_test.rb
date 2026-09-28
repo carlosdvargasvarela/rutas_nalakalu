@@ -1,4 +1,5 @@
 require "test_helper"
+require "minitest/mock"
 
 class DeliveryPlansControllerTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
@@ -7,6 +8,45 @@ class DeliveryPlansControllerTest < ActionDispatch::IntegrationTest
     @admin = users(:one)
     @admin.update!(role: :admin, force_password_change: false)
     sign_in @admin
+  end
+
+  test "update_order guarda exactamente el stop_order pedido, incluso con paradas agrupadas por misma ubicación" do
+    plan = delivery_plans(:one)
+    plan.delivery_plan_assignments.destroy_all
+
+    d1 = deliveries(:one)
+    others = 3.times.map do |i|
+      d = d1.dup
+      d.tracking_token = "regress_stop_order_#{i}"
+      d.save!
+      d
+    end
+
+    a1 = DeliveryPlanAssignment.create!(delivery_plan: plan, delivery: d1)
+    a2 = DeliveryPlanAssignment.create!(delivery_plan: plan, delivery: others[0])
+    # a3 comparte ubicación con a2 (mismo stop_order), como agrupa
+    # DeliveryPlanStopGrouper para paradas físicamente cercanas.
+    a3 = DeliveryPlanAssignment.create!(delivery_plan: plan, delivery: others[1])
+    a3.update_column(:stop_order, a2.stop_order)
+    a4 = DeliveryPlanAssignment.create!(delivery_plan: plan, delivery: others[2])
+
+    new_positions = {a4.id => 1, a1.id => 2, a2.id => 3, a3.id => 3}
+
+    # Aislamos el compactado posterior (DeliveryPlanStopGrouper) para poder
+    # verificar los valores crudos que el propio loop de update_order
+    # persiste. acts_as_list interceptaba cada update!(stop_order: ...) como
+    # un insert_at() y desplazaba en cascada las paradas vecinas ya
+    # reordenadas por este mismo loop, sobre todo con stop_order repetidos.
+    noop_grouper = Class.new { def initialize(*); end; def call; end }
+    DeliveryPlanStopGrouper.stub :new, ->(plan) { noop_grouper.new(plan) } do
+      patch update_order_delivery_plan_url(plan), params: {stop_orders: new_positions}, as: :json
+    end
+
+    assert_response :success
+    assert_equal(
+      new_positions,
+      DeliveryPlanAssignment.where(id: new_positions.keys).index_by(&:id).transform_values(&:stop_order)
+    )
   end
 
   test "should get new" do
