@@ -284,29 +284,42 @@ class DeliveryPlan < ApplicationRecord
     update!(status: :completed) if all_done
   end
 
-  # Corrige planes que quedaron en un estado inconsistente por el bug de
-  # DeliveryPlanAssignment#complete! previo a esta corrección: un assignment
-  # marcado completed cuya delivery nunca llegó a un estado terminal real
-  # (ej. quedó un item en warehousing) — eso podía cerrar el plan entero de
-  # forma prematura. Vuelve esos assignments a in_route y reabre el plan si
-  # ya no le corresponde estar completed.
-  # @return [Boolean] true si hay assignments completed cuya delivery no
-  # llegó a un estado terminal real (ver #resync_status!)
+  # @return [Boolean] true si hay algo que #resync_status! pueda corregir:
+  # (1) un assignment completed cuya delivery no llegó a un estado terminal
+  # real (bug viejo de complete!, podía cerrar el plan de forma prematura), o
+  # (2) un assignment in_route/completed cuya delivery se quedó atrás con
+  # items sueltos en pending/confirmed/in_plan (bug viejo de start!, que solo
+  # avanzaba items exactamente :in_plan).
   def status_needs_resync?
-    delivery_plan_assignments.completed.any? { |a| !a.delivery.terminal? }
+    delivery_plan_assignments.completed.any? { |a| !a.delivery.terminal? } ||
+      delivery_plan_assignments.where.not(status: :pending).any? { |a| lagging_delivery?(a) }
   end
 
-  # @return [Integer] cantidad de assignments corregidos
+  # Corrige ambos casos descritos en #status_needs_resync? y reabre el plan
+  # si ya no le corresponde estar completed.
+  # @return [Integer] cantidad de assignments/entregas corregidas
   def resync_status!
-    stale = delivery_plan_assignments.completed.reject { |a| a.delivery.terminal? }
-    return 0 if stale.empty?
+    fixed = 0
 
     transaction do
+      delivery_plan_assignments.where.not(status: :pending).each do |a|
+        next unless lagging_delivery?(a)
+
+        a.delivery.delivery_items
+          .where(status: DeliveryItem.statuses.values_at("pending", "confirmed", "in_plan"))
+          .find_each { |item| item.update!(status: :in_route) }
+        a.delivery.update_status_based_on_items
+        fixed += 1
+      end
+
+      stale = delivery_plan_assignments.completed.reject { |a| a.delivery.terminal? }
       stale.each { |a| a.update!(status: :in_route) }
-      update!(status: :in_progress) if status_completed?
+      fixed += stale.size
+
+      update!(status: :in_progress) if status_completed? && stale.any?
     end
 
-    stale.size
+    fixed
   end
 
   def abort!
@@ -339,6 +352,12 @@ class DeliveryPlan < ApplicationRecord
   end
 
   private
+
+  # @return [Boolean] true si el assignment ya arrancó/terminó pero su
+  # delivery sigue mostrando un estado anterior a in_route
+  def lagging_delivery?(assignment)
+    assignment.delivery.status.in?(%w[scheduled ready_to_deliver in_plan])
+  end
 
   STATUS_TO_PLAN_EVENT_ACTION = {
     "sent_to_logistics" => "sent_to_logistics",

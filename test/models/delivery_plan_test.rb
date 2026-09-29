@@ -180,4 +180,35 @@ class DeliveryPlanTest < ActiveSupport::TestCase
       stale_copy.update!(last_recorded_by: users(:two))
     end
   end
+
+  test "resync_status! advances stray items on a lagging delivery whose assignment is already in_route" do
+    assignment = delivery_plan_assignments(:one)
+    assignment.update!(status: :in_route)
+    assignment.delivery.update!(status: :in_plan)
+    assignment.delivery.delivery_items.first.update!(status: :confirmed)
+
+    fixed = assignment.delivery_plan.resync_status!
+
+    assert_equal 1, fixed
+    assert_equal "in_route", assignment.delivery.reload.status
+  end
+
+  test "status_needs_resync? is true while a delivery lags behind its in_route assignment" do
+    assignment = delivery_plan_assignments(:one)
+    assignment.update!(status: :in_route)
+    assignment.delivery.update!(status: :in_plan)
+    assignment.delivery.delivery_items.first.update!(status: :confirmed)
+
+    assert assignment.delivery_plan.status_needs_resync?
+  end
+
+  test "resync_status! does not touch a delivery that is genuinely still pending (assignment not started)" do
+    assignment = delivery_plan_assignments(:one)
+    assignment.delivery.update!(status: :in_plan)
+
+    fixed = assignment.delivery_plan.resync_status!
+
+    assert_equal 0, fixed
+    assert_equal "in_plan", assignment.delivery.reload.status
+  end
 end
