@@ -42,12 +42,22 @@ module Api
           assert_not_includes ids, completed.id
         end
 
-        test "index excluye planes sin ninguna parada pendiente/en ruta" do
-          @plan.delivery_plan_assignments.update_all(status: DeliveryPlanAssignment.statuses[:cancelled])
+        test "index excluye planes compuestos únicamente por entregas reagendadas" do
+          @plan.deliveries.update_all(status: Delivery.statuses[:rescheduled])
 
           get api_v1_driver_delivery_plans_path, headers: auth
           ids = JSON.parse(response.body).map { |p| p["id"] }
           assert_not_includes ids, @plan.id
+        end
+
+        test "index sí muestra un plan con todas las entregas terminales si no son puro reagendo" do
+          deliveries = @plan.deliveries.to_a
+          deliveries.first.update!(status: :delivered)
+          deliveries[1..].each { |d| d.update!(status: :cancelled) }
+
+          get api_v1_driver_delivery_plans_path, headers: auth
+          ids = JSON.parse(response.body).map { |p| p["id"] }
+          assert_includes ids, @plan.id
         end
 
         test "show devuelve plan con assignments y progress" do

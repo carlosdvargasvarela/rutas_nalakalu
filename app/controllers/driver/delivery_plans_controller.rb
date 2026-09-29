@@ -10,8 +10,9 @@ module Driver
       authorize DeliveryPlan, policy_class: Driver::DeliveryPlanPolicy
 
       # Base: TODOS los planes (sin restricción de driver), pero solo los que
-      # aún tienen alguna parada pendiente/en ruta (si todas ya fueron
-      # entregadas/canceladas/reagendadas, la ruta no le sirve al conductor).
+      # no son puro reagendo (si TODAS sus entregas quedaron reagendadas, la
+      # ruta no le sirve al conductor; si tiene al menos una entregada,
+      # cancelada o pendiente, se sigue mostrando).
       base_scope = DeliveryPlan.with_pending_stops
 
       # Extraemos filtros de fecha manuales (porque first_delivery_date es un alias SQL)
