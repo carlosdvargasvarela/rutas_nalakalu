@@ -45,6 +45,10 @@ class DeliveryPlanPolicy < ApplicationPolicy
     admin_or_manager_or_logistic?
   end
 
+  def resync_status?
+    admin_or_manager_or_logistic?
+  end
+
   def loading?
     show?
   end

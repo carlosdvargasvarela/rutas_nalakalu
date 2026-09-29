@@ -187,6 +187,7 @@ Rails.application.routes.draw do
       patch :add_delivery_to_plan
       patch :send_to_logistics
       patch :update_order
+      patch :resync_status
     end
     resources :delivery_plan_assignments, only: [:destroy]
   end

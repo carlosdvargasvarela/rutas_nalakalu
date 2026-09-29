@@ -29,8 +29,9 @@ module Driver
       authorize [:driver, @assignment]
 
       handle_optimistic_lock do
-        @assignment.complete!
-        render_success("Entrega completada", group_siblings: same_stop_group_siblings)
+        done = @assignment.complete!
+        message = done ? "Entrega completada" : "Entrega registrada, pero quedaron items sin resolver (ej. faltantes). La parada sigue pendiente hasta corregirlos."
+        render_success(message, group_siblings: same_stop_group_siblings)
       end
     end
 

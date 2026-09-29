@@ -284,6 +284,31 @@ class DeliveryPlan < ApplicationRecord
     update!(status: :completed) if all_done
   end
 
+  # Corrige planes que quedaron en un estado inconsistente por el bug de
+  # DeliveryPlanAssignment#complete! previo a esta corrección: un assignment
+  # marcado completed cuya delivery nunca llegó a un estado terminal real
+  # (ej. quedó un item en warehousing) — eso podía cerrar el plan entero de
+  # forma prematura. Vuelve esos assignments a in_route y reabre el plan si
+  # ya no le corresponde estar completed.
+  # @return [Boolean] true si hay assignments completed cuya delivery no
+  # llegó a un estado terminal real (ver #resync_status!)
+  def status_needs_resync?
+    delivery_plan_assignments.completed.any? { |a| !a.delivery.terminal? }
+  end
+
+  # @return [Integer] cantidad de assignments corregidos
+  def resync_status!
+    stale = delivery_plan_assignments.completed.reject { |a| a.delivery.terminal? }
+    return 0 if stale.empty?
+
+    transaction do
+      stale.each { |a| a.update!(status: :in_route) }
+      update!(status: :in_progress) if status_completed?
+    end
+
+    stale.size
+  end
+
   def abort!
     return if status_aborted? || status_completed?
     update!(status: :aborted)

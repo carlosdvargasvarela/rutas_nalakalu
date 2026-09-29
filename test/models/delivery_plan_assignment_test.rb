@@ -88,6 +88,29 @@ class DeliveryPlanAssignmentTest < ActiveSupport::TestCase
     assert_equal "completed", plan.reload.status
   end
 
+  test "complete! does not mark the assignment completed when the delivery doesn't reach a terminal status" do
+    assignment = delivery_plan_assignments(:one)
+    assignment.delivery.delivery_items.first.update!(status: :warehousing)
+
+    result = assignment.complete!
+
+    assert_equal false, result
+    refute assignment.reload.completed?
+    refute assignment.delivery.reload.terminal?
+  end
+
+  test "complete! does not finish the plan when it leaves the delivery non-terminal" do
+    assignment = delivery_plan_assignments(:one)
+    plan = assignment.delivery_plan
+    plan.delivery_plan_assignments.where.not(id: assignment.id).destroy_all
+    plan.update_columns(status: DeliveryPlan.statuses[:in_progress])
+    assignment.delivery.delivery_items.first.update!(status: :warehousing)
+
+    assignment.complete!
+
+    assert_equal "in_progress", plan.reload.status
+  end
+
   test "complete! keeps the plan in_progress while another stop is still pending" do
     assignment = delivery_plan_assignments(:one)
     plan = assignment.delivery_plan

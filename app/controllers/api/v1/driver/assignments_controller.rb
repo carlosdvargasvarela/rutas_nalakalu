@@ -10,8 +10,9 @@ module Api
         end
 
         def complete
-          handle_lock { @assignment.complete! }
-          render_ok("Entrega completada")
+          done = false
+          handle_lock { done = @assignment.complete! }
+          render_ok(done ? "Entrega completada" : "Entrega registrada, pero quedaron items sin resolver (ej. faltantes). La parada sigue pendiente hasta corregirlos.")
         end
 
         def fail

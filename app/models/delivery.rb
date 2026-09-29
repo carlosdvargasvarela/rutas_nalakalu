@@ -190,6 +190,14 @@ class Delivery < ApplicationRecord
     status.in?(HIDDEN_FROM_ROUTE_MAP_STATUSES)
   end
 
+  # @return [Boolean] true si la entrega ya llegó a un estado final real
+  # (no basta con que el conductor haya tocado "completar": si quedaron
+  # items sueltos en un estado raro, mark_as_delivered! puede dejarla a
+  # medias — ver DeliveryPlanAssignment#complete!)
+  def terminal?
+    status.in?(ITEM_TERMINAL_STATUSES)
+  end
+
   # Admin ve toda entrega en un plan ya armado (marcada con su estado real);
   # cualquier otro rol solo ve las que están en un estado "normal" del flujo.
   #

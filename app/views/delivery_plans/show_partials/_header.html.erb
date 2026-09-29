@@ -31,5 +31,13 @@
         <i class="bi bi-truck me-1"></i>Modo chofer
       <% end %>
     <% end %>
+    <% if policy(delivery_plan).resync_status? && delivery_plan.status_needs_resync? %>
+      <%= button_to resync_status_delivery_plan_path(delivery_plan),
+            method: :patch,
+            class: "btn btn-outline-warning btn-sm",
+            form: {data: {turbo_confirm: "Se encontraron paradas marcadas como completadas cuya entrega no quedó en un estado final real. ¿Corregir y reabrir el plan si corresponde?"}} do %>
+        <i class="bi bi-arrow-repeat me-1"></i>Corregir estados
+      <% end %>
+    <% end %>
   </div>
 </div>

@@ -204,6 +204,19 @@ class DeliveryPlansController < ApplicationController
     render json: {status: "error", message: e.message}, status: :unprocessable_entity
   end
 
+  # Corrige assignments que quedaron "completed" sin que su entrega llegara
+  # a un estado terminal real (bug de cierre prematuro, ver
+  # DeliveryPlan#resync_status!), y reabre el plan si corresponde.
+  def resync_status
+    @delivery_plan = DeliveryPlan.find(params[:id])
+    authorize @delivery_plan
+
+    fixed_count = @delivery_plan.resync_status!
+
+    notice = fixed_count.zero? ? "No se encontraron paradas inconsistentes." : "Se corrigieron #{fixed_count} parada(s) y se reabrió el plan si era necesario."
+    redirect_to delivery_plan_path(@delivery_plan), notice: notice
+  end
+
   def create
     @delivery_plan = DeliveryPlan.new(delivery_plan_params)
     authorize @delivery_plan

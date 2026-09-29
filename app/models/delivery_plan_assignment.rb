@@ -86,26 +86,36 @@ class DeliveryPlanAssignment < ApplicationRecord
     true
   end
 
-  # Completa la parada: marca todos los items como entregados
+  # Completa la parada: marca todos los items como entregados.
+  # Si quedan items en un estado raro (ej. missing) y la entrega no llega a
+  # un estado terminal real, el assignment se queda in_route en vez de
+  # completed — así no cierra el plan solo con paradas a medias.
   # IDEMPOTENTE: retorna true si ya está completed
   def complete!
     return true if completed?
 
+    success = false
+
     transaction do
       delivery.mark_as_delivered!
-      update!(status: :completed, completed_at: Time.current)
+      delivery.reload
 
-      DeliveryEvent.record(
-        delivery: delivery,
-        action: "delivered",
-        actor: AuditActor.current,
-        payload: {via: "plan_assignment"}
-      )
+      if delivery.terminal?
+        update!(status: :completed, completed_at: Time.current)
 
-      finish_plan_if_done
+        DeliveryEvent.record(
+          delivery: delivery,
+          action: "delivered",
+          actor: AuditActor.current,
+          payload: {via: "plan_assignment"}
+        )
+
+        finish_plan_if_done
+        success = true
+      end
     end
 
-    true
+    success
   end
 
   # Marca la parada como fallida y ejecuta el servicio de fallo
