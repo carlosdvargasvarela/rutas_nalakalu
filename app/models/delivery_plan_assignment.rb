@@ -69,9 +69,14 @@ class DeliveryPlanAssignment < ApplicationRecord
         delivery.update!(status: :in_route)
       end
 
-      delivery.delivery_items.where(status: DeliveryItem.statuses[:in_plan]).find_each do |item|
-        item.update!(status: :in_route)
-      end
+      # No solo :in_plan -- un item que quedó en :pending/:confirmed (ej. se
+      # agregó a la entrega después de crear el assignment, sin pasar por
+      # change_deliveries_statuses) hace que update_status_based_on_items
+      # regrese la entrega a :in_plan más abajo, aunque el assignment ya
+      # esté in_route.
+      delivery.delivery_items
+        .where(status: DeliveryItem.statuses.values_at("pending", "confirmed", "in_plan"))
+        .find_each { |item| item.update!(status: :in_route) }
 
       delivery.update_status_based_on_items
 

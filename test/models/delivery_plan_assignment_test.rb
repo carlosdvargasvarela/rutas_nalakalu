@@ -52,6 +52,17 @@ class DeliveryPlanAssignmentTest < ActiveSupport::TestCase
     assert_operator PaperTrail::Version.where(item_type: "Delivery", item_id: assignment.delivery.id).count, :>, versions_before
   end
 
+  test "start! moves the delivery to in_route even when an item was left at confirmed (never reached in_plan)" do
+    assignment = delivery_plan_assignments(:one)
+    assignment.delivery.update!(status: :in_plan)
+    assignment.delivery.delivery_items.first.update!(status: :confirmed)
+
+    assignment.start!
+
+    assert_equal "in_route", assignment.delivery.reload.status
+    assert_equal "in_route", assignment.delivery.delivery_items.first.reload.status
+  end
+
   test "start! leaves a PaperTrail version on each item moved from in_plan to in_route" do
     assignment = delivery_plan_assignments(:one)
     assignment.delivery.update!(status: :in_plan)
