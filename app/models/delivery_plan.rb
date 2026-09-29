@@ -288,17 +288,22 @@ class DeliveryPlan < ApplicationRecord
 
   # @return [Boolean] true si hay algo que #resync_status! pueda corregir:
   # (1) un assignment completed cuya delivery no llegó a un estado terminal
-  # real (bug viejo de complete!, podía cerrar el plan de forma prematura), o
+  # real (bug viejo de complete!, podía cerrar el plan de forma prematura),
   # (2) un assignment in_route/completed cuya delivery se quedó atrás con
   # items sueltos en pending/confirmed/in_plan (bug viejo de start!, que solo
-  # avanzaba items exactamente :in_plan).
+  # avanzaba items exactamente :in_plan), o
+  # (3) un assignment pending/in_route cuya delivery ya está rescheduled --
+  # debió cancelarse solo vía Delivery#cancel_stale_assignment! y se quedó
+  # atascado, bloqueando el cierre de toda la ruta.
   def status_needs_resync?
     delivery_plan_assignments.completed.any? { |a| !a.delivery.terminal? } ||
-      delivery_plan_assignments.where.not(status: :pending).any? { |a| lagging_delivery?(a) }
+      delivery_plan_assignments.where.not(status: :pending).any? { |a| lagging_delivery?(a) } ||
+      delivery_plan_assignments.where(status: [:pending, :in_route]).any? { |a| a.delivery.rescheduled? }
   end
 
-  # Corrige ambos casos descritos en #status_needs_resync? y reabre el plan
-  # si ya no le corresponde estar completed.
+  # Corrige los tres casos descritos en #status_needs_resync?, reabre el
+  # plan si ya no le corresponde estar completed, e intenta cerrarlo si
+  # ahora sí quedó todo en un estado terminal.
   # @return [Integer] cantidad de assignments/entregas corregidas
   def resync_status!
     fixed = 0
@@ -314,11 +319,16 @@ class DeliveryPlan < ApplicationRecord
         fixed += 1
       end
 
+      stuck_rescheduled = delivery_plan_assignments.where(status: [:pending, :in_route]).select { |a| a.delivery.rescheduled? }
+      stuck_rescheduled.each { |a| a.update!(status: :cancelled, completed_at: Time.current) }
+      fixed += stuck_rescheduled.size
+
       stale = delivery_plan_assignments.completed.reject { |a| a.delivery.terminal? }
       stale.each { |a| a.update!(status: :in_route) }
       fixed += stale.size
 
       update!(status: :in_progress) if status_completed? && stale.any?
+      finish! if status_in_progress?
     end
 
     fixed

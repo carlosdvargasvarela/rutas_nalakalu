@@ -211,4 +211,26 @@ class DeliveryPlanTest < ActiveSupport::TestCase
     assert_equal 0, fixed
     assert_equal "in_plan", assignment.delivery.reload.status
   end
+
+  test "resync_status! cancels a stuck assignment whose delivery is already rescheduled, unblocking finish!" do
+    plan = delivery_plans(:one)
+    assignment = plan.delivery_plan_assignments.first
+    plan.delivery_plan_assignments.where.not(id: assignment.id).destroy_all
+    assignment.update!(status: :pending)
+    assignment.delivery.update_columns(status: Delivery.statuses[:rescheduled])
+    plan.update_columns(status: DeliveryPlan.statuses[:in_progress])
+
+    fixed = plan.resync_status!
+
+    assert_equal 1, fixed
+    assert assignment.reload.cancelled?
+    assert_equal "completed", plan.reload.status
+  end
+
+  test "status_needs_resync? is true while an assignment is stuck pending on an already-rescheduled delivery" do
+    assignment = delivery_plan_assignments(:one)
+    assignment.delivery.update_columns(status: Delivery.statuses[:rescheduled])
+
+    assert assignment.delivery_plan.status_needs_resync?
+  end
 end
