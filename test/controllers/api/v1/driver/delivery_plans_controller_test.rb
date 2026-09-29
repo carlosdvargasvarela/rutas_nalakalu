@@ -59,6 +59,16 @@ module Api
           assert json.key?("status")
         end
 
+        test "show devuelve deliveries_count y delivered_count consistentes con las asignaciones visibles" do
+          @plan.delivery_plan_assignments.first.update!(status: :completed)
+
+          get api_v1_driver_delivery_plan_path(@plan), headers: auth
+          json = JSON.parse(response.body)
+
+          assert_equal json["assignments"].size, json["deliveries_count"]
+          assert_equal 1, json["delivered_count"]
+        end
+
         test "show funciona para un plan sin conductor asignado" do
           other = delivery_plans(:one)
           get api_v1_driver_delivery_plan_path(other), headers: auth

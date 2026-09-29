@@ -193,6 +193,8 @@ module Api
             current_lng: plan.current_lng,
             last_seen_at: plan.last_seen_at&.iso8601,
             progress: plan.progress,
+            deliveries_count: assignments.size,
+            delivered_count: assignments.count { |a| a.completed? },
             active_tracker: active_tracker_for(plan),
             crew: plan.driver&.crew_members.to_a.map { |cm| {name: cm.name, id_number: cm.id_number} } || [],
             assignments: assignments.map { |a| serialize_assignment(a) }
