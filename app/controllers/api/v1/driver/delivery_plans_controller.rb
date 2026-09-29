@@ -10,6 +10,7 @@ module Api
           delivered_status = Delivery.statuses[:delivered]
           plans = DeliveryPlan
             .active
+            .with_pending_stops
             .preload(:last_recorded_by, :driver)
             .left_joins(:deliveries)
             .select(<<~SQL)

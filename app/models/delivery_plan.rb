@@ -82,6 +82,11 @@ class DeliveryPlan < ApplicationRecord
 
   scope :for_driver, ->(driver_id) { where(driver_id: driver_id) }
   scope :active, -> { where(status: [:routes_created, :in_progress]) }
+  # Excluye planes donde ya no queda ninguna parada por hacer (todas
+  # entregadas, canceladas o reagendadas) — no tiene sentido mostrárselos al conductor.
+  scope :with_pending_stops, -> {
+    where(id: DeliveryPlanAssignment.where(status: [:pending, :in_route]).select(:delivery_plan_id))
+  }
   # Planes con GPS potencialmente útil en /tracking: en curso o ya completados
   # (el historial de recorrido de un plan completado sigue siendo consultable).
   scope :trackable, -> { where(status: [:routes_created, :in_progress, :completed]) }

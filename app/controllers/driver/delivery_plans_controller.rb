@@ -9,8 +9,10 @@ module Driver
     def index
       authorize DeliveryPlan, policy_class: Driver::DeliveryPlanPolicy
 
-      # Base: TODOS los planes (sin restricción de driver)
-      base_scope = DeliveryPlan.all
+      # Base: TODOS los planes (sin restricción de driver), pero solo los que
+      # aún tienen alguna parada pendiente/en ruta (si todas ya fueron
+      # entregadas/canceladas/reagendadas, la ruta no le sirve al conductor).
+      base_scope = DeliveryPlan.with_pending_stops
 
       # Extraemos filtros de fecha manuales (porque first_delivery_date es un alias SQL)
       q_params = (params[:q] || {}).to_h

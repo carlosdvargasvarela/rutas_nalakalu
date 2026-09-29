@@ -42,6 +42,14 @@ module Api
           assert_not_includes ids, completed.id
         end
 
+        test "index excluye planes sin ninguna parada pendiente/en ruta" do
+          @plan.delivery_plan_assignments.update_all(status: DeliveryPlanAssignment.statuses[:cancelled])
+
+          get api_v1_driver_delivery_plans_path, headers: auth
+          ids = JSON.parse(response.body).map { |p| p["id"] }
+          assert_not_includes ids, @plan.id
+        end
+
         test "show devuelve plan con assignments y progress" do
           get api_v1_driver_delivery_plan_path(@plan), headers: auth
           assert_response :success
