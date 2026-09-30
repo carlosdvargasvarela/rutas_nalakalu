@@ -19,17 +19,20 @@ module Geocodable
   end
 
   # Provincia/cantón/distrito por coordenadas (sirve también para Plus Codes y
-  # direcciones manuales). Vacíos si Google no los trae.
+  # direcciones manuales; sin coordenadas las obtiene del texto). Vacíos si
+  # Google no los trae o el punto cae fuera de Costa Rica.
   def refresh_zone
-    return if !respond_to?(:province=) || latitude.blank? || longitude.blank? # VendorAddress no tiene zona
+    return unless respond_to?(:province=) # VendorAddress no tiene zona
 
-    r = Geocoder.search([latitude.to_f, longitude.to_f],
-      params: {components: nil, result_type: "administrative_area_level_3"}).first
-    comps = r&.data&.dig("address_components") || []
-    zone = ->(lvl) { comps.find { |c| c["types"].include?("administrative_area_level_#{lvl}") }&.dig("long_name") }
-    self.province = zone.(1)&.delete_prefix("Provincia de ")
-    self.canton = zone.(2)
-    self.district = zone.(3)
+    point = [latitude, longitude].map(&:presence)
+    point = Geocoder.search(build_query_for_geocode).first&.coordinates if point.any?(&:nil?)
+    return if point.blank?
+
+    # Con result_type Google a veces omite el cantón: se completa con la búsqueda sin filtrar.
+    results = Geocoder.search(point.map(&:to_f), params: {components: nil, result_type: "administrative_area_level_3"})
+    zone = zone_from(results)
+    zone = zone_from(results + Geocoder.search(point.map(&:to_f), params: {components: nil})) if zone.compact.size < 3
+    self.province, self.canton, self.district = zone
   end
 
   private
@@ -95,5 +98,13 @@ module Geocodable
       # Sin match: marca calidad; no sobrescribas coords existentes
       self.geocode_quality = "no_match"
     end
+  end
+
+  def zone_from(results)
+    comps = results.flat_map { |r| r.data["address_components"] || [] }
+    return [nil, nil, nil] unless comps.any? { |c| c["types"].include?("country") && c["short_name"] == "CR" }
+
+    [1, 2, 3].map { |lvl| comps.find { |c| c["types"].include?("administrative_area_level_#{lvl}") }&.dig("long_name") }
+      .then { |prov, canton, district| [prov&.delete_prefix("Provincia de "), canton, district] }
   end
 end

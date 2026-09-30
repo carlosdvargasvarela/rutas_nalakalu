@@ -1,8 +1,9 @@
 namespace :delivery_addresses do
-  desc "Rellena provincia/cantón/distrito (Google, por coordenadas) en direcciones que aún no los tienen"
+  desc "Rellena provincia/cantón/distrito (Google) de direcciones con entregas desde el 1 de enero de este año"
   task backfill_zone: :environment do
     $stdout.sync = true
-    scope = DeliveryAddress.where(province: nil)
+    ids = Delivery.where(delivery_date: Date.current.beginning_of_year..).select(:delivery_address_id)
+    scope = DeliveryAddress.where(id: ids).where(province: nil).or(DeliveryAddress.where(id: ids).where(canton: nil)).or(DeliveryAddress.where(id: ids).where(district: nil))
     total = scope.count
     puts "Procesando #{total} direcciones..."
     scope.find_each.with_index(1) do |a, i|
