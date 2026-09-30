@@ -7,6 +7,7 @@ module Geocodable
 
     # Solo geocodificar si cambió la dirección Y no hay coordenadas manuales
     before_validation :geocode_enriched, if: :should_geocode?
+    before_validation :refresh_zone, if: -> { will_save_change_to_latitude? || will_save_change_to_longitude? }
   end
 
   def full_address
@@ -15,6 +16,20 @@ module Geocodable
 
   def to_s
     address
+  end
+
+  # Provincia/cantón/distrito por coordenadas (sirve también para Plus Codes y
+  # direcciones manuales). Vacíos si Google no los trae.
+  def refresh_zone
+    return if !respond_to?(:province=) || latitude.blank? || longitude.blank? # VendorAddress no tiene zona
+
+    r = Geocoder.search([latitude.to_f, longitude.to_f],
+      params: {components: nil, result_type: "administrative_area_level_3"}).first
+    comps = r&.data&.dig("address_components") || []
+    zone = ->(lvl) { comps.find { |c| c["types"].include?("administrative_area_level_#{lvl}") }&.dig("long_name") }
+    self.province = zone.(1)&.delete_prefix("Provincia de ")
+    self.canton = zone.(2)
+    self.district = zone.(3)
   end
 
   private
@@ -71,11 +86,6 @@ module Geocodable
 
       # Dirección normalizada (útil para mostrar/auditar)
       self.normalized_address = r.data["formatted_address"] || r.address
-
-      # Provincia / cantón / distrito (vacíos si Google no los trae)
-      comps = r.data["address_components"] || []
-      zone = ->(level) { comps.find { |c| c["types"].include?("administrative_area_level_#{level}") }&.dig("long_name") }
-      self.province, self.canton, self.district = zone.(1), zone.(2), zone.(3)
 
       # Calidad: parcial y tipo de localización (ROOFTOP, APPROXIMATE, etc.)
       partial = r.data["partial_match"] ? "partial" : nil
