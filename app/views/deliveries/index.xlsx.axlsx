@@ -1,7 +1,9 @@
 wb = xlsx_package.workbook
+with_zone = params[:with_zone].present?
 wb.add_worksheet(name: "Entregas") do |sheet|
   sheet.add_row [
-    "Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo"
+    "Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección",
+    *(%w[Provincia Cantón Distrito] if with_zone), "Estado", "Tipo"
   ]
   
   @all_deliveries.each do |delivery|
@@ -17,6 +19,7 @@ wb.add_worksheet(name: "Entregas") do |sheet|
         delivery.order.seller.seller_code,
         delivery.order.client.name,
         delivery.delivery_address.address,
+        *(delivery.delivery_address.attributes.values_at("province", "canton", "district") if with_zone),
         delivery.display_status,
         delivery.delivery_type_humanize
       ]

@@ -50,6 +50,16 @@
                         only_service_cases: params[:only_service_cases],
                         only_repair_services: params[:only_repair_services]
                       ), class: "dropdown-item" %></li>
+                  <li><%= link_to "Exportar Excel (con provincia/cantón/distrito)", deliveries_path(
+                        format: :xlsx,
+                        with_zone: 1,
+                        q: params[:q]&.to_unsafe_h,
+                        no_plan: params[:no_plan],
+                        show_rescheduled: params[:show_rescheduled],
+                        show_archived: params[:show_archived],
+                        only_service_cases: params[:only_service_cases],
+                        only_repair_services: params[:only_repair_services]
+                      ), class: "dropdown-item" %></li>
                   <li>
                     <%= link_to report_deliveries_in_plan_path(
                           format: :xlsx,

@@ -72,6 +72,11 @@ module Geocodable
       # Dirección normalizada (útil para mostrar/auditar)
       self.normalized_address = r.data["formatted_address"] || r.address
 
+      # Provincia / cantón / distrito (vacíos si Google no los trae)
+      comps = r.data["address_components"] || []
+      zone = ->(level) { comps.find { |c| c["types"].include?("administrative_area_level_#{level}") }&.dig("long_name") }
+      self.province, self.canton, self.district = zone.(1), zone.(2), zone.(3)
+
       # Calidad: parcial y tipo de localización (ROOFTOP, APPROXIMATE, etc.)
       partial = r.data["partial_match"] ? "partial" : nil
       loc_type = r.data.dig("geometry", "location_type")

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_09_23_210000) do
+ActiveRecord::Schema[7.2].define(version: 2026_09_29_180000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -130,6 +130,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_23_210000) do
     t.string "place_id"
     t.string "normalized_address"
     t.string "geocode_quality"
+    t.string "province"
+    t.string "canton"
+    t.string "district"
     t.index ["client_id"], name: "index_delivery_addresses_on_client_id"
     t.index ["place_id"], name: "index_delivery_addresses_on_place_id"
   end
@@ -529,6 +532,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_23_210000) do
   add_foreign_key "delivery_plan_locations", "users", column: "recorded_by_id"
   add_foreign_key "delivery_plans", "users", column: "driver_id"
   add_foreign_key "delivery_plans", "users", column: "last_recorded_by_id"
+  add_foreign_key "delivery_plans", "users", column: "load_closed_by_id"
   add_foreign_key "maintenance_windows", "users", column: "activated_by_id"
   add_foreign_key "notifications", "users"
   add_foreign_key "order_contacts", "orders"
