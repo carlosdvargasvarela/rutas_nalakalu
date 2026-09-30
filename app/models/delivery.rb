@@ -559,6 +559,22 @@ class Delivery < ApplicationRecord
       .first
   end
 
+  # Fecha en que entró la primera entrega de estos productos: si se reagendó,
+  # cuenta desde la entrega original y no desde la reagendada.
+  # @return [ActiveSupport::TimeWithZone]
+  def first_entered_at
+    @first_entered_at ||= Delivery.where(id: DeliveryItem
+      .joins(:delivery)
+      .where(order_item_id: delivery_items.map(&:order_item_id),
+        deliveries: {order_id: order_id, delivery_address_id: delivery_address_id})
+      .select(:delivery_id)).minimum(:created_at) || created_at
+  end
+
+  # @return [Integer] días desde que entró la primera entrega
+  def age_days
+    (Date.current - [first_entered_at, created_at].min.to_date).to_i
+  end
+
   # @return [ActiveRecord::Relation<Delivery>] historial de entregas del mismo pedido y dirección
   def delivery_history
     order.deliveries

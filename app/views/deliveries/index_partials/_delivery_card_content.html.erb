@@ -38,7 +38,7 @@
         <%= delivery.order&.client&.name || delivery.client_name %>
       </div>
       <%# Fila 3: Fecha + dirección (con los días que lleva la entrega, a la derecha de la fecha) %>
-      <% age_days = (Date.current - delivery.created_at.to_date).to_i %>
+      <% age_days = delivery.age_days %>
       <div class="d-flex flex-column gap-1 mb-2">
         <div class="small text-secondary d-flex align-items-center gap-1">
           <i class="bi bi-calendar3 text-primary card-row-icon"></i>
@@ -49,7 +49,7 @@
           <% end %>
           <span class="badge bg-light text-muted border rounded-pill ms-auto flex-shrink-0"
                 style="font-weight: 600; font-size: 0.8rem;"
-                title="Creado hace <%= age_days %> día<%= 's' unless age_days == 1 %> (<%= l(delivery.created_at.to_date, format: :short) %>)">
+                title="Desde hace <%= age_days %> día<%= 's' unless age_days == 1 %> (<%= l(delivery.first_entered_at.to_date, format: :short) %>)">
             <i class="bi bi-clock-history me-1"></i><%= age_days %>d
           </span>
         </div>

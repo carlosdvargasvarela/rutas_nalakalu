@@ -86,5 +86,14 @@ module Deliveries
       assert_equal 4, existing_item.reload.quantity_delivered
       assert_equal "rescheduled", @pending_item.reload.status
     end
+
+    test "age_days cuenta desde la primera entrega, no desde la reagendada" do
+      @delivery.update_columns(created_at: 10.days.ago)
+
+      target = Rescheduler.new(delivery: @delivery, new_date: Date.current + 7, current_user: @user).call
+
+      assert_equal 0, (Date.current - target.created_at.to_date).to_i
+      assert_equal 10, target.reload.age_days
+    end
   end
 end
