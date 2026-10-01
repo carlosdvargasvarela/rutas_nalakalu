@@ -31,6 +31,8 @@ class DeliveriesController < ApplicationController
     excluded_from_index = []
     excluded_from_index << :rescheduled unless current_user.admin? && params[:show_rescheduled] == "1"
     excluded_from_index << :archived unless params[:show_archived] == "1"
+    # Solo se ven al pedirlas explícitamente en el filtro de estado.
+    excluded_from_index << :pending_review unless Array(params.dig(:q, :status_in)).include?("pending_review")
     base_scope = Delivery.where.not(status: excluded_from_index)
 
     if params[:no_plan].present?
@@ -45,7 +47,7 @@ class DeliveriesController < ApplicationController
       end
     end
 
-    excluded_statuses = %i[delivered rescheduled cancelled archived failed]
+    excluded_statuses = %i[delivered rescheduled cancelled archived failed pending_review]
     base_scope = base_scope.where.not(status: excluded_statuses) if params[:no_plan].present?
 
     if params[:only_service_cases].present?
@@ -332,7 +334,7 @@ class DeliveriesController < ApplicationController
       .where(order_id: @delivery.order_id, delivery_address_id: @delivery.delivery_address_id)
       .where("delivery_date >= ?", Date.current)
       .where.not(id: @delivery.id)
-      .where.not(status: %i[rescheduled cancelled archived])
+      .where.not(status: %i[rescheduled cancelled archived pending_review])
       .order(:delivery_date)
   end
 

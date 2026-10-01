@@ -122,7 +122,8 @@
                       ["Archivada", "archived"],
                       ["Entrega fracasada", "failed"],
                       ["Cargada en camión", "loaded_on_truck"],
-                      ["En bodegaje", "warehousing"]
+                      ["En bodegaje", "warehousing"],
+                      ["Pendiente de revisión", "pending_review"]
                     ],
                     { selected: Array(params.dig(:q, :status_in)) },
                     { class: "form-select form-select-sm bg-light", multiple: true } %>

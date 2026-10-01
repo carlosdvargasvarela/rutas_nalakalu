@@ -5,7 +5,7 @@ class OrdersController < ApplicationController
 
   def index
     # Incluir las asociaciones necesarias para el filtro de notas
-    @q = Order.left_joins(:deliveries, order_items: {delivery_items: :delivery_item_notes})
+    @q = Order.where(qb_standby: false).left_joins(:deliveries, order_items: {delivery_items: :delivery_item_notes})
       .ransack(params[:q])
 
     # Usar distinct porque un pedido puede tener varias deliveries/notas

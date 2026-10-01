@@ -62,7 +62,7 @@ class RouteExcelImportService
     seller = Seller.find_by(seller_code: seller_code)
     raise "Vendedor con código #{seller_code} no encontrado" unless seller
 
-    order = Order.find_or_create_by!(number: order_number) do |o|
+    order = Order.find_or_create_by!(number: order_number, qb_standby: false) do |o|
       o.client = client
       o.seller = seller
       o.status = :in_production

@@ -44,7 +44,7 @@ module AdminReports
         .where(approved: true)
         .where(archived: false)
         # Excluir estados que ya no requieren confirmación
-        .where.not(status: [:delivered, :rescheduled, :archived, :cancelled, :ready_to_deliver])
+        .where.not(status: [:delivered, :rescheduled, :archived, :cancelled, :ready_to_deliver, :pending_review])
         # Excluir entregas internas
         .where.not(delivery_type: :internal_delivery)
         # Excluir entregas de tienda / pickup (ajusta el símbolo al enum real)

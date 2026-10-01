@@ -222,7 +222,7 @@ class DeliveryItemsController < ApplicationController
       )
       .where("delivery_date >= ?", Date.current)
       .where.not(id: @delivery.id)
-      .where.not(status: %i[rescheduled cancelled archived])
+      .where.not(status: %i[rescheduled cancelled archived pending_review])
       .order(:delivery_date)
 
     # Usamos layout: false porque Turbo Frame lo insertará en el modal existente

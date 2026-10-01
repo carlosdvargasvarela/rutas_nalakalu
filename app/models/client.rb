@@ -2,7 +2,9 @@
 class Client < ApplicationRecord
   has_paper_trail
   has_many :delivery_addresses, dependent: :destroy
-  has_many :orders, dependent: :destroy
+  # Los pedidos en stand-by de QuickBooks no se usan hasta liberarlos (ver Admin::QuickbooksController#release).
+  has_many :orders, -> { where(qb_standby: false) }, dependent: :destroy
+  has_many :standby_orders, -> { where(qb_standby: true) }, class_name: "Order", dependent: :destroy
   has_many :client_notes, dependent: :destroy  # <- AGREGAR
 
   validates :name, presence: true

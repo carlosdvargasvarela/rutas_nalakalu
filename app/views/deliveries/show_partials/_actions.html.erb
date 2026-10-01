@@ -59,7 +59,7 @@
         </button>
         <ul class="dropdown-menu dropdown-menu-end shadow border-0 m-0">
           <% if can_edit %>
-            <% if !delivery.delivered? && !delivery.cancelled? && !delivery.archived? && !delivery.rescheduled? %>
+            <% if !delivery.delivered? && !delivery.cancelled? && !delivery.archived? && !delivery.pending_review? && !delivery.rescheduled? %>
               <li>
                 <%= button_to reschedule_form_delivery_path(delivery),
                       method: :get,
@@ -79,7 +79,7 @@
                 <% end %>
               </li>
             <% end %>
-            <% if !delivery.delivered? && !delivery.cancelled? && !delivery.archived? && !delivery.rescheduled? %>
+            <% if !delivery.delivered? && !delivery.cancelled? && !delivery.archived? && !delivery.pending_review? && !delivery.rescheduled? %>
               <li>
                 <%= button_to mark_as_delivered_delivery_path(delivery),
                       method: :patch,
@@ -89,7 +89,7 @@
                 <% end %>
               </li>
             <% end %>
-            <% if delivery.delivery_items.pending.any? || (!delivery.delivered? && !delivery.cancelled? && !delivery.archived? && !delivery.rescheduled?) %>
+            <% if delivery.delivery_items.pending.any? || (!delivery.delivered? && !delivery.cancelled? && !delivery.archived? && !delivery.pending_review? && !delivery.rescheduled?) %>
               <li><hr class="dropdown-divider"></li>
             <% end %>
             <li>

@@ -70,6 +70,60 @@ class ProcessQuickbooksXmlJobTest < ActiveSupport::TestCase
     assert_equal admin, captured_params[:admin]
     assert_equal "5001", captured_params[:rejected].first[:order_number]
     assert_match "NO-SUCH-SELLER", captured_params[:rejected].first[:reason]
-    assert_nil Order.find_by(number: "PED-5001"), "order with an unknown seller must not be created"
+    assert_nil Order.find_by(number: "PED-5001", qb_standby: false), "order with an unknown seller must not be operational"
+  end
+
+  test "same order number with a different QB txn goes to stand-by and never overwrites" do
+    order = orders(:one)
+    order.update!(number: "PED-2002", qb_txn_id: "txn-A", qb_updated_at: 1.day.ago)
+    items_before = order.order_items.pluck(:product, :quantity).sort
+
+    ProcessQuickbooksXmlJob.new.perform([so_with_duplicate_lines("2002").merge("txn_id" => "txn-B")])
+
+    assert_equal items_before, order.reload.order_items.pluck(:product, :quantity).sort
+    assert_equal "txn-A", order.qb_txn_id
+    held = Order.find_by!(number: "PED-2002", qb_standby: true)
+    assert_equal "txn-B", held.qb_txn_id
+    assert_equal 10, held.order_items.find_by(product: "Silla Roja").quantity
+    assert held.deliveries.all?(&:pending_review?), "stand-by deliveries must not be operational"
+
+    # reenvío de la misma transacción: no duplica ni toca nada
+    assert_no_difference -> { Order.count } do
+      ProcessQuickbooksXmlJob.new.perform([so_with_duplicate_lines("2002").merge("txn_id" => "txn-B")])
+    end
+  end
+
+  test "new order without address or products is saved as stand-by, not as a usable order" do
+    so = so_with_duplicate_lines("2003").merge("sales_order_line_ret" => nil, "customer_ref" => {"full_name" => "Otro Cliente"})
+
+    ProcessQuickbooksXmlJob.new.perform([so])
+
+    assert_nil Order.find_by(number: "PED-2003", qb_standby: false)
+    held = Order.find_by!(number: "PED-2003", qb_standby: true)
+    assert_match(/sin dirección/, held.qb_standby_reason)
+    assert_match(/sin productos/, held.qb_standby_reason)
+    assert held.deliveries.all?(&:pending_review?)
+    assert_equal 0, QbStandbyOrder.count
+  end
+
+  def so_with_contacts(ref, ext_phone, addr_phone)
+    so_with_duplicate_lines(ref).merge(
+      "data_ext_ret" => [{"data_ext_name" => "Contacto de Entrega", "data_ext_value" => "Armando Jose"},
+        {"data_ext_name" => "Celular de Contacto Entrega", "data_ext_value" => ext_phone}],
+      "ship_address" => {"addr1" => "Condominio Santa Ana", "addr2" => "Contacto: Armando Jose", "city" => "Telefono:+506#{addr_phone}"}
+    )
+  end
+
+  test "a different contact in the address block is added as an extra order contact" do
+    ProcessQuickbooksXmlJob.new.perform([so_with_contacts("3002", "88449617", "85188679")])
+
+    contacts = Order.find_by!(number: "PED-3002").order_contacts.order(:id).pluck(:name, :phone, :is_primary)
+    assert_equal [["Armando Jose", "88449617", true], ["Armando Jose", "85188679", false]], contacts
+  end
+
+  test "the same contact in the address block is not duplicated" do
+    ProcessQuickbooksXmlJob.new.perform([so_with_contacts("3003", "88449617", "88449617")])
+
+    assert_equal 1, Order.find_by!(number: "PED-3003").order_contacts.count
   end
 end

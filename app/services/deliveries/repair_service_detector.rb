@@ -1,7 +1,7 @@
 # app/services/deliveries/repair_service_detector.rb
 module Deliveries
   class RepairServiceDetector
-    TERMINAL_STATUSES = %w[rescheduled cancelled archived delivered].freeze
+    TERMINAL_STATUSES = %w[rescheduled cancelled archived delivered pending_review].freeze
 
     def initialize(delivery)
       @delivery = delivery

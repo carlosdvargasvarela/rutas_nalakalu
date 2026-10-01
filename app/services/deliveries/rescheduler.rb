@@ -76,7 +76,7 @@ module Deliveries
         order_id: delivery.order_id,
         delivery_address_id: delivery.delivery_address_id,
         delivery_date: new_date
-      ).where.not(status: %i[rescheduled cancelled archived delivered]).first
+      ).where.not(status: %i[rescheduled cancelled archived delivered pending_review]).first
 
       return active if active.present?
 

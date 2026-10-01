@@ -19,7 +19,8 @@ class Delivery < ApplicationRecord
     "archived" => "Archivada",
     "failed" => "Entrega fracasada",
     "loaded_on_truck" => "Cargada en camión",
-    "warehousing" => "En bodegaje"
+    "warehousing" => "En bodegaje",
+    "pending_review" => "Pendiente de revisión"
   }.freeze
 
   has_paper_trail
@@ -70,7 +71,9 @@ class Delivery < ApplicationRecord
     archived: 7,
     failed: 8,
     loaded_on_truck: 9,
-    warehousing: 10
+    warehousing: 10,
+    # Entrega de un pedido de QuickBooks en stand-by: aislada de rutas, planes y reportes hasta liberarlo.
+    pending_review: 11
   }
 
   enum :delivery_type, {
@@ -99,9 +102,9 @@ class Delivery < ApplicationRecord
 
   SERVICE_CASE_TYPES = %w[pickup_with_return return_delivery onsite_repair only_pickup].freeze
   REPAIR_SERVICE_TYPES = %w[repair_pickup repair_return].freeze
-  BULK_LOCKED_STATUSES = %w[delivered rescheduled cancelled archived failed warehousing].freeze
+  BULK_LOCKED_STATUSES = %w[delivered rescheduled cancelled archived failed warehousing pending_review].freeze
   REOPENABLE_STATUSES = %w[delivered cancelled archived in_route loaded_on_truck warehousing].freeze
-  HIDDEN_FROM_ROUTE_MAP_STATUSES = %w[cancelled rescheduled archived].freeze
+  HIDDEN_FROM_ROUTE_MAP_STATUSES = %w[cancelled rescheduled archived pending_review].freeze
 
   # Estados que cualquier rol (no solo admin) puede ver al mirar un plan ya
   # armado (tabla de paradas, tarjetas, Excel). cancelled/archived/rescheduled/
@@ -145,7 +148,7 @@ class Delivery < ApplicationRecord
       .where.not(status: [statuses[:delivered], statuses[:rescheduled], statuses[:cancelled], statuses[:loaded_on_truck]])
   }
   scope :eligible_for_plan, -> {
-    where.not(status: [:delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived, :failed, :loaded_on_truck, :warehousing])
+    where.not(status: [:delivered, :cancelled, :rescheduled, :in_plan, :in_route, :archived, :failed, :loaded_on_truck, :warehousing, :pending_review])
   }
   scope :not_assigned_to_plan, -> { where.not(id: DeliveryPlanAssignment.select(:delivery_id)) }
   scope :available_for_plan, -> { eligible_for_plan.not_assigned_to_plan }
@@ -466,7 +469,7 @@ class Delivery < ApplicationRecord
   #
   # @return [void]
   def update_status_based_on_items
-    return if archived? || warehousing?
+    return if archived? || warehousing? || pending_review?
 
     item_statuses = delivery_items.reload.map(&:status)
     return if item_statuses.empty?
@@ -554,7 +557,7 @@ class Delivery < ApplicationRecord
   def next_rescheduled_delivery
     order.deliveries
       .where("id > ?", id)
-      .where.not(status: [:cancelled, :archived])
+      .where.not(status: [:cancelled, :archived, :pending_review])
       .order(:id)
       .first
   end

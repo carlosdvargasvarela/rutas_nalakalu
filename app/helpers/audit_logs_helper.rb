@@ -64,7 +64,8 @@ module AuditLogsHelper
       7 => "Archivada",
       8 => "Entrega fracasada",
       9 => "Cargada en camión",
-      10 => "En bodegaje"
+      10 => "En bodegaje",
+      11 => "Pendiente de revisión"
     },
     "Delivery.delivery_type" => {
       0 => "Entrega normal",
