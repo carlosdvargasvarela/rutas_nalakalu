@@ -29,6 +29,9 @@ module DeliveriesHelper
       "warehousing"
 
     # --- OTROS (Gris) ---
+    when "pending_review"
+      "warning"
+
     when "archived"
       "status-taupe"
     else

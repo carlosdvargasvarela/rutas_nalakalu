@@ -55,6 +55,7 @@ module ApplicationHelper
     "rescheduled" => "bi-arrow-repeat",
     "cancelled" => "bi-x-circle",
     "archived" => "bi-archive",
+    "pending_review" => "bi-hourglass-split",
     "failed" => "bi-exclamation-octagon",
     "loaded_on_truck" => "bi-box-seam", # Icono para “cargado en camión”
 

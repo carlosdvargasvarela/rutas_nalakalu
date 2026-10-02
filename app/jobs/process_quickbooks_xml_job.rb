@@ -3,6 +3,9 @@ class ProcessQuickbooksXmlJob
 
   sidekiq_options queue: "default", retry: 3
 
+  # El pedido se guardó completo pero en stand-by (no operativo); solo se avisa a admins.
+  class HeldInStandby < StandardError; end
+
   def perform(orders)
     orders = Array.wrap(orders)
     results_by_seller = Hash.new { |h, k| h[k] = [] }
@@ -13,6 +16,7 @@ class ProcessQuickbooksXmlJob
       results_by_seller[result[:seller_code]] << result if result
     rescue => e
       Rails.logger.error "ProcessQuickbooksXmlJob: Error en SO #{so["ref_number"]}: #{e.message}"
+      hold_after_error(so, e) unless e.is_a?(HeldInStandby)
       rejected << {order_number: so["ref_number"].to_s.strip, reason: e.message}
     end
 
@@ -29,12 +33,22 @@ class ProcessQuickbooksXmlJob
     qb_modified_at = parse_qb_time(so["time_modified"])
     seller_code = so.dig("sales_rep_ref", "full_name")&.strip
 
-    existing = Order.find_by(number: order_number)
+    # Esta transacción ya está en el sistema, retenida o liberada con otro número: QB la reenvía
+    # (traslape de 5 min, ediciones) y no debe duplicarse ni tocar nada.
+    known = qb_txn_id.present? && Order.find_by(qb_txn_id: qb_txn_id)
+    return if known && (known.qb_standby || known.number != order_number)
+
+    existing = Order.find_by(number: order_number, qb_standby: false)
 
     if existing.present?
       if existing.qb_txn_id.blank?
         Rails.logger.info "🚫 Ignorando #{order_number}: pre-integración"
         return
+      end
+
+      # Mismo número, otra transacción de QB: jamás se pisa el pedido existente.
+      if qb_txn_id.present? && existing.qb_txn_id != qb_txn_id
+        hold_in_standby(so, order_number, ["#{order_number} ya existe (cliente #{existing.client&.name}) con otra transacción de QuickBooks"])
       end
 
       if existing.qb_updated_at.present? && qb_modified_at.present? && existing.qb_updated_at >= qb_modified_at
@@ -45,11 +59,16 @@ class ProcessQuickbooksXmlJob
     due_date = so["due_date"]&.strip
     lines = merge_duplicate_product_lines(Array.wrap(so["sales_order_line_ret"]).compact)
 
+    if existing.blank?
+      problems = incomplete_data_problems(so, due_date, lines)
+      hold_in_standby(so, order_number, problems) if problems.any?
+    end
+
     if existing.present?
       lines_changed = update_order_lines(existing, lines, due_date)
       event_action = lines_changed ? "updated" : nil
     else
-      create_order_from_so(so, order_number, due_date, lines)
+      Order.transaction { create_order_from_so(so, order_number, due_date, lines) }
       event_action = "created"
     end
 
@@ -99,18 +118,75 @@ class ProcessQuickbooksXmlJob
     end
   end
 
+  PLACEHOLDER_ADDRESS = "Vendedor no agregó dirección"
+  PLACEHOLDER_CLIENT = "SIN CLIENTE (QuickBooks)"
+  PLACEHOLDER_SELLER_CODE = "SIN-ASIGNAR"
+
+  def incomplete_data_problems(so, due_date, lines)
+    [
+      ("sin nombre de cliente" if so.dig("customer_ref", "full_name").blank?),
+      ("sin dirección de entrega" if so.dig("ship_address", "addr1").blank?),
+      ("sin productos" if lines.empty?),
+      ("sin fecha de entrega" if due_date.blank?)
+    ].compact
+  end
+
+  # Guarda lo que QB mandó como pedido real pero NO operativo: qb_standby=true y
+  # entrega en "Pendiente de revisión" (fuera de rutas/listados) hasta que un admin lo revise y libere.
+  # Tolera datos faltantes; solo exige vendedor (orders.seller_id es NOT NULL).
+  def hold_in_standby(so, order_number, problems)
+    reason = problems.join("; ").truncate(250)
+    lines = merge_duplicate_product_lines(Array.wrap(so["sales_order_line_ret"]).compact)
+    seller_code = so.dig("sales_rep_ref", "full_name")&.strip
+    seller = Seller.find_by(seller_code: seller_code)
+    if seller.nil?
+      # orders.seller_id es NOT NULL: se asigna un vendedor "sin asignar" hasta que un admin elija el real.
+      seller = Seller.find_by(seller_code: PLACEHOLDER_SELLER_CODE) ||
+        Seller.create!(user: User.admin.first!, name: "Sin asignar (QuickBooks)", seller_code: PLACEHOLDER_SELLER_CODE)
+      problems += ["vendedor #{seller_code.inspect} no existe"] unless problems.any? { |p| p.start_with?("Vendedor") }
+      reason = problems.join("; ").truncate(250)
+    end
+    client = Client.find_or_create_by!(name: so.dig("customer_ref", "full_name")&.strip.presence || PLACEHOLDER_CLIENT)
+
+    Order.transaction do
+      order = Order.create!(number: order_number, client: client, seller: seller, status: :in_production,
+        qb_standby: true, qb_standby_reason: reason, qb_txn_id: so["txn_id"],
+        qb_updated_at: parse_qb_time(so["time_modified"]) || Time.current)
+      primary, extra = contacts_from_so(so)
+      add_contact(order, primary)
+      add_contact(order, extra)
+      address = client.delivery_addresses.find_or_create_by!(address: so.dig("ship_address", "addr1")&.strip.presence || PLACEHOLDER_ADDRESS)
+      delivery = order.deliveries.create!(delivery_address: address, status: :pending_review,
+        contact_name: primary[0].presence, contact_phone: primary[1].presence,
+        delivery_date: (Date.parse(so["due_date"].to_s) rescue Date.current), delivery_notes: so["memo"]&.strip.presence)
+      lines.each do |line|
+        qty = parse_quantity(line["quantity"]).to_i.clamp(1, 100_000)
+        item = order.order_items.create!(product: build_product_name(line).presence || "(sin producto)", quantity: qty,
+          qb_line_id: line["txn_line_id"], status: :in_production)
+        delivery.delivery_items.create!(order_item: item, quantity_delivered: qty, status: :pending)
+      end
+    end
+    raise HeldInStandby, "#{order_number}: #{reason}; quedó en stand-by, no se sobrescribió ni se usa"
+  end
+
+  # Error inesperado: se intenta igual dejar el pedido en stand-by; si tampoco se puede
+  # armar (p. ej. vendedor inexistente), se conserva el contenido crudo en QbStandbyOrder.
+  def hold_after_error(so, error)
+    hold_in_standby(so, so["ref_number"].to_s.strip.then { |r| r.start_with?("PED-") ? r : "PED-#{r}" }, [error.message])
+  rescue HeldInStandby
+    nil
+  rescue => e
+    Rails.logger.error "ProcessQuickbooksXmlJob: no se pudo dejar en stand-by: #{e.message}"
+    QbStandbyOrder.hold(so, so["ref_number"].to_s.strip, error.message) if so["txn_id"].present?
+  end
+
   def create_order_from_so(so, order_number, due_date, lines)
     client_name = so.dig("customer_ref", "full_name")&.strip
     seller_code = so.dig("sales_rep_ref", "full_name")&.strip
     address = so.dig("ship_address", "addr1")&.strip.presence || "Vendedor no agregó dirección"
 
-    c_name = find_ext(so["data_ext_ret"], "Contacto de Entrega").to_s.strip
-    c_phone = find_ext(so["data_ext_ret"], "Celular de Contacto Entrega").to_s.strip
-    if c_name.blank? && c_phone.blank?
-      c_name = so.dig("ship_address", "addr2").to_s.gsub(/^Contacto:\s*/i, "").strip
-      c_phone = so.dig("ship_address", "city").to_s.gsub(/^Telefono:\+?506\s*/i, "").strip
-    end
-    full_contact = [c_name, c_phone].select(&:present?).join(" / ")
+    primary, extra = contacts_from_so(so)
+    full_contact = primary.select(&:present?).join(" / ")
 
     lines.each do |line|
       full_product = build_product_name(line)
@@ -128,6 +204,32 @@ class ProcessQuickbooksXmlJob
       }
       RouteExcelImportService.new.process_row(row_data)
     end
+
+    add_contact(Order.find_by(number: order_number, qb_standby: false), extra)
+  end
+
+  # [[nombre, teléfono] principal, [nombre, teléfono] extra o nil]. El principal sale de los
+  # campos "Contacto de Entrega" de QB; si el bloque de dirección trae OTRO contacto
+  # ("Contacto: ..." / "Telefono:+506..."), va como contacto adicional del pedido.
+  def contacts_from_so(so)
+    ext = [find_ext(so["data_ext_ret"], "Contacto de Entrega").to_s.strip,
+      find_ext(so["data_ext_ret"], "Celular de Contacto Entrega").to_s.strip]
+    ship = so["ship_address"] || {}
+    addr = [ship["addr2"].to_s.gsub(/^Contacto:\s*/i, "").strip,
+      (ship["city"].presence || ship["addr3"]).to_s.gsub(/^Telefono:\s*\+?506\s*/i, "").strip]
+    return [addr, nil] if ext.none?(&:present?)
+    return [ext, nil] if addr.none?(&:present?)
+
+    digits = ->(c) { c[1].to_s.gsub(/\D/, "").delete_prefix("506") }
+    same = digits.(ext).present? ? digits.(ext) == digits.(addr) : (digits.(addr).blank? && ext[0].casecmp?(addr[0]))
+    [ext, (addr unless same)]
+  end
+
+  def add_contact(order, contact)
+    return if order.nil? || contact.nil?
+    name, phone = contact
+    return if phone.present? && order.order_contacts.any? { |c| c.phone.to_s.gsub(/\D/, "") == phone.gsub(/\D/, "") }
+    order.order_contacts.create!(name: name.presence || "Contacto (dirección)", phone: phone.presence, is_primary: order.order_contacts.none?)
   end
 
   def update_order_lines(order, lines, due_date)

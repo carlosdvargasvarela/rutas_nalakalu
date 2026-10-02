@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_09_29_180000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_01_130000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -344,6 +344,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_29_180000) do
     t.datetime "updated_at", null: false
     t.string "qb_txn_id"
     t.datetime "qb_updated_at"
+    t.boolean "qb_standby", default: false, null: false
+    t.string "qb_standby_reason"
     t.index ["client_id"], name: "index_orders_on_client_id"
     t.index ["number"], name: "index_orders_on_number"
     t.index ["qb_txn_id"], name: "index_orders_on_qb_txn_id", unique: true
@@ -360,6 +362,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_29_180000) do
     t.index ["actor_id"], name: "index_plan_events_on_actor_id"
     t.index ["created_at"], name: "index_plan_events_on_created_at"
     t.index ["delivery_plan_id"], name: "index_plan_events_on_delivery_plan_id"
+  end
+
+  create_table "qb_standby_orders", force: :cascade do |t|
+    t.string "order_number", null: false
+    t.string "qb_txn_id", null: false
+    t.string "reason", null: false
+    t.text "payload", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["qb_txn_id"], name: "index_qb_standby_orders_on_qb_txn_id", unique: true
   end
 
   create_table "qbwc_jobs", force: :cascade do |t|

@@ -58,6 +58,48 @@
         </button>
       <% end %>
 
+
+      <% if @standby_orders.any? %>
+        <hr class="my-4">
+        <h6 class="fw-semibold"><i class="bi bi-pause-circle me-2 text-warning"></i>Pedidos en stand-by (<%= @standby_orders.size %>)</h6>
+        <p class="text-muted small">Guardados completos, pero no aparecen en rutas ni listados hasta liberarlos. Para liberar, confirme o corrija el número.</p>
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Cliente</th><th>Motivo</th><th>Número</th><th></th></tr></thead>
+          <tbody>
+            <% @standby_orders.each do |o| %>
+              <tr>
+                <td><%= link_to o.client.name, order_path(o) %><br><%= link_to "Editar dirección y productos", admin_edit_standby_quickbooks_path(o), class: "small" %></td>
+                <td class="small"><%= o.qb_standby_reason %></td>
+                <td colspan="2">
+                  <%= form_with url: admin_release_quickbooks_standby_path(o), method: :post, class: "d-flex gap-2" do %>
+                    <input type="text" name="number" value="<%= o.number %>" class="form-control form-control-sm">
+                    <button type="submit" class="btn btn-sm btn-outline-success" data-turbo-confirm="¿Liberar este pedido? Pasará a ser utilizable.">Liberar</button>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+
+      <% if @standby.any? %>
+        <hr class="my-4">
+        <h6 class="fw-semibold"><i class="bi bi-pause-circle me-2 text-warning"></i>Pedidos con error, sin cargar (<%= @standby.size %>)</h6>
+        <p class="text-muted small">QuickBooks los envió pero no se pudieron cargar (error al procesar); se conserva el contenido recibido.</p>
+        <table class="table table-sm">
+          <thead><tr><th>Pedido</th><th>Cliente QB</th><th>Motivo</th><th>Recibido</th></tr></thead>
+          <tbody>
+            <% @standby.each do |s| %>
+              <tr>
+                <td class="fw-semibold"><%= s.order_number %></td>
+                <td><%= s.payload.dig("customer_ref", "full_name") %></td>
+                <td class="small"><%= s.reason %></td>
+                <td class="small"><%= l s.created_at, format: :short %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
     </div>
   </div>
 </div>

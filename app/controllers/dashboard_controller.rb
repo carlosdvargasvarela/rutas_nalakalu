@@ -123,7 +123,7 @@ class DashboardController < ApplicationController
     fetch_reschedule_notifications.unread.each do |notification|
       delivery = notification.notifiable
       next unless delivery.is_a?(Delivery)
-      next if delivery.status.in?(%w[delivered cancelled archived])
+      next if delivery.status.in?(%w[delivered cancelled archived pending_review])
 
       entry = (items_by_id[delivery.id] ||= {delivery: delivery, categories: [], reasons: []})
       entry[:reasons] << (delivery.reschedule_reason.presence || "Entrega reprogramada, todavía sin plan nuevo") unless entry[:categories].include?(:reschedule)
@@ -177,7 +177,7 @@ class DashboardController < ApplicationController
   end
 
   def current_user_orders
-    current_user.seller? ? (current_user.seller&.orders || Order.none) : Order.all
+    current_user.seller? ? (current_user.seller&.orders || Order.none) : Order.where(qb_standby: false)
   end
 
   def build_pending_tasks
@@ -210,7 +210,7 @@ class DashboardController < ApplicationController
       end
 
     when "production_manager"
-      overdue_orders = Order.where(status: :in_production)
+      overdue_orders = Order.where(qb_standby: false, status: :in_production)
         .where("updated_at < ?", 7.days.ago).count
 
       if overdue_orders > 0

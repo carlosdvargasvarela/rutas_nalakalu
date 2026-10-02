@@ -1,0 +1,61 @@
+<div class="container mt-4 admin-container-md">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to "QuickBooks", admin_quickbooks_path %></li>
+      <li class="breadcrumb-item active">Editar <%= @order.number %> (stand-by)</li>
+    </ol>
+  </nav>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+      <h5 class="mb-0 fw-semibold"><%= @order.number %> · <%= @order.client.name %></h5>
+      <div class="small text-muted"><%= @order.qb_standby_reason %></div>
+    </div>
+    <div class="card-body p-4">
+      <% if alert.present? %><div class="alert alert-danger"><%= alert %></div><% end %>
+      <%= form_with url: admin_standby_quickbooks_path(@order), method: :patch do %>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="client_name">Cliente</label>
+            <input type="text" id="client_name" name="client_name" class="form-control" value="<%= @order.client.name %>">
+            <div class="form-text">Si el nombre no existe, se crea el cliente.</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="seller_id">Vendedor</label>
+            <select id="seller_id" name="seller_id" class="form-select">
+              <% @sellers.each do |s| %>
+                <option value="<%= s.id %>" <%= "selected" if s.id == @order.seller_id %>><%= s.name %> (<%= s.seller_code %>)</option>
+              <% end %>
+            </select>
+            <div class="form-text">¿No existe? <%= link_to "Crear usuario vendedor", new_admin_user_path, target: "_blank" %> y recargue esta página.</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="delivery_date">Fecha de entrega</label>
+            <input type="date" id="delivery_date" name="delivery_date" class="form-control" value="<%= @delivery.delivery_date.to_date %>">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold" for="address">Dirección de entrega</label>
+          <input type="text" id="address" name="address" class="form-control" value="<%= @delivery.delivery_address.address %>">
+        </div>
+
+        <label class="form-label fw-semibold">Productos</label>
+        <% @order.order_items.order(:id).each do |item| %>
+          <div class="d-flex gap-2 mb-2 align-items-center">
+            <input type="text" name="items[<%= item.id %>][product]" class="form-control" value="<%= item.product %>">
+            <input type="number" min="1" name="items[<%= item.id %>][quantity]" class="form-control w-auto" value="<%= item.quantity %>">
+            <label class="small text-nowrap"><input type="checkbox" name="items[<%= item.id %>][remove]" value="1"> Quitar</label>
+          </div>
+        <% end %>
+        <div class="d-flex gap-2 mb-4">
+          <input type="text" name="new_product" class="form-control" placeholder="Agregar producto">
+          <input type="number" min="1" name="new_quantity" class="form-control w-auto" value="1">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <%= link_to "Volver", admin_quickbooks_path, class: "btn btn-link" %>
+      <% end %>
+    </div>
+  </div>
+</div>

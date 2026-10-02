@@ -281,6 +281,9 @@ Rails.application.routes.draw do
     end
 
     resource :quickbooks, only: [:show, :update]
+    get "quickbooks/standby/:id/edit", to: "quickbooks#edit_standby", as: :edit_standby_quickbooks
+    patch "quickbooks/standby/:id", to: "quickbooks#update_standby", as: :standby_quickbooks
+    post "quickbooks/standby/:id/release", to: "quickbooks#release", as: :release_quickbooks_standby
 
     resource :deliveries_vocabulary, only: [:show, :update]
   end

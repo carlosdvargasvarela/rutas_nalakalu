@@ -10,7 +10,7 @@ module Deliveries
       window_end = now.beginning_of_day + 8.hours                # 07:00 de hoy
 
       new_deliveries = Delivery
-        .where.not(status: :archived)
+        .where.not(status: [:archived, :pending_review])
         .where("deliveries.created_at >= ? AND deliveries.created_at <= ?", window_start, window_end)
         .includes(
           :delivery_address,

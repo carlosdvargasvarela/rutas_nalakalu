@@ -15,7 +15,7 @@ class ReportsController < ApplicationController
       .joins(order: :client)
       .includes(order: :client, delivery_plan_assignment: :delivery_plan)
       .where(delivery_date: @from..@to)
-      .where.not(status: %w[cancelled archived])
+      .where.not(status: %w[cancelled archived pending_review])
       .order("clients.name ASC, deliveries.delivery_date ASC")
 
     seller_ids = Array(params[:seller_id]).reject(&:blank?)
@@ -84,7 +84,7 @@ class ReportsController < ApplicationController
   def deliveries_in_plan
     authorize Delivery, :index?
 
-    excluded_from_index = params[:show_archived] == "1" ? [] : [:archived]
+    excluded_from_index = params[:show_archived] == "1" ? [:pending_review] : [:archived, :pending_review]
     base_scope = Delivery.joins(:delivery_plan_assignment).where.not(status: excluded_from_index)
 
     if params[:only_service_cases].present?

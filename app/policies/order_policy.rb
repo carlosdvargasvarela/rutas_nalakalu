@@ -31,12 +31,12 @@ class OrderPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
       if user.admin? || user.production_manager? || user.logistics?
-        scope.all
+        scope.where(qb_standby: false)
       elsif user.seller?
-        scope.joins(:seller).where(sellers: {user_id: user.id})
+        scope.where(qb_standby: false).joins(:seller).where(sellers: {user_id: user.id})
       elsif user.driver?
         # Solo pedidos con alguna entrega asignada a un plan del driver actual
-        scope.joins(deliveries: {delivery_plan_assignment: :delivery_plan})
+        scope.where(qb_standby: false).joins(deliveries: {delivery_plan_assignment: :delivery_plan})
           .where(delivery_plans: {driver_id: user.id})
           .distinct
       else

@@ -2,7 +2,9 @@
 class Seller < ApplicationRecord
   has_paper_trail
   belongs_to :user
-  has_many :orders, dependent: :destroy
+  # Los pedidos en stand-by de QuickBooks no se usan hasta liberarlos (ver Admin::QuickbooksController#release).
+  has_many :orders, -> { where(qb_standby: false) }, dependent: :destroy
+  has_many :standby_orders, -> { where(qb_standby: true) }, class_name: "Order", dependent: :destroy
 
   validates :name, presence: true
   validates :seller_code, presence: true, uniqueness: true

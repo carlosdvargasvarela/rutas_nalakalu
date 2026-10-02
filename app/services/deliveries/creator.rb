@@ -213,7 +213,7 @@ module Deliveries
       return if order_item_ids.empty?
 
       # Consideramos como "activas" todas las entregas excepto rescheduled / cancelled / archived
-      blocked_statuses = %w[rescheduled cancelled archived]
+      blocked_statuses = %w[rescheduled cancelled archived pending_review]
       active_status_ids = Delivery.statuses.reject { |k, _| blocked_statuses.include?(k) }.values
 
       conflict_scope = DeliveryItem.joins(:delivery)
