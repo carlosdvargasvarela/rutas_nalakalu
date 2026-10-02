@@ -114,16 +114,16 @@ module Deliveries
       if new_addr_params.present? &&
           (new_addr_params[:address].present? ||
            (new_addr_params[:latitude].present? && new_addr_params[:longitude].present?))
-        # Reusar si ya existe una idéntica para este cliente (el form siempre envía los datos actuales)
+        # Reusar si ya existe una idéntica (incluida la referencia del chofer) para este cliente.
+        # Si la referencia cambió se crea otra dirección: la referencia es por entrega, no se
+        # edita la compartida con otras entregas.
         existing = client.delivery_addresses.find_by(
           address: new_addr_params[:address],
           latitude: new_addr_params[:latitude],
-          longitude: new_addr_params[:longitude]
+          longitude: new_addr_params[:longitude],
+          description: new_addr_params[:description].presence
         )
-        if existing.present?
-          existing.update!(description: new_addr_params[:description]) if existing.description != new_addr_params[:description]
-          return existing
-        end
+        return existing if existing.present?
         return client.delivery_addresses.create!(new_addr_params)
       end
 
