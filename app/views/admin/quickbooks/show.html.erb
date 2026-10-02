@@ -59,10 +59,10 @@
       <% end %>
 
 
-      <% if @standby_orders.any? %>
         <hr class="my-4">
         <h6 class="fw-semibold"><i class="bi bi-pause-circle me-2 text-warning"></i>Pedidos en stand-by (<%= @standby_orders.size %>)</h6>
         <p class="text-muted small">Guardados completos, pero no aparecen en rutas ni listados hasta liberarlos. Para liberar, confirme o corrija el número.</p>
+        <% if @standby_orders.empty? %><p class="small text-muted mb-0">Ninguno por ahora.</p><% else %>
         <table class="table table-sm align-middle">
           <thead><tr><th>Cliente</th><th>Motivo</th><th>Número</th><th></th></tr></thead>
           <tbody>
@@ -80,7 +80,7 @@
             <% end %>
           </tbody>
         </table>
-      <% end %>
+        <% end %>
 
       <% if @standby.any? %>
         <hr class="my-4">
