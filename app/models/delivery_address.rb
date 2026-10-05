@@ -120,14 +120,14 @@ class DeliveryAddress < ApplicationRecord
     return true if address.blank?
 
     addr_lower = address.to_s.downcase.strip
-    desc_lower = description.to_s.downcase.strip
-    full_text = "#{addr_lower} #{desc_lower}".strip
 
+    # Solo se revisa `address`: `description` es la nota libre del chofer y
+    # puede decir "pendiente de confirmar horario" con una dirección válida.
     # 1) Detectar palabras/frases prohibidas claras
-    return true if INVALID_ADDRESS_KEYWORDS.any? { |kw| full_text.include?(kw) }
+    return true if INVALID_ADDRESS_KEYWORDS.any? { |kw| addr_lower.include?(kw) }
 
     # 2) Detectar URLs (copiar enlaces en vez de direcciones)
-    return true if full_text.match?(%r{https?://})
+    return true if addr_lower.match?(%r{https?://})
 
     # 3) Direcciones extremadamente cortas (ej: "x", "xx", "aaa")
     #    - Menos de 5 caracteres sin espacios

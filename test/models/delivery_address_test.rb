@@ -10,6 +10,19 @@ class DeliveryAddressTest < ActiveSupport::TestCase
     assert_includes address.address_errors, "Coordenadas no confirmadas (nunca se movió el pin del mapa)"
   end
 
+  test "una nota con 'pendiente' no invalida una dirección válida" do
+    address = delivery_addresses(:one)
+    address.address = "C. Clínica Jorge Volio 1, Mercedes Norte, San Francisco, Heredia"
+    address.latitude = 9.99
+    address.longitude = -84.12
+    address.description = "Pendiente de confirmar el horario de la oficina ese día."
+
+    refute_includes address.address_errors, "Texto de dirección inválido"
+
+    address.address = "pendiente"
+    assert_includes address.address_errors, "Texto de dirección inválido"
+  end
+
   test "stuck_at_default_coordinates? is false for real coordinates" do
     address = delivery_addresses(:one)
     address.latitude = 9.93
