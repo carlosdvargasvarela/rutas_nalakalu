@@ -61,7 +61,13 @@ export default class extends Controller {
     const taskField = document.querySelector(
       "textarea[name='delivery[delivery_notes]']"
     );
-    const hasTask = taskField && taskField.value.trim() !== "";
+    const hasTask = taskField
+      ? taskField.value.trim() !== ""
+      : [
+          ...document.querySelectorAll(
+            "input[name$='[order_item_attributes][product]']"
+          ),
+        ].some((i) => i.value.trim() !== "");
 
     this.updateBadge(this.taskDetailsBadgeTarget, hasTask);
   }

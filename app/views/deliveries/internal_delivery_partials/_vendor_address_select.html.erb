@@ -27,6 +27,7 @@
         ),
         prompt: "--- Seleccionar proveedor y dirección ---",
         class: "form-select form-select-lg border-primary",
+        required: !current_user.admin?,
         data: {
           "vendor-address-select-target": "select",
           action: "change->vendor-address-select#fill change->internal-delivery-form#validateAddress"

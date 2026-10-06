@@ -2,12 +2,13 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-    static targets = ["template", "item"]
+    static targets = ["template", "item", "list"]
 
     add(e) {
         e.preventDefault()
         const html = this.templateTarget.innerHTML.replaceAll("NEW_RECORD", Date.now().toString())
-        this.element.querySelector("#crew-members-list").insertAdjacentHTML("beforeend", html)
+        const list = this.hasListTarget ? this.listTarget : this.element.querySelector("#crew-members-list")
+        list.insertAdjacentHTML("beforeend", html)
     }
 
     remove(e) {

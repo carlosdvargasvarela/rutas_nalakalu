@@ -12,7 +12,7 @@ export default class extends Controller {
   fill() {
     const option = this.selectTarget.selectedOptions[0];
     if (!option || !option.dataset.address) {
-      this.editVendorLinkTarget.classList.add("d-none");
+      if (this.hasEditVendorLinkTarget) this.editVendorLinkTarget.classList.add("d-none");
       this._hideContactChips();
       return;
     }
@@ -34,6 +34,8 @@ export default class extends Controller {
     }
 
     this._renderContactChips(option.dataset.contacts);
+
+    if (!this.hasEditVendorLinkTarget) return; // usuarios que no pueden editar proveedores
 
     if (option.dataset.vendorId) {
       this.editVendorLinkTarget.href = this.urlTemplateValue.replace("__ID__", option.dataset.vendorId);

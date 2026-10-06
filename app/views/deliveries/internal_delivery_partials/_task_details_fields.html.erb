@@ -1,3 +1,31 @@
+<% unless current_user.admin? %>
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-light">
+    <i class="bi bi-box-seam me-2 text-success"></i><strong>Productos</strong>
+  </div>
+  <div class="card-body" data-controller="nested-form">
+    <p class="small text-muted"><i class="bi bi-info-circle me-1"></i>Agrega un producto por línea.</p>
+    <% row = capture do %>
+      <div class="input-group mb-2" data-nested-form-target="item">
+        <input type="number" name="delivery[delivery_items_attributes][__IDX__][order_item_attributes][quantity]"
+               class="form-control flex-grow-0" style="width: 6rem" value="1" min="1" step="1" required aria-label="Cantidad">
+        <input type="text" name="delivery[delivery_items_attributes][__IDX__][order_item_attributes][product]"
+               class="form-control" placeholder="Ej: 10 cajas de tornillos 2&quot;" __REQ__>
+        <button type="button" class="btn btn-outline-danger" data-action="nested-form#remove" aria-label="Quitar producto">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    <% end %>
+    <div data-nested-form-target="list" data-action="input->internal-delivery-form#validateTaskDetails">
+      <%= row.sub("__IDX__", "0").sub("__REQ__", "required").html_safe %>
+    </div>
+    <template data-nested-form-target="template"><%= row.sub("__IDX__", "NEW_RECORD").sub("__REQ__", "").html_safe %></template>
+    <button type="button" class="btn btn-outline-success btn-sm" data-action="nested-form#add">
+      <i class="bi bi-plus-lg me-1"></i>Agregar producto
+    </button>
+  </div>
+</div>
+<% else %>
 <div class="card shadow-sm mb-4">
   <div class="card-header bg-light">
     <i class="bi bi-pencil-square me-2 text-success"></i><strong>Detalle del mandado</strong>
@@ -71,3 +99,5 @@
 
   </div>
 </div>
+
+<% end %>

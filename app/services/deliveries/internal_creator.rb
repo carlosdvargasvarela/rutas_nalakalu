@@ -7,6 +7,8 @@ module Deliveries
     end
 
     def call
+      validate_non_admin_requirements!
+
       ActiveRecord::Base.transaction do
         company_client = find_or_create_internal_client
         company_seller = find_or_create_internal_seller(company_client)
@@ -39,6 +41,17 @@ module Deliveries
     private
 
     attr_reader :params, :current_user
+
+    # Los usuarios no admin deben elegir proveedor y agregar al menos un producto.
+    def validate_non_admin_requirements!
+      return if current_user.admin?
+
+      raise ArgumentError, "Debes seleccionar un proveedor" if params[:vendor_address_id].blank?
+
+      items = params[:delivery]&.dig(:delivery_items_attributes)&.values || []
+      has_product = items.any? { |i| i.dig(:order_item_attributes, :product).to_s.strip.present? }
+      raise ArgumentError, "Debes agregar al menos un producto" unless has_product
+    end
 
     def find_or_create_internal_client
       Client.find_or_create_by!(name: "NaLakalu Interno") do |client|
@@ -105,16 +118,18 @@ module Deliveries
         product_lines = item_params[:order_item_attributes][:product].to_s
           .split("\n").map(&:strip).reject(&:blank?)
 
+        quantity = [item_params[:order_item_attributes][:quantity].to_i, 1].max
+
         product_lines.map do |product_line|
           order_item = order.order_items.create!(
             product: product_line,
-            quantity: 1,
+            quantity: quantity,
             status: :ready
           )
 
           DeliveryItem.new(
             order_item: order_item,
-            quantity_delivered: 1,
+            quantity_delivered: quantity,
             status: :confirmed
           )
         end
@@ -126,8 +141,8 @@ module Deliveries
         :delivery_date,
         :contact_name,
         :contact_phone,
-        :delivery_notes,
-        :delivery_time_preference
+        :delivery_time_preference,
+        *(:delivery_notes if current_user.admin?)
       )
     end
   end

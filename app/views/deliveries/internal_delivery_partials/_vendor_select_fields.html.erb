@@ -7,15 +7,20 @@
     <% end %>
   </div>
   <div class="card-body">
+    <% unless current_user.admin? %>
+      <p class="small text-muted"><i class="bi bi-info-circle me-1"></i>Debes elegir un proveedor. Si no existe, créalo con "Nuevo proveedor".</p>
+    <% end %>
     <div id="vendor_address_select_container">
       <%= render "deliveries/internal_delivery_partials/vendor_address_select" %>
     </div>
+    <% if current_user.admin_or_manager? %>
     <%= link_to "Editar este proveedor", "#",
           class: "small d-none",
           data: {
             turbo_frame: "modal",
             "vendor-address-select-target": "editVendorLink"
           } %>
+    <% end %>
   </div>
 
   <%= hidden_field_tag "delivery_address[address]",

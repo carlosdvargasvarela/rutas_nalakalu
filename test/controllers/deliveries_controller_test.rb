@@ -35,11 +35,21 @@ class DeliveriesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "production_manager gets the map/autocomplete address form for new_internal_delivery" do
-    @admin.update!(role: :production_manager)
+  test "admin gets the map/autocomplete address form for new_internal_delivery" do
     get new_internal_delivery_deliveries_url
     assert_response :success
     assert_select "[data-controller=address-autocomplete]"
+  end
+
+  test "non-admin gets only the required vendor select and product lines (no notes) for new_internal_delivery" do
+    @admin.update!(role: :production_manager)
+    get new_internal_delivery_deliveries_url
+    assert_response :success
+    assert_select "[data-controller=address-autocomplete]", false
+    assert_select "select[name=vendor_address_id][required]"
+    assert_select "textarea[name='delivery[delivery_notes]']", false
+    assert_select "input[name$='[order_item_attributes][product]']"
+    assert_select "input[name$='[order_item_attributes][quantity]'][min='1']"
   end
 
   test "proveeduria gets the vendor select form for new_internal_delivery" do

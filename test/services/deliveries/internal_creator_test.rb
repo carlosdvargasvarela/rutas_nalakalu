@@ -32,5 +32,36 @@ module Deliveries
         delivery.order.order_items.order(:id).pluck(:product)
       )
     end
+
+    test "uses the submitted quantity (min 1) for the product" do
+      @params[:delivery][:delivery_items_attributes] = {
+        "0" => {order_item_attributes: {product: "Tornillos", quantity: "12"}},
+        "1" => {order_item_attributes: {product: "Cinta", quantity: "0"}}
+      }
+      delivery = InternalCreator.new(params: @params, current_user: @user).call
+
+      assert_equal [12, 1], delivery.delivery_items.order(:id).map(&:quantity_delivered)
+      assert_equal [12, 1], delivery.order.order_items.order(:id).pluck(:quantity)
+    end
+
+    test "non-admin must pick a vendor" do
+      @user.update!(role: :logistics)
+      assert_raises(ArgumentError) { InternalCreator.new(params: @params, current_user: @user).call }
+    end
+
+    test "non-admin must add a product" do
+      @user.update!(role: :logistics)
+      @params[:vendor_address_id] = "1"
+      @params[:delivery][:delivery_items_attributes] = {"0" => {order_item_attributes: {product: " "}}}
+      assert_raises(ArgumentError) { InternalCreator.new(params: @params, current_user: @user).call }
+    end
+
+    test "non-admin cannot set delivery_notes" do
+      @user.update!(role: :logistics)
+      @params[:vendor_address_id] = "1"
+      @params[:delivery][:delivery_notes] = "nota"
+      delivery = InternalCreator.new(params: @params, current_user: @user).call
+      assert_nil delivery.delivery_notes
+    end
   end
 end
