@@ -90,7 +90,7 @@ class DeliveryPlanTest < ActiveSupport::TestCase
 
   test "assigning a driver to a confirmed draft plan with truck already set records routes_created exactly once (nested-save de-dup guard)" do
     plan = delivery_plans(:one)
-    plan.update!(status: :draft, truck: :PRI)
+    plan.update_columns(status: DeliveryPlan.statuses[:draft], truck: DeliveryPlan.trucks[:PRI], driver_id: nil)
     plan.deliveries.each { |d| d.update_columns(status: Delivery.statuses[:in_plan]) }
 
     assert_difference -> { plan.plan_events.where(action: "routes_created").count }, 1 do
@@ -98,14 +98,15 @@ class DeliveryPlanTest < ActiveSupport::TestCase
     end
   end
 
-  test "assigning only a driver (sin camión) no saca el plan de borrador" do
+  test "asignar solo conductor o solo camión saca el plan de borrador" do
     plan = delivery_plans(:one)
-    plan.update!(status: :draft, truck: nil)
-    plan.deliveries.each { |d| d.update_columns(status: Delivery.statuses[:in_plan]) }
-
+    plan.update_columns(status: DeliveryPlan.statuses[:draft], truck: nil, driver_id: nil)
     plan.update!(driver: users(:one))
+    assert plan.reload.status_routes_created?
 
-    assert plan.reload.status_draft?
+    plan.update_columns(status: DeliveryPlan.statuses[:draft], truck: nil, driver_id: nil)
+    plan.update!(truck: :PRI)
+    assert plan.reload.status_routes_created?
   end
 
   test "asignar camión y conductor a un plan confirmado lo saca de borrador automáticamente" do
