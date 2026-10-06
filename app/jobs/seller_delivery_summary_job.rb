@@ -67,7 +67,7 @@ class SellerDeliverySummaryJob
     global_summary = {
       total_sellers: summaries_for_job.count,
       total_deliveries: all_deliveries.count,
-      total_items: all_deliveries.sum { |d| d.delivery_items.count },
+      total_items: all_deliveries.sum { |d| d.delivery_items.not_archived.count },
       total_with_errors: all_deliveries.count { |d| Deliveries::ErrorDetector.new(d).has_errors? },
       by_seller: summaries_for_job.transform_values { |data| data[:summary] }
     }

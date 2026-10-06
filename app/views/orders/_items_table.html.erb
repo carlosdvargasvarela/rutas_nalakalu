@@ -22,7 +22,7 @@
     </thead>
     <tbody>
       <% order.order_items.each do |item| %>
-        <% delivered_qty = DeliveryItem.joins(:delivery)
+        <% delivered_qty = DeliveryItem.not_archived.joins(:delivery)
               .where(order_item: item)
               .where.not(deliveries: { status: :rescheduled })
               .sum(:quantity_delivered) %>
@@ -38,7 +38,7 @@
             <% end %>
           </td>
           <td style="min-width: 200px;">
-            <% deliveries = DeliveryItem.joins(:delivery)
+            <% deliveries = DeliveryItem.not_archived.joins(:delivery)
                     .where(order_item: item)
                     .where.not(deliveries: { status: :rescheduled })
                     .select("deliveries.delivery_date, delivery_items.quantity_delivered") %>

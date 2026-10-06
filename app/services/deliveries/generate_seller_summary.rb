@@ -47,7 +47,7 @@ module Deliveries
 
       {
         total_count: deliveries.count,
-        total_items: deliveries.sum { |d| d.delivery_items.count },
+        total_items: deliveries.sum { |d| d.delivery_items.reject(&:archived?).size },
         with_errors: deliveries_with_errors.count,
         error_categories: error_categories.sort_by { |_, v| -v }.to_h,
         date_range: {

@@ -1,4 +1,4 @@
-<% if delivery.delivery_items.any? %>
+<% if delivery.delivery_items.reject(&:archived?).any? %>
     <div class="modal fade" id="notaEntregaModal<%= delivery.id %>" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -15,7 +15,7 @@
                 <%= label_tag :target, "Aplicar nota a:", class: "form-label" %>
                 <%= select_tag :target,
                       options_for_select([["📌 General (todos los productos)", "all"]] +
-                      delivery.delivery_items.map { |i| ["#{i.order_item.product} (#{i.quantity})", i.id] }),
+                      delivery.delivery_items.reject(&:archived?).map { |i| ["#{i.order_item.product} (#{i.quantity})", i.id] }),
                       class: "form-select" %>
               </div>
               <div class="mb-3">

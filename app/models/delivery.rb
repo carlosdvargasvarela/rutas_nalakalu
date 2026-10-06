@@ -223,7 +223,7 @@ class Delivery < ApplicationRecord
     item_status = DELIVERY_STATUS_TO_ITEM_STATUS.fetch(new_status.to_s)
 
     transaction do
-      delivery_items.find_each do |item|
+      delivery_items.not_archived.find_each do |item|
         item.update!(status: item_status, load_status: :unloaded)
       end
       attrs = {status: new_status, load_status: :empty, warehousing_until: nil}
@@ -337,7 +337,7 @@ class Delivery < ApplicationRecord
   #
   # @return [void]
   def recalculate_load_status!
-    items = delivery_items.reload
+    items = delivery_items.reload.not_archived
     return if items.empty?
 
     loaded_count = items.load_loaded.count
@@ -389,7 +389,7 @@ class Delivery < ApplicationRecord
   # @return [void]
   def reset_load_status!
     transaction do
-      delivery_items.find_each do |item|
+      delivery_items.not_archived.find_each do |item|
         item.update!(load_status: :unloaded)
       end
 
@@ -410,9 +410,9 @@ class Delivery < ApplicationRecord
 
   # @return [Integer] porcentaje (0-100) de items con load_status :loaded
   def load_percentage
-    total = delivery_items.count
+    total = delivery_items.not_archived.count
     return 0 if total.zero?
-    loaded = delivery_items.load_loaded.count
+    loaded = delivery_items.not_archived.load_loaded.count
     ((loaded.to_f / total) * 100).round
   end
 
@@ -471,7 +471,7 @@ class Delivery < ApplicationRecord
   def update_status_based_on_items
     return if archived? || warehousing? || pending_review?
 
-    item_statuses = delivery_items.reload.map(&:status)
+    item_statuses = delivery_items.reload.not_archived.map(&:status)
     return if item_statuses.empty?
 
     new_status = calculate_delivery_status(item_statuses)
@@ -524,7 +524,7 @@ class Delivery < ApplicationRecord
 
   # @return [Integer] suma de `quantity_delivered` entre todos los delivery_items
   def total_items
-    delivery_items.sum(:quantity_delivered)
+    delivery_items.not_archived.sum(:quantity_delivered)
   end
 
   # Marca como entregados todos los items en estados activos y avanza el
@@ -540,7 +540,7 @@ class Delivery < ApplicationRecord
       reload
 
       # Forzar delivered si todos los items lo están
-      if delivery_items.reload.where.not(status: :delivered).none?
+      if delivery_items.reload.not_archived.where.not(status: :delivered).none?
         update!(status: :delivered)
       else
         update_status_based_on_items
@@ -631,7 +631,7 @@ class Delivery < ApplicationRecord
     CSV.generate(headers: true) do |csv|
       csv << ["Fecha de entrega", "Pedido", "Producto", "Cantidad", "Vendedor", "Cliente", "Dirección", "Estado", "Tipo"]
       scope.includes(order: [:client, :seller], delivery_address: :client, delivery_items: {order_item: :order}).find_each do |delivery|
-        delivery.delivery_items.each do |di|
+        delivery.delivery_items.reject(&:archived?).each do |di|
           csv << [
             delivery.delivery_date.strftime("%d/%m/%Y"),
             delivery.order.number,

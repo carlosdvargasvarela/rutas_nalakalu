@@ -112,7 +112,7 @@ module Deliveries
     def product_errors
       errors = []
 
-      if delivery.delivery_items.empty?
+      if delivery.delivery_items.reject(&:archived?).empty?
         errors << {
           category: "Productos",
           severity: "critical",
@@ -121,7 +121,7 @@ module Deliveries
         return errors
       end
 
-      delivery.delivery_items.each do |item|
+      delivery.delivery_items.reject(&:archived?).each do |item|
         # Cantidad inválida
         if item.quantity_delivered.to_i <= 0
           errors << {

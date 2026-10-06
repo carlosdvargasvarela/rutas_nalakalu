@@ -63,7 +63,7 @@ module Deliveries
     # Minutos extra por productos con palabra clave (p. ej. "armado=30"): por
     # producto, la mayor coincidencia.
     def self.buffer_minutes(delivery, rules = buffer_rules)
-      delivery.delivery_items.sum do |item|
+      delivery.delivery_items.reject(&:archived?).sum do |item|
         text = Vocabulary.normalize(item.order_item.product)
         rules.filter_map { |kw, mins| mins if text.include?(kw) }.max.to_i
       end

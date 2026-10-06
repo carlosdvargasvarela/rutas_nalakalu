@@ -62,7 +62,8 @@ class OrderItem < ApplicationRecord
   #   recursión infinita entre este callback y el de guardado.
   # @return [void]
   def update_status_based_on_deliveries
-    if delivery_items.any? && delivery_items.all? { |di| di.status == "delivered" }
+    active_items = delivery_items.reject { |di| di.status == "archived" }
+    if active_items.any? && active_items.all? { |di| di.status == "delivered" }
       update_column(:status, OrderItem.statuses[:delivered])
     elsif status != "cancelled" && ready_to_deliver?
       update_column(:status, OrderItem.statuses[:ready])

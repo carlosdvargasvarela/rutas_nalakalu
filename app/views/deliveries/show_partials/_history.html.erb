@@ -33,9 +33,9 @@
             <div id="history-collapse-<%= d.id %>"
                  class="collapse <%= 'show' if d == delivery %>">
               <div class="px-3 py-2">
-                <% if d.delivery_items.any? %>
+                <% if d.delivery_items.reject(&:archived?).any? %>
                   <div class="d-flex flex-column gap-1">
-                    <% d.delivery_items.each do |item| %>
+                    <% d.delivery_items.reject(&:archived?).each do |item| %>
                       <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light-subtle">
                         <span class="small text-dark">
                           <i class="bi bi-box text-muted me-1"></i>

@@ -11,7 +11,7 @@
       </tr>
     </thead>
     <tbody>
-      <% delivery.delivery_items.each do |item| %>
+      <% delivery.delivery_items.not_archived.each do |item| %>
         <tr id="delivery_item_row_<%= item.id %>">
           <td class="ps-4">
             <div class="fw-bold"><%= item.order_item.product %></div>
@@ -62,7 +62,7 @@
   </table>
 </div>
 <%# Modales de reagendamiento por item %>
-<% delivery.delivery_items.each do |item| %>
+<% delivery.delivery_items.not_archived.each do |item| %>
   <div class="modal fade" id="rescheduleItemModal<%= item.id %>" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
       <div class="modal-content border-0 shadow">

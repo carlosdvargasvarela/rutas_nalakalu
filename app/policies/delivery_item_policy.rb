@@ -25,6 +25,14 @@ class DeliveryItemPolicy < ApplicationPolicy
     admin_or_vendor?
   end
 
+  def archive?
+    user.admin?
+  end
+
+  def unarchive?
+    archive?
+  end
+
   def undo_delivered?
     user.admin?
   end

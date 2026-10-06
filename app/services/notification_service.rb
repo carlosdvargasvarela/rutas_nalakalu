@@ -311,7 +311,7 @@ class NotificationService
 
   def self.current_week_created_message(delivery, created_by: nil)
     fecha = I18n.l(delivery.delivery_date, format: :long)
-    productos = delivery.delivery_items.includes(order_item: :order).map do |di|
+    productos = delivery.delivery_items.not_archived.includes(order_item: :order).map do |di|
       prod = di.order_item&.product || "-"
       qty = di.quantity_delivered || 1
       "- #{prod} x #{qty}"
@@ -340,7 +340,7 @@ class NotificationService
     motivo_texto = reason.present? ? reason : "El usuario no agregó motivos"
     usuario_texto = rescheduled_by.present? ? rescheduled_by : "No especificado"
 
-    productos = delivery.delivery_items.includes(order_item: :order).map do |di|
+    productos = delivery.delivery_items.not_archived.includes(order_item: :order).map do |di|
       prod = di.order_item&.product || "-"
       qty = di.quantity_delivered || 1
       "- #{prod} x #{qty}"

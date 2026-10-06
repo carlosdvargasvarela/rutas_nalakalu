@@ -96,15 +96,15 @@ class DeliveryPlan < ApplicationRecord
   def stats
     {
       total_deliveries: deliveries.count,
-      total_items: deliveries.joins(:delivery_items).count,
-      service_cases: deliveries.joins(:delivery_items).where(delivery_items: {service_case: true}).count,
-      confirmed_items: deliveries.joins(delivery_items: :order_item).where(order_items: {confirmed: true}).count
+      total_items: deliveries.joins(:delivery_items).merge(DeliveryItem.not_archived).count,
+      service_cases: deliveries.joins(:delivery_items).merge(DeliveryItem.not_archived).where(delivery_items: {service_case: true}).count,
+      confirmed_items: deliveries.joins(delivery_items: :order_item).merge(DeliveryItem.not_archived).where(order_items: {confirmed: true}).count
     }
   end
 
   # Recalcular estado de carga del plan (basado en items)
   def recalculate_load_status!
-    all_items = DeliveryItem.joins(:delivery)
+    all_items = DeliveryItem.not_archived.joins(:delivery)
       .where(deliveries: {id: delivery_ids})
 
     return if all_items.empty?

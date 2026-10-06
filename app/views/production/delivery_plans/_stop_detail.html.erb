@@ -1,7 +1,7 @@
 <%# Panel derecho: productos de la parada abierta. locals: delivery, assignment, plan %>
 <%
   locked  = plan.load_closed?
-  items   = delivery.delivery_items.sort_by(&:id)
+  items   = delivery.delivery_items.reject(&:archived?).sort_by(&:id)
   pending = plan.loading_assignments.includes(delivery: :delivery_items).map(&:delivery).reject { |d| d.id == delivery.id || d.load_all_loaded? }
   next_stop = pending.first
 %>

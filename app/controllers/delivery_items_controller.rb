@@ -3,7 +3,7 @@ class DeliveryItemsController < ApplicationController
 
   before_action :set_delivery_item, only: [
     :show, :confirm, :mark_delivered, :undo_delivered, :reschedule,
-    :cancel, :cancel_form, :cancel_to_showroom, :update_notes, :reschedule_form, :note_form
+    :cancel, :cancel_form, :cancel_to_showroom, :archive, :unarchive, :update_notes, :reschedule_form, :note_form
   ]
 
   def show
@@ -125,6 +125,16 @@ class DeliveryItemsController < ApplicationController
     respond_with_delivery_update(delivery, notice: "Producto cancelado.")
   rescue => e
     handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
+  end
+
+  def archive
+    authorize @delivery_item, :archive?
+    update_item_status(:archived, "Producto archivado.")
+  end
+
+  def unarchive
+    authorize @delivery_item, :unarchive?
+    update_item_status(:unarchived, "Producto desarchivado.")
   end
 
   def cancel_to_showroom
@@ -348,6 +358,18 @@ class DeliveryItemsController < ApplicationController
   end
 
   private
+
+  def update_item_status(new_status, notice)
+    DeliveryItems::StatusUpdater.new(
+      delivery_item: @delivery_item,
+      new_status: new_status,
+      current_user: current_user
+    ).call
+
+    respond_with_delivery_update(@delivery_item.delivery.reload, notice: notice)
+  rescue => e
+    handle_item_error(e, fallback: delivery_path(@delivery_item.delivery))
+  end
 
   def set_delivery_item
     @delivery_item = DeliveryItem.find(params[:id])

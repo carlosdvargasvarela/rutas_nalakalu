@@ -45,7 +45,7 @@
                   <i class="bi bi-shop me-1"></i>Sala Pickup
                 </span>
               <% end %>
-              <% if group.any? { |a| a.delivery.delivery_items.any?(&:service_case?) } %>
+              <% if group.any? { |a| a.delivery.delivery_items.reject(&:archived?).any?(&:service_case?) } %>
                 <span class="badge bg-warning">
                   <i class="bi bi-tools me-1"></i>Caso Servicio
                 </span>
@@ -99,17 +99,17 @@
                       <div class="small fw-semibold text-dark mt-1"><%= vendor.name %></div>
                       <%= render "deliveries/vendor_business_hours", vendor: vendor %>
                     <% end %>
-                    <% if d.delivery_items.any? %>
+                    <% if d.delivery_items.not_archived.any? %>
                       <a class="small text-decoration-none text-secondary d-block mt-1"
                          data-bs-toggle="collapse"
                          href="#products_<%= assignment.id %>"
                          role="button">
                         <i class="bi bi-box-seam me-1"></i>
-                        <%= d.delivery_items.size %> ítem<%= d.delivery_items.size == 1 ? '' : 's' %>
+                        <%= d.delivery_items.not_archived.size %> ítem<%= d.delivery_items.not_archived.size == 1 ? '' : 's' %>
                         <i class="bi bi-chevron-down stop-chevron-icon"></i>
                       </a>
                       <div class="collapse mt-1" id="products_<%= assignment.id %>">
-                        <% d.delivery_items.includes(:order_item).each do |di| %>
+                        <% d.delivery_items.not_archived.includes(:order_item).each do |di| %>
                           <div class="d-flex align-items-center gap-1 mb-1">
                             <span class="badge bg-secondary stop-qty-badge">x<%= di.quantity_delivered %></span>
                             <span class="small text-dark"><%= di.order_item.product %></span>
@@ -123,11 +123,11 @@
                        href="#products_<%= assignment.id %>"
                        role="button">
                       <i class="bi bi-box-seam me-1"></i>
-                      <%= d.delivery_items.size %> producto<%= d.delivery_items.size == 1 ? '' : 's' %>
+                      <%= d.delivery_items.not_archived.size %> producto<%= d.delivery_items.not_archived.size == 1 ? '' : 's' %>
                       <i class="bi bi-chevron-down stop-chevron-icon"></i>
                     </a>
                     <div class="collapse mt-1" id="products_<%= assignment.id %>">
-                      <% d.delivery_items.includes(:order_item).each do |di| %>
+                      <% d.delivery_items.not_archived.includes(:order_item).each do |di| %>
                         <div class="d-flex align-items-center gap-1 mb-1">
                           <span class="badge bg-secondary stop-qty-badge">x<%= di.quantity_delivered %></span>
                           <span class="small text-dark"><%= di.order_item.product %></span>
@@ -164,7 +164,7 @@
                       <span class="small"><%= d.delivery_notes %></span>
                     </div>
                   <% end %>
-                  <% d.delivery_items.each do |di| %>
+                  <% d.delivery_items.not_archived.each do |di| %>
                     <% if di.notes.present? %>
                       <div class="note-block note-blue mb-1">
                         <i class="bi bi-pin-angle-fill me-1"></i>

@@ -91,7 +91,9 @@ module AuditLogsHelper
       5 => "Reprogramado",
       6 => "Cancelado",
       7 => "Entrega fracasada",
-      8 => "Cargado en camión"
+      8 => "Cargado en camión",
+      9 => "En bodegaje",
+      10 => "Archivado"
     },
     "DeliveryItem.load_status" => {
       0 => "Sin cargar",

@@ -129,7 +129,9 @@
       </tr>
     </thead>
     <tbody id="delivery_items_rows_<%= delivery.id %>">
-      <% delivery.delivery_items.includes(:order_item).each do |item| %>
+      <% items = delivery.delivery_items.includes(:order_item) %>
+      <% items = items.not_archived unless current_user&.admin? %>
+      <% items.each do |item| %>
         <%= render "deliveries/show_partials/product_item_row",
               item: item,
               delivery: delivery,

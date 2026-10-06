@@ -1,7 +1,7 @@
 <%# app/views/deliveries/show_partials/_product_item_row.html.erb %>
 <% can_confirm = local_assigns.fetch(:can_confirm, false) %>
 <tr id="<%= dom_id(item) %>"
-  class="<%= 'item-with-notes' if item.notes.present? %>">
+  class="<%= 'item-with-notes' if item.notes.present? %> <%= 'opacity-50' if item.archived? %>">
   <%# Checkbox %>
   <td class="text-center align-top pt-3">
     <% if can_confirm && item.bulk_actionable? %>
@@ -63,7 +63,7 @@
         </button>
         <ul class="dropdown-menu dropdown-menu-end shadow border-0"
             style="font-size: 0.85rem; min-width: 160px;">
-          <% unless item.confirmed? || item.delivered? || item.rescheduled? || item.cancelled? %>
+          <% unless item.confirmed? || item.delivered? || item.rescheduled? || item.cancelled? || item.archived? %>
             <li>
               <%= button_to confirm_delivery_item_path(item),
                     method: :patch,
@@ -73,7 +73,7 @@
               <% end %>
             </li>
           <% end %>
-          <% unless item.delivered? || item.rescheduled? || item.cancelled? %>
+          <% unless item.delivered? || item.rescheduled? || item.cancelled? || item.archived? %>
             <li>
               <%= button_to mark_delivered_delivery_item_path(item),
                     method: :patch,
@@ -108,8 +108,28 @@
               <% end %>
             </li>
           <% end %>
+          <% if policy(item).archive? %>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li>
+              <% if item.archived? %>
+                <%= button_to unarchive_delivery_item_path(item),
+                      method: :patch,
+                      class: "dropdown-item py-2 text-secondary",
+                      data: { turbo_stream: true } do %>
+                  <i class="bi bi-arrow-counterclockwise me-2"></i>Desarchivar
+                <% end %>
+              <% elsif !item.delivered? %>
+                <%= button_to archive_delivery_item_path(item),
+                      method: :patch,
+                      class: "dropdown-item py-2 text-secondary",
+                      data: { turbo_stream: true, turbo_confirm: "¿Archivar este producto? Dejará de contar en la entrega." } do %>
+                  <i class="bi bi-archive me-2"></i>Archivar
+                <% end %>
+              <% end %>
+            </li>
+          <% end %>
           <%# Notas %>
-          <% is_terminal = item.delivered? || item.rescheduled? || item.cancelled? %>
+          <% is_terminal = item.delivered? || item.rescheduled? || item.cancelled? || item.archived? %>
           <% unless is_terminal %><li><hr class="dropdown-divider my-1"></li><% end %>
           <li>
             <%= link_to note_form_delivery_item_path(item),

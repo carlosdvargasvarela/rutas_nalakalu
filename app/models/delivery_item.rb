@@ -17,7 +17,8 @@ class DeliveryItem < ApplicationRecord
     "cancelled" => "Cancelado",
     "failed" => "Entrega fracasada",
     "loaded_on_truck" => "Cargado en camión",
-    "warehousing" => "En bodegaje"
+    "warehousing" => "En bodegaje",
+    "archived" => "Archivado"
   }.freeze
 
   has_paper_trail
@@ -41,7 +42,8 @@ class DeliveryItem < ApplicationRecord
     cancelled: 6,
     failed: 7,
     loaded_on_truck: 8,
-    warehousing: 9
+    warehousing: 9,
+    archived: 10
   }
 
   enum load_status: {
@@ -67,12 +69,13 @@ class DeliveryItem < ApplicationRecord
   VISIBLE_TO_ALL_STATUSES = %w[pending confirmed in_plan in_route delivered loaded_on_truck].freeze
 
   scope :service_cases, -> { where(service_case: true) }
-  scope :eligible_for_plan, -> { where.not(status: [:delivered, :cancelled, :rescheduled, :loaded_on_truck, :warehousing, :failed]) }
+  scope :eligible_for_plan, -> { where.not(status: [:delivered, :cancelled, :rescheduled, :loaded_on_truck, :warehousing, :failed, :archived]) }
+  scope :not_archived, -> { where.not(status: :archived) }
   scope :eligible_for_plan_for_others, -> { where(status: VISIBLE_TO_ALL_STATUSES) }
   scope :loaded_items, -> { where(load_status: :loaded) }
   scope :unloaded_items, -> { where(load_status: :unloaded) }
   scope :missing_items, -> { where(load_status: :missing) }
-  scope :bulk_actionable, -> { where.not(status: %i[delivered rescheduled cancelled failed warehousing]) }
+  scope :bulk_actionable, -> { where.not(status: %i[delivered rescheduled cancelled failed warehousing archived]) }
   scope :bulk_confirmable, -> { where(status: :pending) }
   scope :bulk_deconfirmable, -> { where(status: :confirmed) }
   scope :bulk_deliverable, -> { where(status: %i[pending confirmed in_plan in_route loaded_on_truck]) }
@@ -178,7 +181,7 @@ class DeliveryItem < ApplicationRecord
 
   # @return [Boolean] true si el status admite acciones masivas (bulk actions)
   def bulk_actionable?
-    !status.in?(%w[delivered rescheduled cancelled failed warehousing])
+    !status.in?(%w[delivered rescheduled cancelled failed warehousing archived])
   end
 
   # @return [Integer]

@@ -20,7 +20,7 @@
                 <%= render "deliveries/vendor_business_hours", vendor: vendor %>
               <% end %>
               <div class="d-flex flex-wrap gap-1">
-                <% d.delivery_items.includes(:order_item).each do |di| %>
+                <% d.delivery_items.not_archived.includes(:order_item).each do |di| %>
                   <span class="badge bg-light text-dark border">
                     <%= di.order_item.product %>
                     <span class="badge bg-secondary ms-1">x<%= di.quantity_delivered %></span>

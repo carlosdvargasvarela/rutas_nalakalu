@@ -25,8 +25,8 @@
     <small class="text-muted"><%= delivery.order.seller.seller_code %></small>
   </td>
   <td>
-    <% if delivery.delivery_items.any? %>
-      <% delivery.delivery_items.each do |item| %>
+    <% if delivery.delivery_items.not_archived.any? %>
+      <% delivery.delivery_items.not_archived.each do |item| %>
         <div class="d-flex align-items-center mb-1">
           <span class="badge bg-secondary me-2 flex-shrink-0"><%= item.quantity_delivered %></span>
           <span class="small"><%= item.order_item.product %></span>

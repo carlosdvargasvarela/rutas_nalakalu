@@ -24,6 +24,16 @@ module DeliveryItems
         delivery_item.update!(status: :cancelled)
         record_event("item_cancelled")
         notify_cancellation
+      when :archived
+        raise StandardError, "Solo se pueden archivar productos que no estén entregados." if delivery_item.delivered?
+
+        delivery_item.update!(status: :archived)
+        record_event("item_archived")
+        delivery_item.delivery.touch
+      when :unarchived
+        delivery_item.update!(status: :pending)
+        record_event("item_unarchived")
+        delivery_item.delivery.touch
       else
         raise ArgumentError, "Estado no válido: #{new_status}"
       end

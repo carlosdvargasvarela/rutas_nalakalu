@@ -1,8 +1,8 @@
 <%# Parada en la lista de la izquierda. locals: delivery, assignment, plan, selected %>
 <%
   selected = local_assigns.fetch(:selected, false)
-  loaded   = delivery.delivery_items.count { |i| i.load_status == "loaded" }
-  total    = delivery.delivery_items.size
+  loaded   = delivery.delivery_items.reject(&:archived?).count { |i| i.load_status == "loaded" }
+  total    = delivery.delivery_items.reject(&:archived?).size
   tone     = {"all_loaded" => "ok", "partial" => "partial", "some_missing" => "missing"}[delivery.load_status] || "pending"
 %>
 <%= link_to loading_production_delivery_plan_path(plan, stop: delivery.id, filter: params[:filter].presence),

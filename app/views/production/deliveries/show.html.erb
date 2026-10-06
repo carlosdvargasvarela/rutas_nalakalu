@@ -85,7 +85,7 @@
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
           <h5 class="mb-0 fw-bold"><i class="bi bi-box-seam me-2 text-primary"></i>Productos</h5>
           <span class="badge bg-light text-dark border">
-            <%= @delivery.delivery_items.count %> items
+            <%= @delivery.delivery_items.not_archived.count %> items
           </span>
         </div>
         <div class="card-body p-0" id="delivery_items_<%= @delivery.id %>">

@@ -148,7 +148,7 @@ module Api
             longitude: delivery.longitude,
             plus_code: delivery.delivery_address&.plus_code
           },
-          items: delivery.delivery_items.map { |item| serialize_item(item) },
+          items: delivery.delivery_items.reject(&:archived?).map { |item| serialize_item(item) },
           updated_at: delivery.updated_at,
           created_at: delivery.created_at
         }

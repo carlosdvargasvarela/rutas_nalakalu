@@ -156,6 +156,8 @@ Rails.application.routes.draw do
       patch :reschedule
       patch :cancel
       patch :cancel_to_showroom
+      patch :archive
+      patch :unarchive
       patch :update_notes
     end
     collection do

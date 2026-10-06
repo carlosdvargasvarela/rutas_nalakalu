@@ -36,7 +36,7 @@ class DeliveryFailureService
     )
 
     # Marcar todos los delivery_items como failed
-    @delivery.delivery_items.where.not(status: [:delivered, :cancelled]).find_each do |item|
+    @delivery.delivery_items.where.not(status: [:delivered, :cancelled, :archived]).find_each do |item|
       item.update!(status: :failed)
     end
   end
@@ -69,7 +69,7 @@ class DeliveryFailureService
     )
 
     # Clonar delivery_items que no fueron entregados
-    @delivery.delivery_items.where.not(status: [:delivered, :cancelled]).each do |item|
+    @delivery.delivery_items.where.not(status: [:delivered, :cancelled, :archived]).each do |item|
       DeliveryItem.create!(
         delivery: new_delivery,
         order_item: item.order_item,

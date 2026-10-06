@@ -330,7 +330,7 @@ else
       progress = total_count > 0 ? (delivered_count.to_f / total_count * 100).round(1) : 0
 
       unique_clients = plan.deliveries.joins(:order).distinct.count("orders.client_id")
-      unique_products = plan.deliveries.joins(delivery_items: :order_item).distinct.count("order_items.product")
+      unique_products = plan.deliveries.joins(delivery_items: :order_item).merge(DeliveryItem.not_archived).distinct.count("order_items.product")
 
       row_style = case plan.status&.to_s
                   when "scheduled"        then scheduled_style

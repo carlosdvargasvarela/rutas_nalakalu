@@ -44,7 +44,7 @@ wb.add_worksheet(name: "Entregas en plan") do |sheet|
   @deliveries.each do |delivery|
     plan = delivery.delivery_plan_assignment&.delivery_plan
     note = plan_note_for(delivery)
-    items = delivery.delivery_items.presence || [nil]
+    items = delivery.delivery_items.reject(&:archived?).presence || [nil]
 
     items.each do |item|
       style = note.present? ? note_style : (row_count.even? ? row_even_style : row_odd_style)

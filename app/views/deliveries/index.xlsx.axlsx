@@ -10,7 +10,7 @@ wb.add_worksheet(name: "Entregas") do |sheet|
     # 🔹 CAMBIO: Excluir entregas archivadas
     next if delivery.archived?
     
-    delivery.delivery_items.each do |delivery_item|
+    delivery.delivery_items.reject(&:archived?).each do |delivery_item|
       sheet.add_row [
         delivery.delivery_date.strftime("%d/%m/%Y"),
         delivery.order.number,

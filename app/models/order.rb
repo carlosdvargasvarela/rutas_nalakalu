@@ -125,6 +125,7 @@ class Order < ApplicationRecord
         valid_delivery_items = DeliveryItem.joins(:delivery)
           .where(order_item: order_item)
           .where.not(deliveries: {status: [:rescheduled, :archived, :pending_review]})
+          .where.not(delivery_items: {status: :archived})
 
         # Sumar todas las cantidades entregadas reales
         total_delivered_quantity = valid_delivery_items.sum(:quantity_delivered)
