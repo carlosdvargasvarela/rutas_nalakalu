@@ -31,6 +31,8 @@ export default class extends Controller {
   }
 
   validateResponsible() {
+    if (!this.hasResponsibleBadgeTarget) return;
+
     const contactNameField = document.querySelector(
       "input[name='delivery[contact_name]']"
     );
@@ -61,13 +63,12 @@ export default class extends Controller {
     const taskField = document.querySelector(
       "textarea[name='delivery[delivery_notes]']"
     );
-    const hasTask = taskField
-      ? taskField.value.trim() !== ""
-      : [
-          ...document.querySelectorAll(
-            "input[name$='[order_item_attributes][product]']"
-          ),
-        ].some((i) => i.value.trim() !== "");
+    const hasProduct = [
+      ...document.querySelectorAll(
+        "input[name$='[order_item_attributes][product]']"
+      ),
+    ].some((i) => i.value.trim() !== "");
+    const hasTask = hasProduct || (taskField && taskField.value.trim() !== "");
 
     this.updateBadge(this.taskDetailsBadgeTarget, hasTask);
   }

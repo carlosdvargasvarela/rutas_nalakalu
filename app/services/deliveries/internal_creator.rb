@@ -19,7 +19,7 @@ module Deliveries
         processed_items = process_internal_items(order)
 
         @delivery = Delivery.new(
-          internal_delivery_params.merge(
+          internal_delivery_params.merge(vendor_contact_params).merge(
             delivery_type: :internal_delivery,
             status: :ready_to_deliver,
             order: order,
@@ -134,6 +134,14 @@ module Deliveries
           )
         end
       end
+    end
+
+    # Los no admin no llenan responsable: se toma el contacto principal del proveedor.
+    def vendor_contact_params
+      return {} if current_user.admin?
+
+      contact = VendorAddress.find_by(id: params[:vendor_address_id])&.vendor&.vendor_contacts&.primary_first&.first
+      {contact_name: contact&.name, contact_phone: contact&.phone}
     end
 
     def internal_delivery_params

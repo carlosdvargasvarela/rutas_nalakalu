@@ -40,6 +40,7 @@
       </div>
     </div>
 
+    <% if current_user.admin? %>
     <!-- SECCIÓN 2: RESPONSABLE -->
     <div class="accordion-item">
       <h2 class="accordion-header" id="headingResponsible">
@@ -55,6 +56,7 @@
         </div>
       </div>
     </div>
+    <% end %>
 
     <!-- SECCIÓN 3: DIRECCIÓN -->
     <div class="accordion-item">

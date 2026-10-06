@@ -1,4 +1,3 @@
-<% unless current_user.admin? %>
 <div class="card shadow-sm mb-4">
   <div class="card-header bg-light">
     <i class="bi bi-box-seam me-2 text-success"></i><strong>Productos</strong>
@@ -17,53 +16,23 @@
       </div>
     <% end %>
     <div data-nested-form-target="list" data-action="input->internal-delivery-form#validateTaskDetails">
-      <%= row.sub("__IDX__", "0").sub("__REQ__", "required").html_safe %>
+      <%= row.gsub("__IDX__", "0").sub("__REQ__", current_user.admin? ? "" : "required").html_safe %>
     </div>
-    <template data-nested-form-target="template"><%= row.sub("__IDX__", "NEW_RECORD").sub("__REQ__", "").html_safe %></template>
+    <template data-nested-form-target="template"><%= row.gsub("__IDX__", "NEW_RECORD").sub("__REQ__", "").html_safe %></template>
     <button type="button" class="btn btn-outline-success btn-sm" data-action="nested-form#add">
       <i class="bi bi-plus-lg me-1"></i>Agregar producto
     </button>
   </div>
 </div>
-<% else %>
+<% if current_user.admin? %>
 <div class="card shadow-sm mb-4">
   <div class="card-header bg-light">
     <i class="bi bi-pencil-square me-2 text-success"></i><strong>Detalle del mandado</strong>
   </div>
   <div class="card-body">
 
-    <%# Productos físicos (si aplica) %>
-    <div class="mb-4">
-      <div class="form-label fw-bold fs-6">
-        <i class="bi bi-box-seam me-1 text-success"></i>
-        Productos
-        <span class="badge bg-light text-secondary border ms-1" style="font-weight:400;">Opcional</span>
-      </div>
-      <p class="small text-muted mb-3">
-        <i class="bi bi-info-circle me-1"></i>
-        Si el mandado implica llevar o recoger productos específicos, descríbelos aquí.
-        Dejar en blanco si no aplica.
-      </p>
-      <%= f.simple_fields_for :delivery_items do |di| %>
-        <%= di.simple_fields_for :order_item do |oi| %>
-          <%= oi.input :product,
-              as: :text,
-              label: "Lista de productos",
-              input_html: {
-                class: "form-control",
-                rows: 3,
-                placeholder: "Ej: 10 cajas de tornillos 2\", 5 rollos de cinta de embalaje..."
-              },
-              hint: "Un producto por línea o una descripción general",
-              label_html: { class: "form-label fw-bold" } %>
-          <%= oi.hidden_field :quantity, value: 1 %>
-          <%= di.hidden_field :quantity_delivered, value: 1 %>
-        <% end %>
-      <% end %>
-    </div>
-
     <%# ¿Qué hay que hacer? (opcional) %>
-    <div class="border-top pt-3">
+    <div>
       <%= f.label :delivery_notes, class: "form-label fw-bold fs-6" do %>
         <i class="bi bi-clipboard-check me-1 text-success"></i>
         ¿Qué hay que hacer?

@@ -56,6 +56,19 @@ module Deliveries
       assert_raises(ArgumentError) { InternalCreator.new(params: @params, current_user: @user).call }
     end
 
+    test "non-admin contact comes from the vendor's primary contact" do
+      @user.update!(role: :logistics)
+      vendor = Vendor.create!(name: "Prov QA", vendor_addresses_attributes: [{address: "X", latitude: 9.9, longitude: -84.0}])
+      vendor.vendor_contacts.create!(name: "Ana Proveedor", phone: "7777-7777")
+      @params[:vendor_address_id] = vendor.vendor_addresses.first.id.to_s
+      @params[:delivery][:contact_name] = "Otro"
+
+      delivery = InternalCreator.new(params: @params, current_user: @user).call
+
+      assert_equal "Ana Proveedor", delivery.contact_name
+      assert_equal "7777-7777", delivery.contact_phone
+    end
+
     test "non-admin cannot set delivery_notes" do
       @user.update!(role: :logistics)
       @params[:vendor_address_id] = "1"
