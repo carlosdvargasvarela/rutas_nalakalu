@@ -60,6 +60,8 @@ Rails.application.routes.draw do
   # ENTREGAS (DELIVERIES)
   # =============================================================================
   # Gestión completa de entregas de muebles
+  post "map_links/resolve", to: "map_links#resolve"
+
   resources :deliveries, only: [:index, :show, :new, :create, :edit, :update] do
     collection do
       get :by_week

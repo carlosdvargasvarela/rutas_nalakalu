@@ -188,4 +188,13 @@ class DeliveriesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to delivery_path(existing_target)
     assert_equal 1, Delivery.where(order_id: delivery.order_id, delivery_address_id: delivery.delivery_address_id, delivery_date: new_date).count
   end
+
+  test "map_links resolve returns coordinates from a maps url and 422 otherwise" do
+    post "/map_links/resolve", params: {url: "https://maps.apple.com/?ll=9.9281,-84.0907"}, as: :json
+    assert_response :success
+    assert_equal({"lat" => 9.9281, "lng" => -84.0907}, JSON.parse(response.body))
+
+    post "/map_links/resolve", params: {url: "https://evil.com/?q=9.9,-84.0"}, as: :json
+    assert_response :unprocessable_entity
+  end
 end

@@ -400,6 +400,14 @@ export default class extends Controller {
     if (!rawText) return;
 
     const normalized = rawText.replace(/\s+/g, " ").trim();
+
+    if (/^https?:\/\//i.test(normalized)) {
+      // al teclear a mano se espera al blur; al pegar se resuelve de una vez
+      if (event.type === "input" && event.inputType !== "insertFromPaste") return;
+      await this._resolveMapUrl(normalized, event.target);
+      return;
+    }
+
     const coordMatch = normalized.match(
       /^(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)$/,
     );
@@ -424,6 +432,38 @@ export default class extends Controller {
       this._lastInputSource = "plus_code";
       await this._resolvePlusCode(normalized);
       event.target.value = "";
+    }
+  }
+
+  // Enlaces de Google Maps / Apple Maps / Waze: el servidor obtiene las coordenadas.
+  async _resolveMapUrl(url, input) {
+    if (this._resolvingUrl) return;
+    this._resolvingUrl = true;
+    try {
+      const response = await fetch("/map_links/resolve", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "X-CSRF-Token": document.querySelector("meta[name=csrf-token]")?.content,
+        },
+        body: JSON.stringify({ url }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      if (!this._coordsLookLikeCostaRica(data.lat, data.lng)) {
+        alert(`Las coordenadas ${data.lat}, ${data.lng} están fuera del rango esperado para Costa Rica.`);
+        return;
+      }
+      this._lastInputSource = "map_url";
+      this.updateFromCoords(data.lat, data.lng);
+      await this.reverseGeocode({ lat: data.lat, lng: data.lng });
+      input.value = "";
+    } catch (error) {
+      alert(error.message || "No se pudo leer el enlace. Pega uno de Google Maps, Apple Maps o Waze.");
+    } finally {
+      this._resolvingUrl = false;
     }
   }
 
