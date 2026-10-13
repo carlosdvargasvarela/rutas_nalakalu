@@ -19,7 +19,8 @@ class Admin::UsersController < ApplicationController
     authorize User
     @user = User.new(user_params.except(:seller_code))
     @user.seller_code = user_params[:seller_code]
-    @user.password = "Nalakalu.01"
+    # Sin contraseña escrita: clave temporal (y su confirmación) para que el usuario la cambie por correo
+    @user.password = @user.password_confirmation = "Nalakalu.01" if @user.password.blank?
 
     User.transaction do
       if @user.save!
