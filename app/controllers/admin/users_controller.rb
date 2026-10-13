@@ -27,11 +27,16 @@ class Admin::UsersController < ApplicationController
         if @user.seller? && user_params[:seller_code].present?
           Seller.create!(user: @user, name: @user.name, seller_code: user_params[:seller_code])
         end
-        @user.send_reset_password_instructions
       end
     end
 
-    redirect_to admin_users_path, notice: "Usuario creado y correo enviado para establecer contraseña."
+    # Fuera de la transacción: un buzón inexistente no debe impedir crear el usuario
+    begin
+      @user.send_reset_password_instructions
+      redirect_to admin_users_path, notice: "Usuario creado y correo enviado para establecer contraseña."
+    rescue Net::SMTPError => e
+      redirect_to admin_users_path, alert: "Usuario creado, pero no se pudo enviar el correo a #{@user.email} (#{e.message.lines.first.strip})."
+    end
   rescue ActiveRecord::RecordInvalid => e
     render :new, status: :unprocessable_entity
   end
