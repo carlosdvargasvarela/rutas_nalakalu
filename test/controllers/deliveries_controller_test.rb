@@ -74,7 +74,7 @@ class DeliveriesControllerTest < ActionDispatch::IntegrationTest
     )
     assert_nil without_plan.delivery_plan_assignment
 
-    get deliveries_url(q: {delivery_date_gteq: with_plan.delivery_date})
+    get deliveries_url
     assert_response :success
 
     assert_select "##{dom_id(with_plan, :card_content)} button[data-controller=clipboard]:not([disabled])"
