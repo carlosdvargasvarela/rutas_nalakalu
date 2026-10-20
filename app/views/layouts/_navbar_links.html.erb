@@ -9,14 +9,14 @@
     <%= link_to(
       (current_user.production_manager? || current_user.logistics?) ?
         management_production_deliveries_path :
-        deliveries_path(q: {delivery_date_gteq: Date.current.beginning_of_week, delivery_date_lteq: Date.current.end_of_week}),
+        deliveries_path,
       class: "nav-link"
     ) do %>
       <i class="bi bi-truck me-1"></i> Entregas
     <% end %>
   </li>
   <li class="nav-item">
-    <%= link_to delivery_plans_path, class: "nav-link" do %>
+    <%= link_to delivery_plans_path(q: {first_delivery_date_gteq: Date.current.beginning_of_week.to_s, first_delivery_date_lteq: Date.current.end_of_week.to_s}), class: "nav-link" do %>
       <i class="bi bi-calendar-check me-1"></i> Planes de Entrega
     <% end %>
   </li>

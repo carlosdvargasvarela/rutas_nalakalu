@@ -181,6 +181,11 @@
             <%= link_to deliveries_path(no_plan: 1), class: "btn btn-xs btn-outline-secondary #{params[:no_plan].present? ? 'active' : ''}" do %>
               <i class="bi bi-calendar-x me-1"></i>Sin plan
             <% end %>
+            <% week = {delivery_date_gteq: Date.current.beginning_of_week.to_s, delivery_date_lteq: Date.current.end_of_week.to_s} %>
+            <%= link_to deliveries_path(q: (params[:q]&.to_unsafe_h || {}).merge(week)),
+                  class: "btn btn-xs btn-outline-secondary #{params.dig(:q, :delivery_date_gteq) == week[:delivery_date_gteq] && params.dig(:q, :delivery_date_lteq) == week[:delivery_date_lteq] ? 'active' : ''}" do %>
+              <i class="bi bi-calendar-check me-1"></i>Esta semana
+            <% end %>
             <% if current_user.seller? %>
               <%= link_to deliveries_path(
                     no_plan: params[:no_plan],
