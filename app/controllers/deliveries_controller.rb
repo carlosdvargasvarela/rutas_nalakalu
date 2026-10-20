@@ -26,6 +26,10 @@ class DeliveriesController < ApplicationController
     authorize Delivery
 
     @sellers = Seller.order(:name)
+    # Sin ningún filtro en la URL, arranca con la semana actual (lun-dom) ya cargada en los filtros de fecha.
+    if params.except(:controller, :action, :page).empty?
+      params[:q] = {delivery_date_gteq: Date.current.beginning_of_week, delivery_date_lteq: Date.current.end_of_week}
+    end
     session[:deliveries_return_to] = request.fullpath
 
     excluded_from_index = []

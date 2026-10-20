@@ -66,6 +66,6 @@ class DeliveryItemPolicy < ApplicationPolicy
   end
 
   def admin_or_vendor?
-    user.admin? || user.seller? || user.production_manager?
+    user.admin? || user.seller? || user.production_manager? || user.logistics?
   end
 end
