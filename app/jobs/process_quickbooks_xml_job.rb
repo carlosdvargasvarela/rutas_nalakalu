@@ -213,22 +213,34 @@ class ProcessQuickbooksXmlJob
   # ("Contacto: ..." / "Telefono:+506..."), va como contacto adicional del pedido.
   def contacts_from_so(so)
     ext = [find_ext(so["data_ext_ret"], "Contacto de Entrega").to_s.strip,
-      find_ext(so["data_ext_ret"], "Celular de Contacto Entrega").to_s.strip]
+      clean_phone(find_ext(so["data_ext_ret"], "Celular de Contacto Entrega"))]
     ship = so["ship_address"] || {}
     addr = [ship["addr2"].to_s.gsub(/^Contacto:\s*/i, "").strip,
-      (ship["city"].presence || ship["addr3"]).to_s.gsub(/^Telefono:\s*\+?506\s*/i, "").strip]
+      clean_phone(ship["city"].presence || ship["addr3"])]
     return [addr, nil] if ext.none?(&:present?)
     return [ext, nil] if addr.none?(&:present?)
 
-    digits = ->(c) { c[1].to_s.gsub(/\D/, "").delete_prefix("506") }
-    same = digits.(ext).present? ? digits.(ext) == digits.(addr) : (digits.(addr).blank? && ext[0].casecmp?(addr[0]))
-    [ext, (addr unless same)]
+    [ext, (addr unless same_contact?(ext, addr))]
+  end
+
+  # Solo teléfonos reales: quita etiquetas ("Telefono:") y descarta lo que no sea un número (>= 8 dígitos).
+  def clean_phone(raw)
+    s = raw.to_s.sub(/\A\s*(tel[eé]fono|celular|tel)\s*:?\s*/i, "").strip
+    s.match?(/\A[\d\s+\-().]+\z/) && s.gsub(/\D/, "").delete_prefix("506").size >= 8 ? s.sub(/\A\+?506[\s-]*(?=\d)/, "") : ""
+  end
+
+  def digits_of(phone) = phone.to_s.gsub(/\D/, "").delete_prefix("506")
+
+  # Mismo contacto: mismo teléfono, o mismo nombre cuando a alguno le falta el teléfono.
+  def same_contact?(a, b)
+    return digits_of(a[1]) == digits_of(b[1]) if digits_of(a[1]).present? && digits_of(b[1]).present?
+    a[0].casecmp?(b[0])
   end
 
   def add_contact(order, contact)
     return if order.nil? || contact.nil?
     name, phone = contact
-    return if phone.present? && order.order_contacts.any? { |c| c.phone.to_s.gsub(/\D/, "") == phone.gsub(/\D/, "") }
+    return if order.order_contacts.any? { |c| same_contact?([c.name, c.phone], [name, phone]) }
     order.order_contacts.create!(name: name.presence || "Contacto (dirección)", phone: phone.presence, is_primary: order.order_contacts.none?)
   end
 

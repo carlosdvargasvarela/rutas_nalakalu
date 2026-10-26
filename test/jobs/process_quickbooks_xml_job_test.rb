@@ -126,4 +126,13 @@ class ProcessQuickbooksXmlJobTest < ActiveSupport::TestCase
 
     assert_equal 1, Order.find_by!(number: "PED-3003").order_contacts.count
   end
+
+  test "a truncated or labeled phone in the address block does not duplicate the contact nor load as phone" do
+    so = so_with_contacts("3004", "84125138", "x").merge(
+      "ship_address" => {"addr1" => "Casa", "addr2" => "Contacto: Armando Jose", "city" => "Telefono:8412"}
+    )
+    ProcessQuickbooksXmlJob.new.perform([so])
+
+    assert_equal [["Armando Jose", "84125138"]], Order.find_by!(number: "PED-3004").order_contacts.pluck(:name, :phone)
+  end
 end
