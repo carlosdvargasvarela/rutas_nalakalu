@@ -62,6 +62,29 @@ class Admin::QuickbooksStandbyTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "replace: the wrong existing order is renamed and the stand-by takes its number" do
+    wrong = orders(:one)
+    wrong.update!(number: "PED-5001", qb_txn_id: "txn-orig", qb_updated_at: 1.day.ago)
+    patch admin_standby_quickbooks_path(@order), params: {address: "Heredia centro"}
+    get admin_quickbooks_path
+    assert_match(/Reemplazar al existente/, response.body)
+
+    post admin_release_quickbooks_standby_path(@order), params: {number: "PED-5001", rename_existing: "PED-5001-ANULADO"}
+    assert_equal "PED-5001-ANULADO", wrong.reload.number
+    assert_equal "PED-5001", @order.reload.number
+    assert_not @order.qb_standby
+
+    # QB reenvía el pedido malo: se ignora, no vuelve a crear stand-by
+    assert_no_difference -> { Order.count + QbStandbyOrder.count } do
+      ProcessQuickbooksXmlJob.new.perform([{
+        "txn_id" => "txn-orig", "ref_number" => "5001", "time_modified" => Time.current.iso8601,
+        "due_date" => Date.tomorrow.to_s, "sales_rep_ref" => {"full_name" => sellers(:one).seller_code},
+        "customer_ref" => {"full_name" => "Cliente S"},
+        "sales_order_line_ret" => [{"txn_line_id" => "S1", "quantity" => "2", "desc" => "Mesa"}]
+      }])
+    end
+  end
+
   test "unknown seller and client placeholders block release until set; date, client and seller are editable" do
     ProcessQuickbooksXmlJob.new.perform([{
       "txn_id" => "txn-U", "ref_number" => "5002", "time_modified" => Time.current.iso8601,

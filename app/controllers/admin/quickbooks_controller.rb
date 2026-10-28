@@ -2,7 +2,8 @@ class Admin::QuickbooksController < ApplicationController
   def show
     @setting = AppSetting.find_or_initialize_by(key: "qb_sync_from_date")
     authorize @setting
-    @standby_orders = Order.where(qb_standby: true).includes(:client).order(created_at: :desc)
+    @standby_orders = Order.where(qb_standby: true).includes(:client).order(created_at: :desc).to_a
+    @taken_numbers = Order.where(qb_standby: false, number: @standby_orders.map(&:number)).pluck(:number)
     @standby = QbStandbyOrder.order(created_at: :desc)
   end
 
@@ -67,14 +68,21 @@ class Admin::QuickbooksController < ApplicationController
       return redirect_to admin_quickbooks_path, alert: "#{order.number}: falta definir #{placeholders.to_sentence} antes de liberarlo."
     end
     number = params[:number].to_s.strip.presence || order.number
-    if Order.exists?(number: number, qb_standby: false)
+    # Reemplazar: el pedido operativo con ese número (el incorrecto) se renombra y este toma su número.
+    rename_to = params[:rename_existing].to_s.strip.presence
+    existing = Order.find_by(number: number, qb_standby: false)
+    if existing && !rename_to
       return redirect_to admin_quickbooks_path, alert: "#{number} ya existe: indique otro número para liberarlo."
     end
+    if existing && Order.exists?(number: rename_to)
+      return redirect_to admin_quickbooks_path, alert: "#{rename_to} ya existe: indique otro número para el pedido anterior."
+    end
     Order.transaction do
+      existing&.update!(number: rename_to)
       order.update_columns(number: number, qb_standby: false, qb_standby_reason: nil)
       order.deliveries.pending_review.update_all(status: Delivery.statuses[:scheduled])
     end
-    redirect_to admin_quickbooks_path, notice: "#{number} liberado."
+    redirect_to admin_quickbooks_path, notice: existing ? "#{number} liberado; el anterior quedó como #{rename_to}." : "#{number} liberado."
   end
 
   def update

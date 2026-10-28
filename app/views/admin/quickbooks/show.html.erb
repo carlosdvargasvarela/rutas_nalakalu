@@ -75,6 +75,13 @@
                     <input type="text" name="number" value="<%= o.number %>" class="form-control form-control-sm">
                     <button type="submit" class="btn btn-sm btn-outline-success" data-turbo-confirm="¿Liberar este pedido? Pasará a ser utilizable.">Liberar</button>
                   <% end %>
+                  <% if @taken_numbers.include?(o.number) %>
+                    <%= form_with url: admin_release_quickbooks_standby_path(o), method: :post, class: "d-flex gap-2 mt-2" do %>
+                      <input type="hidden" name="number" value="<%= o.number %>">
+                      <input type="text" name="rename_existing" value="<%= o.number %>-ANULADO" class="form-control form-control-sm" title="Nuevo número para el pedido anterior">
+                      <button type="submit" class="btn btn-sm btn-outline-warning text-nowrap" data-turbo-confirm="El pedido actual <%= o.number %> se renombrará y este tomará su número. ¿Continuar?">Reemplazar al existente</button>
+                    <% end %>
+                  <% end %>
                 </td>
               </tr>
             <% end %>
