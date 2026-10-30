@@ -11,6 +11,8 @@ class Vendor < ApplicationRecord
   }
   accepts_nested_attributes_for :vendor_business_hours
 
+  before_validation :clear_business_hours, if: :no_defined_hours?
+
   validates :name, presence: true
   validates :vendor_addresses, presence: {message: "debe tener al menos una dirección"}
 
@@ -35,5 +37,11 @@ class Vendor < ApplicationRecord
 
   def today_hours
     hours_for(Date.current.wday)
+  end
+
+  private
+
+  def clear_business_hours
+    vendor_business_hours.each(&:mark_for_destruction)
   end
 end

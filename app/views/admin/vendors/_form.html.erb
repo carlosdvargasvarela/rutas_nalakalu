@@ -58,6 +58,14 @@
       </h2>
       <div id="vendorHours" class="accordion-collapse collapse" data-bs-parent="#vendorAccordion">
         <div class="accordion-body">
+          <div class="form-check mb-3">
+            <input type="hidden" name="vendor[no_defined_hours]" value="0">
+            <input type="checkbox" name="vendor[no_defined_hours]" value="1" class="form-check-input"
+                   id="vendor_no_defined_hours" <%= "checked" if vendor.no_defined_hours? %>
+                   data-bs-toggle="collapse" data-bs-target="#vendorHoursDays">
+            <label class="form-check-label fw-semibold" for="vendor_no_defined_hours">Sin horario definido</label>
+          </div>
+          <div id="vendorHoursDays" class="collapse <%= "show" unless vendor.no_defined_hours? %>">
           <% ordered_hours = Vendor::DISPLAY_DAY_ORDER.map { |day| vendor.vendor_business_hours.find { |bh| bh.day_of_week == day } }.compact %>
           <% ordered_hours.each_with_index do |bh, i| %>
             <div class="row g-2 align-items-center mb-2">
@@ -85,6 +93,7 @@
               </div>
             </div>
           <% end %>
+          </div>
         </div>
       </div>
     </div>

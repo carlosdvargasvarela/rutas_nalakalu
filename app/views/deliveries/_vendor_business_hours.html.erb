@@ -1,5 +1,9 @@
 <%# locals: vendor %>
-<% if vendor&.vendor_business_hours&.any? %>
+<% if vendor&.no_defined_hours? %>
+  <div class="mt-1 small fw-semibold text-warning-emphasis" style="background:#fff8e6;border-radius:8px;padding:6px 10px;">
+    <i class="bi bi-clock-fill me-1"></i>Sin horario definido
+  </div>
+<% elsif vendor&.vendor_business_hours&.any? %>
   <% today = vendor.today_hours %>
   <details class="mt-1" style="background:#fff8e6;border-radius:8px;padding:6px 10px;">
     <summary class="small fw-semibold text-warning-emphasis" style="cursor:pointer;">

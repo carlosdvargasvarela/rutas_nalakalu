@@ -40,7 +40,12 @@
     </div>
 
     <%# ── Horario de atención del proveedor ── %>
-    <% if delivery.internal_delivery? && (vendor = addr&.matching_vendor) && vendor.vendor_business_hours.any? %>
+    <% vendor = addr&.matching_vendor if delivery.internal_delivery? %>
+    <% if vendor&.no_defined_hours? %>
+      <div style="background:var(--dk-warning-lt);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:.8rem;font-weight:600;color:var(--dk-warning);">
+        <i class="bi bi-clock-fill me-1"></i>Sin horario definido
+      </div>
+    <% elsif vendor&.vendor_business_hours&.any? %>
       <% today = vendor.today_hours %>
       <details style="background:var(--dk-warning-lt);border-radius:10px;padding:8px 12px;margin-bottom:10px;">
         <summary style="font-size:.8rem;font-weight:600;color:var(--dk-warning);cursor:pointer;">

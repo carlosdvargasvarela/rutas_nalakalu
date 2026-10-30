@@ -96,6 +96,7 @@ class Admin::VendorsController < ApplicationController
   def vendor_params
     params.require(:vendor).permit(
       :name,
+      :no_defined_hours,
       vendor_addresses_attributes: [:id, :address, :description, :latitude, :longitude, :plus_code, :_destroy],
       vendor_business_hours_attributes: [:id, :day_of_week, :opens_at, :closes_at, :closed]
     )

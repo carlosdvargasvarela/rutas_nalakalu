@@ -136,7 +136,7 @@ class DashboardController < ApplicationController
   def build_data_quality_issues
     issues = []
 
-    vendors_without_hours = Vendor.left_joins(:vendor_business_hours)
+    vendors_without_hours = Vendor.where(no_defined_hours: false).left_joins(:vendor_business_hours)
       .where(vendor_business_hours: {id: nil}).distinct.count
     if vendors_without_hours > 0
       issues << {

@@ -9,6 +9,26 @@ class Admin::VendorsControllerTest < ActionDispatch::IntegrationTest
     @admin.update!(role: :admin, force_password_change: false)
   end
 
+  test "marking no defined hours removes the schedule, even with incomplete days" do
+    vendor = Vendor.new(name: "Ferretería EPA")
+    vendor.vendor_addresses.build(address: "San José", latitude: 9.93, longitude: -84.08)
+    hour = vendor.vendor_business_hours.build(day_of_week: 1, opens_at: "08:00", closes_at: "17:00")
+    vendor.save!
+
+    sign_in @admin
+    patch admin_vendor_url(vendor), params: {vendor: {
+      no_defined_hours: "1",
+      vendor_business_hours_attributes: {
+        "0" => {id: hour.id, day_of_week: 1, closed: "0", opens_at: "", closes_at: ""},
+        "1" => {day_of_week: 2, closed: "0", opens_at: "", closes_at: ""}
+      }
+    }}
+
+    assert_redirected_to admin_vendors_url
+    assert vendor.reload.no_defined_hours?
+    assert_empty vendor.vendor_business_hours
+  end
+
   test "admin can list vendors" do
     vendor = Vendor.new(name: "Ferretería EPA")
     vendor.vendor_addresses.build(address: "San José", latitude: 9.93, longitude: -84.08)

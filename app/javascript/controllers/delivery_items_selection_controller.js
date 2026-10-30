@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus";
 import { confirmDialog } from "confirm_dialog";
 
 export default class extends Controller {
-  static targets = ["checkbox", "bulkButton", "count"];
+  static targets = ["checkbox", "bulkButton", "count", "row", "hideStatus"];
 
   connect() {
     this.updateUI();
@@ -24,9 +24,24 @@ export default class extends Controller {
     this.element.removeEventListener("hidden.bs.dropdown", this._onDropdownHide);
   }
 
+  // También cubre las filas que llegan por broadcast con un filtro activo.
+  rowTargetConnected(row) {
+    this._applyFilter(row);
+  }
+
+  // Limpia la selección: una acción bulk no debe alcanzar filas ocultas.
+  filter() {
+    this.checkboxTargets.forEach((checkbox) => {
+      checkbox.checked = false;
+    });
+    this.element.querySelector(".select-all-checkbox").checked = false;
+    this.rowTargets.forEach((row) => this._applyFilter(row));
+    this.updateUI();
+  }
+
   toggleAll(event) {
     this.checkboxTargets.forEach((checkbox) => {
-      checkbox.checked = event.target.checked;
+      if (!checkbox.closest("tr").hidden) checkbox.checked = event.target.checked;
     });
     this.updateUI();
   }
@@ -113,6 +128,12 @@ export default class extends Controller {
 
   // ─── Privados ────────────────────────────────────────────────────────────────
 
+  _applyFilter(row) {
+    row.hidden = this.hideStatusTargets.some(
+      (checkbox) => checkbox.checked && checkbox.value === row.dataset.status,
+    );
+  }
+
   _selectedIds() {
     return this.checkboxTargets.filter((c) => c.checked).map((c) => c.value);
   }
@@ -130,6 +151,10 @@ export default class extends Controller {
   _applyPreselection(ids) {
     if (ids.length === 0) return;
 
+    this.hideStatusTargets.forEach((checkbox) => {
+      checkbox.checked = false;
+    });
+    this.filter();
     this.checkboxTargets.forEach((checkbox) => {
       checkbox.checked = ids.includes(checkbox.value);
     });

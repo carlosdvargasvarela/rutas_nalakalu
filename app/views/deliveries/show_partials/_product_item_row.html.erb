@@ -1,6 +1,8 @@
 <%# app/views/deliveries/show_partials/_product_item_row.html.erb %>
 <% can_confirm = local_assigns.fetch(:can_confirm, false) %>
 <tr id="<%= dom_id(item) %>"
+  data-delivery-items-selection-target="row"
+  data-status="<%= item.display_status %>"
   class="<%= 'item-with-notes' if item.notes.present? %> <%= 'opacity-50' if item.archived? %>">
   <%# Checkbox %>
   <td class="text-center align-top pt-3">

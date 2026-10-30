@@ -21,6 +21,8 @@ class DeliveryItem < ApplicationRecord
     "archived" => "Archivado"
   }.freeze
 
+  HIDDEN_BY_DEFAULT = DISPLAY_STATUS_LABELS.values_at("rescheduled", "archived").freeze
+
   has_paper_trail
   belongs_to :delivery
   belongs_to :order_item
@@ -81,6 +83,16 @@ class DeliveryItem < ApplicationRecord
   scope :bulk_deliverable, -> { where(status: %i[pending confirmed in_plan in_route loaded_on_truck]) }
   scope :bulk_cancellable, -> { where(status: %i[pending confirmed in_plan]) }
   scope :bulk_reschedulable, -> { where(status: %i[pending confirmed in_plan]) }
+
+  # Si solo hay estados ocultables no oculta nada: la lista quedaría vacía.
+  def self.statuses_hidden_by_default(labels)
+    (labels - HIDDEN_BY_DEFAULT).empty? ? [] : HIDDEN_BY_DEFAULT
+  end
+
+  # En Ruby y no en SQL: order_items.product trae acentos y mayúsculas mezcladas.
+  def self.by_product
+    all.sort_by { |item| [I18n.transliterate(item.product.to_s.strip).downcase, item.id] }
+  end
 
   # ============================================================================
   # VALIDACIONES

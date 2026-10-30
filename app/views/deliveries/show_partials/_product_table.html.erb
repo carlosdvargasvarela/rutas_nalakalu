@@ -4,6 +4,9 @@
 <% sala_items = Deliveries::SalaPickupDetector.new(delivery).actionable_items %>
 <% service_case_items = Deliveries::ServiceCaseDetector.new(delivery).actionable_items %>
 <% repair_service_items = Deliveries::RepairServiceDetector.new(delivery).actionable_items %>
+<% items = delivery.delivery_items.includes(:order_item) %>
+<% items = items.not_archived unless current_user&.admin? %>
+<% items = items.by_product %>
 <div id="delivery_items_list"
      data-controller="delivery-items-selection"
      class="product-table-workspace">
@@ -124,6 +127,21 @@
       <% end %>
     </div>
   </div>
+  <%# ═══ OCULTAR POR ESTADO ═══ %>
+  <% status_counts = items.map(&:display_status).tally %>
+  <% hidden_statuses = DeliveryItem.statuses_hidden_by_default(status_counts.keys) %>
+  <div class="d-flex align-items-center flex-wrap gap-3 mb-2 ms-1 small">
+    <span class="text-muted">Ocultar:</span>
+    <% status_counts.sort.each do |status, count| %>
+      <div class="form-check mb-0">
+        <input type="checkbox" class="form-check-input" id="hide_status_<%= status.parameterize %>"
+               value="<%= status %>" <%= "checked" if hidden_statuses.include?(status) %>
+               data-delivery-items-selection-target="hideStatus"
+               data-action="change->delivery-items-selection#filter">
+        <label class="form-check-label" for="hide_status_<%= status.parameterize %>"><%= status %> (<%= count %>)</label>
+      </div>
+    <% end %>
+  </div>
   <%# ═══ TABLA ═══ %>
   <table class="table table-hover align-middle mb-0 w-100">
     <thead class="bg-white sticky-top" style="top: 0; z-index: 1;">
@@ -136,8 +154,6 @@
       </tr>
     </thead>
     <tbody id="delivery_items_rows_<%= delivery.id %>">
-      <% items = delivery.delivery_items.includes(:order_item) %>
-      <% items = items.not_archived unless current_user&.admin? %>
       <% items.each do |item| %>
         <%= render "deliveries/show_partials/product_item_row",
               item: item,

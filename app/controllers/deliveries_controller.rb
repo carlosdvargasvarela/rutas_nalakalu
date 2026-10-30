@@ -1093,7 +1093,7 @@ class DeliveriesController < ApplicationController
   private
 
   def load_products_form
-    @items = @delivery.delivery_items.not_archived.includes(:order_item).order(:id)
+    @items = @delivery.delivery_items.not_archived.includes(:order_item).by_product
   end
 
   def submitted_new_items
