@@ -1,0 +1,14 @@
+<tr class="table-success" data-new-row>
+  <td class="ps-3">
+    <input type="text" name="new_items[][product]" value="<%= product %>" class="form-control form-control-sm"
+           placeholder="Nombre del producto" aria-label="Producto nuevo" required>
+  </td>
+  <td>
+    <input type="number" name="new_items[][quantity]" value="<%= quantity %>" min="1"
+           class="form-control form-control-sm" aria-label="Cantidad a entregar" required>
+  </td>
+  <td class="text-center">
+    <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar fila"
+            data-action="click->products-editor#remove">×</button>
+  </td>
+</tr>

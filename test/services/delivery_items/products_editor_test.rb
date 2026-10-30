@@ -104,6 +104,22 @@ class DeliveryItems::ProductsEditorTest < ActiveSupport::TestCase
     assert_raises(StandardError) { edit(items: {@sofa.id => {product: "Sofá", quantity: "0"}}) }
   end
 
+  test "dos filas con el mismo nombre dan un error que nombra el producto y no guardan nada" do
+    error = assert_raises(StandardError) do
+      edit(items: {@sofa.id => {product: "Repetido ", quantity: "2"}, @mesa.id => {product: "Repetido", quantity: "1"}})
+    end
+
+    assert_includes error.message, "«Repetido»"
+    assert_equal "Sofá", @sofa.order_item.reload.product
+  end
+
+  test "un nombre con espacios sobrantes de QuickBooks no cuenta como cambio" do
+    @sofa.order_item.update_column(:product, "Sofá ")
+
+    assert_equal 0, edit(items: {@sofa.id => {product: "Sofá", quantity: "2"}})
+    assert_equal "Sofá ", @sofa.order_item.reload.product
+  end
+
   test "solo un admin archiva, y un producto entregado no se puede tocar" do
     @admin.update!(role: :logistics)
     assert_raises(StandardError) { edit(items: {@sofa.id => {archive: "1"}}) }

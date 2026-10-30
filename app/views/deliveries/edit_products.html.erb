@@ -41,19 +41,20 @@
           </thead>
           <tbody data-products-editor-target="rows">
             <% @items.each do |item| %>
+              <% submitted = @submitted_items&.dig(item.id.to_s) || {} %>
               <tr>
                 <% if item.bulk_actionable? %>
                   <td class="ps-3">
-                    <%= text_field_tag "items[#{item.id}][product]", item.product,
+                    <%= text_field_tag "items[#{item.id}][product]", submitted[:product] || item.product,
                           class: "form-control form-control-sm", required: true, "aria-label": "Producto" %>
                   </td>
                   <td>
-                    <%= number_field_tag "items[#{item.id}][quantity]", item.quantity_delivered,
+                    <%= number_field_tag "items[#{item.id}][quantity]", submitted[:quantity] || item.quantity_delivered,
                           class: "form-control form-control-sm", min: 1, required: true, "aria-label": "Cantidad a entregar" %>
                   </td>
                   <td class="text-center">
                     <% if policy(item).archive? %>
-                      <%= check_box_tag "items[#{item.id}][archive]", "1", false,
+                      <%= check_box_tag "items[#{item.id}][archive]", "1", submitted[:archive] == "1",
                             class: "form-check-input", "aria-label": "Archivar #{item.product}" %>
                     <% end %>
                   </td>
@@ -67,26 +68,16 @@
                 <% end %>
               </tr>
             <% end %>
+            <% Array(@submitted_new_items).each do |item| %>
+              <%= render "deliveries/new_product_row", product: item[:product], quantity: item[:quantity] %>
+            <% end %>
           </tbody>
         </table>
       </div>
     </div>
 
     <template data-products-editor-target="template">
-      <tr class="table-success" data-new-row>
-        <td class="ps-3">
-          <input type="text" name="new_items[][product]" class="form-control form-control-sm"
-                 placeholder="Nombre del producto" aria-label="Producto nuevo" required>
-        </td>
-        <td>
-          <input type="number" name="new_items[][quantity]" value="1" min="1"
-                 class="form-control form-control-sm" aria-label="Cantidad a entregar" required>
-        </td>
-        <td class="text-center">
-          <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar fila"
-                  data-action="click->products-editor#remove">×</button>
-        </td>
-      </tr>
+      <%= render "deliveries/new_product_row", product: nil, quantity: 1 %>
     </template>
 
     <div class="d-flex gap-2 align-items-center flex-wrap">

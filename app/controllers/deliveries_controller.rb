@@ -364,7 +364,7 @@ class DeliveriesController < ApplicationController
       return
     end
 
-    @items = @delivery.delivery_items.not_archived.includes(:order_item).order(:id)
+    load_products_form
   end
 
   def update_products
@@ -373,13 +373,19 @@ class DeliveriesController < ApplicationController
     count = DeliveryItems::ProductsEditor.new(
       delivery:     @delivery,
       items:        params.fetch(:items, {}).to_unsafe_h,
-      new_items:    Array(params[:new_items]).map { |item| item.permit(:product, :quantity).to_h.with_indifferent_access },
+      new_items:    submitted_new_items,
       current_user: current_user
     ).call
 
     redirect_to delivery_path(@delivery), notice: "Productos actualizados: #{count} cambio(s)."
   rescue => e
-    redirect_to edit_products_delivery_path(@delivery), alert: e.message
+    # Se vuelve a mostrar lo que escribió el usuario: en una entrega grande
+    # perder las correcciones por un error de una fila es peor que el error.
+    load_products_form
+    @submitted_items = params.fetch(:items, {}).to_unsafe_h
+    @submitted_new_items = submitted_new_items
+    flash.now[:alert] = e.message
+    render :edit_products, formats: :html, status: :unprocessable_entity
   end
 
   # Copia los campos indicados (ver DeliveryGroup::PROPAGATABLE_FIELDS) de
@@ -1085,6 +1091,14 @@ class DeliveriesController < ApplicationController
   end
 
   private
+
+  def load_products_form
+    @items = @delivery.delivery_items.not_archived.includes(:order_item).order(:id)
+  end
+
+  def submitted_new_items
+    Array(params[:new_items]).map { |item| item.permit(:product, :quantity).to_h.with_indifferent_access }
+  end
 
   def set_delivery
     @delivery = Delivery.includes(

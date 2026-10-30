@@ -63,7 +63,7 @@ module DeliveryItems
       previous = {product: order_item.product, quantity: item.quantity_delivered}
       product = attrs[:product].to_s.strip
       quantity = parse_quantity(attrs[:quantity], product)
-      return false if previous == {product: product, quantity: quantity}
+      return false if previous[:product].strip == product && previous[:quantity] == quantity
 
       apply(item, product, quantity)
       record("item_edited", item, previous_product: previous[:product], previous_quantity: previous[:quantity])
@@ -100,6 +100,10 @@ module DeliveryItems
       order_quantity = order_item.quantity + quantity - item.quantity_delivered.to_i
       order_item.update!(product: product, quantity: [order_quantity, quantity].max)
       item.update!(quantity_delivered: quantity)
+    rescue ActiveRecord::RecordInvalid => e
+      raise unless e.record.errors.of_kind?(:product, :taken)
+
+      raise StandardError, "Hay dos productos llamados «#{product}» en este pedido. Cambiá uno de los nombres o archivá el repetido."
     end
 
     def parse_quantity(raw, product)

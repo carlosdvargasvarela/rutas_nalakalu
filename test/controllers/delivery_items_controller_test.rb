@@ -36,7 +36,8 @@ class DeliveryItemsControllerTest < ActionDispatch::IntegrationTest
 
     patch update_products_delivery_url(delivery), params: {items: {item.id => {product: "X", quantity: "0"}}}
 
-    assert_redirected_to edit_products_delivery_path(delivery)
+    assert_response :unprocessable_entity
+    assert_select "input[name=?][value=?]", "items[#{item.id}][product]", "X"
     assert_equal product, item.order_item.reload.product
   end
 
