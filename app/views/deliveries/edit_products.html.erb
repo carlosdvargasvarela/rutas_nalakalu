@@ -18,6 +18,16 @@
     </div>
   </div>
 
+  <%# Fuera del form: Enter en el buscador no debe guardar. %>
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <div class="input-group input-group-sm" style="max-width: 420px;">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="search" class="form-control" placeholder="Buscar producto..." aria-label="Buscar producto"
+             data-products-editor-target="search" data-action="input->products-editor#filter">
+    </div>
+    <span class="text-muted small" data-products-editor-target="count" aria-live="polite"></span>
+  </div>
+
   <%= form_with url: update_products_delivery_path(@delivery), method: :patch do |f| %>
     <div class="card shadow-sm border-0 mb-3">
       <div class="card-body p-0" style="overflow-x: auto;">
@@ -63,7 +73,7 @@
     </div>
 
     <template data-products-editor-target="template">
-      <tr class="table-success">
+      <tr class="table-success" data-new-row>
         <td class="ps-3">
           <input type="text" name="new_items[][product]" class="form-control form-control-sm"
                  placeholder="Nombre del producto" aria-label="Producto nuevo" required>
@@ -84,7 +94,8 @@
         <i class="bi bi-plus-circle me-1"></i>Agregar producto
       </button>
       <%= link_to "Cancelar", delivery_path(@delivery), class: "btn btn-outline-secondary ms-auto" %>
-      <%= f.submit "Guardar cambios", class: "btn btn-primary fw-bold px-4", data: { disable_with: "Guardando..." } %>
+      <%= f.submit "Guardar cambios", class: "btn btn-primary fw-bold px-4",
+            data: { disable_with: "Guardando...", action: "click->products-editor#clearSearch" } %>
     </div>
   <% end %>
 </div>
