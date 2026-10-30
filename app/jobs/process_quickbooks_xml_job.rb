@@ -65,7 +65,9 @@ class ProcessQuickbooksXmlJob
     end
 
     if existing.present?
-      lines_changed = update_order_lines(existing, lines, due_date)
+      # Productos corregidos a mano: lo de QuickBooks ya no vale para este pedido.
+      lines_changed = existing.products_edited_at.blank? && update_order_lines(existing, lines, due_date)
+      Rails.logger.info "🚫 #{order_number}: líneas de QB ignoradas, productos corregidos a mano" if existing.products_edited_at.present?
       event_action = lines_changed ? "updated" : nil
     else
       Order.transaction { create_order_from_so(so, order_number, due_date, lines) }

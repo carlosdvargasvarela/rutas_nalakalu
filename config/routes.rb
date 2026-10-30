@@ -115,6 +115,8 @@ Rails.application.routes.draw do
       post :create_service_case_from_workspace
       get :repair_service_form
       post :create_repair_service_from_workspace
+      get :edit_products
+      patch :update_products
       get :warehousing_form
       patch :start_warehousing
       patch :end_warehousing

@@ -53,8 +53,8 @@ class OrderItem < ApplicationRecord
   end
 
   # Recalcula el status del order_item a partir del status de sus
-  # delivery_items: "delivered" si todos fueron entregados, "ready" si ya
-  # estaba confirmado como listo (y no cancelado). Se ejecuta después de
+  # delivery_items: "cancelled" si todos están archivados, "delivered" si
+  # todos fueron entregados, "ready" si ya estaba confirmado como listo. Se ejecuta después de
   # cada save (propio o vía callback de un DeliveryItem hijo) y en cascada
   # dispara {#update_order_status}.
   #
@@ -62,9 +62,14 @@ class OrderItem < ApplicationRecord
   #   recursión infinita entre este callback y el de guardado.
   # @return [void]
   def update_status_based_on_deliveries
-    active_items = delivery_items.reject { |di| di.status == "archived" }
-    if active_items.any? && active_items.all? { |di| di.status == "delivered" }
+    all_items = delivery_items.reload
+    active_items = all_items.reject { |di| di.status == "archived" }
+    if all_items.any? && active_items.empty?
+      update_column(:status, OrderItem.statuses[:cancelled])
+    elsif active_items.any? && active_items.all? { |di| di.status == "delivered" }
       update_column(:status, OrderItem.statuses[:delivered])
+    elsif status == "cancelled" && active_items.any?
+      update_column(:status, OrderItem.statuses[confirmed ? :ready : :in_production])
     elsif status != "cancelled" && ready_to_deliver?
       update_column(:status, OrderItem.statuses[:ready])
     end

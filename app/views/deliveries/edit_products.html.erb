@@ -1,0 +1,90 @@
+<%# app/views/deliveries/edit_products.html.erb %>
+<% content_for :title, "Productos de la Entrega \##{@delivery.id}" %>
+
+<div class="container-fluid py-4" data-controller="products-editor">
+  <div class="d-flex align-items-start mb-4 gap-3">
+    <%= link_to delivery_path(@delivery), class: "btn btn-sm btn-outline-secondary mt-1" do %>
+      <i class="bi bi-arrow-left me-1"></i>Volver
+    <% end %>
+    <div>
+      <h4 class="mb-1 fw-bold">
+        <i class="bi bi-box-seam me-2 text-primary"></i>
+        Productos de la Entrega #<%= @delivery.id %>
+      </h4>
+      <p class="text-muted mb-0 small">
+        Pedido <strong><%= @delivery.order.number %></strong>.
+        Los cambios también corrigen el pedido, y QuickBooks ya no modificará sus productos.
+      </p>
+    </div>
+  </div>
+
+  <%= form_with url: update_products_delivery_path(@delivery), method: :patch do |f| %>
+    <div class="card shadow-sm border-0 mb-3">
+      <div class="card-body p-0" style="overflow-x: auto;">
+        <table class="table table-sm align-middle mb-0" style="min-width: 500px;">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3 py-2">Producto</th>
+              <th class="py-2" style="width: 110px;">A entregar</th>
+              <th class="text-center py-2" style="width: 90px;">Archivar</th>
+            </tr>
+          </thead>
+          <tbody data-products-editor-target="rows">
+            <% @items.each do |item| %>
+              <tr>
+                <% if item.bulk_actionable? %>
+                  <td class="ps-3">
+                    <%= text_field_tag "items[#{item.id}][product]", item.product,
+                          class: "form-control form-control-sm", required: true, "aria-label": "Producto" %>
+                  </td>
+                  <td>
+                    <%= number_field_tag "items[#{item.id}][quantity]", item.quantity_delivered,
+                          class: "form-control form-control-sm", min: 1, required: true, "aria-label": "Cantidad a entregar" %>
+                  </td>
+                  <td class="text-center">
+                    <% if policy(item).archive? %>
+                      <%= check_box_tag "items[#{item.id}][archive]", "1", false,
+                            class: "form-check-input", "aria-label": "Archivar #{item.product}" %>
+                    <% end %>
+                  </td>
+                <% else %>
+                  <td class="ps-3 py-2">
+                    <%= item.product %>
+                    <%= render "deliveries/shared_partials/item_status_badge", item: item %>
+                  </td>
+                  <td class="py-2"><%= item.quantity_delivered %></td>
+                  <td></td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <template data-products-editor-target="template">
+      <tr class="table-success">
+        <td class="ps-3">
+          <input type="text" name="new_items[][product]" class="form-control form-control-sm"
+                 placeholder="Nombre del producto" aria-label="Producto nuevo" required>
+        </td>
+        <td>
+          <input type="number" name="new_items[][quantity]" value="1" min="1"
+                 class="form-control form-control-sm" aria-label="Cantidad a entregar" required>
+        </td>
+        <td class="text-center">
+          <button type="button" class="btn btn-sm btn-outline-danger" aria-label="Quitar fila"
+                  data-action="click->products-editor#remove">×</button>
+        </td>
+      </tr>
+    </template>
+
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+      <button type="button" class="btn btn-outline-primary" data-action="click->products-editor#add">
+        <i class="bi bi-plus-circle me-1"></i>Agregar producto
+      </button>
+      <%= link_to "Cancelar", delivery_path(@delivery), class: "btn btn-outline-secondary ms-auto" %>
+      <%= f.submit "Guardar cambios", class: "btn btn-primary fw-bold px-4", data: { disable_with: "Guardando..." } %>
+    </div>
+  <% end %>
+</div>

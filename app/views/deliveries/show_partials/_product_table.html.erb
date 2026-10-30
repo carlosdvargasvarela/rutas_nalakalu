@@ -75,6 +75,13 @@
           Cancelar
         </button>
       <% end %>
+      <% if can_confirm && !delivery.bulk_locked? %>
+        <%= link_to edit_products_delivery_path(delivery),
+              class: "btn btn-sm btn-outline-primary shadow-sm px-3",
+              data: { turbo_frame: "_top" } do %>
+          <i class="bi bi-box-seam me-1"></i>Editar productos
+        <% end %>
+      <% end %>
       <% if can_confirm %>
         <%# Nota bulk %>
         <%= link_to note_delivery_path(delivery),

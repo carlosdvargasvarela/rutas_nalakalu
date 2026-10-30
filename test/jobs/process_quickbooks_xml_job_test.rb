@@ -19,6 +19,20 @@ class ProcessQuickbooksXmlJobTest < ActiveSupport::TestCase
     }
   end
 
+  test "un pedido con productos corregidos a mano no lo corrige QuickBooks" do
+    order = orders(:one)
+    order.update!(number: "PED-2002", qb_txn_id: "fixed-txn", qb_updated_at: 1.day.ago, products_edited_at: Time.current)
+    order.order_items.destroy_all
+    item = order.order_items.create!(product: "Corregido", quantity: 1, status: :ready, qb_line_id: "L1")
+
+    assert_no_difference -> { OrderItem.count } do
+      ProcessQuickbooksXmlJob.new.perform([so_with_duplicate_lines("2002").merge("txn_id" => "fixed-txn")])
+    end
+
+    assert_equal 1, item.reload.quantity
+    assert_equal "Corregido", item.product
+  end
+
   test "two lines with the same product on a new order are summed into a single order_item" do
     ProcessQuickbooksXmlJob.new.perform([so_with_duplicate_lines("3001")])
 

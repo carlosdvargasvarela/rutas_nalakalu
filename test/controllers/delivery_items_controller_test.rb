@@ -9,6 +9,37 @@ class DeliveryItemsControllerTest < ActionDispatch::IntegrationTest
     sign_in @admin
   end
 
+  test "la pantalla de productos muestra el formulario, guarda y vuelve a la entrega" do
+    delivery = deliveries(:one)
+    item = delivery_items(:one)
+    item.update!(status: :pending)
+
+    get edit_products_delivery_url(delivery)
+    assert_response :success
+    assert_select "input[name=?]", "items[#{item.id}][product]"
+
+    patch update_products_delivery_url(delivery), params: {
+      items: {item.id => {product: "Producto corregido", quantity: "2"}},
+      new_items: [{product: "Producto nuevo", quantity: "1"}]
+    }
+
+    assert_redirected_to delivery_path(delivery)
+    assert_equal "Producto corregido", item.order_item.reload.product
+    assert delivery.order.order_items.exists?(product: "Producto nuevo")
+  end
+
+  test "un error en la pantalla de productos vuelve al formulario sin cambios" do
+    delivery = deliveries(:one)
+    item = delivery_items(:one)
+    item.update!(status: :pending)
+    product = item.product
+
+    patch update_products_delivery_url(delivery), params: {items: {item.id => {product: "X", quantity: "0"}}}
+
+    assert_redirected_to edit_products_delivery_path(delivery)
+    assert_equal product, item.order_item.reload.product
+  end
+
   test "bulk_reschedule merges into an existing delivery for the same order/address/date" do
     delivery = deliveries(:one)
     item = delivery_items(:one)

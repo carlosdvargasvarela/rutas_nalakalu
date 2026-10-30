@@ -15,7 +15,7 @@ class DeliveriesController < ApplicationController
     :update_status, :reassign_seller, :take_order, :sala_pickup_form,
     :create_sala_pickup, :service_case_form, :create_service_case_from_workspace,
     :warehousing_form, :start_warehousing, :end_warehousing, :unconfirm, :reopen,
-    :split_form, :split,
+    :split_form, :split, :edit_products, :update_products,
     :new_repair_service_for_existing, :create_repair_service_for_existing,
     :repair_service_form, :create_repair_service_from_workspace,
     :propagate_to_associated
@@ -354,6 +354,32 @@ class DeliveriesController < ApplicationController
     redirect_to delivery_path(@delivery), notice: "Entrega dividida: #{count} movimiento(s) realizados exitosamente."
   rescue => e
     redirect_to split_form_delivery_path(@delivery), alert: e.message
+  end
+
+  def edit_products
+    authorize @delivery, :edit?
+
+    if @delivery.bulk_locked?
+      redirect_to delivery_path(@delivery), alert: "Esta entrega no permite cambiar productos en su estado actual."
+      return
+    end
+
+    @items = @delivery.delivery_items.not_archived.includes(:order_item).order(:id)
+  end
+
+  def update_products
+    authorize @delivery, :edit?
+
+    count = DeliveryItems::ProductsEditor.new(
+      delivery:     @delivery,
+      items:        params.fetch(:items, {}).to_unsafe_h,
+      new_items:    Array(params[:new_items]).map { |item| item.permit(:product, :quantity).to_h.with_indifferent_access },
+      current_user: current_user
+    ).call
+
+    redirect_to delivery_path(@delivery), notice: "Productos actualizados: #{count} cambio(s)."
+  rescue => e
+    redirect_to edit_products_delivery_path(@delivery), alert: e.message
   end
 
   # Copia los campos indicados (ver DeliveryGroup::PROPAGATABLE_FIELDS) de

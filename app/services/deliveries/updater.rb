@@ -183,7 +183,10 @@ module Deliveries
       )
       # Evita un write y una corrida de validaciones/callbacks innecesaria
       # cuando el form reenvía los mismos valores que ya tenía el registro.
-      order_item.save! if order_item.changed?
+      return unless order_item.changed?
+
+      order_item.save!
+      order_item.order.touch(:products_edited_at)
     end
 
     def build_new_delivery_item(order, item_params)

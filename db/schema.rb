@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_06_140000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_30_120000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -346,6 +346,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_140000) do
     t.datetime "qb_updated_at"
     t.boolean "qb_standby", default: false, null: false
     t.string "qb_standby_reason"
+    t.datetime "products_edited_at"
     t.index ["client_id"], name: "index_orders_on_client_id"
     t.index ["number"], name: "index_orders_on_number"
     t.index ["qb_txn_id"], name: "index_orders_on_qb_txn_id", unique: true

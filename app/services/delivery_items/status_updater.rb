@@ -28,10 +28,12 @@ module DeliveryItems
         raise StandardError, "Solo se pueden archivar productos que no estén entregados." if delivery_item.delivered?
 
         delivery_item.update!(status: :archived)
+        adjust_order_quantity(-delivery_item.quantity_delivered.to_i)
         record_event("item_archived")
         delivery_item.delivery.touch
       when :unarchived
         delivery_item.update!(status: :pending)
+        adjust_order_quantity(delivery_item.quantity_delivered.to_i)
         record_event("item_unarchived")
         delivery_item.delivery.touch
       else
@@ -51,6 +53,16 @@ module DeliveryItems
 
     def validate_can_update!
       raise StandardError, "No se puede modificar un producto reagendado." if delivery_item.rescheduled?
+    end
+
+    # Si el producto sigue vigente en otra entrega, el pedido solo pierde (o
+    # recupera) esta parte. Si esta era la única, conserva la cantidad y el
+    # OrderItem pasa a cancelado. En ambos casos QuickBooks ya no debe tocarlo.
+    def adjust_order_quantity(delta)
+      order_item = delivery_item.order_item
+      others = order_item.delivery_items.where.not(id: delivery_item.id).where.not(status: %i[archived rescheduled cancelled])
+      order_item.update!(quantity: [order_item.quantity + delta, 1].max) if others.exists?
+      order_item.order.touch(:products_edited_at)
     end
 
     def update_delivery_status(delivery)

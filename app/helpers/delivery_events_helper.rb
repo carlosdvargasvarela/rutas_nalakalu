@@ -26,6 +26,12 @@ module DeliveryEventsHelper
       parts << "— #{qty} unid. (parcial)" if partial && qty
       parts.join(" ")
 
+    when "item_added"
+      "Producto «#{data["product"]}» agregado (#{data["quantity"]} unid.)"
+
+    when "item_edited"
+      "Producto «#{data["previous_product"]}» x#{data["previous_quantity"]} corregido a «#{data["product"]}» x#{data["quantity"]}"
+
     when "items_bulk_confirmed"
       count = data["items_count"] || data["item_ids"]&.size || "varios"
       "#{count} producto(s) confirmado(s) para entrega"

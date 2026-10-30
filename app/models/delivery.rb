@@ -550,7 +550,7 @@ class Delivery < ApplicationRecord
 
   # @return [Boolean] true si todos los order_items asociados están "ready"
   def confirmed?
-    order_items.all? { |oi| oi.status == "ready" }
+    order_items.reject(&:cancelled?).all? { |oi| oi.status == "ready" }
   end
 
   # @return [Delivery, nil] próxima entrega (id mayor, no cancelled/archived) del mismo pedido

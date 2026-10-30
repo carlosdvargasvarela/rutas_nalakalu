@@ -22,6 +22,8 @@ class DeliveryEvent < ApplicationRecord
     item_rescheduled
     item_archived
     item_unarchived
+    item_added
+    item_edited
     items_bulk_confirmed
     sala_pickup_created
     service_case_created
@@ -68,6 +70,8 @@ class DeliveryEvent < ApplicationRecord
     "item_rescheduled" => "Ítem reagendado",
     "item_archived" => "Ítem archivado",
     "item_unarchived" => "Ítem desarchivado",
+    "item_added" => "Producto agregado",
+    "item_edited" => "Producto corregido",
     "items_bulk_confirmed" => "Ítems confirmados",
     "sala_pickup_created" => "Retiro en Sala programado",
     "service_case_created" => "Caso de servicio creado",
@@ -90,6 +94,8 @@ class DeliveryEvent < ApplicationRecord
     "item_rescheduled" => "warning",
     "item_archived" => "dark",
     "item_unarchived" => "warning",
+    "item_added" => "success",
+    "item_edited" => "primary",
     "items_bulk_confirmed" => "success",
     "sala_pickup_created" => "info",
     "service_case_created" => "info",
@@ -112,6 +118,8 @@ class DeliveryEvent < ApplicationRecord
     "item_rescheduled" => "bi-box-arrow-right",
     "item_archived" => "bi-archive",
     "item_unarchived" => "bi-arrow-counterclockwise",
+    "item_added" => "bi-plus-circle",
+    "item_edited" => "bi-pencil",
     "items_bulk_confirmed" => "bi-check2-all",
     "sala_pickup_created" => "bi-shop",
     "service_case_created" => "bi-tools",

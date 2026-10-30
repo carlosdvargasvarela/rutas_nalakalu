@@ -94,12 +94,14 @@ class Order < ApplicationRecord
   def check_and_update_status!
     return if order_items.empty?
 
+    # Un producto cancelado (p. ej. archivado en su entrega) no frena al resto.
     statuses = order_items.pluck(:status)
+    return update!(status: :cancelled) if statuses.all? { |s| s == "cancelled" }
+
+    statuses -= ["cancelled"]
 
     if statuses.all? { |s| s == "delivered" }
       update!(status: :delivered)
-    elsif statuses.all? { |s| s == "cancelled" }
-      update!(status: :cancelled)
     elsif statuses.all? { |s| ["ready", "delivered"].include?(s) }
       update!(status: :ready_for_delivery)
     elsif statuses.all? { |s| s == "rescheduled" }
@@ -161,12 +163,12 @@ class Order < ApplicationRecord
 
   # @return [Boolean] true si todos los order_items están en status "ready"
   def all_items_ready?
-    order_items.all? { |item| item.ready? }
+    order_items.reject(&:cancelled?).all?(&:ready?)
   end
 
   # @return [Integer] suma de `quantity` de todos los order_items del pedido
   def total_items
-    order_items.sum(:quantity)
+    order_items.where.not(status: :cancelled).sum(:quantity)
   end
 
   # ============================================================================
