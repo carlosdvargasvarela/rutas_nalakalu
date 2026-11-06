@@ -28,8 +28,8 @@
     </li>
   <% end %>
 
-  <%# ── OPERACIONES (producción / admin / manager) ── %>
-  <% if current_user.admin? || current_user.manager? || current_user.production_manager? %>
+  <%# ── OPERACIONES (producción / logística / admin / manager) ── %>
+  <% if current_user.admin? || current_user.manager? || current_user.production_manager? || current_user.logistics? %>
     <li class="nav-item">
       <%= link_to production_delivery_plans_path, class: "nav-link" do %>
         <i class="bi bi-truck-front me-1"></i> Carga a camiones

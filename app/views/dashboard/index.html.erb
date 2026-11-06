@@ -21,9 +21,9 @@
           <i class="bi bi-file-earmark-excel me-1"></i> Importar
         <% end %>
       <% end %>
-      <% if current_user.seller? || current_user.admin? %>
-        <%= link_to orders_path, class: "btn btn-primary rounded-pill shadow-sm" do %>
-          <i class="bi bi-plus-lg me-1"></i> Nuevo Pedido
+      <% if policy(Delivery).new? %>
+        <%= link_to new_delivery_path, class: "btn btn-primary rounded-pill shadow-sm" do %>
+          <i class="bi bi-plus-lg me-1"></i> Nueva Entrega
         <% end %>
       <% end %>
       <%= link_to notifications_path, class: "btn btn-outline-info rounded-pill shadow-sm position-relative" do %>

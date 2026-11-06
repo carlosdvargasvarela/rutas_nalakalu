@@ -7,6 +7,7 @@ class ReportsController < ApplicationController
 
   def deliveries_by_client
     skip_authorization
+    raise Pundit::NotAuthorizedError unless current_user.admin? || current_user.manager?
 
     @from = parse_date(params[:from]) || Date.current.beginning_of_month
     @to   = parse_date(params[:to])   || Date.current.end_of_month

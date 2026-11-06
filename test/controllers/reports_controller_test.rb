@@ -24,6 +24,16 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     file&.unlink
   end
 
+  test "deliveries_by_client is only for admin and manager" do
+    sign_out @admin
+    seller = users(:one)
+    seller.update!(role: :seller, force_password_change: false)
+    sign_in seller
+    get report_deliveries_by_client_path
+    assert_redirected_to root_path
+    assert_equal "No tienes permiso para realizar esta acción.", flash[:alert]
+  end
+
   test "deliveries_in_plan only includes deliveries assigned to a plan" do
     assigned = delivery_plan_assignments(:one).delivery
     assigned.order.update_columns(number: "PED-ASSIGNED-1")

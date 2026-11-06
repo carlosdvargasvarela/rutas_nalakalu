@@ -14,10 +14,12 @@
         <i class="bi bi-file-earmark-spreadsheet"></i>
         <span class="d-none d-sm-inline">Exportar Excel</span>
       <% end %>
-      <%= link_to new_delivery_plan_path,
-            class: "btn btn-primary btn-sm d-flex align-items-center gap-2" do %>
-        <i class="bi bi-plus-circle"></i>
-        <span>Nuevo Plan</span>
+      <% if policy(DeliveryPlan).new? %>
+        <%= link_to new_delivery_plan_path,
+              class: "btn btn-primary btn-sm d-flex align-items-center gap-2" do %>
+          <i class="bi bi-plus-circle"></i>
+          <span>Nuevo Plan</span>
+        <% end %>
       <% end %>
     </div>
   </div>
