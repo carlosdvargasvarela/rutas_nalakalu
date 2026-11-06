@@ -63,3 +63,8 @@ graphify-out/
 
 # Artefactos (screenshots/snapshots) generados por el MCP de Playwright
 /.playwright-mcp/
+
+# Recursos de marca (brand kit, logos) y fuentes del manual: solo se versiona el PDF final
+/Recursos/
+/docs/manual/*
+!/docs/manual/*.pdf
