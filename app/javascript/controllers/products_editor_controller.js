@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 
-const normalize = (text) =>
+export const normalize = (text) =>
   text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
 
 // Filas nuevas y buscador de la pantalla de productos de una entrega.

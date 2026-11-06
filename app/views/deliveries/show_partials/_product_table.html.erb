@@ -131,6 +131,12 @@
   <% status_counts = items.map(&:display_status).tally %>
   <% hidden_statuses = DeliveryItem.statuses_hidden_by_default(status_counts.keys) %>
   <div class="d-flex align-items-center flex-wrap gap-3 mb-2 ms-1 small">
+    <div class="input-group input-group-sm w-auto">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="search" class="form-control" placeholder="Buscar producto..." aria-label="Buscar producto"
+             data-delivery-items-selection-target="search"
+             data-action="input->delivery-items-selection#filter">
+    </div>
     <span class="text-muted">Ocultar:</span>
     <% status_counts.sort.each do |status, count| %>
       <div class="form-check mb-0">

@@ -1,9 +1,10 @@
 // app/javascript/controllers/delivery_items_selection_controller.js
 import { Controller } from "@hotwired/stimulus";
 import { confirmDialog } from "confirm_dialog";
+import { normalize } from "controllers/products_editor_controller";
 
 export default class extends Controller {
-  static targets = ["checkbox", "bulkButton", "count", "row", "hideStatus"];
+  static targets = ["checkbox", "bulkButton", "count", "row", "hideStatus", "search"];
 
   connect() {
     this.updateUI();
@@ -29,13 +30,14 @@ export default class extends Controller {
     this._applyFilter(row);
   }
 
-  // Limpia la selección: una acción bulk no debe alcanzar filas ocultas.
+  // Desmarca lo que se oculta: una acción bulk no debe alcanzar filas ocultas.
   filter() {
-    this.checkboxTargets.forEach((checkbox) => {
-      checkbox.checked = false;
-    });
     this.element.querySelector(".select-all-checkbox").checked = false;
-    this.rowTargets.forEach((row) => this._applyFilter(row));
+    this.rowTargets.forEach((row) => {
+      this._applyFilter(row);
+      const checkbox = row.querySelector(".item-checkbox");
+      if (row.hidden && checkbox) checkbox.checked = false;
+    });
     this.updateUI();
   }
 
@@ -129,9 +131,12 @@ export default class extends Controller {
   // ─── Privados ────────────────────────────────────────────────────────────────
 
   _applyFilter(row) {
-    row.hidden = this.hideStatusTargets.some(
-      (checkbox) => checkbox.checked && checkbox.value === row.dataset.status,
-    );
+    const term = normalize(this.searchTarget.value);
+    row.hidden =
+      !normalize(row.dataset.name).includes(term) ||
+      this.hideStatusTargets.some(
+        (checkbox) => checkbox.checked && checkbox.value === row.dataset.status,
+      );
   }
 
   _selectedIds() {
@@ -151,6 +156,7 @@ export default class extends Controller {
   _applyPreselection(ids) {
     if (ids.length === 0) return;
 
+    this.searchTarget.value = "";
     this.hideStatusTargets.forEach((checkbox) => {
       checkbox.checked = false;
     });
