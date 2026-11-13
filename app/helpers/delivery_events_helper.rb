@@ -14,6 +14,14 @@ module DeliveryEventsHelper
       parts << "— Motivo: #{reason}" if reason
       parts.join(" ")
 
+    when "resent"
+      to = format_date_safe(data["new_date"])
+      reason = data["reason"].presence
+      parts = ["Vuelta a enviar"]
+      parts << "para el #{to}" if to
+      parts << "— Nota: #{reason}" if reason
+      parts.join(" ")
+
     when "item_rescheduled"
       product = data["product"].presence || "producto"
       from = format_date_safe(data["from_date"])
@@ -92,8 +100,9 @@ module DeliveryEventsHelper
     when "created"
       date = format_date_safe(data["delivery_date"])
       type = data["delivery_type"].presence
-      parts = ["Entrega creada"]
+      parts = [data["context"] == "resend" ? "Entrega creada como reenvío" : "Entrega creada"]
       parts << "para el #{date}" if date
+      parts << "— Nota: #{data["reason"]}" if data["context"] == "resend" && data["reason"].present?
       parts << "(#{delivery_type_label(type)})" if type
       parts.join(" ")
 

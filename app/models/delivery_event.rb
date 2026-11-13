@@ -19,6 +19,7 @@ class DeliveryEvent < ApplicationRecord
   # =========================================================================
   ACTIONS = %w[
     rescheduled
+    resent
     item_rescheduled
     item_archived
     item_unarchived
@@ -67,6 +68,7 @@ class DeliveryEvent < ApplicationRecord
 
   ACTION_LABELS = {
     "rescheduled" => "Reagendada",
+    "resent" => "Vuelta a enviar",
     "item_rescheduled" => "Ítem reagendado",
     "item_archived" => "Ítem archivado",
     "item_unarchived" => "Ítem desarchivado",
@@ -91,6 +93,7 @@ class DeliveryEvent < ApplicationRecord
 
   ACTION_COLORS = {
     "rescheduled" => "warning",
+    "resent" => "info",
     "item_rescheduled" => "warning",
     "item_archived" => "dark",
     "item_unarchived" => "warning",

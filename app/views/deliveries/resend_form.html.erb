@@ -1,0 +1,30 @@
+<%# app/views/deliveries/resend_form.html.erb %>
+<%= turbo_frame_tag "modal" do %>
+  <div class="modal-header bg-info-subtle">
+    <h5 class="modal-title fw-semibold">
+      <i class="bi bi-arrow-repeat me-2"></i>Volver a enviar #<%= @delivery.order.number %>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+  <div class="modal-body">
+    <p class="small text-muted">Se crea una entrega nueva con los mismos productos y dirección. Esta entrega queda como está.</p>
+    <%= form_with url: resend_delivery_path(@delivery), method: :post, local: true, data: { turbo_frame: "_top" } do |f| %>
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Fecha de entrega</label>
+        <%= f.date_field :new_date, class: "form-control form-control-sm", required: true,
+              min: (current_user.admin_or_manager? ? nil : Date.current + 1.day),
+              value: Date.current + 1.day %>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Nota <span class="text-muted fw-normal">(opcional)</span></label>
+        <%= f.text_area :reason, class: "form-control form-control-sm", rows: 2,
+              placeholder: "Ej: Segundo envío de la flotilla / Cliente pidió reposición..." %>
+      </div>
+      <div class="modal-footer px-0 pb-0">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <%= f.submit "Volver a enviar", class: "btn btn-sm btn-info fw-semibold",
+              data: { disable_with: "Enviando...", turbo_confirm: "¿Crear una nueva entrega con estos productos?" } %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

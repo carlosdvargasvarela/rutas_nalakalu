@@ -69,6 +69,16 @@
                 <% end %>
               </li>
             <% end %>
+            <% if delivery.delivered? || delivery.cancelled? %>
+              <li>
+                <%= button_to resend_form_delivery_path(delivery),
+                      method: :get,
+                      form: { data: { turbo_frame: "modal" }, class: "w-100" },
+                      class: "dropdown-item d-flex align-items-center gap-2 py-2 border-0 bg-transparent text-start" do %>
+                  <i class="bi bi-arrow-repeat text-info"></i> Volver a enviar
+                <% end %>
+              </li>
+            <% end %>
             <% if delivery.delivery_items.pending.any? %>
               <li>
                 <%= button_to confirm_all_items_delivery_path(delivery),

@@ -11,7 +11,7 @@ class DeliveriesController < ApplicationController
 
   before_action :set_delivery, only: [
     :show, :edit, :update, :mark_as_delivered, :confirm_all_items,
-    :reschedule_form, :reschedule_all, :approve, :note, :archive, :new_service_case_for_existing,
+    :reschedule_form, :reschedule_all, :resend_form, :resend, :approve, :note, :archive, :new_service_case_for_existing,
     :update_status, :reassign_seller, :take_order, :sala_pickup_form,
     :create_sala_pickup, :service_case_form, :create_service_case_from_workspace,
     :warehousing_form, :start_warehousing, :end_warehousing, :unconfirm, :reopen,
@@ -178,6 +178,24 @@ class DeliveriesController < ApplicationController
     )
   rescue => e
     redirect_to(session[:deliveries_return_to] || deliveries_path, alert: "Error al reagendar: #{e.message}")
+  end
+
+  def resend_form
+    authorize @delivery, :edit?
+    render layout: false
+  end
+
+  def resend
+    authorize @delivery, :edit?
+    target = Deliveries::Resender.new(
+      delivery: @delivery,
+      new_date: parse_date(params[:new_date]),
+      current_user: current_user,
+      reason: params[:reason]
+    ).call
+    redirect_to delivery_path(target), notice: "Entrega reenviada para el #{target.delivery_date.strftime("%d/%m/%Y")}."
+  rescue => e
+    redirect_to delivery_path(@delivery), alert: "Error al volver a enviar: #{e.message}"
   end
 
   def new_internal_delivery

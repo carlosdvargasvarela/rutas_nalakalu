@@ -197,4 +197,20 @@ class DeliveriesControllerTest < ActionDispatch::IntegrationTest
     post "/map_links/resolve", params: {url: "https://evil.com/?q=9.9,-84.0"}, as: :json
     assert_response :unprocessable_entity
   end
+
+  test "delivered delivery shows Volver a enviar and resend creates a new delivery" do
+    delivery = deliveries(:one)
+    delivery_items(:one).update!(status: :delivered)
+    delivery.reload.update_status_based_on_items
+
+    get delivery_url(delivery)
+    assert_select "form[action=?]", resend_form_delivery_path(delivery)
+    get resend_form_delivery_url(delivery)
+    assert_response :success
+
+    assert_difference "Delivery.count", 1 do
+      post resend_delivery_url(delivery), params: {new_date: (Date.current + 5).to_s, reason: "Segunda flotilla"}
+    end
+    assert_redirected_to delivery_path(Delivery.order(:id).last)
+  end
 end
