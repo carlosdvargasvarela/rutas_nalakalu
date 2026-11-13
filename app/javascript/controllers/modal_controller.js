@@ -13,6 +13,11 @@ export default class extends Controller {
     };
     document.addEventListener("turbo:frame-load", this._frameLoadHandler);
 
+    // El modal es data-turbo-permanent: sobrevive a las visitas de página
+    // completa (p. ej. un form con turbo_frame "_top" que redirige). Cerrarlo.
+    this._visitHandler = () => this._modal.hide();
+    document.addEventListener("turbo:visit", this._visitHandler);
+
     const frame = document.getElementById("modal");
     if (frame) {
       this._observer = new MutationObserver(() => {
@@ -37,6 +42,7 @@ export default class extends Controller {
 
   disconnect() {
     document.removeEventListener("turbo:frame-load", this._frameLoadHandler);
+    document.removeEventListener("turbo:visit", this._visitHandler);
     this._observer?.disconnect();
   }
 }
