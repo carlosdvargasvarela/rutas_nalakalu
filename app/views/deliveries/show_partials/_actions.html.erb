@@ -168,6 +168,14 @@
           <% if is_admin %>
             <li><hr class="dropdown-divider"></li>
             <li>
+              <%= button_to order_number_form_delivery_path(delivery),
+                    method: :get,
+                    form: { data: { turbo_frame: "modal" }, class: "w-100" },
+                    class: "dropdown-item d-flex align-items-center gap-2 py-2 border-0 bg-transparent text-start" do %>
+                <i class="bi bi-hash text-secondary"></i> Editar número de pedido
+              <% end %>
+            </li>
+            <li>
               <%= button_to archive_delivery_path(delivery),
                     method: :patch,
                     class: "dropdown-item text-danger d-flex align-items-center gap-2 py-2",

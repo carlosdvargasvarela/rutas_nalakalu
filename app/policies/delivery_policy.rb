@@ -51,6 +51,10 @@ class DeliveryPolicy < ApplicationPolicy
     user.admin? || user.manager? || user.production_manager? || user.logistics?
   end
 
+  def edit_order_number?
+    user.admin?
+  end
+
   def reopen?
     user.admin? || user.manager?
   end

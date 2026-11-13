@@ -213,4 +213,24 @@ class DeliveriesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to delivery_path(Delivery.order(:id).last)
   end
+
+  test "admin edits the order number from the delivery; duplicates and non-admins are rejected" do
+    delivery = deliveries(:one)
+    order = delivery.order
+
+    get delivery_url(delivery)
+    assert_select "form[action=?]", order_number_form_delivery_path(delivery)
+
+    patch update_order_number_delivery_url(delivery), params: {number: " PED-NUEVO-1 "}
+    assert_redirected_to delivery_path(delivery)
+    assert_equal "PED-NUEVO-1", order.reload.number
+
+    other = Order.create!(number: "PED-OTRO", client: order.client, seller: order.seller)
+    patch update_order_number_delivery_url(delivery), params: {number: other.number}
+    assert_equal "PED-NUEVO-1", order.reload.number
+
+    @admin.update!(role: :logistics)
+    patch update_order_number_delivery_url(delivery), params: {number: "PED-HACK"}
+    assert_equal "PED-NUEVO-1", order.reload.number
+  end
 end

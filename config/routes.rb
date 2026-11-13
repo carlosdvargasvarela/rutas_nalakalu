@@ -94,6 +94,8 @@ Rails.application.routes.draw do
       patch :reschedule_all
       get :resend_form
       post :resend
+      get :order_number_form
+      patch :update_order_number
       patch :update_status
 
       patch :approve

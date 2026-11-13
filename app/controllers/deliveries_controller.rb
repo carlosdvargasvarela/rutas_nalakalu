@@ -11,7 +11,7 @@ class DeliveriesController < ApplicationController
 
   before_action :set_delivery, only: [
     :show, :edit, :update, :mark_as_delivered, :confirm_all_items,
-    :reschedule_form, :reschedule_all, :resend_form, :resend, :approve, :note, :archive, :new_service_case_for_existing,
+    :reschedule_form, :reschedule_all, :resend_form, :resend, :order_number_form, :update_order_number, :approve, :note, :archive, :new_service_case_for_existing,
     :update_status, :reassign_seller, :take_order, :sala_pickup_form,
     :create_sala_pickup, :service_case_form, :create_service_case_from_workspace,
     :warehousing_form, :start_warehousing, :end_warehousing, :unconfirm, :reopen,
@@ -197,6 +197,31 @@ class DeliveriesController < ApplicationController
     redirect_to delivery_path(target), notice: "Entrega reenviada para el #{target.delivery_date.strftime("%d/%m/%Y")}."
   rescue => e
     redirect_to delivery_path(@delivery), alert: "Error al volver a enviar: #{e.message}"
+  end
+
+  def order_number_form
+    authorize @delivery, :edit_order_number?
+    render layout: false
+  end
+
+  # Solo admins. Cambia el número del pedido (afecta todas sus entregas).
+  def update_order_number
+    authorize @delivery, :edit_order_number?
+    order = @delivery.order
+    new_number = params[:number].to_s.strip
+    old_number = order.number
+
+    if new_number.blank?
+      return redirect_to(delivery_path(@delivery), alert: "El número de pedido no puede quedar vacío.")
+    end
+    if Order.where(number: new_number, qb_standby: false).where.not(id: order.id).exists?
+      return redirect_to(delivery_path(@delivery), alert: "Ya existe otro pedido con el número #{new_number}.")
+    end
+
+    order.update!(number: new_number)
+    DeliveryEvent.record(delivery: @delivery, action: "updated", actor: current_user,
+      payload: {changed_fields: ["número de pedido: #{old_number} → #{new_number}"]})
+    redirect_to delivery_path(@delivery), notice: "Número de pedido cambiado de #{old_number} a #{new_number}."
   end
 
   def new_internal_delivery
