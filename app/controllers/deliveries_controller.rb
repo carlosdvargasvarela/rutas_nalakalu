@@ -191,7 +191,8 @@ class DeliveriesController < ApplicationController
       delivery: @delivery,
       new_date: parse_date(params[:new_date]),
       current_user: current_user,
-      reason: params[:reason]
+      reason: params[:reason],
+      item_ids: Array(params[:item_ids])
     ).call
     redirect_to delivery_path(target), notice: "Entrega reenviada para el #{target.delivery_date.strftime("%d/%m/%Y")}."
   rescue => e

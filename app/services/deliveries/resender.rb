@@ -5,7 +5,9 @@ module Deliveries
   class Resender
     RESENDABLE_ITEM_STATUSES = %i[delivered cancelled failed].freeze
 
-    def initialize(delivery:, new_date:, current_user:, reason: nil)
+    # item_ids: productos elegidos; nil = todos los reenviables.
+    def initialize(delivery:, new_date:, current_user:, reason: nil, item_ids: nil)
+      @item_ids = item_ids
       @delivery = delivery
       @new_date = new_date
       @current_user = current_user
@@ -17,7 +19,8 @@ module Deliveries
       raise ArgumentError, "Solo se pueden volver a enviar entregas entregadas o canceladas" unless @delivery.delivered? || @delivery.cancelled?
 
       items = @delivery.delivery_items.where(status: RESENDABLE_ITEM_STATUSES)
-      raise ArgumentError, "La entrega no tiene productos para volver a enviar" if items.none?
+      items = items.where(id: @item_ids) unless @item_ids.nil?
+      raise ArgumentError, "Selecciona al menos un producto para volver a enviar" if items.none?
 
       ActiveRecord::Base.transaction do
         target = Delivery.create!(

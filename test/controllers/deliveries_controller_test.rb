@@ -209,7 +209,7 @@ class DeliveriesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     assert_difference "Delivery.count", 1 do
-      post resend_delivery_url(delivery), params: {new_date: (Date.current + 5).to_s, reason: "Segunda flotilla"}
+      post resend_delivery_url(delivery), params: {new_date: (Date.current + 5).to_s, reason: "Segunda flotilla", item_ids: [delivery_items(:one).id]}
     end
     assert_redirected_to delivery_path(Delivery.order(:id).last)
   end

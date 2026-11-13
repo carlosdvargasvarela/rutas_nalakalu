@@ -16,6 +16,17 @@
               value: Date.current + 1.day %>
       </div>
       <div class="mb-3">
+        <label class="form-label fw-semibold small">Productos a enviar</label>
+        <% @delivery.delivery_items.where(status: Deliveries::Resender::RESENDABLE_ITEM_STATUSES).includes(:order_item).each do |item| %>
+          <div class="form-check">
+            <%= check_box_tag "item_ids[]", item.id, true, id: "resend_item_#{item.id}", class: "form-check-input" %>
+            <label class="form-check-label small" for="resend_item_<%= item.id %>">
+              <%= item.product %> <span class="text-muted">× <%= item.quantity %></span>
+            </label>
+          </div>
+        <% end %>
+      </div>
+      <div class="mb-3">
         <label class="form-label fw-semibold small">Nota <span class="text-muted fw-normal">(opcional)</span></label>
         <%= f.text_area :reason, class: "form-control form-control-sm", rows: 2,
               placeholder: "Ej: Segundo envío de la flotilla / Cliente pidió reposición..." %>
