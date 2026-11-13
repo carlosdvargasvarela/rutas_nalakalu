@@ -23,18 +23,15 @@
         </div>
       </div>
       <div class="alert alert-secondary mt-4">
-        <h6 class="fw-bold">Formato esperado del archivo:</h6>
-        <ul class="mb-0 small">
-          <li><strong>Columna A:</strong> Fecha de entrega</li>
-          <li><strong>Columna B:</strong> Equipo</li>
-          <li><strong>Columna C:</strong> Número de pedido</li>
-          <li><strong>Columna D:</strong> Cliente</li>
-          <li><strong>Columna E:</strong> Producto</li>
-          <li><strong>Columna F:</strong> Cantidad</li>
-          <li><strong>Columna G:</strong> Vendedor</li>
-          <li><strong>Columna H:</strong> Dirección</li>
-          <li><strong>Columna I:</strong> Contacto</li>
-        </ul>
+        <h6 class="fw-bold">¿Cómo cargar pedidos?</h6>
+        <ol class="small mb-3">
+          <li>Descarga la plantilla.</li>
+          <li>Llena una fila por producto (borra la fila de ejemplo). La hoja <em>Instrucciones</em> explica cada columna.</li>
+          <li>Súbela aquí y revisa la vista previa antes de importar.</li>
+        </ol>
+        <%= link_to template_delivery_imports_path, class: "btn btn-outline-primary btn-sm" do %>
+          <i class="bi bi-file-earmark-excel me-1"></i> Descargar plantilla
+        <% end %>
       </div>
     </div>
   </div>
