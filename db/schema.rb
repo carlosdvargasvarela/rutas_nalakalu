@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_30_130000) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_23_120000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -103,6 +103,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_30_130000) do
     t.string "casa_number"
     t.integer "source_showroom_id"
     t.integer "destination_showroom_id"
+    t.boolean "requires_qr_check", default: false, null: false
     t.index ["approved"], name: "index_deliveries_on_approved"
     t.index ["archived"], name: "index_deliveries_on_archived"
     t.index ["confirmed_by_vendor"], name: "index_deliveries_on_confirmed_by_vendor"

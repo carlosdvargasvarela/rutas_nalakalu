@@ -157,6 +157,13 @@
       </div>
     <% end %>
 
+    <% if delivery.requires_qr_check? %>
+      <div class="dk-alert dk-alert-info" style="margin-bottom:8px;padding:10px 12px;">
+        <i class="bi bi-qr-code" style="font-size:1rem;flex-shrink:0;"></i>
+        <span style="font-size:.82rem;font-weight:600;">Revisar código QR de entrada</span>
+      </div>
+    <% end %>
+
     <%# ── Notas de entrega ── %>
     <% if delivery.delivery_notes.present? %>
       <div class="dk-alert dk-alert-info" style="margin-bottom:8px;padding:10px 12px;">

@@ -62,6 +62,7 @@ module Deliveries
         :delivery_time_preference,
         :condominio_number,
         :casa_number,
+        :requires_qr_check,
         :_return_to_panel,
         delivery_items_attributes: [
           :id, :order_item_id, :quantity_delivered, :service_case, :status, :notes, :_destroy,

@@ -68,7 +68,8 @@ class DeliveryItem < ApplicationRecord
   # cancelled/failed/rescheduled/warehousing quedan afuera porque confunden a
   # logística/vendedores — un producto cancelado no debería seguir
   # apareciendo como si fuera parte de la entrega.
-  VISIBLE_TO_ALL_STATUSES = %w[pending confirmed in_plan in_route delivered loaded_on_truck].freeze
+  # ponytail: delivered sale de la ruta para no-admins (vista, Excel, PDF, chofer); admin ve todo.
+  VISIBLE_TO_ALL_STATUSES = %w[pending confirmed in_plan in_route loaded_on_truck].freeze
 
   scope :service_cases, -> { where(service_case: true) }
   scope :eligible_for_plan, -> { where.not(status: [:delivered, :cancelled, :rescheduled, :loaded_on_truck, :warehousing, :failed, :archived]) }

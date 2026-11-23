@@ -53,6 +53,9 @@
     <%# ── Tab: Resumen ── %>
     <div class="tab-pane fade show active" id="info-pane">
       <%= render "deliveries/show_partials/summary_cards", delivery: delivery %>
+      <% if delivery.requires_qr_check? %>
+        <div class="mt-3"><div class="alert alert-info py-2 px-3 mb-0 small d-flex align-items-center"><i class="bi bi-qr-code me-2"></i>Esta entrega requiere revisar el código QR de entrada.</div></div>
+      <% end %>
       <% if delivery.delivery_notes.present? %>
         <div class="mt-4">
           <label class="text-muted small fw-bold text-uppercase mb-2 d-block">
