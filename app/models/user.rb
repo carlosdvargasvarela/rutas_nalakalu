@@ -86,6 +86,11 @@ class User < ApplicationRecord
     role == "manager"
   end
 
+  # El aviso de QR de entrada lo gestionan las vendedoras; solo ellas y admin lo ven.
+  def sees_qr_check?
+    admin? || seller?
+  end
+
   def admin_or_manager?
     admin? || manager?
   end

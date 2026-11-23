@@ -63,7 +63,7 @@
               <div class="d-flex align-items-center gap-1">
                 <i class="bi bi-box-seam text-info"></i>
                 <span class="fw-bold small"><%= meta[:total_count] %></span>
-                <span class="text-muted small">entregas</span>
+                <span class="text-muted small">entregas</span><% if plan.try(:qr_check_count).to_i > 0 && current_user.sees_qr_check? %><i class="bi bi-qr-code text-info ms-1" title="<%= plan.qr_check_count %> entrega(s) requieren revisar código QR de entrada"></i><% end %>
               </div>
               <div class="flex-grow-1">
                 <div class="progress" style="height:6px; border-radius:99px;">

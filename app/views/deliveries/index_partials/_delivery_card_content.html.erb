@@ -175,7 +175,7 @@
         </div>
       <% end %>
       <%# Aviso QR de entrada (informativo) %>
-      <% if delivery.requires_qr_check? %>
+      <% if delivery.requires_qr_check? && current_user.sees_qr_check? %>
         <div class="mt-2 px-2 py-1 bg-info-subtle text-info-emphasis rounded-2 small d-flex align-items-center gap-1 card-alert-row">
           <i class="bi bi-qr-code"></i> Revisar código QR de entrada
         </div>

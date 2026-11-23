@@ -91,7 +91,7 @@
               </td>
               <%# Entregas %>
               <td class="text-center">
-                <span class="fw-bold text-dark"><%= meta[:total_count] %></span>
+                <span class="fw-bold text-dark"><%= meta[:total_count] %></span><% if plan.try(:qr_check_count).to_i > 0 && current_user.sees_qr_check? %><i class="bi bi-qr-code text-info ms-1" title="<%= plan.qr_check_count %> entrega(s) requieren revisar código QR de entrada"></i><% end %>
                 <small class="text-muted d-block" style="font-size:0.65rem;">entregas</small>
               </td>
               <%# Progreso %>

@@ -33,6 +33,7 @@ class DeliveryPlansController < ApplicationController
         "MAX(deliveries.delivery_date) AS last_delivery_date",
         "COUNT(CASE WHEN deliveries.id IS NOT NULL AND deliveries.status NOT IN (#{hidden_statuses}) THEN 1 END) AS deliveries_count",
         "COUNT(CASE WHEN deliveries.status = #{delivered_status} THEN 1 END) AS delivered_count",
+        "COUNT(CASE WHEN deliveries.requires_qr_check = TRUE AND deliveries.status NOT IN (#{hidden_statuses}) THEN 1 END) AS qr_check_count",
         # Progreso por paradas: varias entregas con el mismo stop_order (mismo
         # lugar) cuentan como una; la parada está entregada si todas lo están.
         "(#{visible_stops_sql}) AS stops_count",

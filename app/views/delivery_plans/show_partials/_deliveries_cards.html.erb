@@ -51,7 +51,7 @@
                     <small class="text-muted">(en ~<%= Deliveries::WaitingEta.humanize(eta) %>)</small>
                   </p>
                 <% end %>
-                <% if delivery.requires_qr_check? %>
+                <% if delivery.requires_qr_check? && current_user.sees_qr_check? %>
                   <div class="mb-2"><div class="alert alert-info py-2 px-3 mb-0 small d-flex align-items-center"><i class="bi bi-qr-code me-2"></i>Esta entrega requiere revisar el código QR de entrada.</div></div>
                 <% end %>
                 <p>
