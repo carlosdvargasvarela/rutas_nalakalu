@@ -49,6 +49,10 @@
                     </span>
                   <% end %>
 
+                  <% if delivery.requires_qr_check? && current_user_or_nil&.sees_qr_check? %>
+                    <i class="bi bi-qr-code text-info ms-1" title="Requiere revisar código QR de entrada"></i>
+                  <% end %>
+
                   <%# Indicador de que hay notas en ítems u order_items %>
                   <% if delivery.delivery_items.any? { |di| di.notes.present? || di.order_item.notes.present? } %>
                     <span class="badge bg-warning ms-1">
