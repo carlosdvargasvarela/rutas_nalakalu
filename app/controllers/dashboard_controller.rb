@@ -32,7 +32,7 @@ class DashboardController < ApplicationController
     attention_items = attention_items.select { |i| i[:categories].include?(params[:category].to_sym) } if params[:category].present?
     @attention_queue = Kaminari.paginate_array(attention_items).page(params[:page_attention]).per(15)
 
-    @data_quality_issues = current_user.admin? ? build_data_quality_issues : []
+    @data_quality_issues = current_user.sees_admin_views? ? build_data_quality_issues : []
 
     @pending_tasks = build_pending_tasks
     @recent_notifications = current_user.notifications.recent.limit(5)

@@ -23,6 +23,8 @@ class ApplicationController < ActionController::Base
   def after_sign_in_path_for(resource)
     if resource.force_password_change?
       edit_user_registration_path
+    elsif resource.proveeduria?
+      root_path                              # 👈 Mismo dashboard que admin
     elsif resource.production_manager?
       management_production_deliveries_path  # 👈 Vista de producción
     elsif resource.driver?

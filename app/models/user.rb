@@ -91,6 +91,12 @@ class User < ApplicationRecord
     admin? || seller?
   end
 
+  # Proveeduría ve las mismas pantallas que admin (menos usuarios, clientes y
+  # configuración), pero sin los permisos de admin para modificar.
+  def sees_admin_views?
+    admin? || proveeduria?
+  end
+
   def admin_or_manager?
     admin? || manager?
   end

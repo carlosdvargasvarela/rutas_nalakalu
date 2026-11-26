@@ -5,7 +5,7 @@
 <% service_case_items = Deliveries::ServiceCaseDetector.new(delivery).actionable_items %>
 <% repair_service_items = Deliveries::RepairServiceDetector.new(delivery).actionable_items %>
 <% items = delivery.delivery_items.includes(:order_item) %>
-<% items = items.not_archived unless current_user&.admin? %>
+<% items = items.not_archived unless current_user&.sees_admin_views? %>
 <% items = items.by_product %>
 <div id="delivery_items_list"
      data-controller="delivery-items-selection"

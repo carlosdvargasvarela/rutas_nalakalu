@@ -29,7 +29,7 @@ class DeliveriesController < ApplicationController
     session[:deliveries_return_to] = request.fullpath
 
     excluded_from_index = []
-    excluded_from_index << :rescheduled unless current_user.admin? && params[:show_rescheduled] == "1"
+    excluded_from_index << :rescheduled unless current_user.sees_admin_views? && params[:show_rescheduled] == "1"
     excluded_from_index << :archived unless params[:show_archived] == "1"
     # Solo se ven al pedirlas explícitamente en el filtro de estado.
     excluded_from_index << :pending_review unless Array(params.dig(:q, :status_in)).include?("pending_review")

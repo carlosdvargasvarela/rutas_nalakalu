@@ -2,15 +2,15 @@
 class SellerPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      user.admin? ? scope.all : scope.none
+      user.sees_admin_views? ? scope.all : scope.none
     end
   end
 
   def index?
-    user.admin?
+    user.sees_admin_views?
   end
 
   def show?
-    user.admin?
+    user.sees_admin_views?
   end
 end

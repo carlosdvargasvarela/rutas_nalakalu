@@ -7,7 +7,7 @@
   </li>
   <li class="nav-item">
     <%= link_to(
-      (current_user.production_manager? || current_user.logistics?) ?
+      (current_user.production_manager? || current_user.logistics?) && !current_user.proveeduria? ?
         management_production_deliveries_path :
         deliveries_path,
       class: "nav-link"
@@ -76,7 +76,7 @@
   <% end %>
 
   <%# ── ADMIN / MANAGER ── %>
-  <% if current_user.admin? || current_user.manager? %>
+  <% if current_user.admin? || current_user.manager? || current_user.proveeduria? %>
     <li><span class="nav-link disabled px-2">|</span></li>
 
     <li class="nav-item dropdown">
@@ -85,11 +85,13 @@
         <i class="bi bi-collection me-1"></i> Catálogos
       </a>
       <ul class="dropdown-menu" aria-labelledby="catalogosDropdown">
-        <li>
-          <%= link_to clients_path, class: "dropdown-item" do %>
-            <i class="bi bi-people me-1"></i> Clientes
-          <% end %>
-        </li>
+        <% unless current_user.proveeduria? %>
+          <li>
+            <%= link_to clients_path, class: "dropdown-item" do %>
+              <i class="bi bi-people me-1"></i> Clientes
+            <% end %>
+          </li>
+        <% end %>
         <li>
           <%= link_to sellers_path, class: "dropdown-item" do %>
             <i class="bi bi-person-badge me-1"></i> Vendedores
@@ -117,6 +119,7 @@
       </ul>
     </li>
 
+    <% unless current_user.proveeduria? %>
     <li class="nav-item dropdown">
       <a class="nav-link dropdown-toggle" href="#" id="configuracionDropdown" role="button"
          data-bs-toggle="dropdown" aria-expanded="false">
@@ -163,5 +166,6 @@
         </li>
       </ul>
     </li>
+    <% end %>
   <% end %>
 </ul>

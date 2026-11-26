@@ -140,7 +140,7 @@
                 </div>
               </div>
               <div class="d-flex gap-3 flex-wrap">
-                <% if current_user.admin? %>
+                <% if current_user.sees_admin_views? %>
                   <div class="form-check form-check-inline">
                     <input type="checkbox" class="form-check-input" name="show_rescheduled" value="1"
                            id="filter_rescheduled" <%= 'checked' if params[:show_rescheduled] == '1' %>>

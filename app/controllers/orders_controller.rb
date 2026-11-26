@@ -47,7 +47,7 @@ class OrdersController < ApplicationController
   end
 
   def redirect_non_admins
-    return if current_user.admin?
+    return if current_user.sees_admin_views?
 
     if current_user.production_manager?
       redirect_to @order ? management_production_deliveries_path(order_number: @order.number) : management_production_deliveries_path

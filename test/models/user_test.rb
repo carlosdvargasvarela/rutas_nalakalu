@@ -13,4 +13,11 @@ class UserTest < ActiveSupport::TestCase
     assert user.production_manager?
     assert_not user.proveeduria?
   end
+
+  test "proveeduria sees admin views but is not admin" do
+    assert User.new(role: :proveeduria).sees_admin_views?
+    assert User.new(role: :admin).sees_admin_views?
+    assert_not User.new(role: :production_manager).sees_admin_views?
+    assert_not User.new(role: :proveeduria).admin?
+  end
 end

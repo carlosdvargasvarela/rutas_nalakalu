@@ -207,7 +207,7 @@ class Delivery < ApplicationRecord
   # @param user [User, nil]
   # @return [Boolean]
   def visible_in_plan_for?(user)
-    user&.admin? || status.in?(VISIBLE_TO_ALL_STATUSES)
+    user&.sees_admin_views? || status.in?(VISIBLE_TO_ALL_STATUSES)
   end
 
   # Reabre una entrega bloqueada (ver REOPENABLE_STATUSES: delivered/
@@ -518,7 +518,7 @@ class Delivery < ApplicationRecord
   # @param user [User, nil]
   # @return [ActiveRecord::Relation<DeliveryItem>]
   def items_visible_in_plan(user = nil)
-    return delivery_items if user&.admin?
+    return delivery_items if user&.sees_admin_views?
     delivery_items.merge(DeliveryItem.eligible_for_plan_for_others)
   end
 
