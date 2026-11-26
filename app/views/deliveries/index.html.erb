@@ -16,6 +16,7 @@
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0 fw-bold">
               <i class="bi bi-truck me-2 text-primary"></i>Entregas
+              <span class="badge rounded-pill text-bg-light border align-middle ms-1" title="Total con los filtros actuales"><%= @deliveries.total_count %></span>
             </h5>
             <div class="d-flex gap-1">
               <% if policy(Delivery).create? %>
